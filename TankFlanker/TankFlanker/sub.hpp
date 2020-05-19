@@ -9,7 +9,7 @@
 #include <vector>
 #include "Box2D/Box2D.h"
 #include "DXLib_ref.h"
-constexpr auto veh_all = 3;//車種
+constexpr auto veh_all = 2;//車種
 void set_effect(EffectS* efh, VECTOR_ref pos, VECTOR_ref nor, float scale = 1.f) {
 	efh->flug = true;
 	efh->pos = pos;
@@ -574,89 +574,6 @@ public:
 				//データ取得
 				{
 					int mdata = FileRead_open(("data/plane/" + t.name + "/data.txt").c_str(), FALSE);
-					char mstr[64]; /*tank*/
-					t.isfloat = getparam_bool(mdata);
-					t.max_speed_limit = getparam_f(mdata) / 3.6f;
-					t.mid_speed_limit = getparam_f(mdata) / 3.6f;
-					t.min_speed_limit = getparam_f(mdata) / 3.6f;
-					t.body_rad_limit = getparam_f(mdata);
-					t.HP = uint16_t(getparam_u(mdata));
-					FileRead_gets(mstr, 64, mdata);
-					for (auto& g : t.gunframe) {
-						g.name = getright(mstr);
-						g.load_time = getparam_f(mdata);
-						g.rounds = uint16_t(getparam_u(mdata));
-						while (true) {
-							FileRead_gets(mstr, 64, mdata);
-							if (std::string(mstr).find(("useammo" + std::to_string(g.useammo.size()))) == std::string::npos) {
-								break;
-							}
-							g.useammo.resize(g.useammo.size() + 1);
-							g.useammo.back() = getright(mstr);
-						}
-					}
-					FileRead_close(mdata);
-				}
-			}
-			for (auto& t : (*vehcs)[2]) {
-
-				for (int i = 0; i < t.obj.frame_num(); i++) {
-					std::string p = t.obj.frame_name(i);
-					if (p.find("ﾜｲﾔｰ", 0) != std::string::npos) {
-						t.wire.resize(t.wire.size() + 1);
-						t.wire.back().first = i;
-						t.wire.back().second = t.obj.frame(t.wire.back().first);
-					}
-					else if (p.find("ｶﾀﾊﾟﾙﾄ", 0) != std::string::npos) {
-						t.catapult.resize(t.catapult.size() + 1);
-						t.catapult.back().first = i;
-						t.catapult.back().second = t.obj.frame(t.catapult.back().first + 2) - t.obj.frame(t.catapult.back().first);
-					}
-				}
-				for (int i = 0; i < t.col.mesh_num(); i++) {
-					std::string p = t.col.material_name(i);
-					if (p.find("armer", 0) != std::string::npos) { //装甲
-						t.armer_mesh.resize(t.armer_mesh.size() + 1);
-						t.armer_mesh.back().first = i;
-						t.armer_mesh.back().second = std::stof(getright(p.c_str())); //装甲値
-					}
-					else if (p.find("space", 0) != std::string::npos) {		    //空間装甲
-						t.space_mesh.resize(t.space_mesh.size() + 1);
-						t.space_mesh.back() = i;
-					}
-					else { //モジュール
-						t.module_mesh.resize(t.module_mesh.size() + 1);
-						t.module_mesh.back() = i;
-					}
-				}
-
-
-				VECTOR_ref size;
-				for (int i = 0; i < t.col.mesh_num(); i++) {
-					VECTOR_ref sizetmp = t.col.mesh_maxpos(i) - t.col.mesh_minpos(i);
-					if (size.x() < sizetmp.x()) {
-						size.x(sizetmp.x());
-					}
-					if (size.y() < sizetmp.y()) {
-						size.y(sizetmp.y());
-					}
-					if (size.z() < sizetmp.z()) {
-						size.z(sizetmp.z());
-					}
-				}
-
-				/*
-				for (int i = 0; i < t.col.mesh_num(); i++) {
-					t.col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, i);
-				}
-				*/
-				//t.col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, 0);
-				//
-				//t.obj.SetFrameLocalMatrix(t.catapult[0].first + 2, MATRIX_ref::RotX(deg2rad(-75)) * MATRIX_ref::Mtrans(t.catapult[0].second));
-
-								//データ取得
-				{
-					int mdata = FileRead_open(("data/carrier/" + t.name + "/data.txt").c_str(), FALSE);
 					char mstr[64]; /*tank*/
 					t.isfloat = getparam_bool(mdata);
 					t.max_speed_limit = getparam_f(mdata) / 3.6f;
