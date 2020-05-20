@@ -28,7 +28,8 @@ public:
 		MV1::Load("data/model/sea/model.mv1", &sea, true);	 //海
 	}
 
-	void set_map(std::vector<Mainclass::wallPats>* wall, std::vector<Mainclass::treePats>* tree, std::unique_ptr<b2World>& world) {
+	void set_map() {
+		//std::vector<Mainclass::wallPats>* wall, std::vector<Mainclass::treePats>* tree, std::unique_ptr<b2World>& world
 		map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 
 		VECTOR_ref size;
@@ -49,35 +50,11 @@ public:
 		}
 		{
 			MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
+			/*
 			MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
 
 			for (int i = 0; i < p.PolygonNum; i++) {
-				if (p.Polygons[i].MaterialIndex == 2) {
-					//壁
-					{
-						wall->resize(wall->size() + 1);
-						wall->back().pos[0] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
-						wall->back().pos[1] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
-						if (b2DistanceSquared(b2Vec2(wall->back().pos[0].x(), wall->back().pos[0].z()), b2Vec2(wall->back().pos[1].x(), wall->back().pos[1].z())) <= 0.005f * 0.005f) {
-							wall->pop_back();
-						}
-
-						wall->resize(wall->size() + 1);
-						wall->back().pos[0] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
-						wall->back().pos[1] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
-						if (b2DistanceSquared(b2Vec2(wall->back().pos[0].x(), wall->back().pos[0].z()), b2Vec2(wall->back().pos[1].x(), wall->back().pos[1].z())) <= 0.005f * 0.005f) {
-							wall->pop_back();
-						}
-
-						wall->resize(wall->size() + 1);
-						wall->back().pos[0] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
-						wall->back().pos[1] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
-						if (b2DistanceSquared(b2Vec2(wall->back().pos[0].x(), wall->back().pos[0].z()), b2Vec2(wall->back().pos[1].x(), wall->back().pos[1].z())) <= 0.005f * 0.005f) {
-							wall->pop_back();
-						}
-					}
-				}
-				else if (p.Polygons[i].MaterialIndex == 3) {
+				if (p.Polygons[i].MaterialIndex == 3) {
 					//木
 					tree->resize(tree->size() + 1);
 					tree->back().mat = MATRIX_ref::Scale(VGet(15.f / 10.f, 15.f / 10.f, 15.f / 10.f));
@@ -92,44 +69,16 @@ public:
 					tree->back().obj_far.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 				}
 			}
-		}
-
-		for (auto& w : *wall) {
-			std::array<b2Vec2, 2> vs;
-			vs[0].Set(w.pos[0].x(), w.pos[0].z());
-			vs[1].Set(w.pos[1].x(), w.pos[1].z());
-			b2ChainShape chain;		// This a chain shape with isolated vertices
-			chain.CreateChain(&vs[0], 2);
-			b2FixtureDef fixtureDef;			       /*動的ボディフィクスチャを定義します*/
-			fixtureDef.shape = &chain;			       /**/
-			fixtureDef.density = 1.0f;			       /*ボックス密度をゼロ以外に設定すると、動的になります*/
-			fixtureDef.friction = 0.3f;			       /*デフォルトの摩擦をオーバーライドします*/
-			b2BodyDef bodyDef;				       /*ダイナミックボディを定義します。その位置を設定し、ボディファクトリを呼び出します*/
-			bodyDef.type = b2_staticBody;			       /**/
-			bodyDef.position.Set(0, 0);			       /**/
-			bodyDef.angle = 0.f;				       /**/
-			w.b2.body.reset(world->CreateBody(&bodyDef));	  /**/
-			w.b2.playerfix = w.b2.body->CreateFixture(&fixtureDef); /*シェイプをボディに追加します*/
+			*/
 		}
 	}
-	void delete_map(std::vector<Mainclass::wallPats>* wall, std::vector<Mainclass::treePats>* tree) {
+	void delete_map() {
 		map.Dispose();		   //map
 		map_col.Dispose();		   //mapコリジョン
 		tree_model.Dispose(); //木
 		tree_far.Dispose(); //木
 		sky.Dispose();	 //空
 		sea.Dispose();	 //海
-		for (auto&t : *tree) {
-			t.obj.Dispose();
-			t.obj_far.Dispose();
-		}
-		for (auto& w : *wall) {
-			delete w.b2.playerfix->GetUserData();
-			w.b2.playerfix->SetUserData(NULL);
-		}
-		wall->clear();
-		tree->clear();
-
 	}
 
 	auto& map_get() { return map; }

@@ -101,6 +101,7 @@ public:
 	}
 	~UI() {
 	}
+	/*
 	template <size_t N>
 	bool select_window(Mainclass::Chara* chara, std::array<std::vector<Mainclass::Vehcs>, N>* vehcs) {
 		if (1) {
@@ -640,7 +641,7 @@ public:
 		}
 		return (CheckHitKey(KEY_INPUT_ESCAPE) == 0);
 	}
-
+	*/
 	void load_window(const char* mes) {
 		SetUseASyncLoadFlag(FALSE);
 		float bar = 0.f, cnt = 0.f;
@@ -664,7 +665,7 @@ public:
 			}
 		}
 	}
-
+	/*
 	void draw(
 		const VECTOR_ref& aimpos,
 		const Mainclass::Chara& chara,
@@ -974,7 +975,7 @@ public:
 				mine.key[6] |= (vr_sys.touch.x() > 0.5f);
 				mine.key[7] |= (vr_sys.touch.x() < -0.5f);
 			}
-			*/
+			//*
 			//ƒsƒbƒ`
 			{
 				int ys = disp_y / 3 - y_r(240, out_disp_y);
@@ -998,5 +999,6 @@ public:
 
 		}
 	}
+	*/
 
 };
