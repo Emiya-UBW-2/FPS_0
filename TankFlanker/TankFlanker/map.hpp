@@ -4,7 +4,7 @@ private:
 	MV1 map, map_col;					    //’n–Ê
 	MV1 tree_model, tree_far;				    //–Ø
 	MV1 sky;	  //‹ó
-	MV1 sea;	  //ŠC
+	//MV1 sea;	  //ŠC
 	GraphHandle SkyScreen;
 	int disp_x = 1920;
 	int disp_y = 1080;
@@ -25,7 +25,7 @@ public:
 		MV1::Load("data/model/tree/model.mv1", &tree_model, true); //–Ø
 		MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //–Ø
 		MV1::Load("data/model/sky/model.mv1", &sky, true);	 //‹ó
-		MV1::Load("data/model/sea/model.mv1", &sea, true);	 //ŠC
+		//MV1::Load("data/model/sea/model.mv1", &sea, true);	 //ŠC
 	}
 
 	void set_map() {
@@ -49,7 +49,6 @@ public:
 			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, i);
 		}
 		{
-			MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
 			/*
 			MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
 
@@ -78,7 +77,6 @@ public:
 		tree_model.Dispose(); //–Ø
 		tree_far.Dispose(); //–Ø
 		sky.Dispose();	 //‹ó
-		sea.Dispose();	 //ŠC
 	}
 
 	auto& map_get() { return map; }
@@ -101,15 +99,6 @@ public:
 		return p;
 	}
 
-
-	void sea_draw(const VECTOR_ref& campos) {
-		SetFogStartEnd(0.0f, 6000.f);
-		SetFogColor(128, 192, 255);
-		{
-			sea.SetPosition(VGet(campos.x(), 0.f, campos.z()));
-			sea.DrawModel();
-		}
-	}
 	//‹ó•`‰æ
 	GraphHandle& sky_draw(const VECTOR_ref& campos, const VECTOR_ref&camvec, const VECTOR_ref& camup, float fov) {
 		SkyScreen.SetDraw_Screen(1000.0f, 5000.0f, fov, VECTOR_ref(campos) - camvec, VGet(0, 0, 0), camup);

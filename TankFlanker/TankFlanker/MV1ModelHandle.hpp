@@ -124,11 +124,26 @@ public:
 					a.phase= 0;
 					break;
 			}
+		}
+		work_anime();
+		return true;
+	}
+
+	bool work_anime(void) {
+		for (auto& a : this->anime) {
 			MV1SetAttachAnimTime(this->handle_, a.handle, a.time);
 			MV1SetAttachAnimBlendRate(this->handle_, a.handle, a.per);
 		}
 		return true;
 	}
+	auto& get_anime(const size_t& p1) {
+		return this->anime[p1];
+	}
+
+	auto& get_anime() {
+		return this->anime;
+	}
+
 	bool start_anime(int sel) {
 		if (sel < int(this->anime.size()) && this->anime.size() != 0) {
 			if (this->anime[sel].phase != 0) {
@@ -206,6 +221,22 @@ public:
 
 		if (mode != DX_LOADMODEL_PHYSICS_LOADCALC) {
 			MV1SetLoadModelUsePhysicsMode(DX_LOADMODEL_PHYSICS_LOADCALC);
+		}
+		return;
+	}
+	void DuplicateonAnime(MV1* temp) const noexcept {
+		*temp= DxLib::MV1DuplicateModel(this->handle_);
+
+		temp->anime.resize(MV1GetAnimNum(temp->get()));
+		if (temp->anime.size() > 0) {
+			for (int i = 0; i < int(temp->anime.size()); i++) {
+				temp->anime[i].handle = MV1AttachAnim(temp->get(), i);
+				temp->anime[i].per = 0.f;
+				MV1SetAttachAnimBlendRate(temp->get(), temp->anime[i].handle, temp->anime[i].per);
+				temp->anime[i].time = 0;
+				temp->anime[i].alltime = MV1GetAttachAnimTotalTime(temp->get(), temp->anime[i].handle);
+				temp->anime[i].phase = 0;
+			}
 		}
 		return;
 	}

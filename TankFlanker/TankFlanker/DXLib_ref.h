@@ -41,7 +41,7 @@ private:
 	const bool use_shadow = true;			     /*影描画*/
 	int shadow_near = 0;			     /*近影*/
 	int shadow_far = 0;			     /*遠影*/
-	bool use_pixellighting = false;			     /**/
+	bool use_pixellighting = true;			     /**/
 	bool use_vsync = false;				     /*垂直同期*/
 	float frate = 60.f;				     /*フレームレート*/
 	std::array<EffekseerEffectHandle, effects> effHndle; /*エフェクトリソース*/
@@ -68,7 +68,7 @@ public:
 		SetDirectInputMouseMode(TRUE);			       /**/
 		SetWindowSizeChangeEnableFlag(FALSE, FALSE);	       /*ウインドウサイズを手動不可、ウインドウサイズに合わせて拡大もしないようにする*/
 		SetUsePixelLighting(use_pixellighting ? TRUE : FALSE); /*ピクセルシェーダの使用*/
-		//SetFullSceneAntiAliasingMode(4, 2);		       /*アンチエイリアス*/
+		SetFullSceneAntiAliasingMode(4, 2);		       /*アンチエイリアス*/
 		SetWaitVSyncFlag(use_vsync ? TRUE : FALSE);	       /*垂直同期*/
 		DxLib_Init();					       /**/
 		Effekseer_Init(8000);				       /*Effekseer*/
