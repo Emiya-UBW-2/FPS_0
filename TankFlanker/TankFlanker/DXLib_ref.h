@@ -69,6 +69,8 @@ public:
 		SetWindowSizeChangeEnableFlag(FALSE, FALSE);	       /*ウインドウサイズを手動不可、ウインドウサイズに合わせて拡大もしないようにする*/
 		SetUsePixelLighting(use_pixellighting ? TRUE : FALSE); /*ピクセルシェーダの使用*/
 		SetFullSceneAntiAliasingMode(4, 2);		       /*アンチエイリアス*/
+		SetEnableXAudioFlag(TRUE);
+		Set3DSoundOneMetre(1.0f);
 		SetWaitVSyncFlag(use_vsync ? TRUE : FALSE);	       /*垂直同期*/
 		DxLib_Init();					       /**/
 		Effekseer_Init(8000);				       /*Effekseer*/

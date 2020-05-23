@@ -2,7 +2,7 @@
 class Mapclass {
 private:
 	MV1 map, map_col;					    //地面
-	MV1 tree_model, tree_far;				    //木
+	//MV1 tree_model, tree_far;				    //木
 	MV1 sky;	  //空
 	//MV1 sea;	  //海
 	GraphHandle SkyScreen;
@@ -22,8 +22,8 @@ public:
 	void set_map_pre() {
 		MV1::Load("data/map/model.mv1", &map, true);		   //map
 		MV1::Load("data/map/col.mv1", &map_col, true);		   //mapコリジョン
-		MV1::Load("data/model/tree/model.mv1", &tree_model, true); //木
-		MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //木
+		//MV1::Load("data/model/tree/model.mv1", &tree_model, true); //木
+		//MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //木
 		MV1::Load("data/model/sky/model.mv1", &sky, true);	 //空
 		//MV1::Load("data/model/sea/model.mv1", &sea, true);	 //海
 	}
@@ -74,8 +74,8 @@ public:
 	void delete_map() {
 		map.Dispose();		   //map
 		map_col.Dispose();		   //mapコリジョン
-		tree_model.Dispose(); //木
-		tree_far.Dispose(); //木
+		//tree_model.Dispose(); //木
+		//tree_far.Dispose(); //木
 		sky.Dispose();	 //空
 	}
 

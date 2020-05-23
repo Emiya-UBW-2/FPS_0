@@ -206,6 +206,17 @@ public:
 			return VGet(0, 0, 0);
 		}
 	}
+
+	inline VECTOR_ref GetEyePosition_minVR(const char& eye_type) {
+		if (use_vr&&m_pHMD) {
+			const vr::HmdMatrix34_t tmpmat = vr::VRSystem()->GetEyeToHeadTransform((vr::EVREye)eye_type);
+			return ctrl[hmd_num].xvec*(tmpmat.m[0][3]) + ctrl[hmd_num].yvec*(tmpmat.m[1][3]) + ctrl[hmd_num].zvec*(-tmpmat.m[2][3]);
+		}
+		else {
+			return VGet(0, 0, 0);
+		}
+	}
+
 	inline void PutEye(ID3D11Texture2D* texte, const char& i) {
 		if (use_vr) {
 			vr::Texture_t tex = { (void*)texte, vr::ETextureType::TextureType_DirectX,vr::EColorSpace::ColorSpace_Auto };

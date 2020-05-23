@@ -54,12 +54,14 @@ public:
 		}
 	}
 	//
-	void SetDraw_Screen() {
+	void SetDraw_Screen(const bool& clear=true) {
 		SetDrawScreen(this->handle_);
-		ClearDrawScreen();
+		if (clear) {
+			ClearDrawScreen();
+		}
 	}
 	void SetDraw_Screen(const float& near_, const float& far_, const float& fov, const VECTOR_ref& campos, const VECTOR_ref& camvec, const VECTOR_ref& camup) {
-		SetDraw_Screen();
+		SetDraw_Screen(true);
 		SetCameraNearFar(near_, far_);
 		SetupCamera_Perspective(fov);
 		SetCameraPositionAndTargetAndUpVec(campos.get(), camvec.get(), camup.get());

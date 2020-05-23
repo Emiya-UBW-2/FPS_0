@@ -49,6 +49,7 @@ public:
 		MV1 obj,mag;
 		std::vector<frames> frame;
 		size_t ammo_max;//É}ÉKÉWÉìÇÃëïíeêî
+		SoundHandle shot;
 	};
 	//player
 		//íeñÚ
@@ -70,7 +71,7 @@ public:
 	struct ef_guns {
 		EffectS first;
 		ammos* second = nullptr;
-		int cnt = -1;
+		float cnt = -1.f;
 	};
 
 	class Chara {
@@ -82,6 +83,9 @@ public:
 
 		std::array<EffectS, efs_user> effcs; /*effect*/
 		Gun* gunptr;
+
+		SoundHandle shot;
+
 		MV1 obj, mag;
 		VECTOR_ref pos;
 		MATRIX_ref mat;
@@ -102,6 +106,8 @@ public:
 
 		VECTOR_ref pos_LHAND;
 		MATRIX_ref mat_LHAND;
+		VECTOR_ref vecadd_LHAND;
+		VECTOR_ref vecadd_LHAND_p;
 
 		VECTOR_ref pos_RHAND;
 		MATRIX_ref mat_RHAND;

@@ -22,10 +22,6 @@ private:
 	//font
 	FontHandle font18;
 	FontHandle font12;
-	//空描画
-	MV1 garage;
-	MV1 sky;
-	MV1 sea;
 	GraphHandle SkyScreen;
 	//コックピット
 	frames	stickx_f, sticky_f, stickz_f,
@@ -33,7 +29,6 @@ private:
 		speed_f, spd3_f, spd2_f, spd1_f
 		;
 	VECTOR_ref cockpit_v;
-	MV1 cockpit;
 	GraphHandle cockpitScreen;
 	//
 	float siz_autoaim = 0.f;
@@ -61,42 +56,9 @@ public:
 		CamScreen = GraphHandle::Make(240, 240, true);
 		bufScreen = GraphHandle::Make(disp_x, disp_y, true);
 
-		MV1::Load("data/model/cockpit/model.mv1", &cockpit, false);
-		for (int i = 0; i < cockpit.frame_num(); i++) {
-			std::string p = cockpit.frame_name(i);
-			if (p.find("座席", 0) != std::string::npos) {
-				cockpit_v = cockpit.frame(i);
-			}
-			else if ((p.find("姿勢指示器", 0) != std::string::npos) && (p.find("予備", 0) == std::string::npos)) {
-				compass_f = { i,cockpit.frame(i) - cockpit.frame(int(cockpit.frame_parent(i))) };
-				//ジャイロコンパス
-			}
-			else if (p.find("スティック縦", 0) != std::string::npos) {
-				stickx_f = { i,cockpit.frame(i) };
-				stickz_f = { i + 1,cockpit.frame(i + 1) - cockpit.frame(i) };
-			}
-			else if ((p.find("ペダル", 0) != std::string::npos) && (p.find("右", 0) == std::string::npos) && (p.find("左", 0) == std::string::npos)) {
-				sticky_f = { i,cockpit.frame(i) };
-			}
-			else if ((p.find("速度計", 0) != std::string::npos)) {
-				speed_f = { i,cockpit.frame(i) };
-			}
-			else if ((p.find("速度100", 0) != std::string::npos)) {
-				spd3_f = { i,cockpit.frame(i) };
-			}
-			else if ((p.find("速度010", 0) != std::string::npos)) {
-				spd2_f = { i,cockpit.frame(i) };
-			}
-			else if ((p.find("速度001", 0) != std::string::npos)) {
-				spd1_f = { i,cockpit.frame(i) };
-			}
-		}
 
 		font18 = FontHandle::Create(y_r(18, out_disp_y), DX_FONTTYPE_EDGE);
 		font12 = FontHandle::Create(y_r(12, out_disp_y), DX_FONTTYPE_EDGE);
-		MV1::Load("data/model/garage/model.mv1", &garage, false);
-		MV1::Load("data/model/sky/model.mv1", &sky, false);
-		MV1::Load("data/model/sea/model.mv1", &sea, true);
 		SkyScreen = GraphHandle::Make(disp_x, disp_y);
 	}
 	~UI() {
