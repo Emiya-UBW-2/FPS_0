@@ -22,14 +22,10 @@ public:
 	void set_map_pre() {
 		MV1::Load("data/map/model.mv1", &map, true);		   //map
 		MV1::Load("data/map/col.mv1", &map_col, true);		   //mapコリジョン
-		//MV1::Load("data/model/tree/model.mv1", &tree_model, true); //木
-		//MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //木
 		MV1::Load("data/model/sky/model.mv1", &sky, true);	 //空
-		//MV1::Load("data/model/sea/model.mv1", &sea, true);	 //海
 	}
 
 	void set_map() {
-		//std::vector<Mainclass::wallPats>* wall, std::vector<Mainclass::treePats>* tree, std::unique_ptr<b2World>& world
 		map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 
 		VECTOR_ref size;
@@ -48,34 +44,10 @@ public:
 		for (int i = 0; i < map_col.mesh_num(); i++) {
 			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, i);
 		}
-		{
-			/*
-			MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
-
-			for (int i = 0; i < p.PolygonNum; i++) {
-				if (p.Polygons[i].MaterialIndex == 3) {
-					//木
-					tree->resize(tree->size() + 1);
-					tree->back().mat = MATRIX_ref::Scale(VGet(15.f / 10.f, 15.f / 10.f, 15.f / 10.f));
-					tree->back().pos = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-					tree->back().fall_flag = false;
-					tree->back().fall_vec = VGet(0.f, 0.f, 1.f);
-					tree->back().fall_rad = 0.f;
-
-					tree->back().obj = tree_model.Duplicate();
-					tree->back().obj.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
-					tree->back().obj_far = tree_far.Duplicate();
-					tree->back().obj_far.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
-				}
-			}
-			*/
-		}
 	}
 	void delete_map() {
 		map.Dispose();		   //map
 		map_col.Dispose();		   //mapコリジョン
-		//tree_model.Dispose(); //木
-		//tree_far.Dispose(); //木
 		sky.Dispose();	 //空
 	}
 

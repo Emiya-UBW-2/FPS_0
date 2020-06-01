@@ -59,7 +59,7 @@ public:
 		disp_y = yd;
 
 		frate = fps;
-		SetOutApplicationLogValidFlag(FALSE);		       /*log*/
+		SetOutApplicationLogValidFlag(TRUE);		       /*log*/
 		SetMainWindowText(title);			       /*タイトル*/
 		ChangeWindowMode(TRUE);				       /*窓表示*/
 		SetUseDirect3DVersion(DX_DIRECT3D_11);		       /*directX ver*/
@@ -79,7 +79,6 @@ public:
 		SetAlwaysRunFlag(TRUE);				       /*background*/
 		SetUseZBuffer3D(TRUE);				       /*zbufuse*/
 		SetWriteZBuffer3D(TRUE);			       /*zbufwrite*/
-		SetDrawMode(DX_DRAWMODE_BILINEAR);		       /**/
 		//エフェクト
 		{
 			size_t j = 0;
@@ -113,7 +112,7 @@ public:
 	}
 
 	bool Set_light(const VECTOR_ref& Light_dir) {
-		SetGlobalAmbientLight(GetColorF(0.80f, 0.75f, 0.70f, 0.0f));
+		SetGlobalAmbientLight(GetColorF(0.12f, 0.11f, 0.10f, 0.0f));
 		SetLightDirection(Light_dir.get());
 		return true;
 	}

@@ -1,0 +1,9 @@
+ammo_max=7
+mode=semi
+mode=end
+shot_sound=2
+slide_sound=2
+trigger_sound=1
+mag_down_sound=1
+mag_set_sound=2
+case_sound=2

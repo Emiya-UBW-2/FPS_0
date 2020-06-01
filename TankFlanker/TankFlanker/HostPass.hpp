@@ -24,6 +24,27 @@ public:
 	}
 	~HostPassEffect() {
 	}
+	//‰½‚à‚¹‚¸•`‰æ
+	template <typename T2>
+	void draw(
+		GraphHandle* buf, GraphHandle& skyhandle, T2 doing,
+		const VECTOR_ref& campos, const VECTOR_ref& camvec, const VECTOR_ref& camup, const float& fov,
+		const float& far_distance = 2000.f, const float& near_distance = 100.f) {
+		//
+		NearScreen.SetDraw_Screen(std::clamp(near_distance, 0.1f, far_distance), far_distance, fov, campos, camvec, camup);
+		{
+			skyhandle.DrawGraph(0, 0, FALSE);
+			doing();
+			Effekseer_Sync3DSetting();
+			DrawEffekseer3D();
+		}
+		buf->SetDraw_Screen();
+		{
+			int x = 0, y = 0;
+			GetGraphSize(buf->get(), &x, &y);
+			DrawRotaGraph(x / 2, y / 2, 1.0, 0.0, NearScreen.get(), false);
+		}
+	}
 	//”íÊ‘Ì[“x•`‰æ
 	template <typename T2>
 	void dof(
@@ -35,13 +56,14 @@ public:
 			FarScreen.SetDraw_Screen(far_distance, (far_distance < 5000.f) ? 6000.0f : (far_distance + 1000.f), fov, campos, camvec, camup);
 			skyhandle.DrawGraph(0, 0, FALSE);
 			doing();
+			Effekseer_Sync3DSetting();
+			DrawEffekseer3D();
 			//
 			MainScreen.SetDraw_Screen(near_distance, far_distance + 50.f, fov, campos, camvec, camup);
-			Effekseer_Sync3DSetting();
 			GraphFilter(FarScreen.get(), DX_GRAPH_FILTER_GAUSS, 16, 200);
 			FarScreen.DrawGraph(0, 0, false);
-			UpdateEffekseer3D();
 			doing();
+			Effekseer_Sync3DSetting();
 			DrawEffekseer3D();
 			//
 			NearScreen.SetDraw_Screen(0.01f, near_distance + 1.f, fov, campos, camvec, camup);
@@ -51,9 +73,7 @@ public:
 		else {
 			//
 			NearScreen.SetDraw_Screen(std::clamp(near_distance, 0.1f, 2000.f), 2000.f, fov, campos, camvec, camup);
-			Effekseer_Sync3DSetting();
 			skyhandle.DrawGraph(0, 0, FALSE);
-			UpdateEffekseer3D(); //2.0ms
 			doing();
 			DrawEffekseer3D();
 		}
@@ -71,6 +91,7 @@ public:
 			GaussScreen.DrawExtendGraph(0, 0, disp_x, disp_y, false);
 			GaussScreen.DrawExtendGraph(0, 0, disp_x, disp_y, false);
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			SetDrawMode(DX_DRAWMODE_NEAREST);
 		}
 	}
 
