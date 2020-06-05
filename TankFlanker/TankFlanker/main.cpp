@@ -4,7 +4,6 @@
 #include "map.hpp"
 #include "VR.hpp"
 #include "debug.hpp"
-
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	//設定読み込み
 	bool dof_e = false;
@@ -29,12 +28,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	if (useVR_e) {
 		dispx = 1080;
 		dispy = 1200;
-		out_dispx = dispx * 960 / dispy;
-		out_dispy = dispy * 960 / dispy;
+		out_dispx = dispx * (desky * 8 / 9) / dispy;
+		out_dispy = dispy * (desky * 8 / 9) / dispy;
 	}
 	else {
-		dispx = 1920;
-		dispy = 1080;
+		dispx = deskx;
+		dispy = desky;
 		out_dispx = dispx;
 		out_dispy = dispy;
 	}
@@ -47,16 +46,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowSize(out_dispx, out_dispy);
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
-	GraphHandle BufScreen = GraphHandle::Make(dispx, dispy);    //描画スクリーン
-	GraphHandle ScopeScreen = GraphHandle::Make(1080,1080);    //描画スクリーン
-	GraphHandle bufScreen = GraphHandle::Make(dispx, dispy, true);
-	std::array<GraphHandle, 3> outScreen;
-	outScreen[0] = GraphHandle::Make(dispx, dispy);    //描画スクリーン
-	outScreen[1] = GraphHandle::Make(dispx, dispy);    //描画スクリーン
-	outScreen[2] = GraphHandle::Make(dispx, dispy);    //描画スクリーン
 	//
-	//FontHandle font36 = FontHandle::Create(y_r(36, out_dispy), DX_FONTTYPE_EDGE);
-	FontHandle font18 = FontHandle::Create(y_r(18, out_dispy), DX_FONTTYPE_EDGE);
+	std::array<GraphHandle, 3> outScreen;
+	outScreen[0] = GraphHandle::Make(dispx, dispy);//左目
+	outScreen[1] = GraphHandle::Make(dispx, dispy);//右目
+	outScreen[2] = GraphHandle::Make(dispx, dispy);//TPS
+	GraphHandle BufScreen = GraphHandle::Make(dispx, dispy);//
+	GraphHandle ScopeScreen = GraphHandle::Make(1080, 1080);//
 	//操作
 	VECTOR_ref campos, campos_buf, camvec, camup;			    //カメラ
 	float fov = deg2rad(useVR_e ? 90 : 45);
@@ -69,7 +65,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	MV1::Load("data/model/tgt/model.mv1", &tgt, true);
 	int tgt_col = LoadSoftImage("data/model/tgt/point.bmp");
 	GraphHandle tgt_pic_tmp = GraphHandle::Load("data/model/tgt/Target-A2.png");
-	//GUNデータ取得
+	//GUNデータ
 	std::vector<Mainclass::Gun> gun_data;
 	gun_data.resize(3);
 	gun_data[0].name = "1911";
@@ -144,17 +140,30 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	//ターゲット
 	frames tgt_f = { 2,tgt.frame(2) };
 	int tgt_pic_x,tgt_pic_y;
-	GetGraphSize(tgt_pic_tmp.get(), &tgt_pic_x, &tgt_pic_y);
-	struct tgts {
+	tgt_pic_tmp.GetSize(&tgt_pic_x, &tgt_pic_y);
+	class tgts {
+	public:
 		MV1 obj;
 		GraphHandle pic;
-		int xf = 0, yf = 0;
-
+		int x_frame = 0, y_frame = 0;
 		float rad = 0.f;
 		float radadd = 0.f;
 		float time = 0.f;
 		float power = 0.f;
 		bool LR = true;
+
+		void set(MV1& tgt,GraphHandle&tex,const int&tgt_picx, const int&tgt_picy) {
+			obj = tgt.Duplicate();
+			pic = GraphHandle::Make(tgt_picx, tgt_picy);
+			pic.SetDraw_Screen(false);
+			tex.DrawGraph(0, 0, true);
+
+			obj.SetupCollInfo(8, 8, 8, 0, 1);
+			obj.SetTextureGraphHandle(2, pic, false);
+			x_frame = 4;
+			y_frame = 3;
+			LR = true;
+		}
 	};
 	std::vector<tgts> tgt_pic;
 	//VRセット
@@ -167,127 +176,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//キャラ設定
 		chara.resize(1);
 		{
-			int sel_g=0;
-			{
-				float start_fl = 0.f;
-				camvec = VGet(0.f, 0.f, 0.f);
-				uint8_t upct = 0, dnct = 0, rtct = 0, ltct = 0, changecnt = 0;
-				bool endp = false;
-				bool startp = false;
-				int m_x = 0, m_y = 0;
-				float ber_r = 0.f;
-				GetMousePoint(&m_x, &m_y);
-				while (ProcessMessage() == 0) {
-					const auto fps = GetFPS();
-					const auto waits = GetNowHiPerformanceCount();
-
-					vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &chara[0].pos_HMD, &chara[0].mat_HMD);
-
-					if (!startp) {
-						//VR用
-						if (useVR_e) {
-							if (vrparts->get_left_hand_num() != -1) {
-								auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
-								if (ptr_.turn && ptr_.now) {
-									changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0) ? 2 : 0));
-									if (changecnt == 1) {
-										++sel_g %= gun_data.size();
-										ber_r = 0.f;
-									}
-									//引き金
-									if ((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
-										startp = true;
-									}
-								}
-							}
-						}
-						//
-						{
-							changecnt = std::clamp<uint8_t>(changecnt + 1, 0, ((CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0));
-							if (changecnt == 1) {
-								++sel_g %= gun_data.size();
-								ber_r = 0.f;
-							}
-							if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-								startp = true;
-							}
-						}
-					}
-					else {
-						upct = 0;
-						dnct = 0;
-						ltct = 0;
-						rtct = 0;
-						changecnt = 0;
-					}
-
-					easing_set(&ber_r, float(out_dispy / 4), 0.95f, fps);
-
-					{
-						if (!startp) {
-							//(MATRIX_ref::RotY(yrad_m) * MATRIX_ref::RotX(xrad_m))
-							campos = chara[0].mat_HMD.zvec() * 0.6f;
-							camvec = VGet(0, 0, 0);
-							if (upct == 1) {
-							}
-							if (dnct == 1) {
-							}
-							if (ltct == 1) {
-							}
-							if (rtct == 1) {
-							}
-						}
-						else {
-							easing_set(&campos, VGet(1.f, 0.f, 0.f), 0.95f, fps);
-							camvec = VGet(0, 0, 0);
-							start_fl += 1.f / fps;
-							if (start_fl > 3.f) {
-								endp = true;
-							}
-						}
-					}
-					//VR空間に適用
-					vrparts->Move_Player();
-					{
-						bufScreen.SetDraw_Screen();
-						auto& v = gun_data[sel_g];
-						{
-							int xp = dispx / 2 - dispy / 6;
-							int yp = dispy / 2 - dispy / 6;
-							font18.DrawStringFormat(xp, yp, GetColor(0, 255, 0), "Name  :%s", v.name.c_str());
-						}
-						outScreen[0].SetDraw_Screen(0.1f, 10.f, fov, campos, camvec, VGet(0.f, 1.f, 0.f));
-						{
-							v.mod.obj.DrawModel();
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 1.f), 0, 255));
-							bufScreen.DrawExtendGraph(0, 0, dispx, dispy, true);
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * start_fl / 3.f), 0, 255));
-							DrawBox(0, 0, dispx, dispy, GetColor(255, 255, 255), TRUE);
-							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						}
-						if (useVR_e) {
-							for (char i = 0; i < 2; i++) {
-								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
-								outScreen[0].DrawGraph(0, 0, false);
-								vrparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
-							}
-						}
-						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
-						{
-							outScreen[0].DrawExtendGraph(0, 0, out_dispx, out_dispy, true);
-						}
-					}
-					Drawparts->Screen_Flip();
-					vrparts->Eye_Flip(waits);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
-					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
-						sel_g = -1;
-						break;
-					}
-					if (endp) {
-						break;
-					}
-				}
-			}
+			int sel_g = UIparts->select_window(useVR_e, gun_data, vrparts);
 			if (sel_g >= 0) {
 				chara[0].set_chara(VGet(0, 0, 0), &gun_data[sel_g], ScopeScreen, hand);
 			}
@@ -298,39 +187,19 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		}
 		//マップ読み込み
 		mapparts->set_map_pre();
-		UIparts->load_window("マップモデル");			   //ロード画面
+		UIparts->load_window("マップモデル");
 		//ターゲット
 		{
 			tgt_pic.resize(4);
-			//tgt_pic.resize(tgt_pic.size() + 1);
 			for (auto& p : tgt_pic) {
-				p.obj = tgt.Duplicate();
-				p.pic = GraphHandle::Make(tgt_pic_x, tgt_pic_y);
-				p.pic.SetDraw_Screen(false);
-				{
-					tgt_pic_tmp.DrawGraph(0, 0, true);
-				}
-				p.obj.SetupCollInfo(8, 8, 8, 0, 1);
-				p.obj.SetTextureGraphHandle(2, p.pic, false);
-				p.xf = 4;
-				p.yf = 3;
-				p.LR = true;
+				p.set(tgt, tgt_pic_tmp, tgt_pic_x, tgt_pic_y);
 			}
-			{
-				VECTOR_ref pos = VGet(4, 0, 10.f);
-				tgt_pic[0].obj.SetPosition(mapparts->map_col_line(pos - VGet(0, -10.f, 0), pos - VGet(0, 10.f, 0), 0).HitPosition);
-			}
-			{
-				VECTOR_ref pos = VGet(-2, 0, 20.f);
-				tgt_pic[1].obj.SetPosition(mapparts->map_col_line(pos - VGet(0, -10.f, 0), pos - VGet(0, 10.f, 0), 0).HitPosition);
-			}
-			{
-				VECTOR_ref pos = VGet(0, 0, 30.f);
-				tgt_pic[2].obj.SetPosition(mapparts->map_col_line(pos - VGet(0, -10.f, 0), pos - VGet(0, 10.f, 0), 0).HitPosition);
-			}
-			{
-				VECTOR_ref pos = VGet(2, 0, 45.f);
-				tgt_pic[3].obj.SetPosition(mapparts->map_col_line(pos - VGet(0, -10.f, 0), pos - VGet(0, 10.f, 0), 0).HitPosition);
+			tgt_pic[0].obj.SetPosition(VGet(4, 0, 10.f));
+			tgt_pic[1].obj.SetPosition(VGet(-2, 0, 20.f));
+			tgt_pic[2].obj.SetPosition(VGet(0, 0, 30.f));
+			tgt_pic[3].obj.SetPosition(VGet(2, 0, 45.f));
+			for (auto& p : tgt_pic) {
+				p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
 			}
 		}
 		//ライティング
@@ -357,17 +226,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				}
 			}
 		};
-		auto draw_on_shadow = [&mapparts, &tgt_pic, &chara, &campos, &vrparts] {
+		auto draw_on_shadow = [&mapparts, &tgt_pic, &chara] {
 			SetFogStartEnd(0.0f, 3000.f);
 			SetFogColor(128, 128, 128);
-			//マップ
-			{
-				mapparts->map_get().DrawModel();
-				for (auto& p : tgt_pic) {
-					p.obj.DrawModel();
-				}
+			mapparts->map_get().DrawModel();
+			for (auto& p : tgt_pic) {
+				p.obj.DrawModel();
 			}
-			//機体
 			for (auto& c : chara) {
 				c.hand.DrawModel();
 				c.mag.DrawModel();
@@ -407,73 +272,61 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				{
 					//プレイヤー操作
 					{
-						//マウスと視点角度をリンク
+						//HMD
 						vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
 						mine.pos = VGet(0.f, 0.f, 0.f);
-						//
-						{
-							//LHAND
-							vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_LHAND, &mine.mat_LHAND);
-							if (!useVR_e) {
-								mine.pos_LHAND = VGet(0.f, 0.95f, 0.75f);
-							}
-							else {
-								mine.mat_LHAND = mine.mat_LHAND*MATRIX_ref::RotAxis(mine.mat_LHAND.xvec(), deg2rad(-60));
-							}
-							mine.mat_LHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_LHAND)*mine.mat_LHAND;
-							//RHAND
-							vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_RHAND, &mine.mat_RHAND);
-							if (!useVR_e) {
-								mine.pos_RHAND = VGet(0.f, 0.95f, 0.75f);
-							}
-							else {
-								mine.mat_RHAND = mine.mat_RHAND*MATRIX_ref::RotAxis(mine.mat_RHAND.xvec(), deg2rad(-60));
-							}
-							//
-							if (mine.obj.get_anime(3).per == 1.f) {
-								mine.audio.slide.play_3D(mine.pos_LHAND, 1.f);
-							}
-							mine.obj.get_anime(3).per -= (60.f / 5.f) / fps;
-							if (mine.obj.get_anime(3).per <= 0.f) {
-								mine.obj.get_anime(3).per = 0.f;
-							}
-							if (useVR_e) {
-								if (vrparts->get_left_hand_num() != -1) {
-									auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
-									if (ptr_.turn && ptr_.now) {
-										//引き金
-										easing_set(&mine.obj.get_anime(2).per, float((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0 && !mine.safety.first), 0.5f, fps);
-										//マグキャッチ
-										easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0), 0.5f, fps);
-										//セフティ
-										mine.safety.second = std::clamp<uint8_t>(mine.safety.second + 1, 0, (((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() < -0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f)) ? 2 : 0);
-										if (mine.safety.second == 1) {
-											mine.safety.first ^= 1;
-										}
-										easing_set(&mine.obj.get_anime(4).per, float(mine.safety.first), 0.5f, fps);
-										//セレクター
-										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0,
-											(((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first)
-											? 2 : 0);
-										//
-									}
+						//LHAND
+						vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_LHAND, &mine.mat_LHAND);
+						if (!useVR_e) {
+							mine.pos_LHAND = VGet(0.f, 0.95f, 0.75f);
+						}
+						else {
+							mine.mat_LHAND = mine.mat_LHAND*MATRIX_ref::RotAxis(mine.mat_LHAND.xvec(), deg2rad(-60));
+						}
+						mine.mat_LHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_LHAND)*mine.mat_LHAND;//リコイル
+						//RHAND
+						vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_RHAND, &mine.mat_RHAND);
+						if (!useVR_e) {
+							mine.pos_RHAND = VGet(0.f, 0.95f, 0.75f);
+						}
+						else {
+							mine.mat_RHAND = mine.mat_RHAND*MATRIX_ref::RotAxis(mine.mat_RHAND.xvec(), deg2rad(-60));
+						}
+						//銃
+						if (mine.obj.get_anime(3).per == 1.f) {
+							mine.audio.slide.play_3D(mine.pos_LHAND, 1.f);
+						}
+						mine.obj.get_anime(3).per = std::max(mine.obj.get_anime(3).per - (60.f / 5.f) / fps, 0.f);
+						if (useVR_e) {
+							if (vrparts->get_left_hand_num() != -1) {
+								auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
+								if (ptr_.turn && ptr_.now) {
+									//引き金
+									easing_set(&mine.obj.get_anime(2).per, float((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0 && !mine.safety.first), 0.5f, fps);
+									//マグキャッチ
+									easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0), 0.5f, fps);
+									//セフティ
+									mine.safety.get_in(((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() < -0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f));
+									easing_set(&mine.obj.get_anime(4).per, float(mine.safety.first), 0.5f, fps);
+									//セレクター
+									mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first) ? 2 : 0);
 								}
-								if (vrparts->get_right_hand_num() != -1) {
-									auto& ptr_RIGHTHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
-									if (ptr_RIGHTHAND.turn && ptr_RIGHTHAND.now) {
-										//マガジン取得
-										if (!mine.down_mag) {
-											if ((ptr_RIGHTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
-												mine.down_mag = true;
-											}
+							}
+							if (vrparts->get_right_hand_num() != -1) {
+								auto& ptr_RIGHTHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
+								if (ptr_RIGHTHAND.turn && ptr_RIGHTHAND.now) {
+									//マガジン取得
+									if (!mine.down_mag) {
+										if ((ptr_RIGHTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
+											mine.down_mag = true;
 										}
 									}
 								}
 							}
-							else {
-								easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
-								mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) ? 2 : 0);
-							}
+						}
+						else {
+							easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
+							mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) ? 2 : 0);
 						}
 					}
 					//共通
@@ -510,9 +363,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								if (!c.reloadf) {
 									c.audio.mag_down.play_3D(c.pos_LHAND, 1.f);
 									if (&c == &mine) {
-										if (vrparts->get_left_hand_num() != -1) {
-											vrparts->Haptic(&(*vrparts->get_device())[vrparts->get_left_hand_num()], unsigned short(60000));
-										}
+										vrparts->Haptic(vrparts->get_left_hand_num(), unsigned short(60000));
 									}
 								}
 								c.reloadf = true;
@@ -533,9 +384,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 							if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
 								if (&c == &mine) {
-									if (vrparts->get_left_hand_num() != -1) {
-										vrparts->Haptic(&(*vrparts->get_device())[vrparts->get_left_hand_num()], unsigned short(60000));
-									}
+									vrparts->Haptic(vrparts->get_left_hand_num(), unsigned short(60000));
 								}
 								c.ammoc--;
 								++c.guncnt;
@@ -628,37 +477,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								c.mat_addvec = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm();
 							}
 							{
-								/*
-								//右手
-								VECTOR_ref u_ = c.pos_LHAND - c.hand.frame(c.frame_hand[0].first);
-								VECTOR_ref v_ = MATRIX_ref::Vtrans(VGet(0, -1.f, 0), MATRIX_ref::RotVec2(VGet(u_.x(), 0, u_.z()), u_));
-								float dist_0 = u_.size();
-								float dist_1 = (c.frame_hand[1].second).size();
-								float dist_2 = (c.frame_hand[2].second).size();
-								float cos_t = -std::clamp(getcos_tri(dist_2, dist_0, dist_1), -1.f, 1.f);
-								float sin_t = -std::sqrtf(1.f - std::powf(cos_t, 2.f));
-
-								//u_ = VGet(u_.x(), u_.y(), u_.z());
-								//
-								c.hand.SetFrameLocalMatrix(c.frame_hand[0].first, MATRIX_ref::Mtrans(c.frame_hand[0].second));
-								MATRIX_ref m1 =
-									MATRIX_ref::RotVec2((c.hand.frame(c.frame_hand[1].first) - c.hand.frame(c.frame_hand[0].first)), (u_.Norm()*cos_t + v_ * sin_t)*dist_1)
-									*
-									c.mat_HMD.Inverse()
-									;
-								c.hand.SetFrameLocalMatrix(c.frame_hand[0].first, m1*MATRIX_ref::Mtrans(c.frame_hand[0].second));
-								//
-								c.hand.SetFrameLocalMatrix(c.frame_hand[1].first, m1.Inverse()*MATRIX_ref::Mtrans(c.frame_hand[1].second));
-								MATRIX_ref m2 = MATRIX_ref::RotVec2(
-									(c.hand.frame(c.frame_hand[1].first) - c.hand.frame(c.frame_hand[2].first)),
-									MATRIX_ref::Vtrans((c.pos_LHAND - c.hand.frame(c.frame_hand[1].first)), c.mat_HMD.Inverse())
-								);
-								c.hand.SetFrameLocalMatrix(c.frame_hand[1].first, m2* m1.Inverse()*MATRIX_ref::Mtrans(c.frame_hand[1].second));
-								//
-
-								MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*c.mat_HMD.Inverse();
-								c.hand.SetFrameLocalMatrix(c.frame_hand[2].first, m3*m2.Inverse()*MATRIX_ref::Mtrans(c.frame_hand[2].second));
-								*/
 								//右手
 								{
 									MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*c.mat_HMD.Inverse();
@@ -683,9 +501,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								//身体
 								{
 									VECTOR_ref v_ = c.mat_HMD.zvec();
-									float rad = std::atan2f(-v_.x(), -v_.z());
 									c.hand.SetFrameLocalMatrix(34,
-										MATRIX_ref::RotY(DX_PI_F + rad / 2.f)*c.mat_HMD.Inverse()*
+										MATRIX_ref::RotY(DX_PI_F + std::atan2f(-v_.x(), -v_.z()) / 2.f)*c.mat_HMD.Inverse()*
 										MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
 									);
 								}
@@ -718,8 +535,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 													//弾痕処理
 													tp.pic.SetDraw_Screen(false);
 													VECTOR_ref pvecp = (a.pos - tp.obj.frame(tgt_f.first));
-													VECTOR_ref xvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.xf));
-													VECTOR_ref yvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.yf));
+													VECTOR_ref xvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.x_frame));
+													VECTOR_ref yvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.y_frame));
 													int UI_xpos = int(float(tgt_pic_x)*(xvecp.Norm().dot(pvecp)) / xvecp.size());//X方向
 													int UI_ypos = int(float(tgt_pic_y)*(yvecp.Norm().dot(pvecp)) / yvecp.size());//Y方向
 													DrawCircle(UI_xpos, UI_ypos, 10, GetColor(255, 0, 0));//弾痕
@@ -935,11 +752,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							Hostpassparts->draw(&ScopeScreen,
 								mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f),
 								draw_on_shadow, cam, vec, yvec, (fov / 7.5f) / 4.f, fardist, neardist);
-						}
+						} 
 
-						DrawLine(0, 1080 / 2, 1080 * 45 / 100, 1080 / 2, GetColor(255, 255, 255), 20);
-						DrawLine(1080 * 55 / 100, 1080 / 2, 1080, 1080 / 2, GetColor(255, 255, 255), 20);
-						DrawLine(1080 / 2, 1080 / 2, 1080 / 2, 1080, GetColor(255, 255, 255), 20);
+						mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080,true);
 					}
 					//VRに移す
 					if (useVR_e) {
@@ -955,42 +770,33 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						float neardist = 0.1f;
 						VECTOR_ref cam = mine.pos + VGet(0.25f, 1.45f, -0.75f);
 						VECTOR_ref vec = mine.pos_HMD;
-						VECTOR_ref yvec = VGet(0, 1.f, 0);
-
-						if (shadow_e) {
-							Hostpassparts->draw(&outScreen[2],
-								mapparts->sky_draw(cam, vec, yvec, fov),
-								[&Drawparts, &draw_on_shadow] { Drawparts->Draw_by_Shadow(draw_on_shadow); }, cam, vec, yvec, fov, fardist, neardist);
-						}
-						else {
-							Hostpassparts->draw(&outScreen[2],
-								mapparts->sky_draw(cam, vec, yvec, fov),
-								draw_on_shadow, cam, vec, yvec, fov, fardist, neardist);
-						}
-						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, fov, cam, vec, yvec);
-					}
-					//
-					{
-						TPS.second = std::clamp<uint8_t>(TPS.second + 1, 0, ((CheckHitKey(KEY_INPUT_SPACE) != 0) ? 2 : 0));
-						if (TPS.second == 1) {
-							TPS.first ^= 1;
-						}
 						if (TPS.first) {//TPS視点
-							outScreen[2].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);
-							//ターゲットを映す
-							UIparts->TGT_drw(fps, tgt_pic, mine.obj.frame(mine.gunptr->frame[3].first), MATRIX_ref::Vtrans(VGet(0, 0, -1.f), mine.mat_LHAND), tgt_pic_x, tgt_pic_y);
+							if (shadow_e) {
+								Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), [&Drawparts, &draw_on_shadow] { Drawparts->Draw_by_Shadow(draw_on_shadow); }, cam, vec, VGet(0, 1.f, 0), fov, fardist, neardist);
+							}
+							else {
+								Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_on_shadow, cam, vec, VGet(0, 1.f, 0), fov, fardist, neardist);
+							}
 						}
-						else {//FPS視点
-							outScreen[1].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);
+						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, fov, cam, vec, VGet(0, 1.f, 0));
+						{
+							TPS.get_in(CheckHitKey(KEY_INPUT_SPACE) != 0);
+							if (TPS.first) {//TPS視点
+								outScreen[2].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);
+								//ターゲットを映す
+								UIparts->TGT_drw(fps, tgt_pic, mine.obj.frame(mine.gunptr->frame[3].first), MATRIX_ref::Vtrans(VGet(0, 0, -1.f), mine.mat_LHAND), tgt_pic_x, tgt_pic_y);
+							}
+							else {//FPS視点
+								outScreen[1].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);
+							}
+							if (mine.gunptr->frame[4].first != INT_MAX) {
+								ScopeScreen.DrawExtendGraph(out_dispx - 200, 0, out_dispx, 200, true);
+							}
+							//デバッグ
+							Debugparts->end_way();
+							Debugparts->debug(10, 10, fps, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 						}
-						if (mine.gunptr->frame[4].first != INT_MAX) {
-							ScopeScreen.DrawExtendGraph(out_dispx - 200, 0, out_dispx, 200, true);
-						}
-						//デバッグ
-						Debugparts->end_way();
-						Debugparts->debug(10, 10, fps, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 					}
-
 				}
 				Drawparts->Screen_Flip();
 				vrparts->Eye_Flip(waits);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。

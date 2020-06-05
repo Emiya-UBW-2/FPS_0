@@ -158,7 +158,7 @@ public:
 		}
 		return true;
 	}
-	bool Screen_Flip(void) {
+	static bool Screen_Flip(void) {
 		ScreenFlip();
 		return true;
 	}

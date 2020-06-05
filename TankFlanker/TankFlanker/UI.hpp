@@ -63,6 +63,121 @@ public:
 	}
 	~UI() {
 	}
+	template<class Y, class D>
+	int select_window(
+		bool useVR_e,
+		std::vector<Mainclass::Gun>& gun_data,
+		std::unique_ptr<Y, D>& vrparts
+	) {
+
+		float fov = deg2rad(useVR_e ? 90 : 45);
+
+		int sel_g = 0;
+		VECTOR_ref campos,camvec = VGet(0.f, 0.f, 0.f);
+		VECTOR_ref pos_HMD;
+		MATRIX_ref mat_HMD;
+		uint8_t changecnt = 0;
+		bool endp = false;
+		bool startp = false;
+		int m_x = 0, m_y = 0;
+		float ber_r = 0.f;
+		//
+		GetMousePoint(&m_x, &m_y);
+		while (ProcessMessage() == 0) {
+			const auto fps = GetFPS();
+			const auto waits = GetNowHiPerformanceCount();
+			if (!startp) {
+				//VR用
+				vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
+				if (useVR_e) {
+					if (vrparts->get_left_hand_num() != -1) {
+						auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
+						if (ptr_.turn && ptr_.now) {
+							changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0) ? 2 : 0));
+							//引き金
+							if ((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
+								startp = true;
+							}
+						}
+					}
+				}
+				else {
+					changecnt = std::clamp<uint8_t>(changecnt + 1, 0, ((CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0));
+					if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
+						startp = true;
+					}
+					//マウスで回転
+				}
+				//
+				if (changecnt == 1) {
+					++sel_g %= gun_data.size();
+					ber_r = 0.f;
+				}
+			}
+			else {
+				changecnt = 0;
+			}
+
+			easing_set(&ber_r, float(out_disp_y / 4), 0.95f, fps);
+
+			{
+				if (!startp) {
+					campos = mat_HMD.zvec() * 0.6f;
+					camvec = VGet(0, 0, 0);
+				}
+				else {
+					easing_set(&campos, VGet(1.f, 0.f, 0.f), 0.95f, fps);
+					camvec = VGet(0, 0, 0);
+					start_fl += 1.f / fps;
+					if (start_fl > 3.f) {
+						endp = true;
+					}
+				}
+			}
+			//VR空間に適用
+			vrparts->Move_Player();
+			{
+				bufScreen.SetDraw_Screen();
+				auto& v = gun_data[sel_g];
+				{
+					int xp = disp_x / 2 - disp_y / 6;
+					int yp = disp_y / 2 - disp_y / 6;
+					font18.DrawStringFormat(xp, yp, GetColor(0, 255, 0), "Name  :%s", v.name.c_str());
+				}
+				outScreen.SetDraw_Screen(0.1f, 10.f, fov, campos, camvec, VGet(0.f, 1.f, 0.f));
+				{
+					v.mod.obj.DrawModel();
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 1.f), 0, 255));
+					bufScreen.DrawExtendGraph(0, 0, disp_x, disp_y, true);
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * start_fl / 3.f), 0, 255));
+					DrawBox(0, 0, disp_x, disp_y, GetColor(255, 255, 255), TRUE);
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				}
+				if (useVR_e) {
+					for (char i = 0; i < 2; i++) {
+						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+						outScreen.DrawGraph(0, 0, false);
+						vrparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
+					}
+				}
+				GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+				{
+					outScreen.DrawExtendGraph(0, 0, out_disp_x, out_disp_y, true);
+				}
+			}
+			DXDraw::Screen_Flip();
+			vrparts->Eye_Flip(waits);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
+			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+				sel_g = -1;
+				break;
+			}
+			if (endp) {
+				break;
+			}
+		}
+		return sel_g;
+	}
+
 	void load_window(const char* mes) {
 		SetUseASyncLoadFlag(FALSE);
 		float bar = 0.f, cnt = 0.f;
@@ -86,7 +201,6 @@ public:
 			}
 		}
 	}
-	//*
 	void draw(
 		const Mainclass::Chara& chara,
 		const float& fps,
@@ -239,7 +353,7 @@ public:
 			int ys = 160 * tgt_pic_y / tgt_pic_x;
 
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
-			VECTOR_ref p = ConvWorldPosToScreenPos(((tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].xf) + tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].yf)) / 2.f).get());
+			VECTOR_ref p = ConvWorldPosToScreenPos(((tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].x_frame) + tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].y_frame)) / 2.f).get());
 			if (p.z() >= 0.f&&p.z() <= 1.f) {
 				DrawLine(xp + xs / 2, yp + ys / 2, int(p.x()*out_disp_x / disp_x), int(p.y()*out_disp_y / disp_y), GetColor(255, 0, 0), 2);
 			}
@@ -250,5 +364,4 @@ public:
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
 	}
-	//*/
 };

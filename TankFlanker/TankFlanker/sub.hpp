@@ -7,7 +7,6 @@
 #include <memory>
 #include <optional>
 #include <vector>
-#include "Box2D/Box2D.h"
 #include "DXLib_ref.h"
 constexpr auto veh_all = 2;//О‘Он
 void set_effect(EffectS* efh, VECTOR_ref pos, VECTOR_ref nor, float scale = 1.f) {
@@ -26,17 +25,25 @@ void set_pos_effect(EffectS* efh, const EffekseerEffectHandle& handle) {
 	}
 	//IsEffekseer3DEffectPlaying(player[0].effcs[i].handle)
 }
-namespace std {
-	template <>
-	struct default_delete<b2Body> {
-		void operator()(b2Body* body) const {
-			body->GetWorld()->DestroyBody(body);
-		}
-	};
-}; // namespace std
 
 typedef std::pair<int, VECTOR_ref> frames;
-typedef std::pair<bool, uint8_t> switchs;
+
+class switchs {
+public:
+	bool first;
+	uint8_t second;
+
+	switchs() {
+		first = false;
+		second = 0;
+	};
+	void get_in(bool key) {
+		second = std::clamp<uint8_t>(second + 1, 0, (key ? 2 : 0));
+		if (second == 1) {
+			first ^= 1;
+		}
+	}
+};
 
 //
 class Mainclass {
@@ -67,11 +74,13 @@ public:
 	class Gun {
 		class models {
 		public:
+			GraphHandle lenzScreen;
 			MV1 obj, mag, ammo;
 			void set(std::string name) {
 				MV1::Load("data/gun/" + name + "/model.mv1", &obj, true);
 				MV1::Load("data/gun/" + name + "/mag.mv1", &mag, true);
 				MV1::Load("data/gun/" + name + "/ammo.mv1", &ammo, true);
+				lenzScreen = GraphHandle::Load("data/gun/" + name + "/lenz.png");
 			}
 		};
 	public:

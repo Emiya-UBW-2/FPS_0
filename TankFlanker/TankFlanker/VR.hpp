@@ -202,9 +202,11 @@ public:
 		}
 	}
 
-	inline void Haptic(systems* ctrl_, unsigned short times) {
-		if (use_vr&&m_pHMD) {
-			m_pHMD->TriggerHapticPulse(ctrl_->id, 2, times);
+	inline void Haptic(const char&id_, unsigned short times) {
+		if (id_ != -1) {
+			if (use_vr&&m_pHMD) {
+				m_pHMD->TriggerHapticPulse(ctrl[id_].id, 2, times);
+			}
 		}
 	}
 };

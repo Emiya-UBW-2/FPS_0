@@ -53,6 +53,12 @@ public:
 			DxLib::DrawExtendGraph(posx1, posy1, posx2, posy2, this->handle_, (trns ? TRUE : FALSE));
 		}
 	}
+	//GetGraphSize
+	void GetSize(int*xsize, int*ysize) noexcept {
+		if (this->handle_ != -1) {
+			GetGraphSize(this->handle_, xsize, ysize);
+		}
+	}
 	//
 	void SetDraw_Screen(const bool& clear=true) {
 		SetDrawScreen(this->handle_);
