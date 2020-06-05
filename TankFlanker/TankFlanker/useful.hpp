@@ -31,42 +31,45 @@ static std::string getright(const char* p1) {
 	return tempname.substr(tempname.find('=') + 1);
 }
 //
-static auto getparam_char(int p1) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p1);
-	return getright(mstr).c_str();
-}
-static auto getparam_str(int p1) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p1);
-	return getright(mstr);
-}
-static auto get_str(int p1) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p1);
-	return std::string(mstr);
-}
+class getparams {
+public:
+	static const char* _char(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return getright(mstr).c_str();
+	}
+	static auto _str(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return getright(mstr);
+	}
+	static auto get_str(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return std::string(mstr);
+	}
 
-static const long int getparam_i(int p1) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p1);
-	return std::stol(getright(mstr));
-}
-static const unsigned long int getparam_u(int p2) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p2);
-	return std::stoul(getright(mstr));
-}
-static const float getparam_f(int p1) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p1);
-	return std::stof(getright(mstr));
-}
-static const bool getparam_bool(int p1) {
-	char mstr[64];
-	FileRead_gets(mstr, 64, p1);
-	return (getright(mstr).find("true") != std::string::npos);
-}
+	static const long int _long(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return std::stol(getright(mstr));
+	}
+	static const unsigned long int _ulong(int p2) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p2);
+		return std::stoul(getright(mstr));
+	}
+	static const float _float(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return std::stof(getright(mstr));
+	}
+	static const bool _bool(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return (getright(mstr).find("true") != std::string::npos);
+	}
+};
 //
 void easing_set(float* first, const float& aim, const float& ratio, const float& fps) {
 	if (ratio == 0.f) {

@@ -44,21 +44,42 @@ private:
 
 public:
 	//gun
-	struct Audios{
+	class Audios {
+	public:
 		SoundHandle shot;
 		SoundHandle slide;
 		SoundHandle trigger;
 		SoundHandle mag_down;
 		SoundHandle mag_set;
 		SoundHandle case_down;
+
+		void set(int mdata) {
+			SetCreate3DSoundFlag(TRUE);
+			shot = SoundHandle::Load("data/audio/shot_" + getparams::_str(mdata) + ".wav");
+			slide = SoundHandle::Load("data/audio/slide_" + getparams::_str(mdata) + ".wav");
+			trigger = SoundHandle::Load("data/audio/trigger_" + getparams::_str(mdata) + ".wav");
+			mag_down = SoundHandle::Load("data/audio/mag_down_" + getparams::_str(mdata) + ".wav");
+			mag_set = SoundHandle::Load("data/audio/mag_set_" + getparams::_str(mdata) + ".wav");
+			case_down = SoundHandle::Load("data/audio/case_" + getparams::_str(mdata) + ".wav");
+			SetCreate3DSoundFlag(FALSE);
+		}
 	};
 	class Gun {
+		class models {
+		public:
+			MV1 obj, mag, ammo;
+			void set(std::string name) {
+				MV1::Load("data/gun/" + name + "/model.mv1", &obj, true);
+				MV1::Load("data/gun/" + name + "/mag.mv1", &mag, true);
+				MV1::Load("data/gun/" + name + "/ammo.mv1", &ammo, true);
+			}
+		};
 	public:
 		std::string name;
-		MV1 obj, mag, ammo;
 		std::vector<frames> frame;
-		size_t ammo_max;//マガジンの装弾数
+		size_t ammo_max=0;//マガジンの装弾数
 		std::vector <uint8_t> select;//セレクター
+		models mod;
 		Audios audio;
 	};
 	//player
@@ -102,31 +123,31 @@ public:
 		size_t usebullet{};		      /*使用弾*/
 
 		std::array<EffectS, efs_user> effcs; /*effect*/
-		Gun* gunptr;
+		Gun* gunptr=nullptr;
 		Audios audio;
 		MV1 obj, mag,hand;
 		std::array<ammo_obj, 64> ammo;	      /*確保する弾*/
 		VECTOR_ref pos;
 		MATRIX_ref mat;
 		switchs safety;
-		uint8_t trigger;
+		uint8_t trigger=0;
 
-		uint8_t selkey;
-		uint8_t select;//セレクター
-		size_t ammoc;//装弾数カウント
+		uint8_t selkey=0;
+		uint8_t select = 0;//セレクター
+		size_t ammoc = 0;//装弾数カウント
 
-		bool gunf;
-		uint8_t guncnt;
+		bool gunf=false;
+		uint8_t guncnt = 0;
 
-		bool LEFT_hand;
+		bool LEFT_hand=false;
 
 
-		bool reloadf;
+		bool reloadf=false;
 		MATRIX_ref mat_mag;
 		VECTOR_ref mat_addvec;
-		float mat_add;
+		float mat_add=0.f;
 
-		bool down_mag;
+		bool down_mag=false;
 
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
@@ -167,13 +188,13 @@ public:
 			*/
 			//
 			this->gunptr = gundata;
-			this->gunptr->obj.DuplicateonAnime(&this->obj);
+			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {
 				this->obj.SetTextureGraphHandle(1, scope, false);	//スコープ
 			}
-			this->mag = this->gunptr->mag.Duplicate();
+			this->mag = this->gunptr->mod.mag.Duplicate();
 			for (auto& a : this->ammo) {
-				a.second = this->gunptr->ammo.Duplicate();
+				a.second = this->gunptr->mod.ammo.Duplicate();
 				a.cnt = -1.f;
 				a.pos = VGet(0, 0, 0);
 				a.mat = MGetIdent();

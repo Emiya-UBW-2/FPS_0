@@ -35,6 +35,9 @@ private:
 	float point_r = 0.f;
 	float point_uf = 0.f;
 	float point_df = 0.f;
+	//
+	int tgt_pic_sel = -1;
+	float tgt_pic_on = 1.f;
 public:
 	UI(const int& o_xd, const int& o_yd, const int& xd, const int& yd) {
 		out_disp_x = o_xd;
@@ -199,6 +202,52 @@ public:
 					}
 				}
 			}
+		}
+	}
+
+	template <class T>
+	void TGT_drw(
+		const float& fps,
+		std::vector<T> &tgt_pic,
+		const VECTOR_ref& pos,
+		const VECTOR_ref& vec,
+		const int& tgt_pic_x,
+		const int& tgt_pic_y
+	) {
+		{
+			int i = 0;
+			bool fl = false;
+			for (auto& tp : tgt_pic) {
+				auto q = tp.obj.CollCheck_Line(pos, VECTOR_ref(pos) + vec * 100.f, 0, 1);
+				if (q.HitFlag == TRUE) {
+					tgt_pic_sel = i;
+					fl = true;
+				}
+				i++;
+			}
+			if (fl) {
+				easing_set(&tgt_pic_on, 1.f, 0.9f, fps);
+			}
+			else {
+				easing_set(&tgt_pic_on, 0.f, 0.95f, fps);
+			}
+		}
+		if (tgt_pic_sel >= 0) {
+			int xp = 60;
+			int yp = 60;
+			int xs = 160;
+			int ys = 160 * tgt_pic_y / tgt_pic_x;
+
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
+			VECTOR_ref p = ConvWorldPosToScreenPos(((tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].xf) + tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].yf)) / 2.f).get());
+			if (p.z() >= 0.f&&p.z() <= 1.f) {
+				DrawLine(xp + xs / 2, yp + ys / 2, int(p.x()*out_disp_x / disp_x), int(p.y()*out_disp_y / disp_y), GetColor(255, 0, 0), 2);
+			}
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128 + int(127.f* tgt_pic_on));
+			tgt_pic[tgt_pic_sel].pic.DrawExtendGraph(xp, yp, xp + xs, yp + ys, false);
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
+			DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
 	}
 	//*/

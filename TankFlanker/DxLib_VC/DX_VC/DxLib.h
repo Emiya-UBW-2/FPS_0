@@ -2,7 +2,7 @@
 // 
 // 		ＤＸライブラリ		ヘッダファイル
 // 
-// 				Ver 3.21e
+// 				Ver 3.21f
 // 
 // -------------------------------------------------------------------------------
 
@@ -12,9 +12,9 @@
 #include "DxCompileConfig.h"
 
 // ＤＸライブラリのバージョン
-#define DXLIB_VERSION 0x321e
-#define DXLIB_VERSION_STR_T _T( "3.21e" )
-#define DXLIB_VERSION_STR_W    L"3.21e"
+#define DXLIB_VERSION 0x321f
+#define DXLIB_VERSION_STR_T _T( "3.21f" )
+#define DXLIB_VERSION_STR_W    L"3.21f"
 
 // 設定 -----------------------------------------------------------------------
 

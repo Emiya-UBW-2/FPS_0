@@ -38,7 +38,16 @@ public:
 	bool stop() const noexcept { return (StopSoundMem(handle_) == 0); }
 	bool vol(int vol) const noexcept { return (ChangeVolumeSoundMem(std::clamp<int>(vol,0,255),handle_) == 0); }
 
+	bool SetPosition(VECTOR_ref pos) const noexcept { return (Set3DPositionSoundMem(pos.get(), handle_) == 0); }
+	bool Radius(float radius) const noexcept { return (Set3DRadiusSoundMem(radius, handle_) == 0); }
+	void play_3D(const VECTOR_ref& pos, const float& radius) {
+		SetPosition(pos);
+		Radius(radius);
+		play(DX_PLAYTYPE_BACK, TRUE);
+	}
+
 	static SoundHandle Load(std::basic_string_view<TCHAR> FileName, int BufferNum = 3) noexcept {
 		return { DxLib::LoadSoundMemWithStrLen(FileName.data(), FileName.length(), BufferNum) };
 	}
+
 };

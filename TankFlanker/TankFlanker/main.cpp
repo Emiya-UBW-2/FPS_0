@@ -11,18 +11,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	bool bloom_e = false;
 	bool shadow_e = false;
 	bool useVR_e = true;
-	int dispx = 1080; /*描画X*/
-	int dispy = 1200; /*描画Y*/
-	int out_dispx = dispx * 960 / dispy; /*ウィンドウX*/
-	int out_dispy = dispy * 960 / dispy; /*ウィンドウY*/
+	int dispx,dispy; /*描画*/
+	int out_dispx,out_dispy; /*ウィンドウ*/
 	switchs TPS;
 	{
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
 		int mdata = FileRead_open("data/setting.txt", FALSE);
-		dof_e = getparam_bool(mdata);
-		bloom_e = getparam_bool(mdata);
-		shadow_e = getparam_bool(mdata);
-		useVR_e = getparam_bool(mdata);
+		dof_e = getparams::_bool(mdata);
+		bloom_e = getparams::_bool(mdata);
+		shadow_e = getparams::_bool(mdata);
+		useVR_e = getparams::_bool(mdata);
 		FileRead_close(mdata);
 	}
 	//DXLib描画
@@ -57,65 +55,43 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	outScreen[1] = GraphHandle::Make(dispx, dispy);    //描画スクリーン
 	outScreen[2] = GraphHandle::Make(dispx, dispy);    //描画スクリーン
 	//
-	FontHandle font36 = FontHandle::Create(y_r(36, out_dispy), DX_FONTTYPE_EDGE);
+	//FontHandle font36 = FontHandle::Create(y_r(36, out_dispy), DX_FONTTYPE_EDGE);
 	FontHandle font18 = FontHandle::Create(y_r(18, out_dispy), DX_FONTTYPE_EDGE);
-	FontHandle font12 = FontHandle::Create(y_r(12, out_dispy), DX_FONTTYPE_EDGE);
-
 	//操作
-	VECTOR_ref eyevec;					    //視点
-	VECTOR_ref campos, camvec, camup;			    //カメラ
-	VECTOR_ref campos_buf;					    //視点
+	VECTOR_ref campos, campos_buf, camvec, camup;			    //カメラ
 	float fov = deg2rad(useVR_e ? 90 : 45);
 	//データ
 	MV1 hand;
 	MV1::Load("data/model/hand/model_h.mv1", &hand, true);
 	auto mapparts = std::make_unique<Mapclass>(dispx, dispy);
-
-	int tgt_col = LoadSoftImage("data/model/tgt/point.bmp");
+	//ターゲット
 	MV1 tgt;
 	MV1::Load("data/model/tgt/model.mv1", &tgt, true);
+	int tgt_col = LoadSoftImage("data/model/tgt/point.bmp");
 	GraphHandle tgt_pic_tmp = GraphHandle::Load("data/model/tgt/Target-A2.png");
-	int tgt_pic_x = 0;
-	int tgt_pic_y = 0;
-	frames tgt_f;
-	struct tgts{
-		MV1 obj;
-		GraphHandle pic;
-		int xf, yf;
-
-		float rad = 0.f;
-		float radadd = 0.f;
-		float time = 0.f;
-		float power = 0.f;
-		bool LR = true;
-	};
-	std::vector<tgts> tgt_pic;
-	int tgt_pic_sel=-1;
-	float tgt_pic_on = 1.f;
-	//
-	//
+	//GUNデータ取得
 	std::vector<Mainclass::Gun> gun_data;
 	gun_data.resize(3);
 	gun_data[0].name = "1911";
-	gun_data[1].name = "M82A2";//"1911";
+	gun_data[1].name = "M82A2";
 	gun_data[2].name = "CAR15_M4";
 	for (auto& g : gun_data) {
-		MV1::Load("data/gun/" + g.name + "/model.mv1", &g.obj, true);
-		MV1::Load("data/gun/" + g.name + "/mag.mv1", &g.mag, true);
-		MV1::Load("data/gun/" + g.name + "/ammo.mv1", &g.ammo, true);
+		g.mod.set(g.name);
 	}
-	UIparts->load_window("モデル");					//ロード画面
-	//データ取得
+	//ロード画面
+	UIparts->load_window("モデル");					
+	//GUNデータ取得
 	for (auto& g : gun_data) {
+		//フレーム
 		g.frame.resize(7);
 		g.frame[4].first = INT_MAX;
-		for (int i = 0; i < g.obj.frame_num(); i++) {
-			std::string s = g.obj.frame_name(i);
+		for (int i = 0; i < g.mod.obj.frame_num(); i++) {
+			std::string s = g.mod.obj.frame_name(i);
 			if (s.find("mag_fall") != std::string::npos) {
 				g.frame[0].first = i;//排莢
-				g.frame[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), g.obj.GetFrameLocalMatrix(g.frame[0].first));//mag
+				g.frame[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), g.mod.obj.GetFrameLocalMatrix(g.frame[0].first));//mag
 				g.frame[1].first = i + 1;
-				g.frame[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), g.obj.GetFrameLocalMatrix(g.frame[1].first));//mag先
+				g.frame[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), g.mod.obj.GetFrameLocalMatrix(g.frame[1].first));//mag先
 			}
 			else if (s.find("case") != std::string::npos) {
 				g.frame[2].first = i;//排莢
@@ -133,47 +109,57 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				g.frame[6].first = i;//左手
 			}
 		}
-		int mdata = FileRead_open(("data/gun/" + g.name + "/data.txt").c_str(), FALSE);
-		g.ammo_max = getparam_i(mdata);
-		while (true) {
-			auto p = getparam_str(mdata);
-			if (getright(p.c_str()).find("end") != std::string::npos) {
-				break;
+		//テキスト
+		{
+			int mdata = FileRead_open(("data/gun/" + g.name + "/data.txt").c_str(), FALSE);
+			//装弾数
+			g.ammo_max = getparams::_long(mdata);
+			//セレクター設定
+			while (true) {
+				auto p = getparams::_str(mdata);
+				if (getright(p.c_str()).find("end") != std::string::npos) {
+					break;
+				}
+				else if (getright(p.c_str()).find("semi") != std::string::npos) {
+					g.select.emplace_back(uint8_t(1));					//セミオート=1
+				}
+				else if (getright(p.c_str()).find("full") != std::string::npos) {
+					g.select.emplace_back(uint8_t(2));					//フルオート=2
+				}
+				else if (getright(p.c_str()).find("3b") != std::string::npos) {
+					g.select.emplace_back(uint8_t(3));					//3連バースト=3
+				}
+				else if (getright(p.c_str()).find("2b") != std::string::npos) {
+					g.select.emplace_back(uint8_t(4));					//2連バースト=4
+				}
+				else {
+					g.select.emplace_back(uint8_t(1));
+				}
 			}
-			else if (getright(p.c_str()).find("semi") != std::string::npos) {
-				g.select.emplace_back(1u);					//セミオート=1
-			}
-			else if (getright(p.c_str()).find("full") != std::string::npos) {
-				g.select.emplace_back(2u);					//フルオート=2
-			}
-			else if (getright(p.c_str()).find("3b") != std::string::npos) {
-				g.select.emplace_back(3u);					//3連バースト=3
-			}
-			else if (getright(p.c_str()).find("2b") != std::string::npos) {
-				g.select.emplace_back(4u);					//2連バースト=4
-			}
-			else {
-				g.select.emplace_back(1u);
-			}
+			//サウンド
+			g.audio.set(mdata);
+			FileRead_close(mdata);
 		}
-		SetCreate3DSoundFlag(TRUE);
-		g.audio.shot = SoundHandle::Load("data/audio/shot_" + getparam_str(mdata) + ".wav");
-		g.audio.slide = SoundHandle::Load("data/audio/slide_" + getparam_str(mdata) + ".wav");
-		g.audio.trigger = SoundHandle::Load("data/audio/trigger_" + getparam_str(mdata) + ".wav");
-		g.audio.mag_down = SoundHandle::Load("data/audio/mag_down_" + getparam_str(mdata) + ".wav");
-		g.audio.mag_set = SoundHandle::Load("data/audio/mag_set_" + getparam_str(mdata) + ".wav");
-		g.audio.case_down = SoundHandle::Load("data/audio/case_" + getparam_str(mdata) + ".wav");
-		SetCreate3DSoundFlag(FALSE);
-		FileRead_close(mdata);
 	}
-	//
-	tgt_f = { 2,tgt.frame(2) };
+	//ターゲット
+	frames tgt_f = { 2,tgt.frame(2) };
+	int tgt_pic_x,tgt_pic_y;
 	GetGraphSize(tgt_pic_tmp.get(), &tgt_pic_x, &tgt_pic_y);
+	struct tgts {
+		MV1 obj;
+		GraphHandle pic;
+		int xf = 0, yf = 0;
+
+		float rad = 0.f;
+		float radadd = 0.f;
+		float time = 0.f;
+		float power = 0.f;
+		bool LR = true;
+	};
+	std::vector<tgts> tgt_pic;
 	//VRセット
 	vrparts->Set_Device();
-	MATRIX_ref HMDmat;
-	bool HMDon;
-	//
+	//キャラ
 	std::vector<Mainclass::Chara> chara;
 	//ココから繰り返し読み込み//-------------------------------------------------------------------
 	bool ending = true;
@@ -188,8 +174,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				uint8_t upct = 0, dnct = 0, rtct = 0, ltct = 0, changecnt = 0;
 				bool endp = false;
 				bool startp = false;
-				float rad = 0.f;
-				float yrad_m = deg2rad(90), xrad_m = 0.f;
 				int m_x = 0, m_y = 0;
 				float ber_r = 0.f;
 				GetMousePoint(&m_x, &m_y);
@@ -197,49 +181,36 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
 
-					if (useVR_e) {
-						if (vrparts->get_hmd_num() != -1) {
-							auto& ptr_HMD = (*vrparts->get_device())[vrparts->get_hmd_num()];
-							HMDmat = MATRIX_ref::Axis1(ptr_HMD.xvec*-1.f, ptr_HMD.yvec, ptr_HMD.zvec*-1.f);
-						}
-						else {
-							HMDmat = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
-						}
-					}
-					else {
-						HMDmat = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
-					}
-					if (useVR_e) {
-						if (vrparts->get_left_hand_num() != -1) {
-							auto& ptr_LEFTHAND = (*vrparts->get_device())[vrparts->get_left_hand_num()];
-							//auto& ptr_RIGHTHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
-							if (ptr_LEFTHAND.turn && ptr_LEFTHAND.now) {
-								if (!startp) {
-									changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_LEFTHAND.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0) ? 2 : 0));
+					vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &chara[0].pos_HMD, &chara[0].mat_HMD);
+
+					if (!startp) {
+						//VR用
+						if (useVR_e) {
+							if (vrparts->get_left_hand_num() != -1) {
+								auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
+								if (ptr_.turn && ptr_.now) {
+									changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0) ? 2 : 0));
 									if (changecnt == 1) {
 										++sel_g %= gun_data.size();
 										ber_r = 0.f;
 									}
 									//引き金
-									if ((ptr_LEFTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
+									if ((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
 										startp = true;
 									}
 								}
 							}
 						}
-					}
-
-
-
-					if (!startp) {
-						upct = std::clamp<uint8_t>(upct + 1, 0, ((CheckHitKey(KEY_INPUT_D) != 0) ? 2 : 0));
-						dnct = std::clamp<uint8_t>(dnct + 1, 0, ((CheckHitKey(KEY_INPUT_A) != 0) ? 2 : 0));
-						ltct = std::clamp<uint8_t>(ltct + 1, 0, ((CheckHitKey(KEY_INPUT_S) != 0) ? 2 : 0));
-						rtct = std::clamp<uint8_t>(rtct + 1, 0, ((CheckHitKey(KEY_INPUT_W) != 0) ? 2 : 0));
-						changecnt = std::clamp<uint8_t>(changecnt + 1, 0, ((CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0));
-						if (changecnt == 1) {
-							++sel_g %= gun_data.size();
-							ber_r = 0.f;
+						//
+						{
+							changecnt = std::clamp<uint8_t>(changecnt + 1, 0, ((CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0));
+							if (changecnt == 1) {
+								++sel_g %= gun_data.size();
+								ber_r = 0.f;
+							}
+							if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
+								startp = true;
+							}
 						}
 					}
 					else {
@@ -253,12 +224,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					easing_set(&ber_r, float(out_dispy / 4), 0.95f, fps);
 
 					{
-						if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-							startp = true;
-						}
 						if (!startp) {
 							//(MATRIX_ref::RotY(yrad_m) * MATRIX_ref::RotX(xrad_m))
-							campos = HMDmat.zvec() * 0.6f;
+							campos = chara[0].mat_HMD.zvec() * 0.6f;
 							camvec = VGet(0, 0, 0);
 							if (upct == 1) {
 							}
@@ -290,7 +258,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 						outScreen[0].SetDraw_Screen(0.1f, 10.f, fov, campos, camvec, VGet(0.f, 1.f, 0.f));
 						{
-							v.obj.DrawModel();
+							v.mod.obj.DrawModel();
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 1.f), 0, 255));
 							bufScreen.DrawExtendGraph(0, 0, dispx, dispy, true);
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * start_fl / 3.f), 0, 255));
@@ -410,25 +378,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 				}
 			}
-			/*
-			{
-				auto& c = chara[0];
-				VECTOR_ref u_ = c.pos_LHAND - c.hand.frame(c.frame_hand[0].first);
-				VECTOR_ref v_ = MATRIX_ref::Vtrans(VGet(0, -1.f, 0), MATRIX_ref::RotVec2(VGet(u_.x(), 0, u_.z()), u_));
-
-				float dist_0 = u_.size();
-				float dist_1 = (c.frame_hand[1].second).size();
-				float dist_2 = (c.frame_hand[2].second).size();
-				float cos_t = -std::clamp(getcos_tri(dist_2, dist_0, dist_1), -1.f, 1.f);
-				float sin_t = -std::sqrtf(1.f - std::powf(cos_t, 2.f));
-
-				DrawLine3D(c.hand.frame(c.frame_hand[0].first).get(), (c.hand.frame(c.frame_hand[0].first) + ((u_.Norm()*cos_t + v_ * sin_t)*dist_1)).get(), GetColor(0, 255, 0));
-
-
-				DrawLine3D(c.hand.frame(c.frame_hand[0].first).get(), (c.hand.frame(c.frame_hand[0].first) + u_.Norm()).get(), GetColor(255, 0, 0));
-				DrawLine3D(c.hand.frame(c.frame_hand[0].first).get(), (c.hand.frame(c.frame_hand[0].first) + v_.Norm()).get(), GetColor(0, 0, 255));
-			}
-			*/
 			//銃弾
 			SetFogEnable(FALSE);
 			SetUseLighting(FALSE);
@@ -459,68 +408,30 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					//プレイヤー操作
 					{
 						//マウスと視点角度をリンク
-						if (useVR_e) {
-							if (vrparts->get_hmd_num() != -1) {
-								auto& ptr_HMD = (*vrparts->get_device())[vrparts->get_hmd_num()];
-								mine.pos_HMD = ptr_HMD.pos;
-								HMDmat = MATRIX_ref::Axis1(ptr_HMD.xvec*-1.f, ptr_HMD.yvec, ptr_HMD.zvec*-1.f);
-								HMDon = ptr_HMD.now;
-							}
-							else {
-								mine.pos_HMD = VGet(0, 1, 0);
-								HMDmat = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
-								HMDon = false;
-							}
-						}
-						else {
-							mine.pos_HMD = VGet(0, 1.f, 0);
-							HMDmat = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
-							HMDon = false;
-						}
+						vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
 						mine.pos = VGet(0.f, 0.f, 0.f);
 						//
 						{
-							if (useVR_e) {
-								bool LHANDon;
-								if (vrparts->get_left_hand_num() != -1) {
-									auto& ptr_LHAND = (*vrparts->get_device())[vrparts->get_left_hand_num()];
-									mine.pos_LHAND = ptr_LHAND.pos;
-									mine.mat_LHAND =
-										MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_LHAND)*
-										MATRIX_ref::Axis1(ptr_LHAND.xvec*-1.f, ptr_LHAND.yvec, ptr_LHAND.zvec*-1.f)*MATRIX_ref::RotAxis(ptr_LHAND.xvec, deg2rad(60));
-									LHANDon = ptr_LHAND.now;
-								}
-								else {
-									mine.pos_LHAND = VGet(0, 1, 0);
-									mine.mat_LHAND = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
-									LHANDon = false;
-								}
+							//LHAND
+							vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_LHAND, &mine.mat_LHAND);
+							if (!useVR_e) {
+								mine.pos_LHAND = VGet(0.f, 0.95f, 0.75f);
 							}
 							else {
-								mine.pos_LHAND = VGet(0.f, 0.95f, 0.75f);
-								mine.mat_LHAND = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
+								mine.mat_LHAND = mine.mat_LHAND*MATRIX_ref::RotAxis(mine.mat_LHAND.xvec(), deg2rad(-60));
 							}
-							{
-								MATRIX_ref RHANDmat;
-								bool RHANDon;
-								if (vrparts->get_right_hand_num() != -1) {
-									auto& ptr_RHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
-									mine.pos_RHAND = ptr_RHAND.pos;
-									RHANDmat = MATRIX_ref::Axis1(ptr_RHAND.xvec, ptr_RHAND.yvec, ptr_RHAND.zvec)*MATRIX_ref::RotAxis(ptr_RHAND.xvec, deg2rad(60));
-									mine.mat_RHAND = MATRIX_ref::Axis1(RHANDmat.xvec()*-1, RHANDmat.yvec(), RHANDmat.zvec()*-1);
-									RHANDon = ptr_RHAND.now;
-								}
-								else {
-									mine.pos_RHAND = VGet(0, 1, 0);
-									mine.mat_RHAND = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
-									RHANDon = false;
-								}
+							mine.mat_LHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_LHAND)*mine.mat_LHAND;
+							//RHAND
+							vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_RHAND, &mine.mat_RHAND);
+							if (!useVR_e) {
+								mine.pos_RHAND = VGet(0.f, 0.95f, 0.75f);
 							}
-
+							else {
+								mine.mat_RHAND = mine.mat_RHAND*MATRIX_ref::RotAxis(mine.mat_RHAND.xvec(), deg2rad(-60));
+							}
+							//
 							if (mine.obj.get_anime(3).per == 1.f) {
-								Set3DPositionSoundMem(mine.pos_LHAND.get(), mine.audio.slide.get());
-								Set3DRadiusSoundMem(1.f, mine.audio.slide.get());
-								mine.audio.slide.play(DX_PLAYTYPE_BACK, TRUE);
+								mine.audio.slide.play_3D(mine.pos_LHAND, 1.f);
 							}
 							mine.obj.get_anime(3).per -= (60.f / 5.f) / fps;
 							if (mine.obj.get_anime(3).per <= 0.f) {
@@ -528,25 +439,27 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 							if (useVR_e) {
 								if (vrparts->get_left_hand_num() != -1) {
-									auto& ptr_LEFTHAND = (*vrparts->get_device())[vrparts->get_left_hand_num()];
-									auto& ptr_RIGHTHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
-									if (ptr_LEFTHAND.turn && ptr_LEFTHAND.now) {
+									auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
+									if (ptr_.turn && ptr_.now) {
 										//引き金
-										easing_set(&mine.obj.get_anime(2).per, float((ptr_LEFTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0 && !mine.safety.first), 0.5f, fps);
+										easing_set(&mine.obj.get_anime(2).per, float((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0 && !mine.safety.first), 0.5f, fps);
 										//マグキャッチ
-										easing_set(&mine.obj.get_anime(5).per, float((ptr_LEFTHAND.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0), 0.5f, fps);
+										easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0), 0.5f, fps);
 										//セフティ
-										mine.safety.second = std::clamp<uint8_t>(mine.safety.second + 1, 0, (((ptr_LEFTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_LEFTHAND.touch.x() < -0.5f && ptr_LEFTHAND.touch.y() < 0.5f&&ptr_LEFTHAND.touch.y() > -0.5f)) ? 2 : 0);
+										mine.safety.second = std::clamp<uint8_t>(mine.safety.second + 1, 0, (((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() < -0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f)) ? 2 : 0);
 										if (mine.safety.second == 1) {
 											mine.safety.first ^= 1;
 										}
 										easing_set(&mine.obj.get_anime(4).per, float(mine.safety.first), 0.5f, fps);
 										//セレクター
 										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0,
-											(((ptr_LEFTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_LEFTHAND.touch.x() > 0.5f && ptr_LEFTHAND.touch.y() < 0.5f&&ptr_LEFTHAND.touch.y() > -0.5f) && !mine.safety.first)
+											(((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first)
 											? 2 : 0);
 										//
 									}
+								}
+								if (vrparts->get_right_hand_num() != -1) {
+									auto& ptr_RIGHTHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
 									if (ptr_RIGHTHAND.turn && ptr_RIGHTHAND.now) {
 										//マガジン取得
 										if (!mine.down_mag) {
@@ -595,11 +508,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									c.ammoc = 1;
 								}
 								if (!c.reloadf) {
-									Set3DPositionSoundMem(c.pos_LHAND.get(), c.audio.mag_down.get());
-									Set3DRadiusSoundMem(1.f, c.audio.mag_down.get());
-									c.audio.mag_down.play(DX_PLAYTYPE_BACK, TRUE);
+									c.audio.mag_down.play_3D(c.pos_LHAND, 1.f);
 									if (&c == &mine) {
-										vrparts->Haptic(&(*vrparts->get_device())[vrparts->get_left_hand_num()], unsigned short(60000));
+										if (vrparts->get_left_hand_num() != -1) {
+											vrparts->Haptic(&(*vrparts->get_device())[vrparts->get_left_hand_num()], unsigned short(60000));
+										}
 									}
 								}
 								c.reloadf = true;
@@ -616,13 +529,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 							c.trigger = std::clamp<uint8_t>(c.trigger + 1, 0, (c.obj.get_anime(2).per >= 0.5f) ? 2 : 0);
 							if (c.trigger == 1) {
-								Set3DPositionSoundMem(c.pos_LHAND.get(), c.audio.trigger.get());
-								Set3DRadiusSoundMem(1.f, c.audio.trigger.get());
-								c.audio.trigger.play(DX_PLAYTYPE_BACK, TRUE);
+								c.audio.trigger.play_3D(c.pos_LHAND, 1.f);
 							}
 							if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
 								if (&c == &mine) {
-									vrparts->Haptic(&(*vrparts->get_device())[vrparts->get_left_hand_num()], unsigned short(60000));
+									if (vrparts->get_left_hand_num() != -1) {
+										vrparts->Haptic(&(*vrparts->get_device())[vrparts->get_left_hand_num()], unsigned short(60000));
+									}
 								}
 								c.ammoc--;
 								++c.guncnt;
@@ -637,14 +550,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								else {
 									c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(300 + GetRand(700)) / 100.f)));
 								}
-								Set3DPositionSoundMem(c.pos_LHAND.get(), c.audio.shot.get());
-								Set3DRadiusSoundMem(10.f, c.audio.shot.get());
-								c.audio.shot.play(DX_PLAYTYPE_BACK, TRUE);
-
-								Set3DPositionSoundMem(c.pos_LHAND.get(), c.audio.slide.get());
-								Set3DRadiusSoundMem(1.f, c.audio.slide.get());
-								c.audio.slide.play(DX_PLAYTYPE_BACK, TRUE);
-
+								c.audio.shot.play_3D(c.pos_LHAND, 1.f);
+								c.audio.slide.play_3D(c.pos_LHAND, 1.f);
 								auto& u = c.bullet[c.usebullet];
 								auto& a = c.ammo[c.usebullet];
 								++c.usebullet %= c.bullet.size();
@@ -707,9 +614,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 											c.obj.get_anime(3).per = 1.f;
 										}
 
-										Set3DPositionSoundMem(c.pos_LHAND.get(), c.audio.mag_set.get());
-										Set3DRadiusSoundMem(1.f, c.audio.mag_set.get());
-										c.audio.mag_set.play(DX_PLAYTYPE_BACK, TRUE);
+										c.audio.mag_set.play_3D(c.pos_LHAND, 1.f);
 
 										c.reloadf = false;
 										c.ammoc += c.gunptr->ammo_max;
@@ -739,25 +644,25 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								MATRIX_ref m1 =
 									MATRIX_ref::RotVec2((c.hand.frame(c.frame_hand[1].first) - c.hand.frame(c.frame_hand[0].first)), (u_.Norm()*cos_t + v_ * sin_t)*dist_1)
 									*
-									HMDmat.Inverse()
+									c.mat_HMD.Inverse()
 									;
 								c.hand.SetFrameLocalMatrix(c.frame_hand[0].first, m1*MATRIX_ref::Mtrans(c.frame_hand[0].second));
 								//
 								c.hand.SetFrameLocalMatrix(c.frame_hand[1].first, m1.Inverse()*MATRIX_ref::Mtrans(c.frame_hand[1].second));
 								MATRIX_ref m2 = MATRIX_ref::RotVec2(
 									(c.hand.frame(c.frame_hand[1].first) - c.hand.frame(c.frame_hand[2].first)),
-									MATRIX_ref::Vtrans((c.pos_LHAND - c.hand.frame(c.frame_hand[1].first)), HMDmat.Inverse())
+									MATRIX_ref::Vtrans((c.pos_LHAND - c.hand.frame(c.frame_hand[1].first)), c.mat_HMD.Inverse())
 								);
 								c.hand.SetFrameLocalMatrix(c.frame_hand[1].first, m2* m1.Inverse()*MATRIX_ref::Mtrans(c.frame_hand[1].second));
 								//
 
-								MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*HMDmat.Inverse();
+								MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*c.mat_HMD.Inverse();
 								c.hand.SetFrameLocalMatrix(c.frame_hand[2].first, m3*m2.Inverse()*MATRIX_ref::Mtrans(c.frame_hand[2].second));
 								*/
 								//右手
 								{
-									MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*HMDmat.Inverse();
-									c.hand.SetFrameLocalMatrix(1, m3*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_LHAND - (c.pos_HMD + c.pos), HMDmat.Inverse())));
+									MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*c.mat_HMD.Inverse();
+									c.hand.SetFrameLocalMatrix(1, m3*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_LHAND - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 								}
 								//左手
 								{
@@ -767,28 +672,28 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 										MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90));
 										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(
 											c.obj.frame(c.gunptr->frame[6].first)
-											- (c.pos_HMD + c.pos), HMDmat.Inverse())));
+											- (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 									}
 									else {
 										c.LEFT_hand = false;
-										MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90))*c.mat_RHAND*HMDmat.Inverse();
-										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_RHAND - (c.pos_HMD + c.pos), HMDmat.Inverse())));
+										MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90))*c.mat_RHAND*c.mat_HMD.Inverse();
+										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_RHAND - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 									}
 								}
 								//身体
 								{
-									VECTOR_ref v_ = HMDmat.zvec();
+									VECTOR_ref v_ = c.mat_HMD.zvec();
 									float rad = std::atan2f(-v_.x(), -v_.z());
 									c.hand.SetFrameLocalMatrix(34,
-										MATRIX_ref::RotY(DX_PI_F + rad / 2.f)*HMDmat.Inverse()*
-										MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), HMDmat.Inverse()))
+										MATRIX_ref::RotY(DX_PI_F + rad / 2.f)*c.mat_HMD.Inverse()*
+										MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
 									);
 								}
 							}
 
 							c.mag.SetMatrix(c.mat_mag);
 							c.obj.SetMatrix(c.mat_LHAND*MATRIX_ref::Mtrans(c.pos_LHAND + c.pos));
-							c.hand.SetMatrix(HMDmat*MATRIX_ref::Mtrans(c.pos_HMD + c.pos));
+							c.hand.SetMatrix(c.mat_HMD*MATRIX_ref::Mtrans(c.pos_HMD + c.pos));
 						}
 						c.obj.work_anime();
 						for (auto& a : c.bullet) {
@@ -902,9 +807,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									a.pos = pp.HitPosition;
 									a.add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(a.add*-1.f)*1.5f);
 									if (!a.down) {
-										Set3DPositionSoundMem(c.pos_LHAND.get(), c.audio.case_down.get());
-										Set3DRadiusSoundMem(1.f, c.audio.case_down.get());
-										c.audio.case_down.play(DX_PLAYTYPE_BACK, TRUE);
+										c.audio.case_down.play_3D(c.pos_LHAND, 1.f);
 									}
 									a.down = true;
 								}
@@ -980,8 +883,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					//campos,camvec,camupの指定
 					{
 						campos_buf = mine.pos + mine.pos_HMD;
-						camvec = HMDmat.zvec()*-1.f;
-						camup = HMDmat.yvec();
+						camvec = mine.mat_HMD.zvec()*-1.f;
+						camup = mine.mat_HMD.yvec();
 					}
 					Set3DSoundListenerPosAndFrontPosAndUpVec(campos_buf.get(), (campos_buf + camvec).get(), camup.get());
 					UpdateEffekseer3D();
@@ -1075,43 +978,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						if (TPS.first) {//TPS視点
 							outScreen[2].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);
 							//ターゲットを映す
-							{
-								VECTOR_ref cam = mine.obj.frame(mine.gunptr->frame[3].first);
-								VECTOR_ref vec = MATRIX_ref::Vtrans(VGet(0, 0, -1.f), mine.mat_LHAND);
-								int i = 0;
-								bool fl = false;
-								for (auto& tp : tgt_pic) {
-									auto q = tp.obj.CollCheck_Line(cam, cam + vec * 100.f, 0, 1);
-									if (q.HitFlag == TRUE) {
-										tgt_pic_sel = i;
-										fl = true;
-									}
-									i++;
-								}
-								if (fl) {
-									easing_set(&tgt_pic_on, 1.f, 0.9f, fps);
-								}
-								else {
-									easing_set(&tgt_pic_on, 0.f, 0.95f, fps);
-								}
-							}
-							if (tgt_pic_sel >= 0) {
-								int xp = 60;
-								int yp = 60;
-								int xs = 160;
-								int ys = 160 * tgt_pic_y / tgt_pic_x;
-
-								SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
-								VECTOR_ref p = ConvWorldPosToScreenPos(((tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].xf) + tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].yf)) / 2.f).get());
-								if (p.z() >= 0.f&&p.z() <= 1.f) {
-									DrawLine(xp + xs / 2, yp + ys / 2, int(p.x()*out_dispx / dispx), int(p.y()*out_dispy / dispy), GetColor(255, 0, 0), 2);
-								}
-								SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128 + int(127.f* tgt_pic_on));
-								tgt_pic[tgt_pic_sel].pic.DrawExtendGraph(xp, yp, xp + xs, yp + ys, false);
-								SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
-								DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
-								SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-							}
+							UIparts->TGT_drw(fps, tgt_pic, mine.obj.frame(mine.gunptr->frame[3].first), MATRIX_ref::Vtrans(VGet(0, 0, -1.f), mine.mat_LHAND), tgt_pic_x, tgt_pic_y);
 						}
 						else {//FPS視点
 							outScreen[1].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);

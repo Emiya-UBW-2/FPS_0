@@ -157,6 +157,25 @@ public:
 		}
 	}
 
+	inline void GetDevicePositionVR(const char& handle_,VECTOR_ref* pos_,MATRIX_ref*mat) {
+		if (use_vr) {
+			if (handle_ != -1) {
+				auto& ptr_ = ctrl[handle_];
+				*pos_ = ptr_.pos;
+				*mat = MATRIX_ref::Axis1(ptr_.xvec*-1.f, ptr_.yvec, ptr_.zvec*-1.f);
+				//ptr_HMD.now;
+			}
+			else {
+				*pos_ = VGet(0, 1.f, 0);
+				*mat = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
+			}
+		}
+		else {
+			*pos_ = VGet(0, 1.f, 0);
+			*mat = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));
+		}
+	}
+
 	inline VECTOR_ref GetEyePosition_minVR(const char& eye_type) {
 		if (use_vr&&m_pHMD) {
 			const vr::HmdMatrix34_t tmpmat = vr::VRSystem()->GetEyeToHeadTransform((vr::EVREye)eye_type);
