@@ -81,6 +81,7 @@ public:
 		bool startp = false;
 		int m_x = 0, m_y = 0;
 		float ber_r = 0.f;
+		start_fl = 0.f;
 		//
 		GetMousePoint(&m_x, &m_y);
 		while (ProcessMessage() == 0) {

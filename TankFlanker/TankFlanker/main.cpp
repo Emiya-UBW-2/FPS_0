@@ -38,7 +38,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		out_dispy = dispy;
 	}
 	//
-	auto Drawparts = std::make_unique<DXDraw>("TankFlanker", dispx, dispy, 90.f);		 /*汎用クラス*/
+	auto Drawparts = std::make_unique<DXDraw>("TankFlanker", dispx, dispy, 90.f,shadow_e);		 /*汎用クラス*/
 	auto UIparts = std::make_unique<UI>(out_dispx, out_dispy, dispx, dispy);		 /*UI*/
 	auto Debugparts = std::make_unique<DeBuG>(90);						 /*デバッグ*/
 	auto Hostpassparts = std::make_unique<HostPassEffect>(dof_e, bloom_e, dispx, dispy);	 /*ホストパスエフェクト*/
@@ -147,7 +147,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		GraphHandle pic;
 		int x_frame = 0, y_frame = 0;
 		float rad = 0.f;
-		float radadd = 0.f;
 		float time = 0.f;
 		float power = 0.f;
 		bool LR = true;
@@ -203,13 +202,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			}
 		}
 		//ライティング
-		{
-			VECTOR_ref light = VGet(0.05f, -0.5f, 0.75f);
-			Drawparts->Set_light(light);
-			if (shadow_e) {
-				Drawparts->Set_Shadow(14, VGet(50.f, 20.f, 50.f), light, [&mapparts] {mapparts->map_get().DrawModel(); });
-			}
-		}
+		Drawparts->Set_Light_Shadow(14, VGet(50.f, 20.f, 50.f), VGet(0.05f, -0.5f, 0.75f), [&mapparts] {mapparts->map_get().DrawModel(); });
 		//影に描画するものを指定する(仮)
 		auto draw_in_shadow = [&tgt_pic, &chara] {
 			for (auto& p : tgt_pic) {
@@ -220,9 +213,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				c.mag.DrawModel();
 				c.obj.DrawModel();
 				for (auto& a : c.ammo) {
-					if (a.cnt >= 0.f) {
-						a.second.DrawModel();
-					}
+					if (a.cnt < 0.f) { continue; }
+					a.second.DrawModel();
 				}
 			}
 		};
@@ -238,9 +230,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				c.mag.DrawModel();
 				c.obj.DrawModel();
 				for (auto& a : c.ammo) {
-					if (a.cnt >= 0.f) {
-						a.second.DrawModel();
-					}
+					if (a.cnt < 0.f) { continue; }
+					a.second.DrawModel();
 				}
 			}
 			//銃弾
@@ -248,17 +239,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			SetUseLighting(FALSE);
 			for (auto& c : chara) {
 				for (auto& a : c.bullet) {
-					if (a.flug) {
-						DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
-					}
+					if (!a.flug) { continue; }
+					DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
 				}
 			}
 			SetUseLighting(TRUE);
 			SetFogEnable(TRUE);
 		};
-		//通信開始
-		{
-		}
+		auto draw_by_shadow = [&Drawparts, &draw_on_shadow] {
+			Drawparts->Draw_by_Shadow(draw_on_shadow);
+		};
 		//開始
 		{
 			auto& mine = chara[0];
@@ -285,7 +275,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 						mine.mat_LHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_LHAND)*mine.mat_LHAND;//リコイル
 						//RHAND
-						vrparts->GetDevicePositionVR(vrparts->get_left_hand_num(), &mine.pos_RHAND, &mine.mat_RHAND);
+						vrparts->GetDevicePositionVR(vrparts->get_right_hand_num(), &mine.pos_RHAND, &mine.mat_RHAND);
 						if (!useVR_e) {
 							mine.pos_RHAND = VGet(0.f, 0.95f, 0.75f);
 						}
@@ -307,26 +297,29 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0), 0.5f, fps);
 									//セフティ
 									mine.safety.get_in(((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() < -0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f));
-									easing_set(&mine.obj.get_anime(4).per, float(mine.safety.first), 0.5f, fps);
 									//セレクター
 									mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first) ? 2 : 0);
 								}
 							}
 							if (vrparts->get_right_hand_num() != -1) {
-								auto& ptr_RIGHTHAND = (*vrparts->get_device())[vrparts->get_right_hand_num()];
-								if (ptr_RIGHTHAND.turn && ptr_RIGHTHAND.now) {
+								auto& ptr_ = (*vrparts->get_device())[vrparts->get_right_hand_num()];
+								if (ptr_.turn && ptr_.now) {
 									//マガジン取得
-									if (!mine.down_mag) {
-										if ((ptr_RIGHTHAND.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
-											mine.down_mag = true;
-										}
+									if ((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
+										mine.down_mag = true;
 									}
 								}
 							}
 						}
 						else {
+							//引き金(左クリック)
 							easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
-							mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) ? 2 : 0);
+							//マグキャッチ(Rキー)
+							easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
+							//セフティ
+							mine.safety.get_in(false);
+							//セレクター(中ボタン)
+							mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
 						}
 					}
 					//共通
@@ -372,6 +365,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							if (c.selkey == 1) {
 								++c.select %= c.gunptr->select.size();
 							}
+							//セフティ
+							easing_set(&c.obj.get_anime(4).per, float(c.safety.first), 0.5f, fps);
 							//射撃
 							if (!c.gunf && c.ammoc >= 1) {
 								if (c.gunptr->select[c.select] == 2) {//フルオート用
@@ -661,16 +656,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 						}
 					}
-					//
-					{
-						//他の座標をここで出力(ホスト)
-					}
-					{
-						//ホストからの座標をここで入力
-					}
 					//ターゲットの演算
 					for (auto& tp : tgt_pic) {
-						//if(false)
 						{
 							if (std::abs(tp.obj.GetPosition().x()) > 7.5f) {
 								tp.LR ^= 1;
@@ -681,9 +668,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								tp.obj.SetPosition(pp.HitPosition);
 							}
 						}
-
-						tp.radadd = -cos(tp.time)*deg2rad(tp.power);
-						tp.rad = std::clamp(tp.rad + tp.radadd, deg2rad(-90), deg2rad(90));
+						tp.rad = std::clamp(tp.rad + (-cos(tp.time)*deg2rad(tp.power)), deg2rad(-90), deg2rad(90));
 						tp.obj.SetFrameLocalMatrix(tgt_f.first, MATRIX_ref::RotX(tp.rad)* MATRIX_ref::Mtrans(tgt_f.second));
 						tp.obj.RefreshCollInfo(0, 1);
 
@@ -692,9 +677,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						tp.time += deg2rad(180.f / fps);
 					}
 					//影用意
-					if (shadow_e) {
-						Drawparts->Ready_Shadow(campos, draw_in_shadow, VGet(50.f, 2.5f, 50.f));
-					}
+					Drawparts->Ready_Shadow(campos, draw_in_shadow, VGet(50.f, 2.5f, 50.f));
 					//VR空間に適用
 					vrparts->Move_Player();
 					//campos,camvec,camupの指定
@@ -705,27 +688,40 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 					Set3DSoundListenerPosAndFrontPosAndUpVec(campos_buf.get(), (campos_buf + camvec).get(), camup.get());
 					UpdateEffekseer3D();
-
-					for (char i = 0; i < 2; i++) {
-						//被写体深度描画
-						{
-							float fardist = 100.f;
-							float neardist = 0.1f;
-
+					//スコープ
+					if (mine.gunptr->frame[4].first != INT_MAX) {
+						VECTOR_ref cam = mine.obj.frame(mine.gunptr->frame[4].first);
+						VECTOR_ref vec = cam - mine.mat_LHAND.zvec();
+						VECTOR_ref yvec = mine.mat_LHAND.yvec();
+						Hostpassparts->draw(&ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f), draw_by_shadow, cam, vec, yvec, (fov / 7.5f) / 4.f, 100.f, 0.1f);
+						mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
+					}
+					//VRに移す
+					if (useVR_e) {
+						for (char i = 0; i < 2; i++) {
+							//被写体深度描画
 							campos = campos_buf + vrparts->GetEyePosition_minVR(i);
-							if (shadow_e) {
-								Hostpassparts->dof(&BufScreen,
-									mapparts->sky_draw(campos, campos + camvec, camup, fov),
-									[&Drawparts, &draw_on_shadow] { Drawparts->Draw_by_Shadow(draw_on_shadow); }, campos, campos + camvec, camup, fov, fardist, neardist);
+							Hostpassparts->dof(&BufScreen, mapparts->sky_draw(campos, campos + camvec, camup, fov), draw_by_shadow, campos, campos + camvec, camup, fov, 100.f, 0.1f);
+							//描画
+							outScreen[i].SetDraw_Screen();
+							{
+								//背景
+								BufScreen.DrawGraph(0, 0, false);
+								//ブルーム
+								Hostpassparts->bloom(BufScreen, 64);
+								//UI
+								UIparts->draw(mine, fps, point, p_up, p_down, useVR_e);
 							}
-							else {
-								Hostpassparts->dof(&BufScreen,
-									mapparts->sky_draw(campos, campos + camvec, camup, fov),
-									draw_on_shadow, campos, campos + camvec, camup, fov, fardist, neardist);
-							}
+							GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+							outScreen[i].DrawGraph(0, 0, false);
+							vrparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
 						}
+					}
+					else {
+						//被写体深度描画
+						Hostpassparts->dof(&BufScreen, mapparts->sky_draw(campos_buf, campos_buf + camvec, camup, fov), draw_by_shadow, campos_buf, campos_buf + camvec, camup, fov, 100.f, 0.1f);
 						//描画
-						outScreen[i].SetDraw_Screen();
+						outScreen[1].SetDraw_Screen();
 						{
 							//背景
 							BufScreen.DrawGraph(0, 0, false);
@@ -735,48 +731,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							UIparts->draw(mine, fps, point, p_up, p_down, useVR_e);
 						}
 					}
-					//スコープ
-					if (mine.gunptr->frame[4].first != INT_MAX) {
-						float fardist = 100.f;
-						float neardist = 1.f;
-						VECTOR_ref cam = mine.obj.frame(mine.gunptr->frame[4].first);
-						VECTOR_ref vec = cam - mine.mat_LHAND.zvec();
-						VECTOR_ref yvec = mine.mat_LHAND.yvec();
-
-						if (shadow_e) {
-							Hostpassparts->draw(&ScopeScreen,
-								mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f),
-								[&Drawparts, &draw_on_shadow] { Drawparts->Draw_by_Shadow(draw_on_shadow); }, cam, vec, yvec, (fov / 7.5f) / 4.f, fardist, neardist);
-						}
-						else {
-							Hostpassparts->draw(&ScopeScreen,
-								mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f),
-								draw_on_shadow, cam, vec, yvec, (fov / 7.5f) / 4.f, fardist, neardist);
-						} 
-
-						mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080,true);
-					}
-					//VRに移す
-					if (useVR_e) {
-						for (char i = 0; i < 2; i++) {
-							GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
-							outScreen[i].DrawGraph(0, 0, false);
-							vrparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
-						}
-					}
 					//映す
 					{
-						float fardist = 100.f;
-						float neardist = 0.1f;
 						VECTOR_ref cam = mine.pos + VGet(0.25f, 1.45f, -0.75f);
 						VECTOR_ref vec = mine.pos_HMD;
 						if (TPS.first) {//TPS視点
-							if (shadow_e) {
-								Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), [&Drawparts, &draw_on_shadow] { Drawparts->Draw_by_Shadow(draw_on_shadow); }, cam, vec, VGet(0, 1.f, 0), fov, fardist, neardist);
-							}
-							else {
-								Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_on_shadow, cam, vec, VGet(0, 1.f, 0), fov, fardist, neardist);
-							}
+							Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), fov, 100.f, 0.1f);
 						}
 						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, fov, cam, vec, VGet(0, 1.f, 0));
 						{
@@ -798,7 +758,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 					}
 				}
-				Drawparts->Screen_Flip();
+				DXDraw::Screen_Flip();
 				vrparts->Eye_Flip(waits);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
 				if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 					ending = false;
@@ -821,11 +781,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			}
 			tgt_pic.clear();
 			mapparts->delete_map();
-			if (shadow_e) {
-				Drawparts->Delete_Shadow();
-			}
+			Drawparts->Delete_Shadow();
 		}
-		//
 	} while (ProcessMessage() == 0 && ending);
 	return 0; // ソフトの終了
 }

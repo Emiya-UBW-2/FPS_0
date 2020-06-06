@@ -38,7 +38,7 @@ struct EffectS {
 
 class DXDraw {
 private:
-	const bool use_shadow = true;			     /*‰e•`‰æ*/
+	bool use_shadow = true;			     /*‰e•`‰æ*/
 	int shadow_near = 0;			     /*‹ß‰e*/
 	int shadow_far = 0;			     /*‰“‰e*/
 	bool use_pixellighting = true;			     /**/
@@ -54,7 +54,8 @@ public:
 	EffekseerEffectHandle& get_gndhitHandle() noexcept { return gndsmkHndle; }
 	const EffekseerEffectHandle& get_gndhitHandle() const noexcept { return gndsmkHndle; }
 
-	DXDraw(const char* title, const int& xd, const int& yd, const float& fps = 60.f) {
+	DXDraw(const char* title, const int& xd, const int& yd, const float& fps = 60.f, const bool& usesdw = true) {
+		use_shadow = usesdw;
 		disp_x = xd;
 		disp_y = yd;
 
@@ -93,30 +94,29 @@ public:
 		DxLib_End();
 	}
 	template <typename T>
-	bool Set_Shadow(const size_t& scale, const VECTOR_ref& farsize, const VECTOR_ref& Light_dir, T doing) {
-		shadow_near = MakeShadowMap(int(pow(2, scale)), int(pow(2, scale)));
-		shadow_far = MakeShadowMap(int(pow(2, scale)), int(pow(2, scale)));
-		SetShadowMapAdjustDepth(shadow_near, 0.0005f);
-		SetShadowMapLightDirection(shadow_near, Light_dir.get());
-		SetShadowMapLightDirection(shadow_far, Light_dir.get());
-		SetShadowMapDrawArea(shadow_far, (farsize*-1.f).get(), farsize.get());
-		ShadowMap_DrawSetup(shadow_far);
-		doing();
-		ShadowMap_DrawEnd();
+	bool Set_Light_Shadow(const size_t& scale, const VECTOR_ref& farsize, const VECTOR_ref& Light_dir, T doing) {
+		SetGlobalAmbientLight(GetColorF(0.12f, 0.11f, 0.10f, 0.0f));
+		SetLightDirection(Light_dir.get());
+		if (use_shadow) {
+			shadow_near = MakeShadowMap(int(pow(2, scale)), int(pow(2, scale)));
+			shadow_far = MakeShadowMap(int(pow(2, scale)), int(pow(2, scale)));
+			SetShadowMapAdjustDepth(shadow_near, 0.0005f);
+			SetShadowMapLightDirection(shadow_near, Light_dir.get());
+			SetShadowMapLightDirection(shadow_far, Light_dir.get());
+			SetShadowMapDrawArea(shadow_far, (farsize*-1.f).get(), farsize.get());
+			ShadowMap_DrawSetup(shadow_far);
+			doing();
+			ShadowMap_DrawEnd();
+		}
 		return true;
 	}
 	bool Delete_Shadow() {
-		DeleteShadowMap(shadow_near);
-		DeleteShadowMap(shadow_far);
+		if (use_shadow) {
+			DeleteShadowMap(shadow_near);
+			DeleteShadowMap(shadow_far);
+		}
 		return true;
 	}
-
-	bool Set_light(const VECTOR_ref& Light_dir) {
-		SetGlobalAmbientLight(GetColorF(0.12f, 0.11f, 0.10f, 0.0f));
-		SetLightDirection(Light_dir.get());
-		return true;
-	}
-
 
 	template <typename T>
 	bool Ready_Shadow(const VECTOR_ref& pos, T doing, const VECTOR_ref& nearsize) {
@@ -143,18 +143,17 @@ public:
 		return true;
 	}
 	bool Screen_Flip(const LONGLONG& waits) {
-		/*
-		{
-			int i = 0;
-			for (auto& c : colors) {
-				DrawFormatString(200, i * 20, c.col, "%06x", c.buf);
-				i++;
-			}
-		}
-		*/
-		Screen_Flip();
+		ScreenFlip();
 		if (!use_vsync) {
 			while (GetNowHiPerformanceCount() - waits < 1000000.0f / frate) {}
+		}
+		return true;
+	}
+
+	static bool Screen_Flip(const LONGLONG& waits,const float& f_rate) {
+		ScreenFlip();
+		if (GetWaitVSyncFlag()==FALSE) {
+			while (GetNowHiPerformanceCount() - waits < 1000000.0f / f_rate) {}
 		}
 		return true;
 	}
