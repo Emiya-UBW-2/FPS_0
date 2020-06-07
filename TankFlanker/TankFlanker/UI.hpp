@@ -31,7 +31,7 @@ private:
 	GraphHandle UI_mag_fall;
 	GraphHandle UI_mag_set;
 	float pt_pl = 0.f, pt_pr = 0.f;
-
+	float pt_pe = 0.f;
 	float point_r = 0.f;
 	float point_uf = 0.f;
 	float point_df = 0.f;
@@ -69,9 +69,7 @@ public:
 		std::vector<Mainclass::Gun>& gun_data,
 		std::unique_ptr<Y, D>& vrparts
 	) {
-
 		float fov = deg2rad(useVR_e ? 90 : 45);
-
 		int sel_g = 0;
 		VECTOR_ref campos,camvec = VGet(0.f, 0.f, 0.f);
 		VECTOR_ref pos_HMD;
@@ -79,10 +77,9 @@ public:
 		uint8_t changecnt = 0;
 		bool endp = false;
 		bool startp = false;
-		int m_x = 0, m_y = 0;
 		float ber_r = 0.f;
+		start_fl = 0.f;
 		//
-		GetMousePoint(&m_x, &m_y);
 		while (ProcessMessage() == 0) {
 			const auto fps = GetFPS();
 			const auto waits = GetNowHiPerformanceCount();
@@ -243,6 +240,24 @@ public:
 						easing_set(&point_uf, 0.f, 0.975f, fps);
 					}
 				}
+				//ƒ‚[ƒh‚»‚Ì‘¼
+				{
+					if (chara.reloadf && !chara.down_mag) {
+						pt_pe = 2.f;
+					}
+
+					int xp = disp_x / 2;
+					int yp = disp_y / 2 + disp_y / 8;
+					//Œ³
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*pt_pe), 0, 128));
+					if (pt_pe >= 0.f) {
+						if (chara.ammoc==0) {
+							font->DrawString(xp - font->GetDrawWidth("EMPTY"), yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y);
+						}
+						pt_pe -= 1.f / fps;
+					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				}
 				//’e–ò
 				{
 					int xp = 0, xs = 0, yp = 0, ys = 0;
@@ -286,8 +301,11 @@ public:
 						if (!chara.reloadf && chara.ammoc == 0) {
 							UI_mag_fall.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 						}
-					}
-					if (pt_pr >= 0.f) {
+						/*
+							UI_safty.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							UI_select.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							UI_trigger.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+						*/
 						pt_pr -= 1.f / fps;
 					}
 				}
@@ -310,8 +328,6 @@ public:
 						if (chara.reloadf && !chara.down_mag) {
 							UI_mag_set.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 						}
-					}
-					if (pt_pl >= 0.f) {
 						pt_pl -= 1.f / fps;
 					}
 				}
