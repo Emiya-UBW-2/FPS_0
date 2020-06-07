@@ -111,7 +111,7 @@ public:
 		return true;
 	}
 
-	bool Set_light(const VECTOR_ref& Light_dir) {
+	static bool Set_light(const VECTOR_ref& Light_dir) {
 		SetGlobalAmbientLight(GetColorF(0.12f, 0.11f, 0.10f, 0.0f));
 		SetLightDirection(Light_dir.get());
 		return true;
