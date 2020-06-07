@@ -22,7 +22,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		useVR_e = getparams::_bool(mdata);
 		FileRead_close(mdata);
 	}
-	//VR
+	//DXLib描画
 	auto vrparts = std::make_unique<VRDraw>(&useVR_e);
 	//画面指定
 	if (useVR_e) {
@@ -181,6 +181,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				chara[0].set_chara(VGet(0, 0, 0), &gun_data[sel_g], ScopeScreen, hand);
 			}
 			else {
+				ending = false;
 				break;
 			}
 		}
@@ -193,9 +194,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			for (auto& p : tgt_pic) {
 				p.set(tgt, tgt_pic_tmp, tgt_pic_x, tgt_pic_y);
 			}
-			tgt_pic[0].obj.SetPosition(VGet(-4, 0, 18.f));
-			tgt_pic[1].obj.SetPosition(VGet(-2, 0, 27.f));
-			tgt_pic[2].obj.SetPosition(VGet(0, 0, 36.f));
+			tgt_pic[0].obj.SetPosition(VGet(4, 0, 10.f));
+			tgt_pic[1].obj.SetPosition(VGet(-2, 0, 20.f));
+			tgt_pic[2].obj.SetPosition(VGet(0, 0, 30.f));
 			tgt_pic[3].obj.SetPosition(VGet(2, 0, 45.f));
 			for (auto& p : tgt_pic) {
 				p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
@@ -204,7 +205,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//ライティング
 		{
 			VECTOR_ref light = VGet(0.05f, -0.5f, 0.75f);
-			DXDraw::Set_light(light);
+			Drawparts->Set_light(light);
 			if (shadow_e) {
 				Drawparts->Set_Shadow(14, VGet(50.f, 20.f, 50.f), light, [&mapparts] {mapparts->map_get().DrawModel(); });
 			}
