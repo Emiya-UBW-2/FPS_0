@@ -743,7 +743,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								}
 								i++;
 							}
-							std::vector<int>;
+							//std::vector<int>;
 							scores.insert(scores.begin() + i, point);
 						}
 					}
