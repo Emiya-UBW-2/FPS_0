@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include<fstream>
 #include "DXLib_ref/DXLib_ref.h"
 void set_effect(EffectS* efh, VECTOR_ref pos, VECTOR_ref nor, float scale = 1.f) {
 	efh->flug = true;
@@ -60,7 +61,7 @@ public:
 		SoundHandle case_down;
 
 		void set(int mdata) {
-			SetUseASyncLoadFlag(TRUE);
+			//SetUseASyncLoadFlag(TRUE);
 			SetCreate3DSoundFlag(TRUE);
 			shot = SoundHandle::Load("data/audio/shot_" + getparams::_str(mdata) + ".wav");
 			slide = SoundHandle::Load("data/audio/slide_" + getparams::_str(mdata) + ".wav");
@@ -69,7 +70,7 @@ public:
 			mag_set = SoundHandle::Load("data/audio/mag_set_" + getparams::_str(mdata) + ".wav");
 			case_down = SoundHandle::Load("data/audio/case_" + getparams::_str(mdata) + ".wav");
 			SetCreate3DSoundFlag(FALSE);
-			SetUseASyncLoadFlag(FALSE);
+			//SetUseASyncLoadFlag(FALSE);
 		}
 	};
 	class Gun {

@@ -30,8 +30,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	auto vrparts = std::make_unique<VRDraw>(&useVR_e);
 	//画面指定
 	if (useVR_e) {
-		dispx = 1080;
-		dispy = 1200;
+		dispx = 1080*2;
+		dispy = 1200*2;
 		out_dispx = dispx * (desky * 8 / 9) / dispy;
 		out_dispy = dispy * (desky * 8 / 9) / dispy;
 	}
@@ -42,7 +42,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		out_dispy = dispy;
 	}
 	//
-	auto Drawparts = std::make_unique<DXDraw>("TankFlanker", dispx, dispy, 90.f,shadow_e,getlog_e);		 /*汎用クラス*/
+	auto Drawparts = std::make_unique<DXDraw>("FPS_0", dispx, dispy, 90.f,shadow_e,getlog_e);		 /*汎用クラス*/
 	auto UIparts = std::make_unique<UI>(out_dispx, out_dispy, dispx, dispy);		 /*UI*/
 	auto Debugparts = std::make_unique<DeBuG>(90);						 /*デバッグ*/
 	auto Hostpassparts = std::make_unique<HostPassEffect>(dof_e, bloom_e, dispx, dispy);	 /*ホストパスエフェクト*/
@@ -51,7 +51,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
 	//
-	SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
+	//SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
 	//
 	std::array<GraphHandle, 3> outScreen;
 	outScreen[0] = GraphHandle::Make(dispx, dispy);//左目
@@ -143,8 +143,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			FileRead_close(mdata);
 		}
 	}
-	//ロード画面
-	UIparts->load_window("サウンド");
 	//ターゲット
 	frames tgt_f = { 2,tgt.frame(2) };
 	int tgt_pic_x,tgt_pic_y;
@@ -177,7 +175,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	std::vector<int> scores;
 	{
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
-		int mdata = FileRead_open("data/setting.txt", FALSE);
+		int mdata = FileRead_open("data/score.txt", FALSE);
 		while (FileRead_eof(mdata) == 0) {
 			scores.emplace_back(getparams::_int(mdata));
 		}
@@ -273,9 +271,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			int point = 0;
 			int p_up = 0;
 			int p_down = 0;
+			bool c_ready = false;
+			float c_readytimer = 3.f;
 			bool c_start = false;
 			bool c_end = false;
-			float c_timer = 5.f;
+			float c_timer = 30.f;
 			while (ProcessMessage() == 0) {
 				const auto fps = GetFPS();
 				const auto waits = GetNowHiPerformanceCount();
@@ -329,7 +329,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									//マガジン取得
 									mine.down_mag |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
 									//タイマーオン
-									c_start |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
+									c_ready |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
 								}
 							}
 						}
@@ -343,7 +343,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							//セレクター(中ボタン)
 							mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
 							//タイマーオン
-							c_start |= (CheckHitKey(KEY_INPUT_B) != 0);
+							c_ready |= (CheckHitKey(KEY_INPUT_B) != 0);
+						}
+
+						if (c_ready&&!c_start) {
+							c_readytimer -= 1.f / fps;
+							if (c_readytimer <= 0.f) {
+								c_start = true;
+							}
 						}
 					}
 					//共通
@@ -728,7 +735,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						Hostpassparts->draw(&ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f), draw_by_shadow, cam, vec, yvec, (fov / 7.5f) / 4.f, 100.f, 0.1f);
 						mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
 					}
-					UIparts->set_draw(mine, c_start, c_end, c_timer, point, p_up, p_down, useVR_e);
+					UIparts->set_draw(mine, scores,
+						c_ready, c_readytimer,
+						c_start, c_end, c_timer,
+						point, p_up, p_down, useVR_e);
 					//タイマー処理（ほかのところに置け）
 					if (c_start && !c_end) {
 						c_timer -= 1.f / fps;
@@ -738,12 +748,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							scores;
 							int i = 0;
 							for (auto& c : scores) {
-								if (c > point) {
+								if (c < point) {
 									break;
 								}
 								i++;
 							}
-							//std::vector<int>;
 							scores.insert(scores.begin() + i, point);
 						}
 					}
@@ -829,5 +838,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			Drawparts->Delete_Shadow();
 		}
 	} while (ProcessMessage() == 0 && ending);
+	{
+		std::ofstream outputfile("data/score.txt");
+		for (auto& s : scores) {
+			outputfile << s << "\n";
+		}
+		outputfile.close();
+	}
 	return 0; // ソフトの終了
 }

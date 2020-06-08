@@ -48,10 +48,10 @@ public:
 		disp_x = xd;
 		disp_y = yd;
 
-		font36 = FontHandle::Create(y_r(36, out_disp_y), DX_FONTTYPE_EDGE);
-		font24 = FontHandle::Create(y_r(24, out_disp_y), DX_FONTTYPE_EDGE);
-		font18 = FontHandle::Create(y_r(18, out_disp_y), DX_FONTTYPE_EDGE);
-		font12 = FontHandle::Create(y_r(12, out_disp_y), DX_FONTTYPE_EDGE);
+		font36 = FontHandle::Create(y_r(36, disp_y), DX_FONTTYPE_EDGE);
+		font24 = FontHandle::Create(y_r(24, disp_y), DX_FONTTYPE_EDGE);
+		font18 = FontHandle::Create(y_r(18, disp_y), DX_FONTTYPE_EDGE);
+		font12 = FontHandle::Create(y_r(12, disp_y), DX_FONTTYPE_EDGE);
 
 		bufScreen = GraphHandle::Make(disp_x, disp_y, true);
 		outScreen = GraphHandle::Make(disp_x, disp_y, true);
@@ -208,6 +208,9 @@ public:
 	}
 	void set_draw(
 		const Mainclass::Chara& chara,
+		const std::vector<int>& scores,
+		const bool& c_ready,
+		const float& c_readytimer,
 		const bool& c_start,
 		const bool& c_end,
 		const float& c_timer,
@@ -260,6 +263,12 @@ public:
 					if (!c_end) {
 						if (!c_start) {
 							font->DrawString(xp - font->GetDrawWidth("READY") / 2, yp, "READY", GetColor(255, 0, 0));
+							if (c_ready) {
+								font_big->DrawStringFormat(
+									xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, c_readytimer) / 2,
+									yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, c_readytimer);
+							}
+
 							ready_f = 1.f;
 							ready_yp = 0.f;
 						}
@@ -279,7 +288,7 @@ public:
 					else {
 						easing_set(&ready_f, 1.f, 0.9f, fps);
 						font->DrawString(xp - font->GetDrawWidth("TIME OUT!") / 2, yp, "TIME OUT!", GetColor(255, 0, 0));
-						easing_set(&ready_yp, float(disp_y / 8+ ((!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y))), 0.95f, fps);
+						easing_set(&ready_yp, float(disp_y / 8+ ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y))), 0.95f, fps);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
@@ -294,7 +303,23 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					{
 						//スコアズ
-						font->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "TOTAL POINT : %d", point); yp += (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y);
+						font->DrawStringFormat(xp, yp, GetColor(255, 128, 0), "TOTAL POINT : %d", point); yp += y_r(48, disp_y);
+						int i = 1;
+						bool ss = false;
+						for (auto& s : scores) {
+							if (point == s && !ss) {
+								font->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%04d : %04d", i, s);
+								ss = true;
+							}
+							else {
+								font->DrawStringFormat(xp, yp, GetColor(255, 255, 0), "%04d : %04d", i, s);
+							}
+							i++;
+							yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+							if (yp > disp_y / 2 + ys / 2) {
+								break;
+							}
+						}
 					}
 				}
 				//モードその他
@@ -309,7 +334,7 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*pt_pe), 0, 128));
 					if (pt_pe >= 0.f) {
 						if (chara.ammoc == 0) {
-							font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y);
+							font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
 						}
 						pt_pe -= 1.f / fps;
 					}
@@ -319,23 +344,23 @@ public:
 				{
 					int xp = 0, xs = 0, yp = 0, ys = 0;
 					if (!vr) {
-						xs = x_r(200, out_disp_x);
-						xp = x_r(20, out_disp_x);
-						ys = y_r(18, out_disp_y);
-						yp = disp_y - y_r(50, out_disp_y);
+						xs = x_r(200, disp_y);
+						xp = x_r(20, disp_y);
+						ys = y_r(18, disp_y);
+						yp = disp_y - y_r(50, disp_y);
 					}
 					else {
-						xs = x_r(200, out_disp_x);
-						xp = disp_x / 2 - x_r(20, out_disp_x)-xs;
-						ys = y_r(12, out_disp_y);
-						yp = disp_y / 2 + disp_y / 6 + y_r(20, out_disp_y);
+						xs = x_r(200, disp_y);
+						xp = disp_x / 2 - x_r(20, disp_y)-xs;
+						ys = y_r(12, disp_y);
+						yp = disp_y / 2 + disp_y / 6 + y_r(20, disp_y);
 					}
 					int i = 0;
 					{
 						font->DrawString(xp, yp, chara.gunptr->name, GetColor(255, 255, 255));
 						font->DrawStringFormat(
 							xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gunptr->ammo_max),
-							yp + ys + y_r(2, out_disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gunptr->ammo_max);
+							yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gunptr->ammo_max);
 						i++;
 					}
 				}
