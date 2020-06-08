@@ -16,16 +16,10 @@
 #include <list>
 #include <vector>
 enum Effect {
-	ef_fire = 0, //”­–C‰Š
-	ef_reco = 1, //‘åŒûŒa’µ’e
-	ef_reco2 = 2, //¬ŒûŒa’µ’e
-	ef_gndhit = 3, //‘åŒûŒa’…’e
-	ef_gndhit2 = 4, //¬ŒûŒa’…’e
-	ef_bomb = 5, //Œ‚”j”š”­
-	ef_smoke1 = 6, //ƒ~ƒTƒCƒ‹‰Š
-	ef_smoke2 = 7, //e‚Ì‹OÕ
-	effects = 8, //“Ç‚İ‚Ş
-	efs_user = 8  //
+	ef_fire, //”­–C‰Š
+	ef_reco, //¬ŒûŒa’µ’e
+	ef_smoke, //e‚Ì‹OÕ
+	effects, //“Ç‚İ‚Ş
 };
 struct EffectS {
 	bool flug{ false };		 /**/

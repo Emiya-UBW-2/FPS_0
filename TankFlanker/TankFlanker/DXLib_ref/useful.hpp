@@ -48,7 +48,11 @@ public:
 		FileRead_gets(mstr, 64, p1);
 		return std::string(mstr);
 	}
-
+	static const long int _int(int p1) {
+		char mstr[64];
+		FileRead_gets(mstr, 64, p1);
+		return std::stoi(getright(mstr));
+	}
 	static const long int _long(int p1) {
 		char mstr[64];
 		FileRead_gets(mstr, 64, p1);

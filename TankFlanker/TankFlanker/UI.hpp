@@ -267,7 +267,7 @@ public:
 							ready_f -= 1.f / fps;
 							if (ready_f <= 0.75f) {
 								ready_f = 0.75f;
-								easing_set(&ready_yp, float(disp_y / 7), 0.95f, fps);
+								easing_set(&ready_yp, float(disp_y / 6), 0.95f, fps);
 
 								font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", 0, c_timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", 0, c_timer);
 							}
@@ -279,7 +279,7 @@ public:
 					else {
 						easing_set(&ready_f, 1.f, 0.9f, fps);
 						font->DrawString(xp - font->GetDrawWidth("TIME OUT!") / 2, yp, "TIME OUT!", GetColor(255, 0, 0));
-						easing_set(&ready_yp, float(disp_y / 8+ (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y)), 0.95f, fps);
+						easing_set(&ready_yp, float(disp_y / 8+ ((!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y))), 0.95f, fps);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
@@ -292,6 +292,10 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 					DrawBox(xp, yp, xp + xs, yp + ys, GetColor(0, 0, 0), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					{
+						//スコアズ
+						font->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "TOTAL POINT : %d", point); yp += (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y);
+					}
 				}
 				//モードその他
 				{

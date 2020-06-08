@@ -132,7 +132,9 @@ public:
 		std::array<ammos, 64> bullet;	      /*Šm•Û‚·‚é’e*/
 		size_t usebullet{};		      /*Žg—p’e*/
 
-		std::array<EffectS, efs_user> effcs; /*effect*/
+		std::array<EffectS, effects> effcs; /*effect*/
+		std::array<EffectS, 12> gndsmkeffcs; /*effect*/
+		size_t gndsmk_use = 0;
 		Gun* gunptr=nullptr;
 		Audios audio;
 		MV1 obj, mag,hand;

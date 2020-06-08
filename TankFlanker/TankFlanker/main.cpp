@@ -81,7 +81,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		g.mod.set(g.name);
 	}
 	//ロード画面
-	UIparts->load_window("モデル");					
+	UIparts->load_window("モデル");	
 	//GUNデータ取得
 	for (auto& g : gun_data) {
 		//フレーム
@@ -173,6 +173,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		}
 	};
 	std::vector<tgts> tgt_pic;
+	//スコア保存
+	std::vector<int> scores;
+	{
+		SetOutApplicationLogValidFlag(FALSE);  /*log*/
+		int mdata = FileRead_open("data/setting.txt", FALSE);
+		while (FileRead_eof(mdata) == 0) {
+			scores.emplace_back(getparams::_int(mdata));
+		}
+		FileRead_close(mdata);
+	}
 	//VRセット
 	vrparts->Set_Device();
 	//キャラ
@@ -265,7 +275,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			int p_down = 0;
 			bool c_start = false;
 			bool c_end = false;
-			float c_timer = 60.f;
+			float c_timer = 5.f;
 			while (ProcessMessage() == 0) {
 				const auto fps = GetFPS();
 				const auto waits = GetNowHiPerformanceCount();
@@ -276,6 +286,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						//HMD
 						vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
 						mine.pos = VGet(0.f, 0.f, 0.f);
+						//mine.pos_HMD = VGet(0.35f, 1.f, 0.f);
 						//LHAND
 						vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &mine.pos_LHAND, &mine.mat_LHAND);
 						if (!useVR_e) {
@@ -437,7 +448,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									}
 
 									set_effect(&c.effcs_gun[c.gun_effcnt].first, u.pos, u.vec, 0.11f / 0.1f);
-									set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke2));
+									set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
 									c.effcs_gun[c.gun_effcnt].second = &u;
 									c.effcs_gun[c.gun_effcnt].cnt = 0.f;
 									++c.gun_effcnt %= c.effcs_gun.size();
@@ -590,6 +601,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 														break;
 													}
 												}
+
+												set_effect(&c.effcs[ef_reco], a.pos, q.Normal, 0.1f / 0.1f);
 												a.flug = false;
 												break;
 											}
@@ -602,6 +615,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 												break;
 											}
 										}
+										if (c.gndsmkeffcs[c.gndsmk_use].handle.IsPlaying()) {
+											c.gndsmkeffcs[c.gndsmk_use].handle.Stop();
+										}
+										set_effect(&c.gndsmkeffcs[c.gndsmk_use], a.pos, p.Normal, 0.025f / 0.1f);
+										++c.gndsmk_use %= c.gndsmkeffcs.size();
 										a.flug = false;
 									}
 								}
@@ -648,12 +666,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 						}
 						for (auto& t : c.effcs) {
-							if (t.id != ef_smoke1 && t.id != ef_smoke2) {
+							if (t.id != ef_smoke) {
 								set_pos_effect(&t, Drawparts->get_effHandle(int(t.id)));
 							}
-							if (!t.handle.IsPlaying()) {
-								t.handle.Stop();
-							}
+						}
+						for (auto& t : c.gndsmkeffcs) {
+							set_pos_effect(&t, Drawparts->get_gndhitHandle());
 						}
 						for (auto& a : c.effcs_gun) {
 							if (a.second != nullptr) {
@@ -717,6 +735,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						if (c_timer <= 0.f) {
 							c_timer = 0.f;
 							c_end=true;//
+							scores;
+							int i = 0;
+							for (auto& c : scores) {
+								if (c > point) {
+									break;
+								}
+								i++;
+							}
+							std::vector<int>;
+							scores.insert(scores.begin() + i, point);
 						}
 					}
 					if (useVR_e) {
