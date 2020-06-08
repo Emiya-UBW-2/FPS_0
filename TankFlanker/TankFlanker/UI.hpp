@@ -36,6 +36,9 @@ private:
 	float point_uf = 0.f;
 	float point_df = 0.f;
 	//
+	float ready_f = 0.f;
+	float ready_yp = 0.f;
+	//
 	int tgt_pic_sel = -1;
 	float tgt_pic_on = 1.f;
 public:
@@ -71,7 +74,8 @@ public:
 	) {
 		float fov = deg2rad(useVR_e ? 90 : 45);
 		int sel_g = 0;
-		VECTOR_ref campos,camvec = VGet(0.f, 0.f, 0.f);
+		VECTOR_ref campos;
+		float gun_yrad = 90.f;
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
 		uint8_t changecnt = 0;
@@ -87,12 +91,12 @@ public:
 				//VR用
 				vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
 				if (useVR_e) {
-					if (vrparts->get_left_hand_num() != -1) {
-						auto& ptr_ = (*vrparts->get_device())[vrparts->get_left_hand_num()];
+					if (vrparts->get_hand1_num() != -1) {
+						auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
 						if (ptr_.turn && ptr_.now) {
-							changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_.on[1] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)) != 0) ? 2 : 0));
+							changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_.on[1] & BUTTON_SIDE) != 0) ? 2 : 0));
 							//引き金
-							if ((ptr_.on[0] & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)) != 0) {
+							if ((ptr_.on[0] & BUTTON_TRIGGER) != 0) {
 								startp = true;
 							}
 						}
@@ -120,11 +124,14 @@ public:
 			{
 				if (!startp) {
 					campos = mat_HMD.zvec() * 0.6f;
-					camvec = VGet(0, 0, 0);
+					gun_yrad += 10.f/fps;
+					if (gun_yrad >= 180.f) {
+						gun_yrad = -180.f;
+					}
 				}
 				else {
-					easing_set(&campos, VGet(1.f, 0.f, 0.f), 0.95f, fps);
-					camvec = VGet(0, 0, 0);
+					easing_set(&campos, VGet(0.f, 0.f, 1.f), 0.95f, fps);
+					easing_set(&gun_yrad, 90.f, 0.95f, fps);
 					start_fl += 1.f / fps;
 					if (start_fl > 3.f) {
 						endp = true;
@@ -141,8 +148,9 @@ public:
 					int yp = disp_y / 2 - disp_y / 6;
 					font18.DrawStringFormat(xp, yp, GetColor(0, 255, 0), "Name  :%s", v.name.c_str());
 				}
-				outScreen.SetDraw_Screen(0.1f, 10.f, fov, campos, camvec, VGet(0.f, 1.f, 0.f));
+				outScreen.SetDraw_Screen(0.1f, 10.f, fov, campos, VGet(0, 0, 0), VGet(0.f, 1.f, 0.f));
 				{
+					v.mod.obj.SetMatrix(MATRIX_ref::RotY(deg2rad(gun_yrad)));
 					v.mod.obj.DrawModel();
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 1.f), 0, 255));
 					bufScreen.DrawExtendGraph(0, 0, disp_x, disp_y, true);
@@ -198,15 +206,19 @@ public:
 			}
 		}
 	}
-	void draw(
+	void set_draw(
 		const Mainclass::Chara& chara,
-		const float& fps,
+		const bool& c_start,
+		const bool& c_end,
+		const float& c_timer,
 		const int& point ,
 		const int& p_up,
 		const int& p_down,
 		const bool& vr = false
 	) {
 		//
+		const float fps = GetFPS();
+		bufScreen.SetDraw_Screen();
 		{
 			FontHandle* font_big = (!vr) ? &font36 : &font24;
 			FontHandle* font = (!vr) ? &font18 : &font12;
@@ -240,6 +252,37 @@ public:
 						easing_set(&point_uf, 0.f, 0.975f, fps);
 					}
 				}
+				//開始
+				{
+					int xp = disp_x / 2;
+					int yp = disp_y / 2-int(ready_yp*float(disp_y/7));
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ready_f), 0, 255));
+					if (!c_end) {
+						if (!c_start) {
+							font->DrawString(xp - font->GetDrawWidth("READY") / 2, yp, "READY", GetColor(255, 0, 0));
+							ready_f = 1.f;
+							ready_yp = 0.f;
+						}
+						else {
+							ready_f -= 1.f / fps;
+							if (ready_f <= 0.75f) {
+								ready_f = 0.75f;
+								easing_set(&ready_yp, 1.f, 0.95f, fps);
+
+								font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", 0, c_timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", 0, c_timer);
+							}
+							else {
+								font->DrawString(xp - font->GetDrawWidth("START!") / 2, yp, "START!", GetColor(255, 0, 0));
+							}
+						}
+					}
+					else {
+						easing_set(&ready_f, 1.f, 0.9f, fps);
+						font->DrawString(xp - font->GetDrawWidth("TIME OUT!") / 2, yp, "TIME OUT!", GetColor(255, 0, 0));
+						easing_set(&ready_yp, 0.f, 0.95f, fps);
+					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				}
 				//モードその他
 				{
 					if (chara.reloadf && !chara.down_mag) {
@@ -251,8 +294,8 @@ public:
 					//元
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*pt_pe), 0, 128));
 					if (pt_pe >= 0.f) {
-						if (chara.ammoc==0) {
-							font->DrawString(xp - font->GetDrawWidth("EMPTY"), yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y);
+						if (chara.ammoc == 0) {
+							font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, out_disp_y) : y_r(12, out_disp_y);
 						}
 						pt_pe -= 1.f / fps;
 					}
@@ -294,7 +337,7 @@ public:
 					int xp = disp_x / 2 + disp_y / 6 - xs;
 					int yp = disp_y / 2 + disp_y / 6 - ys;
 					//元
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*pt_pr), 0, 128));
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pr), 0, 192));
 					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					if (pt_pr >= 0.f) {
@@ -321,7 +364,7 @@ public:
 					int xp = disp_x / 2 - disp_y / 6;
 					int yp = disp_y / 2 + disp_y / 6 - ys;
 					//元
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*pt_pl), 0, 128));
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pl), 0, 192));
 					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					if (pt_pl >= 0.f) {
@@ -334,16 +377,19 @@ public:
 			}
 		}
 	}
+	void draw() {
+		bufScreen.DrawExtendGraph(0, 0, disp_x, disp_y, true);
+	}
 
 	template <class T>
 	void TGT_drw(
-		const float& fps,
 		std::vector<T> &tgt_pic,
 		const VECTOR_ref& pos,
 		const VECTOR_ref& vec,
 		const int& tgt_pic_x,
 		const int& tgt_pic_y
 	) {
+		const float fps = GetFPS();
 		{
 			int i = 0;
 			bool fl = false;

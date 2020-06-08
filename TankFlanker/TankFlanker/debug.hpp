@@ -24,7 +24,7 @@ public:
 			waydeb[seldeb++] = (float)(GetNowHiPerformanceCount() - waypoint) / 1000.0f;
 		}
 	}
-	void debug(int xpos, int ypos, float fps, float time) {
+	void debug(int xpos, int ypos, float time) {
 		int wide = 180;
 		deb[0][0] = time;
 		for (size_t j = deb.size() - 1; j >= 1; --j) {
@@ -56,7 +56,7 @@ public:
 		const auto c_ffffff = GetColor(255, 255, 255);
 		DXDraw::Line2D(xpos, ypos + int(50.f*ys), xpos + wide, ypos + int(50.f*ys), GetColor(0, 255, 0));
 
-		font.DrawStringFormat(xpos, ypos, c_ffffff, "%05.2ffps ( %.2fms)", fps, time);
+		font.DrawStringFormat(xpos, ypos, c_ffffff, "%05.2ffps ( %.2fms)", GetFPS(), time);
 
 		font.DrawStringFormat(xpos, ypos + fontsize, c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
 		for (size_t j = 1; j < waydeb.size(); ++j) {

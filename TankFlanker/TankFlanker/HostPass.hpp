@@ -75,6 +75,7 @@ public:
 			NearScreen.SetDraw_Screen(std::clamp(near_distance, 0.1f, 2000.f), 2000.f, fov, campos, camvec, camup);
 			skyhandle.DrawGraph(0, 0, FALSE);
 			doing();
+			Effekseer_Sync3DSetting();
 			DrawEffekseer3D();
 		}
 		buf->SetDraw_Screen();
@@ -82,6 +83,7 @@ public:
 	}
 	//ブルームエフェクト
 	void bloom(GraphHandle& BufScreen, const int& level = 255) {
+		BufScreen.DrawGraph(0, 0, false);
 		if (bloom_flag) {
 			GraphFilter(BufScreen.get(), DX_GRAPH_FILTER_TWO_COLOR, 245, GetColor(0, 0, 0), 255, GetColor(128, 128, 128), 255);
 			GraphFilterBlt(BufScreen.get(), GaussScreen.get(), DX_GRAPH_FILTER_DOWN_SCALE, EXTEND);
