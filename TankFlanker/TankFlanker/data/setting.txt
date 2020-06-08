@@ -1,4 +1,5 @@
-hostpass=false
-bloom=false
+hostpass=true
+bloom=true
 shadow=true
 usevr=true
+getlog=false

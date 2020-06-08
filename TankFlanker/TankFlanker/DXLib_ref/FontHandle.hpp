@@ -8,7 +8,7 @@ private:
 	static constexpr int invalid_handle = -1;
 
 public:
-	constexpr FontHandle() noexcept : handle_(invalid_handle) {}
+	constexpr FontHandle(void) noexcept : handle_(invalid_handle) {}
 	FontHandle(const FontHandle&) = delete;
 	FontHandle(FontHandle&& o) noexcept : handle_(o.handle_) {
 		o.handle_ = invalid_handle;
@@ -19,24 +19,24 @@ public:
 		o.handle_ = invalid_handle;
 		return *this;
 	}
-	~FontHandle() noexcept {
+	~FontHandle(void) noexcept {
 		if (-1 != this->handle_) {
 			DeleteFontToHandle(this->handle_);
 		}
 	}
-	void Dispose() noexcept {
+	void Dispose(void) noexcept {
 		if (-1 != this->handle_) {
 			DeleteFontToHandle(this->handle_);
 			this->handle_ = -1;
 		}
 	}
-	int get() const noexcept { return handle_; }
-	bool DrawString(int x, int y, std::basic_string_view<TCHAR> String, unsigned int Color, unsigned int EdgeColor = 0, bool VerticalFlag = false) const noexcept {
+	int get(void) const noexcept { return handle_; }
+	bool DrawString(const int& x, const int& y, std::basic_string_view<TCHAR> String, unsigned int Color, unsigned int EdgeColor = 0, bool VerticalFlag = false) const noexcept {
 		return DxLib::DrawNStringToHandle(x, y, String.data(), String.size(), Color, this->handle_, EdgeColor, VerticalFlag)==TRUE;
 	}
 
 	template <typename... Args>
-	bool DrawStringFormat(int x, int y, unsigned int Color, std::string String, Args&&... args) const noexcept {
+	bool DrawStringFormat(const int& x, const int& y, unsigned int Color, std::string String, Args&&... args) const noexcept {
 		return DxLib::DrawFormatStringToHandle(x, y, Color, this->handle_, String.c_str(), args...)==TRUE;
 	}
 
@@ -50,10 +50,10 @@ public:
 	}
 
 
-	static FontHandle Create(std::basic_string_view<TCHAR> FontName, int Size, int FontType = -1, int CharSet = -1, int EdgeSize = -1, bool Italic = false) noexcept {
+	static FontHandle Create(std::basic_string_view<TCHAR> FontName, const int& Size, const int& FontType = -1, const int& CharSet = -1, const int& EdgeSize = -1, bool Italic = false) noexcept {
 		return { DxLib::CreateFontToHandleWithStrLen(FontName.data(), FontName.length(), Size, Size/3, FontType, CharSet, EdgeSize, Italic) };
 	}
-	static FontHandle Create(int Size, int FontType = -1, int CharSet = -1, int EdgeSize = -1, bool Italic = false) noexcept {
+	static FontHandle Create(const int& Size, const int& FontType = -1, const int& CharSet = -1, const int& EdgeSize = -1, bool Italic = false) noexcept {
 		return { DxLib::CreateFontToHandle(nullptr, Size, Size / 3, FontType, CharSet, EdgeSize, Italic) };
 	}
 };

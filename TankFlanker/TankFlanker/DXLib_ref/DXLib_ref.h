@@ -54,13 +54,13 @@ public:
 	EffekseerEffectHandle& get_gndhitHandle() noexcept { return gndsmkHndle; }
 	const EffekseerEffectHandle& get_gndhitHandle() const noexcept { return gndsmkHndle; }
 
-	DXDraw(const char* title, const int& xd, const int& yd, const float& fps = 60.f, const bool& usesdw = true) {
+	DXDraw(const char* title, const int& xd, const int& yd, const float& fps = 60.f, const bool& usesdw = true, const bool& getlog=false) {
 		use_shadow = usesdw;
 		disp_x = xd;
 		disp_y = yd;
 
 		frate = fps;
-		SetOutApplicationLogValidFlag(TRUE);		       /*log*/
+		SetOutApplicationLogValidFlag(getlog ? TRUE : FALSE);  /*log*/
 		SetMainWindowText(title);			       /*タイトル*/
 		ChangeWindowMode(TRUE);				       /*窓表示*/
 		SetUseDirect3DVersion(DX_DIRECT3D_11);		       /*directX ver*/

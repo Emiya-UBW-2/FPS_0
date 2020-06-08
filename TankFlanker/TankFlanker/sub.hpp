@@ -7,8 +7,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
-#include "DXLib_ref.h"
-constexpr auto veh_all = 2;//О‘Он
+#include "DXLib_ref/DXLib_ref.h"
 void set_effect(EffectS* efh, VECTOR_ref pos, VECTOR_ref nor, float scale = 1.f) {
 	efh->flug = true;
 	efh->pos = pos;

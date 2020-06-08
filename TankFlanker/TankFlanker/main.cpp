@@ -12,6 +12,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	bool bloom_e = false;
 	bool shadow_e = false;
 	bool useVR_e = true;
+	bool getlog_e = true;
 	int dispx,dispy; /*描画*/
 	int out_dispx,out_dispy; /*ウィンドウ*/
 	switchs TPS;
@@ -22,6 +23,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		bloom_e = getparams::_bool(mdata);
 		shadow_e = getparams::_bool(mdata);
 		useVR_e = getparams::_bool(mdata);
+		getlog_e = getparams::_bool(mdata);
 		FileRead_close(mdata);
 	}
 	//DXLib描画
@@ -40,7 +42,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		out_dispy = dispy;
 	}
 	//
-	auto Drawparts = std::make_unique<DXDraw>("TankFlanker", dispx, dispy, 90.f,shadow_e);		 /*汎用クラス*/
+	auto Drawparts = std::make_unique<DXDraw>("TankFlanker", dispx, dispy, 90.f,shadow_e,getlog_e);		 /*汎用クラス*/
 	auto UIparts = std::make_unique<UI>(out_dispx, out_dispy, dispx, dispy);		 /*UI*/
 	auto Debugparts = std::make_unique<DeBuG>(90);						 /*デバッグ*/
 	auto Hostpassparts = std::make_unique<HostPassEffect>(dof_e, bloom_e, dispx, dispy);	 /*ホストパスエフェクト*/
@@ -395,7 +397,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								c.ammoc--;
 								++c.guncnt;
 								c.gunf = true;
-								if (c_start) {
+								if (c_start && !c_end) {
 									p_down = -5;
 									point += p_down;
 								}
@@ -538,7 +540,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 												//
 												tp.power = (tp.obj.frame(tgt_f.first) - a.pos).y();
 												tp.time = 0.f;
-												if (c_start) {
+												if (c_start && !c_end) {
 													//弾痕処理
 													tp.pic.SetDraw_Screen(false);
 													VECTOR_ref pvecp = (a.pos - tp.obj.frame(tgt_f.first));
@@ -710,7 +712,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 					UIparts->set_draw(mine, c_start, c_end, c_timer, point, p_up, p_down, useVR_e);
 					//タイマー処理（ほかのところに置け）
-					if (c_start) {
+					if (c_start && !c_end) {
 						c_timer -= 1.f / fps;
 						if (c_timer <= 0.f) {
 							c_timer = 0.f;
