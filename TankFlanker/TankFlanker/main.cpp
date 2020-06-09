@@ -16,6 +16,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	int dispx,dispy; /*描画*/
 	int out_dispx,out_dispy; /*ウィンドウ*/
 	switchs TPS;
+	switchs ads;
+	VECTOR_ref viewvec;
 	{
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
 		int mdata = FileRead_open("data/setting.txt", FALSE);
@@ -42,7 +44,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		out_dispy = dispy;
 	}
 	//
-	auto Drawparts = std::make_unique<DXDraw>("FPS_0", dispx, dispy, 90.f,shadow_e,getlog_e);		 /*汎用クラス*/
+	auto Drawparts = std::make_unique<DXDraw>("FPS_0", dispx, dispy, 90.f,shadow_e,getlog_e);/*汎用クラス*/
 	auto UIparts = std::make_unique<UI>(out_dispx, out_dispy, dispx, dispy);		 /*UI*/
 	auto Debugparts = std::make_unique<DeBuG>(90);						 /*デバッグ*/
 	auto Hostpassparts = std::make_unique<HostPassEffect>(dof_e, bloom_e, dispx, dispy);	 /*ホストパスエフェクト*/
@@ -51,7 +53,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
 	//
-	//SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
+	SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
 	//
 	std::array<GraphHandle, 3> outScreen;
 	outScreen[0] = GraphHandle::Make(dispx, dispy);//左目
@@ -85,8 +87,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	//GUNデータ取得
 	for (auto& g : gun_data) {
 		//フレーム
-		g.frame.resize(7);
+		g.frame.resize(8);
 		g.frame[4].first = INT_MAX;
+		g.frame[7].first = INT_MAX;
+		g.mod.obj.SetMatrix(MGetIdent());
 		for (int i = 0; i < g.mod.obj.frame_num(); i++) {
 			std::string s = g.mod.obj.frame_name(i);
 			if (s.find("mag_fall") != std::string::npos) {
@@ -103,12 +107,17 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			}
 			else if (s.find("scope") != std::string::npos) {
 				g.frame[4].first = i;//スコープ
+				g.frame[4].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), g.mod.obj.GetFrameLocalMatrix(g.frame[4].first));//mag先
 			}
 			else if (s.find("trigger") != std::string::npos) {
-				g.frame[5].first = i+1;//スコープ
+				g.frame[5].first = i+1;//トリガー
 			}
 			else if (s.find("LEFT") != std::string::npos) {
 				g.frame[6].first = i;//左手
+			}
+			else if (s.find("site") != std::string::npos) {
+				g.frame[7].first = i;//アイアンサイト
+				g.frame[7].second = g.mod.obj.frame(g.frame[7].first);//mag先
 			}
 		}
 		//テキスト
@@ -268,6 +277,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//開始
 		{
 			auto& mine = chara[0];
+			mine.mat_HMD = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));//改善
 			int point = 0;
 			int p_up = 0;
 			int p_down = 0;
@@ -276,6 +286,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			bool c_start = false;
 			bool c_end = false;
 			float c_timer = 30.f;
+			SetMousePoint(deskx / 2, desky / 2);
 			while (ProcessMessage() == 0) {
 				const auto fps = GetFPS();
 				const auto waits = GetNowHiPerformanceCount();
@@ -284,13 +295,46 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					//プレイヤー操作
 					{
 						//HMD
-						vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
+						if (useVR_e) {
+							vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
+						}
+						else {
+							mine.pos_HMD = VGet(0.f, 1.f, 0.f);
+							//マウスエイム
+							{
+								int x_m, y_m;
+								GetMousePoint(&x_m, &y_m);
+								float old = mine.xrad;
+								mine.mat_HMD = MATRIX_ref::RotX(-mine.xrad)*mine.mat_HMD;
+
+								mine.xrad = std::clamp(mine.xrad - deg2rad(y_m - desky / 2)*0.1f, deg2rad(-45), deg2rad(45));
+
+								mine.mat_HMD *= MATRIX_ref::RotY(deg2rad(x_m - deskx / 2)*0.1f);
+								mine.mat_HMD = MATRIX_ref::RotX(mine.xrad)*mine.mat_HMD;
+								SetMousePoint(deskx / 2, desky / 2);
+								SetMouseDispFlag(FALSE);
+							}
+						}
 						mine.pos = VGet(0.f, 0.f, 0.f);
 						//mine.pos_HMD = VGet(0.35f, 1.f, 0.f);
 						//LHAND
 						vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &mine.pos_LHAND, &mine.mat_LHAND);
 						if (!useVR_e) {
-							mine.pos_LHAND = VGet(0.f, 0.95f, 0.75f);
+							VECTOR_ref pv = VGet(0, 0, 0);
+							if (mine.gunptr->frame[4].first != INT_MAX) {
+								pv = mine.gunptr->frame[4].second;
+							}
+							else if (mine.gunptr->frame[7].first != INT_MAX) {
+								pv = mine.gunptr->frame[7].second;
+							}
+							if (ads.first) {
+								easing_set(&viewvec, VGet(0.f, 1.f - pv.y(), -0.25f), 0.75f, fps);
+							}
+							else {
+								easing_set(&viewvec, VGet(-0.15f, 0.95f - pv.y(), -0.5f), 0.75f, fps);
+							}
+							mine.pos_LHAND = mine.pos_HMD + MATRIX_ref::Vtrans(viewvec - mine.pos_HMD, mine.mat_HMD);
+							mine.mat_LHAND = mine.mat_HMD;
 						}
 						else {
 							mine.mat_LHAND = mine.mat_LHAND*MATRIX_ref::RotAxis(mine.mat_LHAND.xvec(), deg2rad(-60));
@@ -299,7 +343,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						//RHAND
 						vrparts->GetDevicePositionVR(vrparts->get_hand2_num(), &mine.pos_RHAND, &mine.mat_RHAND);
 						if (!useVR_e) {
-							mine.pos_RHAND = VGet(0.f, 0.95f, 0.75f);
+							mine.pos_RHAND = mine.obj.frame(mine.gunptr->frame[6].first);
+							mine.mat_RHAND = mine.mat_HMD;
 						}
 						else {
 							mine.mat_RHAND = mine.mat_RHAND*MATRIX_ref::RotAxis(mine.mat_RHAND.xvec(), deg2rad(-60));
@@ -329,13 +374,28 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									//マガジン取得
 									mine.down_mag |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
 									//タイマーオン
-									c_ready |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
+									c_ready |= ((ptr_.on[1] & BUTTON_SIDE) != 0);
+									//計測リセット
+									if (c_end) {
+										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
+											point = 0;
+											p_up = 0;
+											p_down = 0;
+											c_ready = false;
+											c_readytimer = 3.f;
+											c_start = false;
+											c_end = false;
+											c_timer = 30.f;
+										}
+									}
 								}
 							}
 						}
 						else {
 							//引き金(左クリック)
 							easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
+							//ADS
+							ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
 							//マグキャッチ(Rキー)
 							easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
 							//セフティ
@@ -344,8 +404,21 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
 							//タイマーオン
 							c_ready |= (CheckHitKey(KEY_INPUT_B) != 0);
+							//計測リセット
+							if (c_end) {
+								if (CheckHitKey(KEY_INPUT_V) != 0) {
+									point = 0;
+									p_up = 0;
+									p_down = 0;
+									c_ready = false;
+									c_readytimer = 3.f;
+									c_start = false;
+									c_end = false;
+									c_timer = 30.f;
+								}
+							}
 						}
-
+						//タイマー開始
 						if (c_ready&&!c_start) {
 							c_readytimer -= 1.f / fps;
 							if (c_readytimer <= 0.f) {
@@ -356,6 +429,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					//共通
 					for (auto& c : chara) {
 						{
+							//1フレームずれへの暫定対処
+							c.mag.SetMatrix(c.mat_mag);
+							c.obj.SetMatrix(c.mat_LHAND*MATRIX_ref::Mtrans(c.pos_LHAND + c.pos));
+							c.hand.SetMatrix(c.mat_HMD*MATRIX_ref::Mtrans(c.pos_HMD + c.pos));
+							//
 							easing_set(&c.vecadd_LHAND, c.vecadd_LHAND_p, 0.9f, fps);
 							easing_set(&c.vecadd_LHAND_p, VGet(0, 0, 1.f), 0.975f, fps);
 							if (c.gunf) {
@@ -416,8 +494,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								++c.guncnt;
 								c.gunf = true;
 								if (c_start && !c_end) {
-									p_down = -5;
-									point += p_down;
+									p_down = -4;
+									if (point + p_down >= 0) {
+										point += p_down;
+									}
 								}
 								//持ち手を持つとココが相殺される
 								if (c.LEFT_hand) {
@@ -445,15 +525,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								u.yadd = 0.f;
 								u.repos = u.pos;
 
-								if (c.effcs[ef_fire].handle.IsPlaying()) {
-									c.effcs[ef_fire].handle.Stop();
-								}
 								set_effect(&c.effcs[ef_fire], u.pos, u.vec, 0.0025f / 0.1f);
 								{
-									if (c.effcs_gun[c.gun_effcnt].cnt > 0.f) {
-										c.effcs_gun[c.gun_effcnt].first.handle.Stop();
-									}
-
 									set_effect(&c.effcs_gun[c.gun_effcnt].first, u.pos, u.vec, 0.11f / 0.1f);
 									set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
 									c.effcs_gun[c.gun_effcnt].second = &u;
@@ -515,9 +588,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
 										c.LEFT_hand = true;
 										MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90));
-										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(
-											c.obj.frame(c.gunptr->frame[6].first)
-											- (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
+										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.obj.frame(c.gunptr->frame[6].first) - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 									}
 									else {
 										c.LEFT_hand = false;
@@ -527,11 +598,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								}
 								//身体
 								{
-									VECTOR_ref v_ = c.mat_HMD.zvec();
-									c.hand.SetFrameLocalMatrix(34,
-										MATRIX_ref::RotY(DX_PI_F + std::atan2f(-v_.x(), -v_.z()) / 2.f)*c.mat_HMD.Inverse()*
-										MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
-									);
+									if (useVR_e) {
+										VECTOR_ref v_ = c.mat_HMD.zvec();
+										c.hand.SetFrameLocalMatrix(34,
+											MATRIX_ref::RotY(DX_PI_F + std::atan2f(-v_.x(), -v_.z()) / 2.f)*c.mat_HMD.Inverse()*
+											MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
+										);
+									}
+									else {
+										VECTOR_ref v_ = c.mat_HMD.zvec();
+										c.hand.SetFrameLocalMatrix(34,
+											MATRIX_ref::RotY(DX_PI_F + std::atan2f(-v_.x(), -v_.z()))*c.mat_HMD.Inverse()*
+											MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
+										);
+									}
 								}
 							}
 
@@ -550,91 +630,84 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									if (p.HitFlag == TRUE) {
 										a.pos = p.HitPosition;
 									}
-									{
-										for (auto& tp : tgt_pic) {
-											auto q = tp.obj.CollCheck_Line(a.repos, a.pos, 0, 1);
-											if (q.HitFlag == TRUE) {
-												a.pos = q.HitPosition;
-												//
-												tp.power = (tp.obj.frame(tgt_f.first) - a.pos).y();
-												tp.time = 0.f;
-												if (c_start && !c_end) {
-													//弾痕処理
-													tp.pic.SetDraw_Screen(false);
-													VECTOR_ref pvecp = (a.pos - tp.obj.frame(tgt_f.first));
-													VECTOR_ref xvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.x_frame));
-													VECTOR_ref yvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.y_frame));
-													int UI_xpos = int(float(tgt_pic_x)*(xvecp.Norm().dot(pvecp)) / xvecp.size());//X方向
-													int UI_ypos = int(float(tgt_pic_y)*(yvecp.Norm().dot(pvecp)) / yvecp.size());//Y方向
-													DrawCircle(UI_xpos, UI_ypos, 10, GetColor(255, 0, 0));//弾痕
-													//ポイント判定
-													{
-														int r_, g_, b_, a_;
-														GetPixelSoftImage(tgt_col, UI_xpos, UI_ypos, &r_, &g_, &b_, &a_);
+									for (auto& tp : tgt_pic) {
+										auto q = tp.obj.CollCheck_Line(a.repos, a.pos, 0, 1);
+										if (q.HitFlag == TRUE) {
+											a.pos = q.HitPosition;
+											//
+											tp.power = (tp.obj.frame(tgt_f.first) - a.pos).y();
+											tp.time = 0.f;
+											if (c_start && !c_end) {
+												//弾痕処理
+												tp.pic.SetDraw_Screen(false);
+												VECTOR_ref pvecp = (a.pos - tp.obj.frame(tgt_f.first));
+												VECTOR_ref xvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.x_frame));
+												VECTOR_ref yvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.y_frame));
+												int UI_xpos = int(float(tgt_pic_x)*(xvecp.Norm().dot(pvecp)) / xvecp.size());//X方向
+												int UI_ypos = int(float(tgt_pic_y)*(yvecp.Norm().dot(pvecp)) / yvecp.size());//Y方向
+												DrawCircle(UI_xpos, UI_ypos, 10, GetColor(255, 0, 0));//弾痕
+												//ポイント判定
+												{
+													int r_, g_, b_, a_;
+													GetPixelSoftImage(tgt_col, UI_xpos, UI_ypos, &r_, &g_, &b_, &a_);
 
-														switch (r_) {
-														case 0:
-															p_up = 15;
-															break;
-														case 44:
-															p_up = 10;
-															break;
-														case 86:
-															p_up = 9;
-															break;
-														case 128:
-															p_up = 8;
-															break;
-														case 170:
-															p_up = 7;
-															break;
-														case 212:
-															p_up = 5;
-															break;
-														default:
-															p_up = 0;
-															break;
-														}
-
-														p_up = int(float(p_up) * ((a.pos - c.pos_LHAND).size() / 10.f));
-
-														point += p_up;
-													}
-												}
-
-												for (auto& b : c.effcs_gun) {
-													if (b.second == &a) {
-														b.first.handle.SetPos(b.second->pos);
+													switch (r_) {
+													case 0:
+														p_up = 15;
+														break;
+													case 44:
+														p_up = 10;
+														break;
+													case 86:
+														p_up = 9;
+														break;
+													case 128:
+														p_up = 8;
+														break;
+													case 170:
+														p_up = 7;
+														break;
+													case 212:
+														p_up = 6;
+														break;
+													default:
+														p_up = 5;
 														break;
 													}
+													p_up = int(float(p_up) * ((a.pos - c.pos_LHAND).size() / 9.144f));
+													point += p_up;
 												}
-
-												set_effect(&c.effcs[ef_reco], a.pos, q.Normal, 0.1f / 0.1f);
-												a.flug = false;
-												break;
 											}
+											//
+											set_effect(&c.effcs[ef_reco], a.pos, q.Normal, 0.011f / 0.1f);
+											//
+											a.flug = false;
+											for (auto& b : c.effcs_gun) {
+												if (b.second == &a) {
+													b.cnt = 2.5f;
+													b.first.handle.SetPos(b.second->pos);
+													break;
+												}
+											}
+											break;
 										}
 									}
 									if (p.HitFlag == TRUE && a.flug) {
+										a.flug = false;
 										for (auto& b : c.effcs_gun) {
 											if (b.second == &a) {
+												b.cnt = 2.5f;
 												b.first.handle.SetPos(b.second->pos);
 												break;
 											}
 										}
-										if (c.gndsmkeffcs[c.gndsmk_use].handle.IsPlaying()) {
-											c.gndsmkeffcs[c.gndsmk_use].handle.Stop();
-										}
 										set_effect(&c.gndsmkeffcs[c.gndsmk_use], a.pos, p.Normal, 0.025f / 0.1f);
 										++c.gndsmk_use %= c.gndsmkeffcs.size();
-										a.flug = false;
 									}
 								}
 								//消す(2秒たった、スピードが100以下、貫通が0以下)
 								if (a.cnt >= 3.f || a.spec.speed_a < 0.f || a.spec.pene_a <= 0.f) {
 									a.flug = false;
-								}
-								if (!a.flug) {
 									for (auto& b : c.effcs_gun) {
 										if (b.second == &a) {
 											b.cnt = 2.5f;
@@ -716,7 +789,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						tp.time += deg2rad(180.f / fps);
 					}
 					//影用意
-					Drawparts->Ready_Shadow(campos, draw_in_shadow, VGet(50.f, 2.5f, 50.f));
+					Drawparts->Ready_Shadow(campos, draw_in_shadow, VGet(10.f, 2.5f, 10.f));
 					//VR空間に適用
 					vrparts->Move_Player();
 					//campos,camvec,camupの指定
