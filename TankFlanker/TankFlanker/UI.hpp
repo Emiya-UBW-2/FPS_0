@@ -13,6 +13,8 @@ private:
 	FontHandle font24;
 	FontHandle font18;
 	FontHandle font12;
+	FontHandle font18_o;
+	FontHandle font12_o;
 	//
 	int out_disp_x = 1920;
 	int out_disp_y = 1080;
@@ -52,6 +54,8 @@ public:
 		font24 = FontHandle::Create(y_r(24, disp_y), DX_FONTTYPE_EDGE);
 		font18 = FontHandle::Create(y_r(18, disp_y), DX_FONTTYPE_EDGE);
 		font12 = FontHandle::Create(y_r(12, disp_y), DX_FONTTYPE_EDGE);
+		font18_o = FontHandle::Create(y_r(18, out_disp_y), DX_FONTTYPE_EDGE);
+		font12_o = FontHandle::Create(y_r(12, out_disp_y), DX_FONTTYPE_EDGE);
 
 		bufScreen = GraphHandle::Make(disp_x, disp_y, true);
 		outScreen = GraphHandle::Make(disp_x, disp_y, true);
@@ -192,8 +196,8 @@ public:
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			{
-				font18.DrawStringFormat(0, out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), " loading... : %04d/%04d  ", all - GetASyncLoadNum(), all);
-				font12.DrawStringFormat(out_disp_x - font12.GetDrawWidthFormat("%s ì«Ç›çûÇ›íÜ ", mes), out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), "%s ì«Ç›çûÇ›íÜ ", mes);
+				font18_o.DrawStringFormat(0, out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), " loading... : %04d/%04d  ", all - GetASyncLoadNum(), all);
+				font12_o.DrawStringFormat(out_disp_x - font12.GetDrawWidthFormat("%s ì«Ç›çûÇ›íÜ ", mes), out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), "%s ì«Ç›çûÇ›íÜ ", mes);
 				DrawBox(0, out_disp_y - y_r(50, out_disp_y), int(float(out_disp_x) * bar / float(all)), out_disp_y - y_r(40, out_disp_y), GetColor(0, 255, 0), TRUE);
 				easing_set(&bar, float(all - GetASyncLoadNum()), 0.95f, fps);
 			}

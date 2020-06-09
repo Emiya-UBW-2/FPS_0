@@ -17,6 +17,9 @@ void set_effect(EffectS* efh, VECTOR_ref pos, VECTOR_ref nor, float scale = 1.f)
 }
 void set_pos_effect(EffectS* efh, const EffekseerEffectHandle& handle) {
 	if (efh->flug) {
+		if (efh->handle.IsPlaying()) {
+			efh->handle.Stop();
+		}
 		efh->handle = handle.Play3D();
 		efh->handle.SetPos(efh->pos);
 		efh->handle.SetRotation(atan2(efh->nor.y(), std::hypot(efh->nor.x(), efh->nor.z())), atan2(-efh->nor.x(), -efh->nor.z()), 0);
@@ -164,6 +167,7 @@ public:
 
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
+		float xrad;
 
 		VECTOR_ref pos_LHAND;
 		MATRIX_ref mat_LHAND;
