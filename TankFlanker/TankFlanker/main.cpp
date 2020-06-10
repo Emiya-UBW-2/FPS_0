@@ -18,6 +18,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	switchs TPS;
 	switchs ads;
 	VECTOR_ref viewvec;
+	float xrad_p=0.f;
+	VECTOR_ref add_pos;
+	bool wkey;
+	bool skey;
+	bool akey;
+	bool dkey;
 	{
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
 		int mdata = FileRead_open("data/setting.txt", FALSE);
@@ -53,7 +59,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
 	//
-	SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
+	//SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
 	//
 	std::array<GraphHandle, 3> outScreen;
 	outScreen[0] = GraphHandle::Make(dispx, dispy);//左目
@@ -299,24 +305,51 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
 						}
 						else {
-							mine.pos_HMD = VGet(0.f, 1.f, 0.f);
+							mine.pos_HMD = VGet(0.f, 1.5f, 0.f);
 							//マウスエイム
 							{
 								int x_m, y_m;
 								GetMousePoint(&x_m, &y_m);
-								float old = mine.xrad;
-								mine.mat_HMD = MATRIX_ref::RotX(-mine.xrad)*mine.mat_HMD;
-
-								mine.xrad = std::clamp(mine.xrad - deg2rad(y_m - desky / 2)*0.1f, deg2rad(-45), deg2rad(45));
-
+								mine.mat_HMD = MATRIX_ref::RotX(-xrad_p)*mine.mat_HMD;
+								xrad_p = std::clamp(xrad_p - deg2rad(y_m - desky / 2)*0.1f, deg2rad(-45), deg2rad(45));
 								mine.mat_HMD *= MATRIX_ref::RotY(deg2rad(x_m - deskx / 2)*0.1f);
-								mine.mat_HMD = MATRIX_ref::RotX(mine.xrad)*mine.mat_HMD;
+								mine.mat_HMD = MATRIX_ref::RotX(xrad_p)*mine.mat_HMD;
 								SetMousePoint(deskx / 2, desky / 2);
 								SetMouseDispFlag(FALSE);
 							}
 						}
-						mine.pos = VGet(0.f, 0.f, 0.f);
-						//mine.pos_HMD = VGet(0.35f, 1.f, 0.f);
+						//移動
+						{
+							wkey = (CheckHitKey(KEY_INPUT_W) != 0);
+							skey = (CheckHitKey(KEY_INPUT_S) != 0);
+							akey = (CheckHitKey(KEY_INPUT_A) != 0);
+							dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+							if (wkey) {
+								easing_set(&add_pos, mine.mat_HMD.zvec()*-4.f / fps, 0.95f, fps);
+							}
+							if (skey) {
+								easing_set(&add_pos, mine.mat_HMD.zvec()*4.f / fps, 0.95f, fps);
+							}
+							if (akey) {
+								easing_set(&add_pos, mine.mat_HMD.xvec()*4.f / fps, 0.95f, fps);
+							}
+							if (dkey) {
+								easing_set(&add_pos, mine.mat_HMD.xvec()*-4.f / fps, 0.95f, fps);
+							}
+							if (!wkey && !skey && !akey && !dkey) {
+								easing_set(&add_pos, VGet(0, 0, 0), 0.95f, fps);
+							}
+							mine.pos += add_pos;
+							auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos, 0);
+							if (pp.HitFlag == 1) {
+								mine.pos = pp.HitPosition;
+								mine.add_ypos = 0.f;
+							}
+							else {
+								mine.pos.yadd(mine.add_ypos);
+								mine.add_ypos -= 9.8f / std::powf(fps, 2.f);
+							}
+						}
 						//LHAND
 						vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &mine.pos_LHAND, &mine.mat_LHAND);
 						if (!useVR_e) {
@@ -328,10 +361,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								pv = mine.gunptr->frame[7].second;
 							}
 							if (ads.first) {
-								easing_set(&viewvec, VGet(0.f, 1.f - pv.y(), -0.25f), 0.75f, fps);
+								easing_set(&viewvec, mine.pos_HMD + VGet(0.f, 0.f - pv.y(), -0.25f), 0.75f, fps);
 							}
 							else {
-								easing_set(&viewvec, VGet(-0.15f, 0.95f - pv.y(), -0.5f), 0.75f, fps);
+								easing_set(&viewvec, mine.pos_HMD + VGet(-0.15f, -0.05f - pv.y(), -0.5f), 0.75f, fps);
 							}
 							mine.pos_LHAND = mine.pos_HMD + MATRIX_ref::Vtrans(viewvec - mine.pos_HMD, mine.mat_HMD);
 							mine.mat_LHAND = mine.mat_HMD;
@@ -351,7 +384,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 						//銃
 						if (mine.obj.get_anime(3).per == 1.f) {
-							mine.audio.slide.play_3D(mine.pos_LHAND, 1.f);
+							mine.audio.slide.play_3D(mine.pos + mine.pos_LHAND, 1.f);
 						}
 						mine.obj.get_anime(3).per = std::max(mine.obj.get_anime(3).per - 12.f / fps, 0.f);
 						if (useVR_e) {
@@ -463,7 +496,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									c.ammoc = 1;
 								}
 								if (!c.reloadf) {
-									c.audio.mag_down.play_3D(c.pos_LHAND, 1.f);
+									c.audio.mag_down.play_3D(c.pos + c.pos_LHAND, 1.f);
 									if (&c == &mine) {
 										vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 									}
@@ -484,7 +517,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 							c.trigger = std::clamp<uint8_t>(c.trigger + 1, 0, (c.obj.get_anime(2).per >= 0.5f) ? 2 : 0);
 							if (c.trigger == 1) {
-								c.audio.trigger.play_3D(c.pos_LHAND, 1.f);
+								c.audio.trigger.play_3D(c.pos + c.pos_LHAND, 1.f);
 							}
 							if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
 								if (&c == &mine) {
@@ -506,8 +539,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								else {
 									c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(300 + GetRand(700)) / 100.f)));
 								}
-								c.audio.shot.play_3D(c.pos_LHAND, 1.f);
-								c.audio.slide.play_3D(c.pos_LHAND, 1.f);
+								c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
+								c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
 								auto& u = c.bullet[c.usebullet];
 								auto& a = c.ammo[c.usebullet];
 								++c.usebullet %= c.bullet.size();
@@ -563,7 +596,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 											c.obj.get_anime(3).per = 1.f;
 										}
 
-										c.audio.mag_set.play_3D(c.pos_LHAND, 1.f);
+										c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
 
 										c.reloadf = false;
 										c.ammoc += c.gunptr->ammo_max;
@@ -580,7 +613,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								//右手
 								{
 									MATRIX_ref m3 = MATRIX_ref::RotZ(deg2rad(90))*c.mat_LHAND*c.mat_HMD.Inverse();
-									c.hand.SetFrameLocalMatrix(1, m3*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_LHAND - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
+									c.hand.SetFrameLocalMatrix(1, m3*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_LHAND - c.pos_HMD, c.mat_HMD.Inverse())));
 								}
 								//左手
 								{
@@ -598,20 +631,19 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								}
 								//身体
 								{
-									if (useVR_e) {
-										VECTOR_ref v_ = c.mat_HMD.zvec();
-										c.hand.SetFrameLocalMatrix(34,
-											MATRIX_ref::RotY(DX_PI_F + std::atan2f(-v_.x(), -v_.z()) / 2.f)*c.mat_HMD.Inverse()*
-											MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
-										);
-									}
-									else {
-										VECTOR_ref v_ = c.mat_HMD.zvec();
-										c.hand.SetFrameLocalMatrix(34,
-											MATRIX_ref::RotY(DX_PI_F + std::atan2f(-v_.x(), -v_.z()))*c.mat_HMD.Inverse()*
-											MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
-										);
-									}
+									VECTOR_ref v_ = c.mat_HMD.zvec();
+									float x_1 = -sinf(c.body_yrad);
+									float y_1 = cosf(c.body_yrad);
+									float x_2 = v_.x();
+									float y_2 = -v_.z();
+
+									float r_ = std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
+									c.body_yrad += r_ * 9.f / fps;
+									//easing_set(&c.body_yrad, r_, 0.7f, fps);
+									c.hand.SetFrameLocalMatrix(34,
+										MATRIX_ref::RotY(DX_PI_F + c.body_yrad)*c.mat_HMD.Inverse()*
+										MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
+									);
 								}
 							}
 
@@ -674,7 +706,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 														p_up = 5;
 														break;
 													}
-													p_up = int(float(p_up) * ((a.pos - c.pos_LHAND).size() / 9.144f));
+													p_up = int(float(p_up) * ((a.pos - (c.pos+c.pos_LHAND)).size() / 9.144f));
 													point += p_up;
 												}
 											}
@@ -731,7 +763,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									a.pos = pp.HitPosition;
 									a.add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(a.add*-1.f)*1.5f);
 									if (!a.down) {
-										c.audio.case_down.play_3D(c.pos_LHAND, 1.f);
+										c.audio.case_down.play_3D(c.pos + c.pos_LHAND, 1.f);
 									}
 									a.down = true;
 								}
@@ -789,7 +821,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						tp.time += deg2rad(180.f / fps);
 					}
 					//影用意
-					Drawparts->Ready_Shadow(campos, draw_in_shadow, VGet(10.f, 2.5f, 10.f));
+					Drawparts->Ready_Shadow(campos_buf, draw_in_shadow, VGet(10.f, 2.5f, 10.f));
 					//VR空間に適用
 					vrparts->Move_Player();
 					//campos,camvec,camupの指定
@@ -808,10 +840,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						Hostpassparts->draw(&ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f), draw_by_shadow, cam, vec, yvec, (fov / 7.5f) / 4.f, 100.f, 0.1f);
 						mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
 					}
-					UIparts->set_draw(mine, scores,
-						c_ready, c_readytimer,
-						c_start, c_end, c_timer,
-						point, p_up, p_down, useVR_e);
+					UIparts->set_draw(mine, scores, c_ready, c_readytimer, c_start, c_end, c_timer, point, p_up, p_down, useVR_e);
 					//タイマー処理（ほかのところに置け）
 					if (c_start && !c_end) {
 						c_timer -= 1.f / fps;
@@ -859,8 +888,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 					//映す
 					{
-						VECTOR_ref cam = mine.pos + VGet(0.25f, 1.45f, -0.75f);
-						VECTOR_ref vec = mine.pos_HMD;
+						VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(0.35f, 0.15f, 1.f),mine.mat_HMD);
+						VECTOR_ref vec = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(0.35f, 0.15f, 0.f), mine.mat_HMD);
 						if (TPS.first) {//TPS視点
 							Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), fov, 100.f, 0.1f);
 						}

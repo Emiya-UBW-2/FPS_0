@@ -43,6 +43,10 @@ private:
 	//
 	int tgt_pic_sel = -1;
 	float tgt_pic_on = 1.f;
+	//
+	SoundHandle timer, decision, cancel, cursor, whistle;
+	float c_readytimer_old=3.f;
+	bool c_end_f = false;
 public:
 	UI(const int& o_xd, const int& o_yd, const int& xd, const int& yd) {
 		out_disp_x = o_xd;
@@ -67,6 +71,12 @@ public:
 		UI_mag_fall = GraphHandle::Load("data/UI/mag_fall.bmp");
 		UI_mag_set = GraphHandle::Load("data/UI/mag_set.bmp");
 		SetTransColor(0, 0, 0);
+
+		timer = SoundHandle::Load("data/audio/timer.wav");
+		decision = SoundHandle::Load("data/audio/shot_2.wav");//
+		cancel = SoundHandle::Load("data/audio/cancel.wav");
+		cursor = SoundHandle::Load("data/audio/cursor.wav");
+		whistle = SoundHandle::Load("data/audio/whistle.wav");
 	}
 	~UI() {
 	}
@@ -117,6 +127,10 @@ public:
 				if (changecnt == 1) {
 					++sel_g %= gun_data.size();
 					ber_r = 0.f;
+					cursor.play(DX_PLAYTYPE_BACK, TRUE);
+				}
+				if (startp) {
+					decision.play(DX_PLAYTYPE_BACK, TRUE);
 				}
 			}
 			else {
@@ -175,7 +189,7 @@ public:
 				}
 			}
 			DXDraw::Screen_Flip();
-			vrparts->Eye_Flip(waits);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
+			vrparts->Eye_Flip(waits);
 			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 				sel_g = -1;
 				break;
@@ -271,10 +285,15 @@ public:
 								font_big->DrawStringFormat(
 									xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, c_readytimer) / 2,
 									yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, c_readytimer);
+								if (int(c_readytimer_old) != int(c_readytimer)) {
+									timer.play(DX_PLAYTYPE_BACK, TRUE);
+								}
 							}
+							c_readytimer_old = c_readytimer;
 
 							ready_f = 1.f;
 							ready_yp = 0.f;
+							c_end_f = false;
 						}
 						else {
 							ready_f -= 1.f / fps;
@@ -293,6 +312,10 @@ public:
 						easing_set(&ready_f, 1.f, 0.9f, fps);
 						font->DrawString(xp - font->GetDrawWidth("TIME OUT!") / 2, yp, "TIME OUT!", GetColor(255, 0, 0));
 						easing_set(&ready_yp, float(disp_y / 8+ ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y))), 0.95f, fps);
+						if (!c_end_f) {
+							whistle.play(DX_PLAYTYPE_BACK, TRUE);
+							c_end_f = true;
+						}
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
@@ -311,6 +334,9 @@ public:
 						int i = 1;
 						bool ss = false;
 						for (auto& s : scores) {
+							if (yp > disp_y / 2 + ys / 2) {
+								break;
+							}
 							if (point == s && !ss) {
 								font->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%04d : %04d", i, s);
 								ss = true;
@@ -320,29 +346,39 @@ public:
 							}
 							i++;
 							yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
-							if (yp > disp_y / 2 + ys / 2) {
-								break;
-							}
 						}
 					}
 				}
 				//モードその他
 				{
-					if (chara.reloadf && !chara.down_mag) {
-						pt_pe = 2.f;
-					}
-
 					int xp = disp_x / 2;
 					int yp = disp_y / 2 + disp_y / 8;
 					//元
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*pt_pe), 0, 128));
-					if (pt_pe >= 0.f) {
-						if (chara.ammoc == 0) {
-							font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
-						}
-						pt_pe -= 1.f / fps;
+					if (chara.ammoc == 0) {
+						font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
 					}
-					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					if (chara.safety.first) {
+						font->DrawString(xp - font->GetDrawWidth("SAFETY") / 2, yp, "SAFETY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+					}
+				}
+				//セレクター
+				{
+					int xp = disp_x / 2 - disp_y / 10;
+					int yp = disp_y / 2 + disp_y / 8;
+					switch (chara.gunptr->select[chara.select]) {
+					case 1:
+						font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(255, 0, 0));
+						break;
+					case 2:
+						font->DrawString(xp - font->GetDrawWidth("FULL AUTO") / 2, yp, "FULL AUTO", GetColor(255, 0, 0));
+						break;
+					case 3:
+						font->DrawString(xp - font->GetDrawWidth("3B") / 2, yp, "3B", GetColor(255, 0, 0));
+						break;
+					case 4:
+						font->DrawString(xp - font->GetDrawWidth("2B") / 2, yp, "2B", GetColor(255, 0, 0));
+						break;
+					}
 				}
 				//弾薬
 				{

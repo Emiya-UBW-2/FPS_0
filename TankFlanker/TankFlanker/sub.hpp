@@ -167,7 +167,8 @@ public:
 
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
-		float xrad;
+		float add_ypos = 0.f;
+		float body_yrad = 0.f;
 
 		VECTOR_ref pos_LHAND;
 		MATRIX_ref mat_LHAND;
