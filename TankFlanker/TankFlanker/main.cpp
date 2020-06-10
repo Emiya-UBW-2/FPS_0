@@ -283,7 +283,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//開始
 		{
 			auto& mine = chara[0];
+
+			mine.safety.first = true;
+			mine.safety.second = 0;
 			mine.mat_HMD = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));//改善
+
 			int point = 0;
 			int p_up = 0;
 			int p_down = 0;
@@ -426,18 +430,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 						else {
 							//引き金(左クリック)
-							easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
+							easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 && !mine.safety.first), 0.5f, fps);
 							//ADS
 							ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
 							//マグキャッチ(Rキー)
 							easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
-							//セフティ
-							mine.safety.get_in(false);
+							//セフティ(Tキー)
+							mine.safety.get_in(CheckHitKey(KEY_INPUT_T) != 0);
 							//セレクター(中ボタン)
 							mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
-							//タイマーオン
+							//タイマーオン(Bキー)
 							c_ready |= (CheckHitKey(KEY_INPUT_B) != 0);
-							//計測リセット
+							//計測リセット(Vキー)
 							if (c_end) {
 								if (CheckHitKey(KEY_INPUT_V) != 0) {
 									point = 0;
@@ -888,8 +892,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 					//映す
 					{
-						VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(0.35f, 0.15f, 1.f),mine.mat_HMD);
-						VECTOR_ref vec = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(0.35f, 0.15f, 0.f), mine.mat_HMD);
+						VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 1.f),mine.mat_HMD);
+						VECTOR_ref vec = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 0.f), mine.mat_HMD);
 						if (TPS.first) {//TPS視点
 							Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), fov, 100.f, 0.1f);
 						}

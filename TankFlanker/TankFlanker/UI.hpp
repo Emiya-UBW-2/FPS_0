@@ -33,6 +33,7 @@ private:
 	GraphHandle UI_mag_fall;
 	GraphHandle UI_mag_set;
 	float pt_pl = 0.f, pt_pr = 0.f;
+	float pt_pl2 = 0.f, pt_pr2 = 0.f;
 	float pt_pe = 0.f;
 	float point_r = 0.f;
 	float point_uf = 0.f;
@@ -47,6 +48,10 @@ private:
 	SoundHandle timer, decision, cancel, cursor, whistle;
 	float c_readytimer_old=3.f;
 	bool c_end_f = false;
+
+	float time_tmp = 0.f;
+	//チュートリアル
+	int display_c1 = 0;
 public:
 	UI(const int& o_xd, const int& o_yd, const int& xd, const int& yd) {
 		out_disp_x = o_xd;
@@ -354,11 +359,17 @@ public:
 					int xp = disp_x / 2;
 					int yp = disp_y / 2 + disp_y / 8;
 					//元
-					if (chara.ammoc == 0) {
-						font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+					if (time_tmp >= 0.25f) {
+						if (chara.ammoc == 0) {
+							font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+						}
+						if (chara.safety.first) {
+							font->DrawString(xp - font->GetDrawWidth("SAFETY") / 2, yp, "SAFETY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+						}
 					}
-					if (chara.safety.first) {
-						font->DrawString(xp - font->GetDrawWidth("SAFETY") / 2, yp, "SAFETY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+					time_tmp += 1.f / fps;
+					if (time_tmp >= 0.5f) {
+						time_tmp = 0.f;
 					}
 				}
 				//セレクター
@@ -367,16 +378,16 @@ public:
 					int yp = disp_y / 2 + disp_y / 8;
 					switch (chara.gunptr->select[chara.select]) {
 					case 1:
-						font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(255, 0, 0));
+						font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;
 					case 2:
-						font->DrawString(xp - font->GetDrawWidth("FULL AUTO") / 2, yp, "FULL AUTO", GetColor(255, 0, 0));
+						font->DrawString(xp - font->GetDrawWidth("FULL AUTO") / 2, yp, "FULL AUTO", GetColor(0, 255, 0));
 						break;
 					case 3:
-						font->DrawString(xp - font->GetDrawWidth("3B") / 2, yp, "3B", GetColor(255, 0, 0));
+						font->DrawString(xp - font->GetDrawWidth("3B") / 2, yp, "3B", GetColor(0, 255, 0));
 						break;
 					case 4:
-						font->DrawString(xp - font->GetDrawWidth("2B") / 2, yp, "2B", GetColor(255, 0, 0));
+						font->DrawString(xp - font->GetDrawWidth("2B") / 2, yp, "2B", GetColor(0, 255, 0));
 						break;
 					}
 				}
@@ -404,53 +415,109 @@ public:
 						i++;
 					}
 				}
-				//右手
-				{
-					if (!chara.reloadf && chara.ammoc == 0) {
-						pt_pr = 2.f;
-					}
-
-					int xs = 500 / 4;
-					int ys = 408 / 4;
-
-					int xp = disp_x / 2 + disp_y / 6 - xs;
-					int yp = disp_y / 2 + disp_y / 6 - ys;
-					//元
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pr), 0, 192));
-					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					if (pt_pr >= 0.f) {
+				if (vr) {
+					//右手
+					{
 						if (!chara.reloadf && chara.ammoc == 0) {
-							UI_mag_fall.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							pt_pr = 2.f;
 						}
-						/*
-							UI_safty.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-							UI_select.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-							UI_trigger.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-						*/
-						pt_pr -= 1.f / fps;
-					}
-				}
-				//左手
-				{
-					if (chara.reloadf && !chara.down_mag) {
-						pt_pl = 2.f;
-					}
 
-					int xs = 500 / 4;
-					int ys = 408 / 4;
+						int xs = 500 / 4;
+						int ys = 408 / 4;
 
-					int xp = disp_x / 2 - disp_y / 6;
-					int yp = disp_y / 2 + disp_y / 6 - ys;
-					//元
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pl), 0, 192));
-					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					if (pt_pl >= 0.f) {
+						int xp = disp_x / 2 + disp_y / 6 - xs;
+						int yp = disp_y / 2 + disp_y / 6 - ys;
+						//元
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pr), 0, 192));
+						UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						if (pt_pr >= 0.f) {
+							if (!chara.reloadf && chara.ammoc == 0) {
+								UI_mag_fall.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							}
+							pt_pr -= 1.f / fps;
+						}
+					}
+					{
+						if (display_c1 == 0 && chara.safety.first) {
+							pt_pr2 = 1.f;
+						}
+						if (display_c1 == 1 && !chara.gunf) {
+							pt_pr2 = 1.f;
+						}
+
+						int xs = 500 / 4;
+						int ys = 408 / 4;
+
+						int xp = disp_x / 2 + disp_y / 6 - xs;
+						int yp = disp_y / 2 - ys / 2;
+						//元
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pr2), 0, 192));
+						UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+						DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
+						font->DrawString(xp, yp + ys, "Tutorial", GetColor(255, 0, 0));
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						if (pt_pr2 >= 0.f) {
+							if (display_c1 == 0 && chara.safety.first) {
+								UI_safty.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							}
+							if (display_c1 == 1 && !chara.gunf) {
+								UI_trigger.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							}
+							/*
+								UI_select.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							*/
+							pt_pr2 -= 1.f / fps;
+						}
+
+						if (display_c1 == 0 && !chara.safety.first) {
+							display_c1 = 1;
+						}
+						if (display_c1 == 1 && chara.gunf) {
+							display_c1 = 2;
+						}
+					}
+					//左手
+					{
 						if (chara.reloadf && !chara.down_mag) {
-							UI_mag_set.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							pt_pl = 2.f;
 						}
-						pt_pl -= 1.f / fps;
+
+						int xs = 500 / 4;
+						int ys = 408 / 4;
+
+						int xp = disp_x / 2 - disp_y / 6;
+						int yp = disp_y / 2 + disp_y / 6 - ys;
+						//元
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pl), 0, 192));
+						UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						if (pt_pl >= 0.f) {
+							if (chara.reloadf && !chara.down_mag) {
+								UI_mag_set.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							}
+							pt_pl -= 1.f / fps;
+						}
+					}
+					{
+						if (display_c1 <= 1) {
+							pt_pl2 = 1.f;
+						}
+						int xs = 500 / 4;
+						int ys = 408 / 4;
+
+						int xp = disp_x / 2 - disp_y / 6;
+						int yp = disp_y / 2 - ys / 2;
+						//元
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pl2), 0, 192));
+						UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+						DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
+						font->DrawString(xp, yp + ys, "Tutorial", GetColor(255, 0, 0));
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						if (pt_pl2 >= 0.f) {
+							//
+							pt_pl2 -= 1.f / fps;
+						}
 					}
 				}
 			}
