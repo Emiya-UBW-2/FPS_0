@@ -297,7 +297,7 @@ public:
 							c_readytimer_old = c_readytimer;
 
 							ready_f = 1.f;
-							ready_yp = 0.f;
+							ready_yp = float(disp_y / 12);
 							c_end_f = false;
 						}
 						else {

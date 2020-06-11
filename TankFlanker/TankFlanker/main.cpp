@@ -63,7 +63,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
 	//
-	SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
+	SetWindowPosition(deskx + (deskx - out_dispx) / 2-11, -32);
 	//
 	std::array<GraphHandle, 3> outScreen;
 	outScreen[0] = GraphHandle::Make(dispx, dispy);//ç∂ñ⁄
