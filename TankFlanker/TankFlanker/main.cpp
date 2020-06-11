@@ -345,7 +345,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							skey = (CheckHitKey(KEY_INPUT_S) != 0);
 							akey = (CheckHitKey(KEY_INPUT_A) != 0);
 							dkey = (CheckHitKey(KEY_INPUT_D) != 0);
-							jampkey = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+							jampkey = (CheckHitKey(KEY_INPUT_SPACE) != 0);
+
+							//jampkey = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
 
 							if (wkey) {
 								easing_set(&add_pos_buf, mine.mat_HMD.zvec()*-4.f / fps, 0.95f, fps);
@@ -400,7 +402,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 							if (ads.first) {
 								easing_set(&viewvec, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.3f), 0.75f, fps);
-								easing_set(&fov_fps, (fov*0.5f) / ((mine.gunptr->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
+								easing_set(&fov_fps, (fov*0.6f) / ((mine.gunptr->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
 								easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
 							}
 							else {
@@ -938,7 +940,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, fov, cam, vec, VGet(0, 1.f, 0));
 						{
-							TPS.get_in(CheckHitKey(KEY_INPUT_SPACE) != 0);
+							TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
 							if (TPS.first) {//TPS視点
 								outScreen[2].DrawExtendGraph(0, 0, out_dispx, out_dispy, false);
 								//ターゲットを映す
