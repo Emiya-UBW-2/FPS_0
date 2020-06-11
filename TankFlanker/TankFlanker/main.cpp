@@ -291,13 +291,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 			mine.safety.first = true;
 			mine.safety.second = 0;
-			mine.mat_HMD = MATRIX_ref::Axis1(VGet(-1, 0, 0), VGet(0, 1, 0), VGet(0, 0, -1));//‰ü‘P
 
 			int point = 0;
 			int p_up = 0;
 			int p_down = 0;
 			bool c_ready = false;
-			float c_readytimer = 3.f;
+			float c_readytimer = 4.f;
 			bool c_start = false;
 			bool c_end = false;
 			float c_timer = 30.f;
@@ -374,20 +373,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								easing_set(&add_pos, VGet(0, 0, 0), 0.995f, fps);
 							}
 							mine.pos += add_pos;
-							MV1_COLL_RESULT_POLY pp;
 							if (mine.add_ypos > 0.f) {
-								pp.HitFlag = 0;
-							}
-							else {
-								pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos, 0);
-							}
-							if (pp.HitFlag == 1) {
-								mine.pos = pp.HitPosition;
-								mine.add_ypos = 0.f;
-							}
-							else {
 								mine.pos.yadd(mine.add_ypos);
 								mine.add_ypos -= 9.8f / std::powf(fps, 2.f);
+							}
+							else {
+								auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos, 0);
+								if (pp.HitFlag == 1) {
+									mine.pos = pp.HitPosition;
+									mine.add_ypos = 0.f;
+								}
+								else {
+									mine.pos.yadd(mine.add_ypos);
+									mine.add_ypos -= 9.8f / std::powf(fps, 2.f);
+								}
 							}
 						}
 						//LHAND
@@ -415,6 +414,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						}
 						else {
 							mine.mat_LHAND = mine.mat_LHAND*MATRIX_ref::RotAxis(mine.mat_LHAND.xvec(), deg2rad(-60));
+							easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
 						}
 						mine.mat_LHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_LHAND)*mine.mat_LHAND;//ƒŠƒRƒCƒ‹
 						//RHAND
@@ -459,7 +459,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 											p_up = 0;
 											p_down = 0;
 											c_ready = false;
-											c_readytimer = 3.f;
+											c_readytimer = 4.f;
 											c_start = false;
 											c_end = false;
 											c_timer = 30.f;
@@ -661,7 +661,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								}
 								//¶Žè
 								{
-									float dist_ = (c.pos_RHAND - c.obj.frame(c.gunptr->frame[6].first)).size();
+									float dist_ = ((c.pos_RHAND + c.pos) - c.obj.frame(c.gunptr->frame[6].first)).size();
 									if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
 										c.LEFT_hand = true;
 										MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90));
@@ -670,7 +670,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									else {
 										c.LEFT_hand = false;
 										MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90))*c.mat_RHAND*c.mat_HMD.Inverse();
-										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_RHAND - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
+										c.hand.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_RHAND - c.pos_HMD, c.mat_HMD.Inverse())));
 									}
 								}
 								//g‘Ì
