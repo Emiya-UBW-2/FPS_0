@@ -17,13 +17,17 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	int out_dispx,out_dispy; /*ウィンドウ*/
 	switchs TPS;
 	switchs ads;
+	uint8_t change_gun = 0;
 	VECTOR_ref viewvec;
+	VECTOR_ref campos_TPS;
 	float xrad_p=0.f;
-	VECTOR_ref add_pos;
-	bool wkey;
-	bool skey;
-	bool akey;
-	bool dkey;
+	VECTOR_ref add_pos, add_pos_buf;
+	bool wkey = false;
+	bool skey = false;
+	bool akey = false;
+	bool dkey = false;
+	bool jampkey = false;
+	int sel_g = 0;
 	{
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
 		int mdata = FileRead_open("data/setting.txt", FALSE);
@@ -59,7 +63,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
 	//
-	//SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
+	SetWindowPosition(deskx + (deskx - out_dispx) / 2-12, -64);
 	//
 	std::array<GraphHandle, 3> outScreen;
 	outScreen[0] = GraphHandle::Make(dispx, dispy);//左目
@@ -70,6 +74,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	//操作
 	VECTOR_ref campos, campos_buf, camvec, camup;			    //カメラ
 	float fov = deg2rad(useVR_e ? 90 : 45);
+	float fov_fps = fov;
 	//データ
 	MV1 hand;
 	MV1::Load("data/model/hand/model_h.mv1", &hand, true);
@@ -206,7 +211,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//キャラ設定
 		chara.resize(1);
 		{
-			int sel_g = UIparts->select_window(useVR_e, gun_data, vrparts);
+			sel_g = UIparts->select_window(useVR_e, gun_data, vrparts);
 			if (sel_g >= 0) {
 				chara[0].set_chara(VGet(0, 0, 0), &gun_data[sel_g], ScopeScreen, hand);
 			}
@@ -304,6 +309,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				{
 					//プレイヤー操作
 					{
+						//銃変更
+						{
+							change_gun = std::clamp<uint8_t>(change_gun + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
+							if (change_gun == 1) {
+								auto pos = mine.pos;
+								mine.delete_chara();
+								++sel_g %= gun_data.size();
+								mine.set_chara(VGet(0, 0, 0), &gun_data[sel_g], ScopeScreen, hand);
+								mine.pos = pos;
+								viewvec = VGet(0, 0, 0);
+							}
+						}
 						//HMD
 						if (useVR_e) {
 							vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
@@ -328,23 +345,40 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							skey = (CheckHitKey(KEY_INPUT_S) != 0);
 							akey = (CheckHitKey(KEY_INPUT_A) != 0);
 							dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+							jampkey = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+
 							if (wkey) {
-								easing_set(&add_pos, mine.mat_HMD.zvec()*-4.f / fps, 0.95f, fps);
+								easing_set(&add_pos_buf, mine.mat_HMD.zvec()*-4.f / fps, 0.95f, fps);
 							}
 							if (skey) {
-								easing_set(&add_pos, mine.mat_HMD.zvec()*4.f / fps, 0.95f, fps);
+								easing_set(&add_pos_buf, mine.mat_HMD.zvec()*4.f / fps, 0.95f, fps);
 							}
 							if (akey) {
-								easing_set(&add_pos, mine.mat_HMD.xvec()*4.f / fps, 0.95f, fps);
+								easing_set(&add_pos_buf, mine.mat_HMD.xvec()*4.f / fps, 0.95f, fps);
 							}
 							if (dkey) {
-								easing_set(&add_pos, mine.mat_HMD.xvec()*-4.f / fps, 0.95f, fps);
+								easing_set(&add_pos_buf, mine.mat_HMD.xvec()*-4.f / fps, 0.95f, fps);
 							}
 							if (!wkey && !skey && !akey && !dkey) {
-								easing_set(&add_pos, VGet(0, 0, 0), 0.95f, fps);
+								easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
+							}
+							if (mine.add_ypos==0.f) {
+								if (jampkey) {
+									mine.add_ypos = 0.05f;
+								}
+								add_pos = add_pos_buf;
+							}
+							else {
+								easing_set(&add_pos, VGet(0, 0, 0), 0.995f, fps);
 							}
 							mine.pos += add_pos;
-							auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos, 0);
+							MV1_COLL_RESULT_POLY pp;
+							if (mine.add_ypos > 0.f) {
+								pp.HitFlag = 0;
+							}
+							else {
+								pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos, 0);
+							}
 							if (pp.HitFlag == 1) {
 								mine.pos = pp.HitPosition;
 								mine.add_ypos = 0.f;
@@ -365,10 +399,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 								pv = mine.gunptr->frame[7].second;
 							}
 							if (ads.first) {
-								easing_set(&viewvec, mine.pos_HMD + VGet(0.f, 0.f - pv.y(), -0.25f), 0.75f, fps);
+								easing_set(&viewvec, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.3f), 0.75f, fps);
+								easing_set(&fov_fps, (fov*0.5f) / ((mine.gunptr->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
+								easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
 							}
 							else {
 								easing_set(&viewvec, mine.pos_HMD + VGet(-0.15f, -0.05f - pv.y(), -0.5f), 0.75f, fps);
+								easing_set(&fov_fps, fov, 0.9f, fps);
+								easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
 							}
 							mine.pos_LHAND = mine.pos_HMD + MATRIX_ref::Vtrans(viewvec - mine.pos_HMD, mine.mat_HMD);
 							mine.mat_LHAND = mine.mat_HMD;
@@ -825,7 +863,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 						tp.time += deg2rad(180.f / fps);
 					}
 					//影用意
-					Drawparts->Ready_Shadow(campos_buf, draw_in_shadow, VGet(10.f, 2.5f, 10.f));
+					Drawparts->Ready_Shadow(campos_buf, draw_in_shadow, VGet(5.f, 2.5f, 5.f));
 					//VR空間に適用
 					vrparts->Move_Player();
 					//campos,camvec,camupの指定
@@ -882,7 +920,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 					else {
 						//被写体深度描画
-						Hostpassparts->dof(&BufScreen, mapparts->sky_draw(campos_buf, campos_buf + camvec, camup, fov), draw_by_shadow, campos_buf, campos_buf + camvec, camup, fov, 100.f, 0.1f);
+						campos = campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), mine.mat_HMD);
+						Hostpassparts->dof(&BufScreen, mapparts->sky_draw(campos, campos + camvec, camup, fov_fps), draw_by_shadow, campos, campos + camvec, camup, fov_fps, 100.f, 0.1f);
 						//描画
 						outScreen[1].SetDraw_Screen();
 						{
@@ -892,7 +931,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 					}
 					//映す
 					{
-						VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 1.f),mine.mat_HMD);
+						VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(campos_TPS, mine.mat_HMD);
 						VECTOR_ref vec = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 0.f), mine.mat_HMD);
 						if (TPS.first) {//TPS視点
 							Hostpassparts->draw(&outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), fov, 100.f, 0.1f);
