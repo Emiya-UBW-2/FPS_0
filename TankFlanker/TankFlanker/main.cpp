@@ -42,7 +42,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SetWindowPosition((deskx - out_dispx) / 2, 0);
 	}
 	//
-	SetWindowPosition(deskx + (deskx - out_dispx) / 2-11, -32);
+	//SetWindowPosition(deskx + (deskx - out_dispx) / 2-11, -32);
 	//
 	std::array<GraphHandle, 3> outScreen;
 	outScreen[0] = GraphHandle::Make(dispx, dispy);//左目
@@ -320,7 +320,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							}
 						}
 						//移動
-						{
+						if(!settings->useVR_e) {
 							auto wkey = (CheckHitKey(KEY_INPUT_W) != 0);
 							auto skey = (CheckHitKey(KEY_INPUT_S) != 0);
 							auto akey = (CheckHitKey(KEY_INPUT_A) != 0);
@@ -344,7 +344,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							if (!wkey && !skey && !akey && !dkey) {
 								easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
 							}
-							if (mine.add_ypos==0.f) {
+							if (mine.add_ypos == 0.f) {
 								if (jampkey) {
 									mine.add_ypos = 0.05f;
 								}
@@ -353,6 +353,43 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 							else {
 								easing_set(&add_pos, VGet(0, 0, 0), 0.995f, fps);
 							}
+						}
+						else {
+							if (vrparts->get_hand2_num() != -1) {
+								auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
+								if (ptr_.turn && ptr_.now) {
+									if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
+										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
+											easing_set(&add_pos_buf,
+												(
+													mine.mat_HMD.zvec()*ptr_.touch.y() +
+													mine.mat_HMD.xvec()*ptr_.touch.x()
+													)*-8.f / fps, 0.95f, fps);
+										}
+										else {
+											easing_set(&add_pos_buf,
+												(
+													mine.mat_HMD.zvec()*ptr_.touch.y() +
+													mine.mat_HMD.xvec()*ptr_.touch.x()
+													)*-4.f / fps, 0.95f, fps);
+										}
+									}
+									else {
+										easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
+									}
+									if (mine.add_ypos == 0.f) {
+										if ((ptr_.on[0] & BUTTON_SIDE) != 0) {
+											mine.add_ypos = 0.05f;
+										}
+										add_pos = add_pos_buf;
+									}
+									else {
+										easing_set(&add_pos, VGet(0, 0, 0), 0.995f, fps);
+									}
+								}
+							}
+						}
+						{
 							mine.pos += add_pos;
 							{
 								auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos + VGet(0, -0.1f, 0), 0);
@@ -415,7 +452,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									//引き金
 									easing_set(&mine.obj.get_anime(2).per, float((ptr_.on[0] & BUTTON_TRIGGER) != 0 && !mine.safety.first), 0.5f, fps);
 									//マグキャッチ
-									easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[1] & BUTTON_SIDE) != 0), 0.5f, fps);
+									easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[0] & BUTTON_SIDE) != 0), 0.5f, fps);
 									//セフティ
 									mine.safety.get_in(((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() < -0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f));
 									//セレクター
@@ -428,7 +465,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 									//マガジン取得
 									mine.down_mag |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
 									//タイマーオン
-									c_ready |= ((ptr_.on[1] & BUTTON_SIDE) != 0);
+									c_ready |= ((ptr_.on[0] & BUTTON_SIDE) != 0);
 									//計測リセット
 									if (c_end) {
 										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
