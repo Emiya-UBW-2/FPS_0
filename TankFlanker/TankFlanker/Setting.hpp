@@ -7,12 +7,10 @@ private:
 	GraphHandle bufScreen;
 	FontHandle font18;
 	FontHandle font12;
-	uint8_t dof_c = 0;
-	uint8_t bloom_c = 0;
-	uint8_t shadow_c = 0;
-	uint8_t shadow_level_c = 0;
-	uint8_t useVR_c = 0;
-	uint8_t getlog_c = 0;
+	uint8_t up_c = 0;
+	uint8_t down_c = 0;
+
+	uint8_t sel_p = 0;
 public:
 	bool dof_e = false;
 	bool bloom_e = false;
@@ -54,31 +52,64 @@ public:
 	}
 	void set_draw_setting(void) {
 		bufScreen.SetDraw_Screen();
-		font18.DrawString(0, 0, "test", GetColor(255, 0, 0));
+		{
+			DrawBox(2, 2, 640, 480, GetColor(255, 0, 0), FALSE);
+			up_c = std::clamp<uint8_t>(up_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
+			if (up_c == 1) {
+				switch (sel_p) {
+				case 0:
+					dof_e ^= 1;
+					break;
+				case 1:
+					bloom_e ^= 1;
+					break;
+				case 2:
+					shadow_e ^= 1;
+					break;
+				case 3:
+					++shadow_level_e;
+					break;
+				case 4:
+					useVR_e ^= 1;
+					break;
+				case 5:
+					getlog_e ^= 1;
+					break;
+				}
+			}
+			down_c = std::clamp<uint8_t>(down_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
+			if (down_c == 1) {
+				switch (sel_p) {
+				case 0:
+					dof_e ^= 1;
+					break;
+				case 1:
+					bloom_e ^= 1;
+					break;
+				case 2:
+					shadow_e ^= 1;
+					break;
+				case 3:
+					++shadow_level_e;
+					break;
+				case 4:
+					useVR_e ^= 1;
+					break;
+				case 5:
+					getlog_e ^= 1;
+					break;
+				}
+			}
 
-		DrawBox(2, 2, 640, 480, GetColor(255, 0, 0), FALSE);
-
-		dof_c = std::clamp<uint8_t>(dof_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
-		bloom_c = std::clamp<uint8_t>(bloom_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
-		shadow_c = std::clamp<uint8_t>(shadow_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
-		shadow_level_c = std::clamp<uint8_t>(shadow_level_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
-		useVR_c = std::clamp<uint8_t>(useVR_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
-		getlog_c = std::clamp<uint8_t>(getlog_c + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
-		if (dof_c == 1) { dof_e ^= 1; }
-		if (bloom_c == 1) { bloom_e ^= 1; }
-		if (shadow_c == 1) { shadow_e ^= 1; }
-		if (shadow_level_c == 1) { ++shadow_level_e; }
-		if (useVR_c == 1) { useVR_e ^= 1; }
-		if (getlog_c == 1) { getlog_e ^= 1; }
-		int xp = 10+2;
-		int yp = 24+2;
-		font18.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "hostpass    %s", (dof_e ? "true" : "false")); yp += 20;
-		font18.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "bloom       %s", (bloom_e ? "true" : "false")); yp += 20;
-		font18.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "shadow      %s", (shadow_e ? "true" : "false")); yp += 20;
-		font18.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "shadowlevel %d", shadow_level_e); yp += 20;
-		font18.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "usevr       %s", (useVR_e ? "true" : "false")); yp += 20;
-		font18.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "getlog      %s", (getlog_e ? "true" : "false")); yp += 20;
+			int xp = 10 + 2;
+			int yp = 24 + 2;
+			font18.DrawStringFormat(xp, yp, (sel_p == 0) ? GetColor(255, 255, 0) : GetColor(255, 0, 0), "hostpass    %s", (dof_e ? "true" : "false")); yp += 20;
+			font18.DrawStringFormat(xp, yp, (sel_p == 1) ? GetColor(255, 255, 0) : GetColor(255, 0, 0), "bloom       %s", (bloom_e ? "true" : "false")); yp += 20;
+			font18.DrawStringFormat(xp, yp, (sel_p == 2) ? GetColor(255, 255, 0) : GetColor(255, 0, 0), "shadow      %s", (shadow_e ? "true" : "false")); yp += 20;
+			font18.DrawStringFormat(xp, yp, (sel_p == 3) ? GetColor(255, 255, 0) : GetColor(255, 0, 0), "shadowlevel %d", shadow_level_e); yp += 20;
+			font18.DrawStringFormat(xp, yp, (sel_p == 4) ? GetColor(255, 255, 0) : GetColor(255, 0, 0), "usevr       %s", (useVR_e ? "true" : "false")); yp += 20;
+			font18.DrawStringFormat(xp, yp, (sel_p == 5) ? GetColor(255, 255, 0) : GetColor(255, 0, 0), "getlog      %s", (getlog_e ? "true" : "false")); yp += 20;
+		}
 	}
-
 	auto& settinggraphs(void) { return bufScreen; }
 };

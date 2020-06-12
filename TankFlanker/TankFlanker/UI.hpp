@@ -103,6 +103,8 @@ public:
 		bool startp = false;
 		float ber_r = 0.f;
 		start_fl = 0.f;
+		float sets = 1.f;
+		switchs setf;
 		//
 		while (ProcessMessage() == 0) {
 			const auto fps = GetFPS();
@@ -165,7 +167,14 @@ public:
 			//VR‹óŠÔ‚É“K—p
 			vrparts->Move_Player();
 			{
-				settings->set_draw_setting();
+				setf.get_in(CheckHitKey(KEY_INPUT_O) != 0);
+				if (setf.first) {
+					settings->set_draw_setting();
+					easing_set(&sets, 1.f, 0.9f, fps);
+				}
+				else {
+					easing_set(&sets, 0.f, 0.9f, fps);
+				}
 				bufScreen.SetDraw_Screen();
 				auto& v = gun_data[sel_g];
 				{
@@ -195,10 +204,10 @@ public:
 					DrawBox(0, 0, out_disp_x, out_disp_y, GetColor(64, 64, 64), TRUE);
 					outScreen.DrawExtendGraph(0, 0, out_disp_x, out_disp_y, true);
 
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(32.f), 0, 255));
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(215.f*sets), 0, 255));
 					settings->settinggraphs().DrawExtendGraph(
-						out_disp_x / 2 - out_disp_x / 6, out_disp_y / 2 - (out_disp_x / 6 * 480 / 640),
-						out_disp_x / 2 + out_disp_x / 6, out_disp_y / 2 + (out_disp_x / 6 * 480 / 640),
+						out_disp_x / 2 - int(float(out_disp_x / 6)*sets), out_disp_y / 2 - int(float(out_disp_x / 6 * 480 / 640)*sets),
+						out_disp_x / 2 + int(float(out_disp_x / 6)*sets), out_disp_y / 2 + int(float(out_disp_x / 6 * 480 / 640)*sets),
 						true);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
