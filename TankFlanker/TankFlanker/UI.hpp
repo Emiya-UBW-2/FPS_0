@@ -85,11 +85,12 @@ public:
 	}
 	~UI() {
 	}
-	template<class Y, class D>
+	template<class Y, class D, class H, class T>
 	int select_window(
 		bool useVR_e,
 		std::vector<Mainclass::Gun>& gun_data,
-		std::unique_ptr<Y, D>& vrparts
+		std::unique_ptr<Y, D>& vrparts,
+		std::unique_ptr<H, T>& settings
 	) {
 		float fov = deg2rad(useVR_e ? 90 : 45);
 		int sel_g = 0;
@@ -164,6 +165,7 @@ public:
 			//VR空間に適用
 			vrparts->Move_Player();
 			{
+				settings->set_draw_setting();
 				bufScreen.SetDraw_Screen();
 				auto& v = gun_data[sel_g];
 				{
@@ -190,7 +192,15 @@ public:
 				}
 				GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 				{
+					DrawBox(0, 0, out_disp_x, out_disp_y, GetColor(64, 64, 64), TRUE);
 					outScreen.DrawExtendGraph(0, 0, out_disp_x, out_disp_y, true);
+
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(32.f), 0, 255));
+					settings->settinggraphs().DrawExtendGraph(
+						out_disp_x / 2 - out_disp_x / 6, out_disp_y / 2 - (out_disp_x / 6 * 480 / 640),
+						out_disp_x / 2 + out_disp_x / 6, out_disp_y / 2 + (out_disp_x / 6 * 480 / 640),
+						true);
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 			}
 			DXDraw::Screen_Flip();
@@ -199,6 +209,15 @@ public:
 				sel_g = -1;
 				break;
 			}
+			//設定適応後再起動するやつ
+			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+				//
+				settings->save();
+				start_me();
+				sel_g = -1;
+				break;
+			}
+
 			if (endp) {
 				break;
 			}

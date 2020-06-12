@@ -118,4 +118,23 @@ float getcos_tri(const float& a, const float& b, const float& c) {
 	}
 	return 1.f;
 }
+//起動
+void createProcess(char* szCmd, DWORD flag, bool fWait) {
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	memset(&si, 0, sizeof(STARTUPINFO));
+	memset(&pi, 0, sizeof(PROCESS_INFORMATION));
+	si.cb = sizeof(STARTUPINFO);
+	CreateProcess(NULL, szCmd, NULL, NULL, FALSE, flag, NULL, NULL, &si, &pi);
+	if (fWait) WaitForSingleObject(pi.hProcess, INFINITE);	//終了を待つ.
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+}
+//自信を多重起動
+void start_me(void) {
+	char Path[MAX_PATH];
+	// EXEのあるフォルダのパスを取得
+	::GetModuleFileName(NULL, Path, MAX_PATH);
+	createProcess(Path, SW_HIDE, false);
+}
 //
