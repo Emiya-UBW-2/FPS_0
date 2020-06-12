@@ -103,8 +103,9 @@ public:
 		bool startp = false;
 		float ber_r = 0.f;
 		start_fl = 0.f;
-		float sets = 1.f;
+		float sets = 0.f;
 		switchs setf;
+		bool restart = true;
 		//
 		while (ProcessMessage() == 0) {
 			const auto fps = GetFPS();
@@ -169,7 +170,7 @@ public:
 			{
 				setf.get_in(CheckHitKey(KEY_INPUT_O) != 0);
 				if (setf.first) {
-					settings->set_draw_setting();
+					restart = settings->set_draw_setting();
 					easing_set(&sets, 1.f, 0.9f, fps);
 				}
 				else {
@@ -219,14 +220,14 @@ public:
 				break;
 			}
 			//İ’è“K‰ŒãÄ‹N“®‚·‚é‚â‚Â
-			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+			if (!setf.first && !restart) {
 				//
 				settings->save();
 				start_me();
 				sel_g = -1;
 				break;
 			}
-
+			//
 			if (endp) {
 				break;
 			}
