@@ -114,6 +114,7 @@
     <ClInclude Include="DXLib_ref\useful.hpp" />
     <ClInclude Include="HostPass.hpp" />
     <ClInclude Include="map.hpp" />
+    <ClInclude Include="route.hpp" />
     <ClInclude Include="Setting.hpp" />
     <ClInclude Include="sub.hpp" />
     <ClInclude Include="UI.hpp" />

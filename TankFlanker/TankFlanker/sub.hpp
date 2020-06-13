@@ -53,6 +53,131 @@ class Mainclass {
 private:
 
 public:
+	//tgt
+	class tgttmp {
+	public:
+		MV1 tgt;
+		GraphHandle tgt_pic_tmp;
+		int tgt_col;
+		int tgt_pic_x;
+		int tgt_pic_y;
+		frames tgt_f;
+
+		tgttmp() {
+			MV1::Load("data/model/tgt/model.mv1", &this->tgt, true);
+			this->tgt_col = LoadSoftImage("data/model/tgt/point.bmp");
+			this->tgt_pic_tmp = GraphHandle::Load("data/model/tgt/Target-A2.png");
+		}
+
+		void set() {
+			this->tgt_pic_tmp.GetSize(&this->tgt_pic_x, &this->tgt_pic_y);
+			this->tgt_f = { 2,this->tgt.frame(2) };
+		}
+	};
+	class tgts {
+	public:
+		MV1 obj;
+		GraphHandle pic;
+		int x_frame = 0, y_frame = 0;
+		float rad = 0.f;
+		float time = 0.f;
+		float power = 0.f;
+		bool LR = true;
+		template<class Y, class D>
+		void set(std::unique_ptr<Y, D>& tgtparts) {
+			obj = tgtparts->tgt.Duplicate();
+			pic = GraphHandle::Make(tgtparts->tgt_pic_x, tgtparts->tgt_pic_y);
+			pic.SetDraw_Screen(false);
+			tgtparts->tgt_pic_tmp.DrawGraph(0, 0, true);
+
+			obj.SetupCollInfo(8, 8, 8, 0, 1);
+			obj.SetTextureGraphHandle(2, pic, false);
+			x_frame = 4;
+			y_frame = 3;
+			LR = true;
+		}
+	};
+	//score
+	class scores {
+	public:
+		std::vector<int> score_s;
+		int point = 0;
+		int p_up = 0;
+		int p_down = 0;
+
+		bool c_ready = false;
+		float c_readytimer = 4.f;
+		bool c_start = false;
+		bool c_end = false;
+		float c_timer = 30.f;
+
+		scores() {
+			SetOutApplicationLogValidFlag(FALSE);  /*log*/
+			int mdata = FileRead_open("data/score.txt", FALSE);
+			while (FileRead_eof(mdata) == 0) {
+				this->score_s.emplace_back(getparams::_int(mdata));
+			}
+			FileRead_close(mdata);
+		}
+		~scores() {
+			std::ofstream outputfile("data/score.txt");
+			for (auto& s : this->score_s) {
+				outputfile << s << "\n";
+			}
+			outputfile.close();
+		}
+		void ins() {
+			int i = 0;
+			for (auto& c : this->score_s) {
+				if (c < this->point) {
+					break;
+				}
+				i++;
+			}
+			this->score_s.insert(this->score_s.begin() + i, this->point);
+		}
+
+		void reset() {
+			this->point = 0;
+			this->p_up = 0;
+			this->p_down = 0;
+			this->c_ready = false;
+			this->c_readytimer = 4.f;
+			this->c_start = false;
+			this->c_end = false;
+			this->c_timer = 30.f;
+		}
+
+		void sub(const int& pt) {
+			this->p_down = pt;
+			if (this->point + this->p_down >= 0) {
+				this->point += this->p_down;
+			}
+		}
+
+		void add(const int& pt) {
+			this->p_up = pt;
+			this->point += this->p_up;
+		}
+
+		void move_timer() {
+			float fps = GetFPS();
+			if (this->c_ready && !this->c_start) {
+				this->c_readytimer -= 1.f / fps;
+				if (this->c_readytimer <= 0.f) {
+					this->c_start = true;
+				}
+			}
+			if (this->c_start && !this->c_end) {
+				this->c_timer -= 1.f / fps;
+				if (this->c_timer <= 0.f) {
+					this->c_timer = 0.f;
+					this->c_end = true;//
+					this->ins();//データベースにデータを挿入
+				}
+			}
+		}
+	};
 	//gun
 	class Audios {
 	public:
@@ -95,6 +220,74 @@ public:
 		std::vector <uint8_t> select;//セレクター
 		models mod;
 		Audios audio;
+
+		void set_data() {
+			//フレーム
+			this->frame.resize(8);
+			this->frame[4].first = INT_MAX;
+			this->frame[7].first = INT_MAX;
+			this->mod.obj.SetMatrix(MGetIdent());
+			for (int i = 0; i < this->mod.obj.frame_num(); i++) {
+				std::string s = this->mod.obj.frame_name(i);
+				if (s.find("mag_fall") != std::string::npos) {
+					this->frame[0].first = i;//排莢
+					this->frame[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[0].first));//mag
+					this->frame[1].first = i + 1;
+					this->frame[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[1].first));//mag先
+				}
+				else if (s.find("case") != std::string::npos) {
+					this->frame[2].first = i;//排莢
+				}
+				else if (s.find("mazzule") != std::string::npos) {
+					this->frame[3].first = i;//マズル
+				}
+				else if (s.find("scope") != std::string::npos) {
+					this->frame[4].first = i;//スコープ
+					this->frame[4].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[4].first));
+				}
+				else if (s.find("trigger") != std::string::npos) {
+					this->frame[5].first = i + 1;//トリガー
+				}
+				else if (s.find("LEFT") != std::string::npos) {
+					this->frame[6].first = i;//左手
+				}
+				else if (s.find("site") != std::string::npos) {
+					this->frame[7].first = i;//アイアンサイト
+					this->frame[7].second = this->mod.obj.frame(i);
+				}
+			}
+			//テキスト
+			{
+				int mdata = FileRead_open(("data/gun/" + this->name + "/data.txt").c_str(), FALSE);
+				//装弾数
+				this->ammo_max = getparams::_long(mdata);
+				//セレクター設定
+				while (true) {
+					auto p = getparams::_str(mdata);
+					if (getright(p.c_str()).find("end") != std::string::npos) {
+						break;
+					}
+					else if (getright(p.c_str()).find("semi") != std::string::npos) {
+						this->select.emplace_back(uint8_t(1));					//セミオート=1
+					}
+					else if (getright(p.c_str()).find("full") != std::string::npos) {
+						this->select.emplace_back(uint8_t(2));					//フルオート=2
+					}
+					else if (getright(p.c_str()).find("3b") != std::string::npos) {
+						this->select.emplace_back(uint8_t(3));					//3連バースト=3
+					}
+					else if (getright(p.c_str()).find("2b") != std::string::npos) {
+						this->select.emplace_back(uint8_t(4));					//2連バースト=4
+					}
+					else {
+						this->select.emplace_back(uint8_t(1));
+					}
+				}
+				//サウンド
+				this->audio.set(mdata);
+				FileRead_close(mdata);
+			}
+		}
 	};
 	//player
 		//弾薬

@@ -48,7 +48,7 @@ public:
 	EffekseerEffectHandle& get_gndhitHandle() noexcept { return gndsmkHndle; }
 	const EffekseerEffectHandle& get_gndhitHandle() const noexcept { return gndsmkHndle; }
 
-	DXDraw(const char* title, const int& xd, const int& yd, const float& fps = 60.f, const bool& usesdw = true, const bool& getlog=false) {
+	DXDraw(const char* title, const int& xd, const int& yd, const int& o_xd, const int& o_yd, const float& fps = 60.f, const bool& usesdw = true, const bool& getlog=false) {
 		use_shadow = usesdw;
 		disp_x = xd;
 		disp_y = yd;
@@ -77,11 +77,17 @@ public:
 		//エフェクト
 		{
 			size_t j = 0;
-			for (auto& e : effHndle)
+			for (auto& e : effHndle) {
 				e = EffekseerEffectHandle::load("data/effect/" + std::to_string(j++) + ".efk");
+			}
 			gndsmkHndle = EffekseerEffectHandle::load("data/effect/gndsmk.efk");
 		}
-
+		SetWindowSize(o_xd, o_yd);
+		SetWindowPosition( 
+			//*
+			deskx+ 
+			//*/
+			(deskx - o_xd) / 2 - 8, -32);
 	}
 	~DXDraw(void) {
 		Effkseer_End();

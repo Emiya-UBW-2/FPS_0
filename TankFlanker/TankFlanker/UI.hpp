@@ -58,6 +58,7 @@ public:
 		out_disp_y = o_yd;
 		disp_x = xd;
 		disp_y = yd;
+		SetUseASyncLoadFlag(TRUE);
 
 		font36 = FontHandle::Create(y_r(36, disp_y), DX_FONTTYPE_EDGE);
 		font24 = FontHandle::Create(y_r(24, disp_y), DX_FONTTYPE_EDGE);
@@ -82,6 +83,8 @@ public:
 		cancel = SoundHandle::Load("data/audio/cancel.wav");
 		cursor = SoundHandle::Load("data/audio/cursor.wav");
 		whistle = SoundHandle::Load("data/audio/whistle.wav");
+
+		SetUseASyncLoadFlag(FALSE);
 	}
 	~UI() {
 	}
@@ -105,7 +108,7 @@ public:
 		start_fl = 0.f;
 		float sets = 0.f;
 		switchs setf;
-		bool restart = true;
+		unsigned char restart = 0;
 		//
 		while (ProcessMessage() == 0) {
 			const auto fps = GetFPS();
@@ -171,9 +174,13 @@ public:
 				setf.get_in(CheckHitKey(KEY_INPUT_O) != 0);
 				if (setf.first) {
 					restart = settings->set_draw_setting();
+					if (restart >= 2) {
+						setf.first = false;
+					}
 					easing_set(&sets, 1.f, 0.9f, fps);
 				}
 				else {
+					settings->reset();
 					easing_set(&sets, 0.f, 0.9f, fps);
 				}
 				bufScreen.SetDraw_Screen();
@@ -220,7 +227,7 @@ public:
 				break;
 			}
 			//設定適応後再起動するやつ
-			if (!setf.first && !restart) {
+			if (restart == 3) {
 				//
 				settings->save();
 				start_me();
@@ -258,17 +265,10 @@ public:
 			}
 		}
 	}
+	template<class Y, class D>
 	void set_draw(
 		const Mainclass::Chara& chara,
-		const std::vector<int>& scores,
-		const bool& c_ready,
-		const float& c_readytimer,
-		const bool& c_start,
-		const bool& c_end,
-		const float& c_timer,
-		const int& point ,
-		const int& p_up,
-		const int& p_down,
+		std::unique_ptr<Y, D>& scoreparts,
 		const bool& vr = false
 	) {
 		//
@@ -283,25 +283,25 @@ public:
 					int xp = disp_x / 2, yp = disp_y / 2 + disp_y / 12;
 
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_df), 0, 255));
-					font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(50, 150, 255), " +%d", p_down);
+					font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(50, 150, 255), " +%d", scoreparts->p_down);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_uf), 0, 255));
-					font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 255, 0), " +%d", p_up);
+					font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 255, 0), " +%d", scoreparts->p_up);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*std::max(point_uf, point_df)), 0, 255));
 					font_big->DrawStringFormat(xp - font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 0, 0), "[%d]", int(point_r));
 
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-					if (point - 50.f / fps > point_r) {
+					if (scoreparts->point - 50.f / fps > point_r) {
 						point_r += 50.f / fps;
 						easing_set(&point_uf, 1.f, 0.9f, fps);
 					}
 					else {
-						if (point + 10.f / fps < point_r) {
+						if (scoreparts->point + 10.f / fps < point_r) {
 							point_r -= 10.f / fps;
 							easing_set(&point_df, 1.f, 0.9f, fps);
 						}
 						else {
-							point_r = float(point);
+							point_r = float(scoreparts->point);
 							easing_set(&point_df, 0.f, 0.975f, fps);
 						}
 						easing_set(&point_uf, 0.f, 0.975f, fps);
@@ -312,18 +312,18 @@ public:
 					int xp = disp_x / 2;
 					int yp = disp_y / 2-int(ready_yp);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ready_f), 0, 255));
-					if (!c_end) {
-						if (!c_start) {
+					if (!scoreparts->c_end) {
+						if (!scoreparts->c_start) {
 							font->DrawString(xp - font->GetDrawWidth("READY") / 2, yp, "READY", GetColor(255, 0, 0));
-							if (c_ready) {
+							if (scoreparts->c_ready) {
 								font_big->DrawStringFormat(
-									xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, c_readytimer) / 2,
-									yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, c_readytimer);
-								if (int(c_readytimer_old) != int(c_readytimer)) {
+									xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, scoreparts->c_readytimer) / 2,
+									yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->c_readytimer);
+								if (int(c_readytimer_old) != int(scoreparts->c_readytimer)) {
 									timer.play(DX_PLAYTYPE_BACK, TRUE);
 								}
 							}
-							c_readytimer_old = c_readytimer;
+							c_readytimer_old = scoreparts->c_readytimer;
 
 							ready_f = 1.f;
 							ready_yp = float(disp_y / 12);
@@ -335,7 +335,7 @@ public:
 								ready_f = 0.75f;
 								easing_set(&ready_yp, float(disp_y / 6), 0.95f, fps);
 
-								font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", 0, c_timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", 0, c_timer);
+								font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", 0, scoreparts->c_timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->c_timer);
 							}
 							else {
 								font->DrawString(xp - font->GetDrawWidth("START!") / 2, yp, "START!", GetColor(255, 0, 0));
@@ -354,7 +354,7 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 				//スコアボード
-				if (c_end) {
+				if (scoreparts->c_end) {
 					int xs = disp_y / 4;
 					int ys = disp_y / 4;
 					int xp = disp_x / 2 - xs / 2;
@@ -364,14 +364,14 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					{
 						//スコアズ
-						font->DrawStringFormat(xp, yp, GetColor(255, 128, 0), "TOTAL POINT : %d", point); yp += y_r(48, disp_y);
+						font->DrawStringFormat(xp, yp, GetColor(255, 128, 0), "TOTAL POINT : %d", scoreparts->point); yp += y_r(48, disp_y);
 						int i = 1;
 						bool ss = false;
-						for (auto& s : scores) {
+						for (auto& s : scoreparts->score_s) {
 							if (yp > disp_y / 2 + ys / 2) {
 								break;
 							}
-							if (point == s && !ss) {
+							if (scoreparts->point == s && !ss) {
 								font->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%04d : %04d", i, s);
 								ss = true;
 							}

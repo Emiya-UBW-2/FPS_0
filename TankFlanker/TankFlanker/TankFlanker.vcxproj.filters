@@ -68,5 +68,8 @@
     <ClInclude Include="Setting.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="route.hpp">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
