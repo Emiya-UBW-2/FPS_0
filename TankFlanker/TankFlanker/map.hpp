@@ -8,6 +8,8 @@ private:
 	GraphHandle SkyScreen;
 	int disp_x = 1920;
 	int disp_y = 1080;
+
+	SoundHandle envi;
 public:
 	Mapclass(const int& xd, const int& yd) {
 		disp_x = xd;
@@ -23,6 +25,9 @@ public:
 		MV1::Load("data/map/model.mv1", &map, true);		   //map
 		MV1::Load("data/map/col.mv1", &map_col, true);		   //mapコリジョン
 		MV1::Load("data/model/sky/model.mv1", &sky, true);	 //空
+		SetUseASyncLoadFlag(TRUE);
+		envi = SoundHandle::Load("data/audio/envi.wav");
+		SetUseASyncLoadFlag(FALSE);
 	}
 
 	void set_map() {
@@ -45,10 +50,15 @@ public:
 			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, i);
 		}
 	}
+
+	void start_map() {
+		envi.play(DX_PLAYTYPE_LOOP, TRUE);
+	}
 	void delete_map() {
 		map.Dispose();		   //map
 		map_col.Dispose();		   //mapコリジョン
 		sky.Dispose();	 //空
+		envi.Dispose();
 	}
 
 	auto& map_get() { return map; }
@@ -57,18 +67,6 @@ public:
 
 	auto map_col_line(const VECTOR_ref& startpos, const VECTOR_ref& endpos, const int&  i) {
 		return map_col.CollCheck_Line(startpos, endpos, 0, i);
-	}
-
-	bool map_col_line_nearest(const VECTOR_ref& startpos, VECTOR_ref* endpos) {
-		bool p = false;
-		for (int i = 0; i < map_col_get().mesh_num(); i++) {
-			auto hp = map_col_line(startpos, *endpos, i);
-			if (hp.HitFlag == TRUE) {
-				*endpos = hp.HitPosition;
-				p = true;
-			}
-		}
-		return p;
 	}
 
 	//空描画

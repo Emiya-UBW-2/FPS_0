@@ -77,6 +77,7 @@ public:
 			//マップ読み込み
 			mapparts->set_map_pre();
 			UIparts->load_window("マップモデル");
+			mapparts->set_map();
 			//ターゲット
 			{
 				tgt_pic.resize(4);
@@ -155,6 +156,9 @@ public:
 				float fov = deg2rad(settings->useVR_e ? 90 : 45);		//
 				float fov_fps = fov;						//
 				SetMousePoint(deskx / 2, desky / 2);
+				//envi
+
+				//
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
@@ -575,6 +579,13 @@ public:
 										if (p.HitFlag == TRUE) {
 											a.pos = p.HitPosition;
 										}
+										/*
+										auto p2 = mapparts->map_col_line(a.repos, a.pos, 1);
+										if (p2.HitFlag == TRUE) {
+											a.pos = p2.HitPosition;
+											p = p2;
+										}
+										*/
 										for (auto& tp : tgt_pic) {
 											auto q = tp.obj.CollCheck_Line(a.repos, a.pos, 0, 1);
 											if (q.HitFlag == TRUE) {
@@ -627,6 +638,7 @@ public:
 												//
 												set_effect(&c.effcs[ef_reco], a.pos, q.Normal, 0.011f / 0.1f);
 												//
+												a.hit = true;
 												a.flug = false;
 												for (auto& b : c.effcs_gun) {
 													if (b.second == &a) {
