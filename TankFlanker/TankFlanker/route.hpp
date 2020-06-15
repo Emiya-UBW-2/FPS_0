@@ -372,11 +372,19 @@ public:
 								//引き金(左クリック)
 								easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 && !mine.safety.first), 0.5f, fps);
 								//ADS
-								ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+								if (mine.gunptr->cate == 1) {
+									ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+								}
 								//マグキャッチ(Rキー)
 								easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
 								//セフティ(Tキー)
-								mine.safety.get_in(CheckHitKey(KEY_INPUT_T) != 0);
+								if (mine.gunptr->cate == 1) {
+									mine.safety.get_in(CheckHitKey(KEY_INPUT_T) != 0);
+								}
+								else {
+									mine.safety.first = false;
+									mine.safety.second = 0;
+								}
 								//セレクター(中ボタン)
 								mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
 								//タイマーオン(Bキー)

@@ -281,6 +281,11 @@ public:
 			FontHandle* font = (!vr) ? &font18 : &font12;
 			//ƒ_ƒ[ƒW
 			{
+				if (!scoreparts->c_start) {
+					point_r = float(scoreparts->point);
+				}
+			}
+			{
 				int xp = disp_x / 2, yp = disp_y / 2 + disp_y / 12;
 
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_df), 0, 255));
