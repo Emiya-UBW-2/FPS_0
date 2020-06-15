@@ -401,29 +401,29 @@ public:
 								//
 								easing_set(&c.vecadd_LHAND, c.vecadd_LHAND_p, 0.9f, fps);
 								easing_set(&c.vecadd_LHAND_p, VGet(0, 0, 1.f), 0.975f, fps);
-								if (c.gunptr->cate == 1) {
-									//リコイル
-									if (c.gunf) {
-										if (c.ammoc >= 1) {
-											c.obj.get_anime(0).per = 1.f;
-											c.obj.get_anime(1).per = 0.f;
-											c.obj.get_anime(0).time += 60.f / fps;
-											if (c.obj.get_anime(0).time >= c.obj.get_anime(0).alltime) {
-												c.obj.get_anime(0).time = 0.f;
-												c.gunf = false;
-											}
+								//リコイル
+								if (c.gunf) {
+									if (c.ammoc >= 1) {
+										c.obj.get_anime(0).per = 1.f;
+										c.obj.get_anime(1).per = 0.f;
+										c.obj.get_anime(0).time += 60.f / fps;
+										if (c.obj.get_anime(0).time >= c.obj.get_anime(0).alltime) {
+											c.obj.get_anime(0).time = 0.f;
+											c.gunf = false;
 										}
-										else {
-											c.obj.get_anime(1).per = 1.f;
-											c.obj.get_anime(0).per = 0.f;
-											c.obj.get_anime(1).time += 60.f / fps;
-											if (c.obj.get_anime(1).time >= c.obj.get_anime(1).alltime) {
-												c.obj.get_anime(1).time = c.obj.get_anime(1).alltime;
-												c.gunf = false;
-											}
-										}
-
 									}
+									else {
+										c.obj.get_anime(1).per = 1.f;
+										c.obj.get_anime(0).per = 0.f;
+										c.obj.get_anime(1).time += 60.f / fps;
+										if (c.obj.get_anime(1).time >= c.obj.get_anime(1).alltime) {
+											c.obj.get_anime(1).time = c.obj.get_anime(1).alltime;
+											c.gunf = false;
+										}
+									}
+
+								}
+								if (c.gunptr->cate == 1) {
 									//マガジン排出
 									if (c.obj.get_anime(5).per >= 0.5f) {
 										if (c.ammoc >= 1) {
@@ -441,107 +441,121 @@ public:
 									if (c.selkey == 1) {
 										++c.select %= c.gunptr->select.size();
 									}
-									//セフティ
-									easing_set(&c.obj.get_anime(4).per, float(c.safety.first), 0.5f, fps);
 								}
+								//セフティ
+								easing_set(&c.obj.get_anime(4).per, float(c.safety.first), 0.5f, fps);
 								//射撃
-								if (c.gunptr->cate == 1) {
-									if (!c.gunf && c.ammoc >= 1) {
-										if (c.gunptr->select[c.select] == 2) {//フルオート用
-											c.trigger = 0;
-										}
+								if (!c.gunf && c.ammoc >= 1) {
+									if (c.gunptr->select[c.select] == 2) {//フルオート用
+										c.trigger = 0;
 									}
 								}
 								c.trigger = std::clamp<uint8_t>(c.trigger + 1, 0, (c.obj.get_anime(2).per >= 0.5f) ? 2 : 0);
 								if (c.trigger == 1) {
 									c.audio.trigger.play_3D(c.pos + c.pos_LHAND, 1.f);
 								}
-								if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
-									if (&c == &mine) {
-										vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
-									}
-									c.ammoc--;
-									++c.guncnt;
-									c.gunf = true;
-									if (scoreparts->c_start && !scoreparts->c_end) {
-										scoreparts->sub(-4);
-									}
-									//持ち手を持つとココが相殺される
-									if (c.LEFT_hand) {
-										c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(-50 + GetRand(150)) / 100.f)));
-									}
-									else {
-										c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(300 + GetRand(700)) / 100.f)));
-									}
-									c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
-									c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
-									auto& u = c.bullet[c.usebullet];
-									auto& a = c.ammo[c.usebullet];
-									++c.usebullet %= c.bullet.size();
-									//ココだけ変化
-									u.spec.caliber_a = 0.011f;
-									u.spec.damage_a = 33;
-									u.spec.pene_a = 10.f;
-									u.spec.speed_a = 260.f;
-
-									u.pos = c.obj.frame(c.gunptr->frame[3].first);
-									u.vec = c.mat_LHAND.zvec()*-1.f;
-									u.hit = false;
-									u.flug = true;
-									u.cnt = 0.f;
-									u.yadd = 0.f;
-									u.repos = u.pos;
-
-									set_effect(&c.effcs[ef_fire], u.pos, u.vec, 0.0025f / 0.1f);
-									{
-										set_effect(&c.effcs_gun[c.gun_effcnt].first, u.pos, u.vec, 0.11f / 0.1f);
-										set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
-										c.effcs_gun[c.gun_effcnt].second = &u;
-										c.effcs_gun[c.gun_effcnt].cnt = 0.f;
-										++c.gun_effcnt %= c.effcs_gun.size();
-									}
-
-
-									a.cnt = 0.f;
-									a.pos = c.obj.frame(c.gunptr->frame[2].first);//排莢
-									a.add = (c.obj.frame(c.gunptr->frame[2].first + 1) - a.pos).Norm()*2.5f / fps;//排莢ベクトル
-									a.mat = c.mat_LHAND;
-								}
-								//マガジン取得
-								if (c.reloadf) {
-									if (!c.down_mag) {
-										c.mat_mag *= MATRIX_ref::Mtrans(c.mat_addvec*c.mat_add);
-										c.mat_add += -9.8f / powf(fps, 2.f);
-										easing_set(&c.mat_addvec, VGet(0, 1.f, 0), 0.95f, fps);
-									}
-									else {
-										auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
-										VECTOR_ref xvec = MATRIX_ref::Vtrans(c.mat_RHAND.xvec(), p);
-										VECTOR_ref yvec = MATRIX_ref::Vtrans(c.mat_RHAND.yvec(), p);
-										VECTOR_ref zvec = MATRIX_ref::Vtrans(c.mat_RHAND.zvec(), p);
-
-										c.mat_mag = c.mag.GetFrameLocalMatrix(3)* MATRIX_ref::Axis1(xvec, yvec, zvec)* MATRIX_ref::Mtrans(c.pos_RHAND + c.pos);
-
-										if ((c.mag.frame(3) - c.obj.frame(c.gunptr->frame[0].first)).size() <= 0.05f) {
-											c.obj.get_anime(1).time = 0.f;
-											c.obj.get_anime(0).per = 1.f;
-											c.obj.get_anime(1).per = 0.f;
-											if (c.ammoc == 0) {
-												c.obj.get_anime(3).per = 1.f;
-											}
-
-											c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
-
-											c.reloadf = false;
-											c.ammoc += c.gunptr->ammo_max;
+								if (c.gunptr->cate == 1) {
+									if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
+										if (&c == &mine) {
+											vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 										}
+										c.ammoc--;
+										++c.guncnt;
+										c.gunf = true;
+										if (scoreparts->c_start && !scoreparts->c_end) {
+											scoreparts->sub(-4);
+										}
+										//持ち手を持つとココが相殺される
+										if (c.LEFT_hand) {
+											c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(-50 + GetRand(150)) / 100.f)));
+										}
+										else {
+											c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(300 + GetRand(700)) / 100.f)));
+										}
+										c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
+										c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
+										auto& u = c.bullet[c.usebullet];
+										auto& a = c.ammo[c.usebullet];
+										++c.usebullet %= c.bullet.size();
+										//ココだけ変化
+										u.spec.caliber_a = 0.011f;
+										u.spec.damage_a = 33;
+										u.spec.pene_a = 10.f;
+										u.spec.speed_a = 260.f;
+
+										u.pos = c.obj.frame(c.gunptr->frame[3].first);
+										u.vec = c.mat_LHAND.zvec()*-1.f;
+										u.hit = false;
+										u.flug = true;
+										u.cnt = 0.f;
+										u.yadd = 0.f;
+										u.repos = u.pos;
+
+										set_effect(&c.effcs[ef_fire], u.pos, u.vec, 0.0025f / 0.1f);
+										{
+											set_effect(&c.effcs_gun[c.gun_effcnt].first, u.pos, u.vec, 0.11f / 0.1f);
+											set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
+											c.effcs_gun[c.gun_effcnt].second = &u;
+											c.effcs_gun[c.gun_effcnt].cnt = 0.f;
+											++c.gun_effcnt %= c.effcs_gun.size();
+										}
+
+
+										a.cnt = 0.f;
+										a.pos = c.obj.frame(c.gunptr->frame[2].first);//排莢
+										a.add = (c.obj.frame(c.gunptr->frame[2].first + 1) - a.pos).Norm()*2.5f / fps;//排莢ベクトル
+										a.mat = c.mat_LHAND;
+									}
+									//マガジン取得
+									if (c.reloadf) {
+										if (!c.down_mag) {
+											c.mat_mag *= MATRIX_ref::Mtrans(c.mat_addvec*c.mat_add);
+											c.mat_add += -9.8f / powf(fps, 2.f);
+											easing_set(&c.mat_addvec, VGet(0, 1.f, 0), 0.95f, fps);
+										}
+										else {
+											auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
+											VECTOR_ref xvec = MATRIX_ref::Vtrans(c.mat_RHAND.xvec(), p);
+											VECTOR_ref yvec = MATRIX_ref::Vtrans(c.mat_RHAND.yvec(), p);
+											VECTOR_ref zvec = MATRIX_ref::Vtrans(c.mat_RHAND.zvec(), p);
+
+											c.mat_mag = c.mag.GetFrameLocalMatrix(3)* MATRIX_ref::Axis1(xvec, yvec, zvec)* MATRIX_ref::Mtrans(c.pos_RHAND + c.pos);
+
+											if ((c.mag.frame(3) - c.obj.frame(c.gunptr->frame[0].first)).size() <= 0.05f) {
+												c.obj.get_anime(1).time = 0.f;
+												c.obj.get_anime(0).per = 1.f;
+												c.obj.get_anime(1).per = 0.f;
+												if (c.ammoc == 0) {
+													c.obj.get_anime(3).per = 1.f;
+												}
+
+												c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
+
+												c.reloadf = false;
+												c.ammoc += c.gunptr->ammo_max;
+											}
+										}
+									}
+									else {
+										c.mat_mag = c.mat_LHAND* MATRIX_ref::Mtrans(c.obj.frame(c.gunptr->frame[1].first));
+										c.down_mag = false;
+										c.mat_add = 0.f;
+										c.mat_addvec = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm();
 									}
 								}
 								else {
-									c.mat_mag = c.mat_LHAND* MATRIX_ref::Mtrans(c.obj.frame(c.gunptr->frame[1].first));
-									c.down_mag = false;
-									c.mat_add = 0.f;
-									c.mat_addvec = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm();
+									//近接
+									if (c.trigger == 1 && !c.gunf) {
+										if (&c == &mine) {
+											vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
+										}
+										c.gunf = true;
+										if (scoreparts->c_start && !scoreparts->c_end) {
+											scoreparts->sub(-4);
+										}
+										c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
+										c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
+									}
 								}
 								{
 									//右手
@@ -578,8 +592,9 @@ public:
 										);
 									}
 								}
-
-								c.mag.SetMatrix(c.mat_mag);
+								if (c.gunptr->cate == 1) {
+									c.mag.SetMatrix(c.mat_mag);
+								}
 								c.obj.SetMatrix(c.mat_LHAND*MATRIX_ref::Mtrans(c.pos_LHAND + c.pos));
 								c.hand.SetMatrix(c.mat_HMD*MATRIX_ref::Mtrans(c.pos_HMD + c.pos));
 							}
