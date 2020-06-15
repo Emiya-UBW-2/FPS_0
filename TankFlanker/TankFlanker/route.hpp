@@ -10,14 +10,14 @@ class main_c {
 	//データ
 	MV1 hand;
 	std::vector<Mainclass::Gun> gun_data;	//GUNデータ
+	std::vector<Mainclass::Chara> chara;	//キャラ
+	std::vector<Mainclass::tgts> tgt_pic;	//ターゲット
 	//
 	bool ending = true;
 	int sel_g = 0;
 public:
 	main_c() {
 		//ラムダ式のいざこざが治ったら戻す
-		std::vector<Mainclass::Chara> chara;	//キャラ
-		std::vector<Mainclass::tgts> tgt_pic;	//ターゲット
 		//
 		auto settings = std::make_unique<Setting>();			//設定読み込み
 		auto vrparts = std::make_unique<VRDraw>(&settings->useVR_e);	//DXLib描画
@@ -48,15 +48,16 @@ public:
 		auto mapparts = std::make_unique<Mapclass>(this->dispx, this->dispy);			//map
 		auto tgtparts = std::make_unique<Mainclass::tgttmp>();					//ターゲット
 		//GUNデータ
-		gun_data.resize(3);
-		gun_data[0].name = "1911";
-		gun_data[1].name = "M82A2";
-		gun_data[2].name = "CAR15_M4";
+		gun_data.resize(4);
+		gun_data[0].name = "Knife";
+		gun_data[1].name = "1911";
+		gun_data[2].name = "M82A2";
+		gun_data[3].name = "CAR15_M4";
 		for (auto& g : gun_data) {
 			g.mod.set(g.name);
 		}
 		//ロード画面
-		UIparts->load_window("モデル");
+		UIparts->load_window("銃モデル");
 		//GUNデータ取得
 		for (auto& g : gun_data) {
 			g.set_data();
@@ -95,11 +96,11 @@ public:
 			//ライティング
 			Drawparts->Set_Light_Shadow(settings->shadow_level_e, VGet(50.f, 20.f, 50.f), VGet(0.05f, -0.5f, 0.75f), [&mapparts] {mapparts->map_get().DrawModel(); });
 			//影に描画するものを指定する(仮)
-			auto draw_in_shadow = [&tgt_pic, &chara] {
-				for (auto& p : tgt_pic) {
+			auto draw_in_shadow = [&] {
+				for (auto& p : this->tgt_pic) {
 					p.obj.DrawModel();
 				}
-				for (auto& c : chara) {
+				for (auto& c : this->chara) {
 					c.hand.DrawModel();
 					c.mag.DrawModel();
 					c.obj.DrawModel();
@@ -109,36 +110,35 @@ public:
 					}
 				}
 			};
-			auto draw_on_shadow = [&mapparts, &tgt_pic, &chara] {
-				SetFogStartEnd(0.0f, 300.f);
-				SetFogColor(128, 128, 128);
-				mapparts->map_get().DrawModel();
-				for (auto& p : tgt_pic) {
-					p.obj.DrawModel();
-				}
-				for (auto& c : chara) {
-					c.hand.DrawModel();
-					c.mag.DrawModel();
-					c.obj.DrawModel();
-					for (auto& a : c.ammo) {
-						if (a.cnt < 0.f) { continue; }
-						a.second.DrawModel();
+			auto draw_by_shadow = [&] {
+				Drawparts->Draw_by_Shadow([&] {
+					SetFogStartEnd(0.0f, 300.f);
+					SetFogColor(128, 128, 128);
+					mapparts->map_get().DrawModel();
+					for (auto& p : this->tgt_pic) {
+						p.obj.DrawModel();
 					}
-				}
-				//銃弾
-				SetFogEnable(FALSE);
-				SetUseLighting(FALSE);
-				for (auto& c : chara) {
-					for (auto& a : c.bullet) {
-						if (!a.flug) { continue; }
-						DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+					for (auto& c : this->chara) {
+						c.hand.DrawModel();
+						c.mag.DrawModel();
+						c.obj.DrawModel();
+						for (auto& a : c.ammo) {
+							if (a.cnt < 0.f) { continue; }
+							a.second.DrawModel();
+						}
 					}
-				}
-				SetUseLighting(TRUE);
-				SetFogEnable(TRUE);
-			};
-			auto draw_by_shadow = [&Drawparts, &draw_on_shadow] {
-				Drawparts->Draw_by_Shadow(draw_on_shadow);
+					//銃弾
+					SetFogEnable(FALSE);
+					SetUseLighting(FALSE);
+					for (auto& c : this->chara) {
+						for (auto& a : c.bullet) {
+							if (!a.flug) { continue; }
+							DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+						}
+					}
+					SetUseLighting(TRUE);
+					SetFogEnable(TRUE);
+				});
 			};
 			//開始
 			{

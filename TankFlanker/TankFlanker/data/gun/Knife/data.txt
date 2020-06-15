@@ -1,5 +1,5 @@
-ammo_max=7
-cat=gun
+ammo_max=1
+cat=knife
 mode=semi
 mode=end
 shot_sound=1

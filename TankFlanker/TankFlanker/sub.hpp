@@ -214,6 +214,7 @@ public:
 			}
 		};
 	public:
+		uint8_t cate = 0;
 		std::string name;
 		std::vector<frames> frame;
 		size_t ammo_max=0;//マガジンの装弾数
@@ -224,68 +225,86 @@ public:
 		void set_data() {
 			//フレーム
 			this->frame.resize(8);
+			this->frame[0].first = INT_MAX;
+			this->frame[1].first = INT_MAX;
+			this->frame[2].first = INT_MAX;
+			this->frame[3].first = INT_MAX;
 			this->frame[4].first = INT_MAX;
+			this->frame[5].first = INT_MAX;
+			this->frame[6].first = INT_MAX;
 			this->frame[7].first = INT_MAX;
+
 			this->mod.obj.SetMatrix(MGetIdent());
-			for (int i = 0; i < this->mod.obj.frame_num(); i++) {
-				std::string s = this->mod.obj.frame_name(i);
-				if (s.find("mag_fall") != std::string::npos) {
-					this->frame[0].first = i;//排莢
-					this->frame[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[0].first));//mag
-					this->frame[1].first = i + 1;
-					this->frame[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[1].first));//mag先
-				}
-				else if (s.find("case") != std::string::npos) {
-					this->frame[2].first = i;//排莢
-				}
-				else if (s.find("mazzule") != std::string::npos) {
-					this->frame[3].first = i;//マズル
-				}
-				else if (s.find("scope") != std::string::npos) {
-					this->frame[4].first = i;//スコープ
-					this->frame[4].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[4].first));
-				}
-				else if (s.find("trigger") != std::string::npos) {
-					this->frame[5].first = i + 1;//トリガー
-				}
-				else if (s.find("LEFT") != std::string::npos) {
-					this->frame[6].first = i;//左手
-				}
-				else if (s.find("site") != std::string::npos) {
-					this->frame[7].first = i;//アイアンサイト
-					this->frame[7].second = this->mod.obj.frame(i);
-				}
-			}
-			//テキスト
 			{
-				int mdata = FileRead_open(("data/gun/" + this->name + "/data.txt").c_str(), FALSE);
-				//装弾数
-				this->ammo_max = getparams::_long(mdata);
-				//セレクター設定
-				while (true) {
-					auto p = getparams::_str(mdata);
-					if (getright(p.c_str()).find("end") != std::string::npos) {
-						break;
+				for (int i = 0; i < this->mod.obj.frame_num(); i++) {
+					std::string s = this->mod.obj.frame_name(i);
+					if (s.find("mag_fall") != std::string::npos) {
+						this->frame[0].first = i;//排莢
+						this->frame[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[0].first));//mag
+						this->frame[1].first = i + 1;
+						this->frame[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[1].first));//mag先
 					}
-					else if (getright(p.c_str()).find("semi") != std::string::npos) {
-						this->select.emplace_back(uint8_t(1));					//セミオート=1
+					else if (s.find("case") != std::string::npos) {
+						this->frame[2].first = i;//排莢
 					}
-					else if (getright(p.c_str()).find("full") != std::string::npos) {
-						this->select.emplace_back(uint8_t(2));					//フルオート=2
+					else if (s.find("mazzule") != std::string::npos) {
+						this->frame[3].first = i;//マズル
 					}
-					else if (getright(p.c_str()).find("3b") != std::string::npos) {
-						this->select.emplace_back(uint8_t(3));					//3連バースト=3
+					else if (s.find("scope") != std::string::npos) {
+						this->frame[4].first = i;//スコープ
+						this->frame[4].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[4].first));
 					}
-					else if (getright(p.c_str()).find("2b") != std::string::npos) {
-						this->select.emplace_back(uint8_t(4));					//2連バースト=4
+					else if (s.find("trigger") != std::string::npos) {
+						this->frame[5].first = i + 1;//トリガー
 					}
-					else {
-						this->select.emplace_back(uint8_t(1));
+					else if (s.find("LEFT") != std::string::npos) {
+						this->frame[6].first = i;//左手
+					}
+					else if (s.find("site") != std::string::npos) {
+						this->frame[7].first = i;//アイアンサイト
+						this->frame[7].second = this->mod.obj.frame(i);
 					}
 				}
-				//サウンド
-				this->audio.set(mdata);
-				FileRead_close(mdata);
+				//テキスト
+				{
+					int mdata = FileRead_open(("data/gun/" + this->name + "/data.txt").c_str(), FALSE);
+					//装弾数
+					this->ammo_max = getparams::_long(mdata);
+					{
+						auto p = getparams::_str(mdata);
+						if (getright(p.c_str()).find("knife") != std::string::npos) {
+							this->cate = 0;
+						}
+						else if (getright(p.c_str()).find("gun") != std::string::npos) {
+							this->cate = 1;
+						}
+					}
+					//セレクター設定
+					while (true) {
+						auto p = getparams::_str(mdata);
+						if (getright(p.c_str()).find("end") != std::string::npos) {
+							break;
+						}
+						else if (getright(p.c_str()).find("semi") != std::string::npos) {
+							this->select.emplace_back(uint8_t(1));					//セミオート=1
+						}
+						else if (getright(p.c_str()).find("full") != std::string::npos) {
+							this->select.emplace_back(uint8_t(2));					//フルオート=2
+						}
+						else if (getright(p.c_str()).find("3b") != std::string::npos) {
+							this->select.emplace_back(uint8_t(3));					//3連バースト=3
+						}
+						else if (getright(p.c_str()).find("2b") != std::string::npos) {
+							this->select.emplace_back(uint8_t(4));					//2連バースト=4
+						}
+						else {
+							this->select.emplace_back(uint8_t(1));
+						}
+					}
+					//サウンド
+					this->audio.set(mdata);
+					FileRead_close(mdata);
+				}
 			}
 		}
 	};
@@ -397,7 +416,7 @@ public:
 				}
 			}
 			*/
-			//
+			//0..
 			this->gunptr = gundata;
 			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {

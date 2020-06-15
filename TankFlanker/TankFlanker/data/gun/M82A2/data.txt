@@ -1,4 +1,5 @@
 ammo_max=7
+cat=gun
 mode=semi
 mode=end
 shot_sound=2

@@ -1,4 +1,5 @@
 ammo_max=30
+cat=gun
 mode=semi
 mode=full
 mode=end
