@@ -416,7 +416,6 @@ public:
 				}
 			}
 			*/
-			//0..
 			this->gunptr = gundata;
 			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {

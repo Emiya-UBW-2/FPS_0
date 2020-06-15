@@ -102,11 +102,15 @@ public:
 				}
 				for (auto& c : this->chara) {
 					c.hand.DrawModel();
-					c.mag.DrawModel();
+					if (c.gunptr->cate == 1) {
+						c.mag.DrawModel();
+					}
 					c.obj.DrawModel();
-					for (auto& a : c.ammo) {
-						if (a.cnt < 0.f) { continue; }
-						a.second.DrawModel();
+					if (c.gunptr->cate == 1) {
+						for (auto& a : c.ammo) {
+							if (a.cnt < 0.f) { continue; }
+							a.second.DrawModel();
+						}
 					}
 				}
 			};
@@ -120,20 +124,26 @@ public:
 					}
 					for (auto& c : this->chara) {
 						c.hand.DrawModel();
-						c.mag.DrawModel();
+						if (c.gunptr->cate == 1) {
+							c.mag.DrawModel();
+						}
 						c.obj.DrawModel();
-						for (auto& a : c.ammo) {
-							if (a.cnt < 0.f) { continue; }
-							a.second.DrawModel();
+						if (c.gunptr->cate == 1) {
+							for (auto& a : c.ammo) {
+								if (a.cnt < 0.f) { continue; }
+								a.second.DrawModel();
+							}
 						}
 					}
 					//銃弾
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);
 					for (auto& c : this->chara) {
-						for (auto& a : c.bullet) {
-							if (!a.flug) { continue; }
-							DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+						if (c.gunptr->cate == 1) {
+							for (auto& a : c.bullet) {
+								if (!a.flug) { continue; }
+								DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+							}
 						}
 					}
 					SetUseLighting(TRUE);
@@ -391,50 +401,55 @@ public:
 								//
 								easing_set(&c.vecadd_LHAND, c.vecadd_LHAND_p, 0.9f, fps);
 								easing_set(&c.vecadd_LHAND_p, VGet(0, 0, 1.f), 0.975f, fps);
-								if (c.gunf) {
-									if (c.ammoc >= 1) {
-										c.obj.get_anime(0).per = 1.f;
-										c.obj.get_anime(1).per = 0.f;
-										c.obj.get_anime(0).time += 60.f / fps;
-										if (c.obj.get_anime(0).time >= c.obj.get_anime(0).alltime) {
-											c.obj.get_anime(0).time = 0.f;
-											c.gunf = false;
+								if (c.gunptr->cate == 1) {
+									//リコイル
+									if (c.gunf) {
+										if (c.ammoc >= 1) {
+											c.obj.get_anime(0).per = 1.f;
+											c.obj.get_anime(1).per = 0.f;
+											c.obj.get_anime(0).time += 60.f / fps;
+											if (c.obj.get_anime(0).time >= c.obj.get_anime(0).alltime) {
+												c.obj.get_anime(0).time = 0.f;
+												c.gunf = false;
+											}
 										}
-									}
-									else {
-										c.obj.get_anime(1).per = 1.f;
-										c.obj.get_anime(0).per = 0.f;
-										c.obj.get_anime(1).time += 60.f / fps;
-										if (c.obj.get_anime(1).time >= c.obj.get_anime(1).alltime) {
-											c.obj.get_anime(1).time = c.obj.get_anime(1).alltime;
-											c.gunf = false;
+										else {
+											c.obj.get_anime(1).per = 1.f;
+											c.obj.get_anime(0).per = 0.f;
+											c.obj.get_anime(1).time += 60.f / fps;
+											if (c.obj.get_anime(1).time >= c.obj.get_anime(1).alltime) {
+												c.obj.get_anime(1).time = c.obj.get_anime(1).alltime;
+												c.gunf = false;
+											}
 										}
-									}
 
-								}
-								//マガジン排出
-								if (c.obj.get_anime(5).per >= 0.5f) {
-									if (c.ammoc >= 1) {
-										c.ammoc = 1;
 									}
-									if (!c.reloadf) {
-										c.audio.mag_down.play_3D(c.pos + c.pos_LHAND, 1.f);
-										if (&c == &mine) {
-											vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
+									//マガジン排出
+									if (c.obj.get_anime(5).per >= 0.5f) {
+										if (c.ammoc >= 1) {
+											c.ammoc = 1;
 										}
+										if (!c.reloadf) {
+											c.audio.mag_down.play_3D(c.pos + c.pos_LHAND, 1.f);
+											if (&c == &mine) {
+												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
+											}
+										}
+										c.reloadf = true;
 									}
-									c.reloadf = true;
+									//セレクター
+									if (c.selkey == 1) {
+										++c.select %= c.gunptr->select.size();
+									}
+									//セフティ
+									easing_set(&c.obj.get_anime(4).per, float(c.safety.first), 0.5f, fps);
 								}
-								//セレクター
-								if (c.selkey == 1) {
-									++c.select %= c.gunptr->select.size();
-								}
-								//セフティ
-								easing_set(&c.obj.get_anime(4).per, float(c.safety.first), 0.5f, fps);
 								//射撃
-								if (!c.gunf && c.ammoc >= 1) {
-									if (c.gunptr->select[c.select] == 2) {//フルオート用
-										c.trigger = 0;
+								if (c.gunptr->cate == 1) {
+									if (!c.gunf && c.ammoc >= 1) {
+										if (c.gunptr->select[c.select] == 2) {//フルオート用
+											c.trigger = 0;
+										}
 									}
 								}
 								c.trigger = std::clamp<uint8_t>(c.trigger + 1, 0, (c.obj.get_anime(2).per >= 0.5f) ? 2 : 0);
