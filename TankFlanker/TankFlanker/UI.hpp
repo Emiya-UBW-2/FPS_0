@@ -442,6 +442,14 @@ public:
 					break;
 				}
 			}
+			//ƒAƒCƒeƒ€E‚¢
+			{
+				int xp = disp_x / 2;
+				int yp = disp_y / 2 + disp_y / 12;
+				if (chara.canget) {
+					font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "‚ðE‚¤ : F") / 2, yp, chara.canget_gun + "‚ðE‚¤ : F", GetColor(0, 255, 0));
+				}
+			}
 			//’e–ò
 			{
 				int xp = 0, xs = 0, yp = 0, ys = 0;
@@ -465,6 +473,9 @@ public:
 						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gunptr->ammo_max);
 					i++;
 				}
+				font->DrawStringFormat(300, 300, GetColor(255, 0, 0), "%d", chara.gunptr_have[0]);
+				font->DrawStringFormat(300, 320, GetColor(255, 0, 0), "%d", chara.gunptr_have[1]);
+				font->DrawStringFormat(300, 340, GetColor(255, 0, 0), "%d", chara.gunptr_have[2]);
 			}
 			if (vr) {
 				//‰EŽè

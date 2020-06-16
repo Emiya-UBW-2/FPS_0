@@ -340,6 +340,29 @@ public:
 		VECTOR_ref add;
 		MATRIX_ref mat;
 	};
+	class Gun_item {
+	public:
+		VECTOR_ref pos, add;
+		MATRIX_ref mat;
+		MV1 obj, mag;
+		Gun* gunptr = nullptr;
+
+		void set_chara(const VECTOR_ref& pos_, Gun*gundata) {
+			this->pos = pos_;
+			this->add = VGet(0, 0, 0);
+			this->mat = MGetIdent();
+			//手
+			this->gunptr = gundata;
+			this->obj = this->gunptr->mod.obj.Duplicate();
+			this->mag = this->gunptr->mod.mag.Duplicate();
+		}
+
+		void delete_chara() {
+			this->gunptr = nullptr;
+			this->obj.Dispose();
+			this->mag.Dispose();
+		}
+	};
 
 	class Chara {
 	public:
@@ -352,6 +375,8 @@ public:
 		std::array<EffectS, 12> gndsmkeffcs; /*effect*/
 		size_t gndsmk_use = 0;
 		Gun* gunptr=nullptr;
+
+		std::array<Gun*, 3> gunptr_have;
 		Audios audio;
 		MV1 obj, mag,hand;
 		std::array<ammo_obj, 64> ammo;	      /*確保する弾*/
@@ -371,10 +396,9 @@ public:
 
 
 		bool reloadf=false;
+		VECTOR_ref pos_mag;
+		VECTOR_ref add_mag;
 		MATRIX_ref mat_mag;
-		VECTOR_ref mat_addvec;
-		float mat_add=0.f;
-
 		bool down_mag=false;
 
 		VECTOR_ref pos_HMD;
@@ -392,7 +416,14 @@ public:
 
 		std::vector<frames> frame_hand;
 
-		void set_chara(const VECTOR_ref& pos_, Gun*gundata, const GraphHandle& scope,MV1& hand_) {
+		bool canget;
+		std::string canget_gun;
+		void set_list(Gun*gundata) {
+			this->gunptr_have[0] = gundata;
+			this->gunptr_have[1] = nullptr;
+			this->gunptr_have[2] = nullptr;
+		}
+		void set_chara(const VECTOR_ref& pos_, int gunid, const GraphHandle& scope,MV1& hand_) {
 			this->pos = pos_;
 			this->mat = MGetIdent();
 			//手
@@ -416,7 +447,8 @@ public:
 				}
 			}
 			*/
-			this->gunptr = gundata;
+			this->gunptr = gunptr_have[gunid];
+
 			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {
 				this->obj.SetTextureGraphHandle(1, scope, false);	//スコープ
@@ -478,6 +510,10 @@ public:
 			for (auto& t : this->effcs) {
 				t.handle.Dispose();
 			}
+		}
+		void init() {
+			delete_chara();
+			std::fill(gunptr_have.begin(), gunptr_have.end(), nullptr);
 		}
 	};
 };
