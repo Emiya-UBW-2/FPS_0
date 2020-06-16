@@ -184,6 +184,8 @@ public:
 				VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//ƒJƒƒ‰
 				float fov = deg2rad(settings->useVR_e ? 90 : 45);		//
 				float fov_fps = fov;						//
+
+				TPS.first = true;
 				SetMousePoint(deskx / 2, desky / 2);
 				//envi
 
