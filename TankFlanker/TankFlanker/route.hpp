@@ -197,7 +197,6 @@ public:
 						{
 							//銃変更
 							{
-								change_gun = std::clamp<uint8_t>(change_gun + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
 								if (change_gun == 1) {
 									auto pos = mine.pos;
 									++this->sel_g%=mine.gunptr_have.size();
@@ -218,21 +217,12 @@ public:
 									if (vrparts->get_hand2_num() != -1) {
 										auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
 										if (ptr_.turn && ptr_.now) {
-											if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
-												if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
-													easing_set(&add_pos_buf,
-														(
-															mine.mat_HMD.zvec()*ptr_.touch.y() +
-															mine.mat_HMD.xvec()*ptr_.touch.x()
-															)*-8.f / fps, 0.95f, fps);
-												}
-												else {
-													easing_set(&add_pos_buf,
-														(
-															mine.mat_HMD.zvec()*ptr_.touch.y() +
-															mine.mat_HMD.xvec()*ptr_.touch.x()
-															)*-4.f / fps, 0.95f, fps);
-												}
+											if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
+												easing_set(&add_pos_buf,
+													(
+													mine.mat_HMD.zvec()*ptr_.touch.y() +
+													mine.mat_HMD.xvec()*ptr_.touch.x()
+													)*-4.f / fps, 0.95f, fps);
 											}
 											else {
 												easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
@@ -372,6 +362,8 @@ public:
 										mine.safety.get_in(((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() < -0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f));
 										//セレクター
 										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first) ? 2 : 0);
+										//武装変更
+										change_gun = std::clamp<uint8_t>(change_gun + 1, 0, ((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) ? 2 : 0);
 									}
 								}
 								if (vrparts->get_hand2_num() != -1) {
@@ -387,6 +379,8 @@ public:
 												scoreparts->reset();
 											}
 										}
+										//銃変更
+										chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
 									}
 								}
 							}
@@ -419,6 +413,8 @@ public:
 								}
 								//銃変更
 								chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
+								//武装変更
+								change_gun = std::clamp<uint8_t>(change_gun + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
 							}
 							//タイマー処理
 							scoreparts->move_timer();

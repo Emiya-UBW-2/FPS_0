@@ -8,8 +8,9 @@
 #include <memory>
 
 #define BUTTON_TRIGGER vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)
-#define BUTTON_SIDE vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_IndexController_A)
+#define BUTTON_SIDE vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip)
 #define BUTTON_TOUCHPAD vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad)
+#define BUTTON_TOPBUTTON vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_ApplicationMenu)
 
 #define DEVICE_HMD vr::TrackedDeviceClass_HMD
 #define DEVICE_CONTROLLER vr::TrackedDeviceClass_Controller
