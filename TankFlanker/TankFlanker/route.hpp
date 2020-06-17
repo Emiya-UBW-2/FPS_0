@@ -49,11 +49,12 @@ public:
 		auto mapparts = std::make_unique<Mapclass>(this->dispx, this->dispy);			//map
 		auto tgtparts = std::make_unique<Mainclass::tgttmp>();					//ターゲット
 		//GUNデータ
-		gun_data.resize(4);
+		gun_data.resize(5);
 		gun_data[0].name = "Knife";
 		gun_data[1].name = "1911";
 		gun_data[2].name = "M82A2";
 		gun_data[3].name = "CAR15_M4";
+		gun_data[4].name = "AK74";
 		for (auto& g : gun_data) {
 			g.mod.set(g.name);
 		}
@@ -79,11 +80,12 @@ public:
 			else {
 				break;
 			}
-			gunitem.resize(4);
-			gunitem[0].set_chara(VGet( 2.f, 1.f, 0.0f), &gun_data[0]);
-			gunitem[1].set_chara(VGet( 0.f, 1.f, 0.0f), &gun_data[1]);
-			gunitem[2].set_chara(VGet(-2.f, 1.f, 0.0f), &gun_data[2]);
-			gunitem[3].set_chara(VGet(-4.f, 1.f, 0.0f), &gun_data[3]);
+			gunitem.resize(5);
+			gunitem[0].set_chara(VGet( 4.f, 1.f, 0.0f), &gun_data[0]);
+			gunitem[1].set_chara(VGet( 2.f, 1.f, 0.0f), &gun_data[1]);
+			gunitem[2].set_chara(VGet( 0.f, 1.f, 0.0f), &gun_data[2]);
+			gunitem[3].set_chara(VGet(-2.f, 1.f, 0.0f), &gun_data[3]);
+			gunitem[4].set_chara(VGet(-4.f, 1.f, 0.0f), &gun_data[4]);
 			//マップ読み込み
 			mapparts->set_map_pre();
 			UIparts->load_window("マップモデル");
