@@ -32,6 +32,7 @@ private:
 	GraphHandle UI_trigger;
 	GraphHandle UI_mag_fall;
 	GraphHandle UI_mag_set;
+	GraphHandle UI_get;
 	float pt_pl = 0.f, pt_pr = 0.f;
 	float pt_pl2 = 0.f, pt_pr2 = 0.f;
 	float pt_pe = 0.f;
@@ -76,6 +77,7 @@ public:
 		UI_trigger = GraphHandle::Load("data/UI/trigger.bmp");
 		UI_mag_fall = GraphHandle::Load("data/UI/mag_fall.bmp");
 		UI_mag_set = GraphHandle::Load("data/UI/mag_set.bmp");
+		UI_get = GraphHandle::Load("data/UI/get.bmp");
 		SetTransColor(0, 0, 0);
 
 		timer = SoundHandle::Load("data/audio/timer.wav");
@@ -447,7 +449,12 @@ public:
 				int xp = disp_x / 2;
 				int yp = disp_y / 2 + disp_y / 12;
 				if (chara.canget) {
-					font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "‚ðE‚¤ : F") / 2, yp, chara.canget_gun + "‚ðE‚¤ : F", GetColor(0, 255, 0));
+					if (!vr) {
+						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "‚ðE‚¤ : F") / 2, yp, chara.canget_gun + "‚ðE‚¤ : F", GetColor(255, 128, 0));
+					}
+					else {
+						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "‚ðE‚¤ : Z") / 2, yp, chara.canget_gun + "‚ðE‚¤ : Z", GetColor(255, 128, 0));
+					}
 				}
 			}
 			//’e–ò
@@ -466,6 +473,56 @@ public:
 					yp = disp_y / 2 + disp_y / 6 + y_r(20, disp_y);
 				}
 				int i = 0;
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
+				{
+					int x, y;
+					GetGraphSize(chara.gunptr->mod.UIScreen.get(), &x, &y);
+					int xp2;
+					int yp2;
+					if (!vr) {
+						xp2 = y_r(180, disp_y);
+						yp2 = y_r(180, disp_y) * y / x;
+					}
+					else {
+						xp2 = y_r(120, disp_y);
+						yp2 = y_r(120, disp_y) * y / x;
+					}
+					chara.gunptr->mod.UIScreen.DrawExtendGraph(xp, yp - yp2, xp + xp2, yp, true);
+				}
+				{
+					int x, y;
+					int xp2;
+					int yp2;
+
+					xp2 = xp + y_r(200, disp_y);
+					yp2 = yp - y_r(180, disp_y) * 4 / 10;
+
+					for (auto& gp : chara.gunptr_have) {
+						int xst2 = y_r(50, disp_y);
+						int yst2 = y_r(50, disp_y) * 4 / 10;
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+						DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(0,0,0), TRUE);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+
+						if (gp == nullptr) {
+
+						}
+						else {
+							GetGraphSize(gp->mod.UIScreen.get(), &x, &y);
+							int xs2;
+							int ys2;
+							xs2 = xst2;
+							ys2 = xst2 * y / x;
+							gp->mod.UIScreen.DrawExtendGraph(
+								xp2, yp2 + (yst2 - ys2) / 2,
+								xp2 + xs2, yp2 + ys2 + (yst2 - ys2) / 2, true);
+						}
+						if (gp == chara.gunptr) {
+							DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(255, 0, 0), FALSE);
+						}
+						yp2 += y_r(60, disp_y) * 4 / 10;
+					}
+				}
 				{
 					font->DrawString(xp, yp, chara.gunptr->name, GetColor(255, 255, 255));
 					font->DrawStringFormat(
@@ -473,9 +530,6 @@ public:
 						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gunptr->ammo_max);
 					i++;
 				}
-				font->DrawStringFormat(300, 300, GetColor(255, 0, 0), "%d", chara.gunptr_have[0]);
-				font->DrawStringFormat(300, 320, GetColor(255, 0, 0), "%d", chara.gunptr_have[1]);
-				font->DrawStringFormat(300, 340, GetColor(255, 0, 0), "%d", chara.gunptr_have[2]);
 			}
 			if (vr) {
 				//‰EŽè
@@ -522,12 +576,15 @@ public:
 					if (pt_pr2 >= 0.f) {
 						if (display_c1 == 0 && chara.safety.first) {
 							UI_safty.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							font->DrawString(xp, yp, "SAFETY OFF", GetColor(2555, 128, 0));
 						}
 						if (display_c1 == 1 && !chara.gunf) {
 							UI_trigger.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							font->DrawString(xp, yp, "FIRE", GetColor(2555, 128, 0));
 						}
 						/*
 							UI_select.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							font->DrawString(xp, yp, "FIRE", GetColor(2555, 128, 0));
 						*/
 						pt_pr2 -= 1.f / fps;
 					}
@@ -544,7 +601,9 @@ public:
 					if (chara.reloadf && !chara.down_mag) {
 						pt_pl = 2.f;
 					}
-
+					if (chara.canget) {
+						pt_pl = 2.f;
+					}
 					int xs = 500 / 4;
 					int ys = 408 / 4;
 
@@ -557,6 +616,11 @@ public:
 					if (pt_pl >= 0.f) {
 						if (chara.reloadf && !chara.down_mag) {
 							UI_mag_set.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							font->DrawString(xp, yp, "GET MAG", GetColor(2555, 128, 0));
+						}
+						if (chara.canget) {
+							UI_get.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
+							font->DrawString(xp, yp, "GET GUN", GetColor(2555, 128, 0));
 						}
 						pt_pl -= 1.f / fps;
 					}
@@ -637,6 +701,30 @@ public:
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
 			DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+		}
+	}
+
+	template <class T>
+	void Gunitem_draw(std::vector<T> &gunitem, const VECTOR_ref& pos) {
+		for (auto& g : gunitem) {
+			if (g.gunptr != nullptr) {
+				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+				if (p.z() >= 0.f&&p.z() <= 1.f) {
+					float r_ = (g.pos - pos).size();
+					if (r_ <= 1.f) {
+						r_ = 1.f;
+					}
+					if (r_ <= 10.f) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+
+						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
+						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->name, GetColor(255, 0, 0));
+
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					}
+				}
+			}
 		}
 	}
 };

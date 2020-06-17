@@ -72,32 +72,33 @@ public:
 			chara.resize(1);
 			if (this->sel_g >= 0) {
 				chara[0].set_list(&gun_data[this->sel_g]);
-				chara[0].set_chara(VGet(0, 0, 0), 0, this->ScopeScreen, hand);
+				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, hand);
+				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
 				this->sel_g = 0;
 			}
 			else {
 				break;
 			}
-			gunitem.resize(5);
-			gunitem[0].set_chara(VGet(0, 5.f, 5.f), &gun_data[1]);
-			gunitem[1].set_chara(VGet(0, 4.f, 10.f), &gun_data[2]);
-			gunitem[2].set_chara(VGet(0, 3.f, 15.f), &gun_data[3]);
-			gunitem[3].set_chara(VGet(0, 2.f, 20.f), &gun_data[3]);
-			gunitem[4].set_chara(VGet(0, 1.f, 25.f), &gun_data[3]);
+			gunitem.resize(4);
+			gunitem[0].set_chara(VGet( 2.f, 1.f, 0.0f), &gun_data[0]);
+			gunitem[1].set_chara(VGet( 0.f, 1.f, 0.0f), &gun_data[1]);
+			gunitem[2].set_chara(VGet(-2.f, 1.f, 0.0f), &gun_data[2]);
+			gunitem[3].set_chara(VGet(-4.f, 1.f, 0.0f), &gun_data[3]);
 			//マップ読み込み
 			mapparts->set_map_pre();
 			UIparts->load_window("マップモデル");
 			mapparts->set_map();
 			//ターゲット
 			{
-				tgt_pic.resize(4);
+				tgt_pic.resize(5);
 				for (auto& p : tgt_pic) {
 					p.set(tgtparts);
 				}
-				tgt_pic[0].obj.SetPosition(VGet(4, 0, 10.f));
-				tgt_pic[1].obj.SetPosition(VGet(-2, 0, 20.f));
-				tgt_pic[2].obj.SetPosition(VGet(0, 0, 30.f));
-				tgt_pic[3].obj.SetPosition(VGet(2, 0, 45.f));
+				tgt_pic[0].obj.SetPosition(VGet(4, 0, 12.f));
+				tgt_pic[1].obj.SetPosition(VGet(-4, 0, 18.f));
+				tgt_pic[2].obj.SetPosition(VGet(2, 0, 27.f));
+				tgt_pic[3].obj.SetPosition(VGet(-2, 0, 36.f));
+				tgt_pic[4].obj.SetPosition(VGet(0, 0, 45.f));
 				for (auto& p : tgt_pic) {
 					p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
 				}
@@ -172,7 +173,7 @@ public:
 			//開始
 			{
 				auto& mine = chara[0];
-				mine.safety.first = true;
+				mine.safety.first = false;
 				mine.safety.second = 0;
 				scoreparts->reset();
 				//プレイヤー操作変数群
@@ -188,8 +189,11 @@ public:
 				TPS.first = true;
 				SetMousePoint(deskx / 2, desky / 2);
 				//envi
-
+				mapparts->start_map();
 				//
+				for (auto& tp : tgt_pic) {
+					//tp.isMOVE=false;
+				}
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
@@ -300,6 +304,10 @@ public:
 								else {
 									mine.pos.yadd(mine.add_ypos);
 									mine.add_ypos -= 9.8f / std::powf(fps, 2.f);
+									if (mine.pos.y() <= -5.f) {
+										mine.pos = VGet(0.f, 5.f, 0.f);
+										mine.add_ypos = 0.f;
+									}
 								}
 							}
 							//
@@ -824,25 +832,24 @@ public:
 												for (size_t i = 0; i < mine.gunptr_have.size(); i++) {
 													if (mine.gunptr_have[i] == nullptr) {
 														VECTOR_ref pos_t = c.pos;
-														auto ar = c.gunptr_have;
-														Mainclass::Gun*ptr = g.gunptr;
-														c.gunptr_have[0] = g.gunptr;
-														c.gunptr_have[1] = ar[0];
-														c.gunptr_have[2] = ar[1];
+														c.gunptr_have[i] = g.gunptr;
 														g.delete_chara();//
+
 														c.delete_chara();
-														c.set_chara(pos_t, 0, this->ScopeScreen, hand);
+														c.set_chara(pos_t, i, this->ScopeScreen, hand);
 														gunpos_TPS = VGet(0, 0, 0);
-														this->sel_g = 0;
+														this->sel_g = i;
 														break;
 													}
 													if (i == mine.gunptr_have.size() - 1) {
-														VECTOR_ref pos_t = c.pos;
-														MATRIX_ref mat_t = c.mat_LHAND;
+														//
 														Mainclass::Gun*ptr = g.gunptr;
 														g.delete_chara();
 														g.set_chara(c.pos + c.pos_LHAND, c.gunptr);
 														g.mat = c.mat_LHAND;
+														//
+														VECTOR_ref pos_t = c.pos;
+														MATRIX_ref mat_t = c.mat_LHAND;
 														c.delete_chara();
 														c.gunptr_have[this->sel_g] = ptr;
 														c.set_chara(pos_t, this->sel_g, this->ScopeScreen, hand);
@@ -857,7 +864,7 @@ public:
 						}
 						//ターゲットの演算
 						for (auto& tp : tgt_pic) {
-							{
+							if (tp.isMOVE) {
 								if (std::abs(tp.obj.GetPosition().x()) > 7.5f) {
 									tp.LR ^= 1;
 								}
@@ -901,10 +908,11 @@ public:
 								//被写体深度描画
 								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(campos, campos + camvec, camup, fov), draw_by_shadow, campos, campos + camvec, camup, fov, 100.f, 0.1f);
 								//描画
-								this->outScreen[i].SetDraw_Screen();
+								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, fov_fps, campos, campos + camvec, camup);
 								{
 									Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 									UIparts->draw();//UI
+									UIparts->Gunitem_draw(this->gunitem, campos_buf);
 								}
 								//VRに移す
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
@@ -920,10 +928,11 @@ public:
 							//被写体深度描画
 							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(campos, campos + camvec, camup, fov_fps), draw_by_shadow, campos, campos + camvec, camup, fov_fps, 100.f, 0.1f);
 							//描画
-							this->outScreen[1].SetDraw_Screen();
+							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, fov_fps, campos, campos + camvec, camup);
 							{
 								Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 								UIparts->draw();//UI
+								UIparts->Gunitem_draw(this->gunitem,campos_buf);
 							}
 						}
 						//ディスプレイ描画

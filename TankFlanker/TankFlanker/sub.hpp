@@ -82,7 +82,7 @@ public:
 		float rad = 0.f;
 		float time = 0.f;
 		float power = 0.f;
-		bool LR = true;
+		bool LR = true,isMOVE=true;
 		template<class Y, class D>
 		void set(std::unique_ptr<Y, D>& tgtparts) {
 			obj = tgtparts->tgt.Duplicate();
@@ -204,6 +204,7 @@ public:
 	class Gun {
 		class models {
 		public:
+			GraphHandle UIScreen;
 			GraphHandle lenzScreen;
 			MV1 obj, mag, ammo;
 			void set(std::string name) {
@@ -211,6 +212,7 @@ public:
 				MV1::Load("data/gun/" + name + "/mag.mv1", &mag, true);
 				MV1::Load("data/gun/" + name + "/ammo.mv1", &ammo, true);
 				lenzScreen = GraphHandle::Load("data/gun/" + name + "/lenz.png");
+				UIScreen = GraphHandle::Load("data/gun/" + name + "/pic.bmp");
 			}
 		};
 	public:
