@@ -1,4 +1,3 @@
-ammo_max=30
 cat=gun
 mode=semi
 mode=full
@@ -9,3 +8,11 @@ trigger_sound=1
 mag_down_sound=1
 mag_set_sound=1
 case_sound=1
+ammo_max=30
+ammo_1=556NATO
+ammo_end=end
+mag=STANAG
+recoil_x(deg)+=0.2
+recoil_x(deg)-=-0.2
+recoil_y(deg)+=2.0
+recoil_y(deg)-=-0.5

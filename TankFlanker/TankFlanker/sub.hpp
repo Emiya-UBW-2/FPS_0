@@ -178,7 +178,7 @@ public:
 			}
 		}
 	};
-	//gun
+	//銃用オーディオ
 	class Audios {
 	public:
 		SoundHandle shot;
@@ -201,50 +201,109 @@ public:
 			SetUseASyncLoadFlag(FALSE);
 		}
 	};
+	//弾データ
+	class Ammos {
+	public:
+		std::string name;
+		float caliber = 0.f;
+		float speed = 100.f;//弾速
+		float pene = 10.f;//貫通
+		float damage = 10.f;//ダメージ
+
+		MV1 ammo;
+		void set(void) {
+			int mdata = FileRead_open(("data/ammo/" + this->name + "/data.txt").c_str(), FALSE);
+			this->caliber = getparams::_float(mdata)*0.001f;//口径
+			this->speed = getparams::_float(mdata);	//弾速
+			this->pene = getparams::_float(mdata);	//貫通
+			this->damage = getparams::_float(mdata);//ダメージ
+			FileRead_close(mdata);
+
+			MV1::Load("data/ammo/" + this->name + "/ammo.mv1", &ammo, true);
+		}
+	};
+	//マガジンデータ
+	class Mags {
+	public:
+		std::string name;
+		int cap = 1;
+		std::vector<Ammos> ammo;
+
+		MV1 mag;
+		void set(void) {
+			if (this->name.find("none") == std::string::npos) {
+				int mdata = FileRead_open(("data/mag/" + this->name + "/data.txt").c_str(), FALSE);
+				this->cap = getparams::_int(mdata);//口径
+				//弾データ
+				while (true) {
+					auto p = getparams::_str(mdata);
+					if (getright(p.c_str()).find("end") != std::string::npos) {
+						break;
+					}
+					else {
+						this->ammo.resize(this->ammo.size() + 1);
+						this->ammo.back().name = p;
+					}
+				}
+				FileRead_close(mdata);
+				MV1::Load("data/mag/" + this->name + "/mag.mv1", &mag, true);
+			}
+		}
+	};
+	//銃データ
 	class Gun {
-		class models {
+		class Models {
 		public:
 			GraphHandle UIScreen;
 			GraphHandle lenzScreen;
-			MV1 obj, mag, ammo;
-			void set(std::string name) {
-				MV1::Load("data/gun/" + name + "/model.mv1", &obj, true);
-				MV1::Load("data/gun/" + name + "/mag.mv1", &mag, true);
-				MV1::Load("data/gun/" + name + "/ammo.mv1", &ammo, true);
-				lenzScreen = GraphHandle::Load("data/gun/" + name + "/lenz.png");
-				UIScreen = GraphHandle::Load("data/gun/" + name + "/pic.bmp");
+			MV1 obj;
+			void set(std::string named) {
+				MV1::Load("data/gun/" + named + "/model.mv1", &obj, true);
+				lenzScreen = GraphHandle::Load("data/gun/" + named + "/lenz.png");
+				UIScreen = GraphHandle::Load("data/gun/" + named + "/pic.bmp");
 			}
 		};
 	public:
 		uint8_t cate = 0;
 		std::string name;
 		std::vector<frames> frame;
-		size_t ammo_max=0;//マガジンの装弾数
 		std::vector <uint8_t> select;//セレクター
-		models mod;
+		Models mod;
 		Audios audio;
 
-		void set_data() {
-			//フレーム
-			this->frame.resize(8);
-			this->frame[0].first = INT_MAX;
-			this->frame[1].first = INT_MAX;
-			this->frame[2].first = INT_MAX;
-			this->frame[3].first = INT_MAX;
-			this->frame[4].first = INT_MAX;
-			this->frame[5].first = INT_MAX;
-			this->frame[6].first = INT_MAX;
-			this->frame[7].first = INT_MAX;
+		size_t ammo_max = 0;//マガジンの装弾数
+		float recoil_xup = 0.f;
+		float recoil_xdn = 0.f;
+		float recoil_yup = 0.f;
+		float recoil_ydn = 0.f;
 
+		float ammo_speed = 100.f;//弾速
+		float ammo_pene = 10.f;//貫通
+		float ammo_damege = 10.f;//ダメージ
+
+		std::vector<Ammos> ammo;
+		Mags mag;
+
+		void set_data() {
 			this->mod.obj.SetMatrix(MGetIdent());
 			{
+				//フレーム
+				this->frame.resize(8);
+				this->frame[0].first = INT_MAX;
+				this->frame[1].first = INT_MAX;
+				this->frame[2].first = INT_MAX;
+				this->frame[3].first = INT_MAX;
+				this->frame[4].first = INT_MAX;
+				this->frame[5].first = INT_MAX;
+				this->frame[6].first = INT_MAX;
+				this->frame[7].first = INT_MAX;
 				for (int i = 0; i < this->mod.obj.frame_num(); i++) {
 					std::string s = this->mod.obj.frame_name(i);
 					if (s.find("mag_fall") != std::string::npos) {
 						this->frame[0].first = i;//排莢
-						this->frame[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[0].first));//mag
+						this->frame[0].second = this->mod.obj.frame(i);
 						this->frame[1].first = i + 1;
-						this->frame[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[1].first));//mag先
+						this->frame[1].second = this->mod.obj.frame(i + 1);
 					}
 					else if (s.find("case") != std::string::npos) {
 						this->frame[2].first = i;//排莢
@@ -254,7 +313,7 @@ public:
 					}
 					else if (s.find("scope") != std::string::npos) {
 						this->frame[4].first = i;//スコープ
-						this->frame[4].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->mod.obj.GetFrameLocalMatrix(this->frame[4].first));
+						this->frame[4].second = this->mod.obj.frame(i);
 					}
 					else if (s.find("trigger") != std::string::npos) {
 						this->frame[5].first = i + 1;//トリガー
@@ -270,8 +329,7 @@ public:
 				//テキスト
 				{
 					int mdata = FileRead_open(("data/gun/" + this->name + "/data.txt").c_str(), FALSE);
-					//装弾数
-					this->ammo_max = getparams::_long(mdata);
+					//カテゴリ
 					{
 						auto p = getparams::_str(mdata);
 						if (getright(p.c_str()).find("knife") != std::string::npos) {
@@ -305,48 +363,42 @@ public:
 					}
 					//サウンド
 					this->audio.set(mdata);
+					//装弾数
+					this->ammo_max = getparams::_long(mdata);
+					//弾データ
+					while (true) {
+						auto p = getparams::_str(mdata);
+						if (getright(p.c_str()).find("end") != std::string::npos) {
+							break;
+						}
+						else {
+							this->ammo.resize(this->ammo.size()+1);
+							this->ammo.back().name = p;
+						}
+					}
+					//マガジン
+					this->mag.name = getparams::_str(mdata);
+					//反動
+					this->recoil_xup = getparams::_float(mdata);
+					this->recoil_xdn = getparams::_float(mdata);
+					this->recoil_yup = getparams::_float(mdata);
+					this->recoil_ydn = getparams::_float(mdata);
 					FileRead_close(mdata);
+					//
+					for (auto& a : this->ammo) {
+						a.set();
+					}
+					this->mag.set();
 				}
 			}
 		}
 	};
-	//player
-		//弾薬
-	struct Ammos {
-		float caliber_a = 0.f;
-		float pene_a = 0.f;
-		float speed_a = 0.f;
-		uint16_t damage_a = 0;
-	};
-	struct ammos {
-		bool hit{ false };
-		bool flug{ false };
-		float cnt = 0.f;
-		unsigned int color = 0;
-		Ammos spec;
-		float yadd = 0.f;
-		VECTOR_ref pos, repos, vec;
-	};
-	struct ef_guns {
-		EffectS first;
-		ammos* second = nullptr;
-		float cnt = -1.f;
-	};
-
-	struct ammo_obj {
-		EffectS first;
-		MV1 second;
-		float cnt = -1.f;
-		bool down = false;
-		VECTOR_ref pos;
-		VECTOR_ref add;
-		MATRIX_ref mat;
-	};
+	//アイテム
 	class Gun_item {
 	public:
 		VECTOR_ref pos, add;
 		MATRIX_ref mat;
-		MV1 obj, mag;
+		MV1 obj;
 		Gun* gunptr = nullptr;
 
 		void set_chara(const VECTOR_ref& pos_, Gun*gundata) {
@@ -356,22 +408,51 @@ public:
 			//手
 			this->gunptr = gundata;
 			this->obj = this->gunptr->mod.obj.Duplicate();
-			this->mag = this->gunptr->mod.mag.Duplicate();
 		}
 
 		void delete_chara() {
 			this->gunptr = nullptr;
 			this->obj.Dispose();
-			this->mag.Dispose();
 		}
 	};
-
+	//実際に発射される弾
+	struct ammos {
+		bool hit{ false };
+		bool flug{ false };
+		float cnt = 0.f;
+		unsigned int color = 0;
+		Ammos* spec;
+		float yadd = 0.f;
+		VECTOR_ref pos, repos, vec;
+	};
+	//player
 	class Chara {
+		struct ef_guns {
+			EffectS first;
+			ammos* second = nullptr;
+			float cnt = -1.f;
+		};
+		struct ammo_obj {
+			MV1 second;
+			float cnt = -1.f;
+			bool down = false;
+			VECTOR_ref pos;
+			VECTOR_ref add;
+			MATRIX_ref mat;
+		};
+		struct mag_obj {
+			MV1 second;
+			float cnt = -1.f;
+			bool down = false;
+			VECTOR_ref pos;
+			VECTOR_ref add;
+			MATRIX_ref mat;
+		};
 	public:
 		std::array<ef_guns, 60> effcs_gun;    /*effect*/
 		size_t gun_effcnt = 0;
 		std::array<ammos, 64> bullet;	      /*確保する弾*/
-		size_t usebullet{};		      /*使用弾*/
+		size_t usebullet = 0;		      /*使用弾*/
 
 		std::array<EffectS, effects> effcs; /*effect*/
 		std::array<EffectS, 12> gndsmkeffcs; /*effect*/
@@ -381,7 +462,10 @@ public:
 		std::array<Gun*, 3> gunptr_have;
 		Audios audio;
 		MV1 obj, mag,hand;
-		std::array<ammo_obj, 64> ammo;	      /*確保する弾*/
+		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
+		std::array<mag_obj, 8> magazine;	/*確保する弾*/
+		size_t usemag = 0;		      /*使用弾*/
+
 		VECTOR_ref pos;
 		MATRIX_ref mat;
 		switchs safety;
@@ -455,15 +539,18 @@ public:
 			if (this->gunptr->frame[4].first != INT_MAX) {
 				this->obj.SetTextureGraphHandle(1, scope, false);	//スコープ
 			}
-			this->mag = this->gunptr->mod.mag.Duplicate();
+			this->mag = this->gunptr->mag.mag.Duplicate();
 			for (auto& a : this->ammo) {
-				a.second = this->gunptr->mod.ammo.Duplicate();
 				a.cnt = -1.f;
 				a.pos = VGet(0, 0, 0);
 				a.mat = MGetIdent();
 			}
 
-
+			for (auto& a : this->magazine) {
+				a.cnt = -1.f;
+				a.pos = VGet(0, 0, 0);
+				a.mat = MGetIdent();
+			}
 			this->LEFT_hand = false;
 
 			this->guncnt = 0;
@@ -498,6 +585,9 @@ public:
 			this->obj.Dispose();
 			this->mag.Dispose();
 			for (auto& a : this->ammo) {
+				a.second.Dispose();
+			}
+			for (auto& a : this->magazine) {
 				a.second.Dispose();
 			}
 			this->audio.shot.Dispose();

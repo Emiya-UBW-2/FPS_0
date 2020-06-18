@@ -1,4 +1,3 @@
-ammo_max=30
 cat=gun
 mode=semi
 mode=full
@@ -9,3 +8,11 @@ trigger_sound=1
 mag_down_sound=1
 mag_set_sound=1
 case_sound=1
+ammo_max=30
+ammo_1=545_39
+ammo_end=end
+mag=AK74
+recoil_x(deg)+=1.0
+recoil_x(deg)-=-1.0
+recoil_y(deg)+=3.0
+recoil_y(deg)-=-1.0

@@ -64,6 +64,8 @@ public:
 		for (auto& g : gun_data) {
 			g.set_data();
 		}
+		//ロード画面
+		UIparts->load_window("銃モデル");
 		tgtparts->set();						//ターゲット
 		auto scoreparts = std::make_unique<Mainclass::scores>();	//スコア
 		vrparts->Set_Device();						//VRセット
@@ -115,8 +117,15 @@ public:
 				for (auto& c : this->chara) {
 					c.hand.DrawModel();
 					if (c.gunptr->cate == 1) {
-						c.mag.DrawModel();
+						if (!c.reloadf || c.down_mag) {
+							c.mag.DrawModel();
+						}
+						for (auto& a : c.magazine) {
+							if (a.cnt < 0.f) { continue; }
+							a.second.DrawModel();
+						}
 					}
+
 					c.obj.DrawModel();
 					if (c.gunptr->cate == 1) {
 						for (auto& a : c.ammo) {
@@ -142,8 +151,15 @@ public:
 					for (auto& c : this->chara) {
 						c.hand.DrawModel();
 						if (c.gunptr->cate == 1) {
-							c.mag.DrawModel();
+							if (!c.reloadf || c.down_mag) {
+								c.mag.DrawModel();
+							}
+							for (auto& a : c.magazine) {
+								if (a.cnt < 0.f) { continue; }
+								a.second.DrawModel();
+							}
 						}
+
 						c.obj.DrawModel();
 						if (c.gunptr->cate == 1) {
 							for (auto& a : c.ammo) {
@@ -164,7 +180,7 @@ public:
 						if (c.gunptr->cate == 1) {
 							for (auto& a : c.bullet) {
 								if (!a.flug) { continue; }
-								DXDraw::Capsule3D(a.pos, a.repos, ((a.spec.caliber_a - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+								DXDraw::Capsule3D(a.pos, a.repos, ((a.spec->caliber - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
 							}
 						}
 					}
@@ -193,9 +209,11 @@ public:
 				//envi
 				mapparts->start_map();
 				//
+				/*
 				for (auto& tp : tgt_pic) {
 					//tp.isMOVE=false;
 				}
+				*/
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
@@ -270,16 +288,16 @@ public:
 									auto jampkey = (CheckHitKey(KEY_INPUT_SPACE) != 0);
 									auto runkey = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
 									if (wkey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.zvec()*-4.f / fps, 0.95f, fps);
+										easing_set(&add_pos_buf, mine.mat_HMD.zvec()*-(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (skey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.zvec()*4.f / fps, 0.95f, fps);
+										easing_set(&add_pos_buf, mine.mat_HMD.zvec()*(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (akey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.xvec()*4.f / fps, 0.95f, fps);
+										easing_set(&add_pos_buf, mine.mat_HMD.xvec()*(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (dkey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.xvec()*-4.f / fps, 0.95f, fps);
+										easing_set(&add_pos_buf, mine.mat_HMD.xvec()*-(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (!wkey && !skey && !akey && !dkey) {
 										easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
@@ -474,6 +492,16 @@ public:
 											if (&c == &mine) {
 												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 											}
+											{
+												auto& m = c.magazine[c.usemag];
+												++c.usemag %= c.magazine.size();
+												m.second.Dispose();
+												m.second = c.gunptr->mag.mag.Duplicate();
+												m.cnt = 0.f;//
+												m.pos = c.pos_mag;//排莢
+												m.add = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
+												m.mat = c.mat_mag;
+											}
 										}
 										c.reloadf = true;
 									}
@@ -524,23 +552,16 @@ public:
 												scoreparts->sub(-4);
 											}
 											//持ち手を持つとココが相殺される
-											if (c.LEFT_hand) {
-												c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(-50 + GetRand(150)) / 100.f)));
-											}
-											else {
-												c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p, MATRIX_ref::RotY(deg2rad(float(-50 + GetRand(100)) / 100.f))*MATRIX_ref::RotX(deg2rad(float(300 + GetRand(700)) / 100.f)));
-											}
+											c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p,
+												MATRIX_ref::RotY(deg2rad(float(int(c.gunptr->recoil_xdn*100.f) + GetRand(int((c.gunptr->recoil_xup - c.gunptr->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
+												MATRIX_ref::RotX(deg2rad(float(int(c.gunptr->recoil_ydn*100.f) + GetRand(int((c.gunptr->recoil_yup - c.gunptr->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
 											c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
 											c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
 											auto& u = c.bullet[c.usebullet];
 											auto& a = c.ammo[c.usebullet];
 											++c.usebullet %= c.bullet.size();
 											//ココだけ変化
-											u.spec.caliber_a = 0.011f;
-											u.spec.damage_a = 33;
-											u.spec.pene_a = 10.f;
-											u.spec.speed_a = 260.f;
-
+											u.spec = &c.gunptr->ammo[0];
 											u.pos = c.obj.frame(c.gunptr->frame[3].first);
 											u.vec = c.mat_LHAND.zvec()*-1.f;
 											u.hit = false;
@@ -557,8 +578,8 @@ public:
 												c.effcs_gun[c.gun_effcnt].cnt = 0.f;
 												++c.gun_effcnt %= c.effcs_gun.size();
 											}
-
-
+											a.second.Dispose();
+											a.second = u.spec->ammo.Duplicate();
 											a.cnt = 0.f;
 											a.pos = c.obj.frame(c.gunptr->frame[2].first);//排莢
 											a.add = (c.obj.frame(c.gunptr->frame[2].first + 1) - a.pos).Norm()*2.5f / fps;//排莢ベクトル
@@ -566,17 +587,7 @@ public:
 										}
 										//マガジン取得
 										if (c.reloadf) {
-											if (!c.down_mag) {
-												c.pos_mag += c.add_mag;
-												c.add_mag.yadd(-9.8f / powf(fps, 2.f));
-												auto pp = mapparts->map_col_line(c.pos_mag + VGet(0, 1.f, 0), c.pos_mag- VGet(0, 0.05f, 0) , 0);
-												if (pp.HitFlag == 1) {
-													c.pos_mag = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
-													c.add_mag += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(c.add_mag*-1.f)*1.2f);
-													easing_set(&c.add_mag, VGet(0, 0, 0), 0.9f, fps);
-												}
-											}
-											else {
+											if (c.down_mag) {
 												auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
 												VECTOR_ref xvec = MATRIX_ref::Vtrans(c.mat_RHAND.xvec(), p);
 												VECTOR_ref yvec = MATRIX_ref::Vtrans(c.mat_RHAND.yvec(), p);
@@ -600,9 +611,8 @@ public:
 											}
 										}
 										else {
-											c.mat_mag = c.mat_LHAND;
 											c.down_mag = false;
-											c.add_mag = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm()*-1.f / fps;
+											c.mat_mag = c.mat_LHAND;
 											c.pos_mag = c.obj.frame(c.gunptr->frame[1].first);
 										}
 										break;
@@ -653,7 +663,7 @@ public:
 							for (auto& a : c.bullet) {
 								if (a.flug) {
 									a.repos = a.pos;
-									a.pos += a.vec * (a.spec.speed_a / fps);
+									a.pos += a.vec * (a.spec->speed / fps);
 									//判定
 									{
 										auto p = mapparts->map_col_line(a.repos, a.pos, 0);
@@ -714,7 +724,7 @@ public:
 														pt = 5;
 														break;
 													}
-													scoreparts->add(int(float(pt) * ((a.pos - (c.pos + c.pos_LHAND)).size() / 9.144f)));
+													scoreparts->add(int(float(pt) * ((a.pos - (c.pos + c.pos_LHAND)).size() / 9.144f)*(a.spec->damage / 10.f)));
 												}
 												//
 												set_effect(&c.effcs[ef_reco], a.pos, q.Normal, 0.011f / 0.1f);
@@ -745,7 +755,7 @@ public:
 										}
 									}
 									//消す(2秒たった、スピードが100以下、貫通が0以下)
-									if (a.cnt >= 3.f || a.spec.speed_a < 0.f || a.spec.pene_a <= 0.f) {
+									if (a.cnt >= 3.f || a.spec->speed < 0.f || a.spec->pene <= 0.f) {
 										a.flug = false;
 										for (auto& b : c.effcs_gun) {
 											if (b.second == &a) {
@@ -763,17 +773,22 @@ public:
 									a.cnt += 1.f / fps;
 									a.pos += a.add*(float(200 + GetRand(1000)) / 1000.f);
 									a.add.yadd(-9.8f / powf(fps, 2.f));
-									a.mat *= MATRIX_ref::RotY(deg2rad(360 * 10 + GetRand(360 * 20)) / fps);
 
-									auto pp = mapparts->map_col_line(a.pos + VGet(0, 1.f, 0), a.pos, 0);
+									auto pp = mapparts->map_col_line(a.pos + VGet(0, 1.f, 0), a.pos - VGet(0, 0.008f, 0), 0);
 									if (pp.HitFlag == 1) {
-										a.pos = pp.HitPosition;
-										a.add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(a.add*-1.f)*1.5f);
+										a.pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.008f, 0);
+										a.add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(a.add*-1.f)*1.25f);
 										easing_set(&a.add, VGet(0, 0, 0), 0.95f, fps);
 										if (!a.down) {
 											c.audio.case_down.play_3D(c.pos + c.pos_LHAND, 1.f);
 										}
+
+										a.mat *= MATRIX_ref::RotVec2(a.mat.yvec(), VECTOR_ref(pp.Normal));
+
 										a.down = true;
+									}
+									else {
+										a.mat *= MATRIX_ref::RotY(deg2rad(360 * 10 + GetRand(360 * 20)) / fps);
 									}
 									if (a.cnt >= 3.f) {
 										a.cnt = -1.f;
@@ -785,6 +800,29 @@ public:
 									a.down = false;
 								}
 							}
+
+							for (auto& a : c.magazine) {
+								if (a.cnt >= 0.f) {
+									a.cnt += 1.f / fps;
+									a.pos += a.add;
+									a.add.yadd(-9.8f / powf(fps, 2.f));
+
+									auto pp = mapparts->map_col_line(a.pos + VGet(0, 1.f, 0), a.pos - VGet(0, 0.05f, 0), 0);
+									if (pp.HitFlag == 1) {
+										a.pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
+
+										a.add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(a.add*-1.f)*1.5f);
+										easing_set(&a.add, VGet(0, 0, 0), 0.9f, fps);
+
+										a.mat *= MATRIX_ref::RotVec2(a.mat.xvec(), pp.Normal);
+									}
+									if (a.cnt >= 3.f) {
+										a.cnt = -1.f;
+									}
+									a.second.SetMatrix(a.mat*MATRIX_ref::Mtrans(a.pos));
+								}
+							}
+
 							for (auto& t : c.effcs) {
 								if (t.id != ef_smoke) {
 									set_pos_effect(&t, Drawparts->get_effHandle(int(t.id)));
@@ -815,13 +853,13 @@ public:
 						for (auto& g : this->gunitem) {
 							//
 							if (g.gunptr != nullptr) {
-								g.obj.SetMatrix(MATRIX_ref::RotZ(deg2rad(90))*g.mat*MATRIX_ref::Mtrans(g.pos));
+								g.obj.SetMatrix(g.mat*MATRIX_ref::Mtrans(g.pos));
 								g.pos += g.add;
 								g.add.yadd(-9.8f / powf(fps, 2.f));
 								auto pp = mapparts->map_col_line(g.pos + VGet(0, 1.f, 0), g.pos - VGet(0, 0.05f, 0), 0);
 								if (pp.HitFlag == 1) {
 									g.pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
-									g.mat *= MATRIX_ref::RotVec2(g.mat.yvec(), VECTOR_ref(pp.Normal));
+									g.mat *= MATRIX_ref::RotVec2(g.mat.xvec(), VECTOR_ref(pp.Normal));
 									easing_set(&g.add, VGet(0, 0, 0), 0.5f, fps);
 								}
 								//
@@ -838,9 +876,9 @@ public:
 														g.delete_chara();//
 
 														c.delete_chara();
-														c.set_chara(pos_t, i, this->ScopeScreen, hand);
+														c.set_chara(pos_t, int(i), this->ScopeScreen, hand);
 														gunpos_TPS = VGet(0, 0, 0);
-														this->sel_g = i;
+														this->sel_g = int(i);
 														break;
 													}
 													if (i == mine.gunptr_have.size() - 1) {
