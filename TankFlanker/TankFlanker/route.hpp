@@ -74,7 +74,7 @@ public:
 			this->sel_g = UIparts->select_window(settings->useVR_e, gun_data, vrparts, settings);
 			chara.resize(1);
 			if (this->sel_g >= 0) {
-				chara[0].set_list(&gun_data[this->sel_g]);
+				chara[0].set_list(&gun_data[this->sel_g], &gun_data[0]);
 				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, hand);
 				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
 				this->sel_g = 0;
@@ -195,7 +195,7 @@ public:
 				mine.safety.second = 0;
 				scoreparts->reset();
 				//プレイヤー操作変数群
-				switchs TPS, ads,chgun;						//
+				switchs TPS, ads,chgun,usegun;					//
 				uint8_t change_gun = 0;						//
 				VECTOR_ref gunpos_TPS;						//
 				float xrad_p = 0.f;						//マウスエイム
@@ -214,6 +214,7 @@ public:
 					//tp.isMOVE=false;
 				}
 				*/
+				bool bee = true;
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
@@ -222,7 +223,7 @@ public:
 						//プレイヤー操作
 						{
 							//銃変更
-							{
+							if (usegun.first) {
 								if (change_gun == 1) {
 									auto pos = mine.pos;
 									++this->sel_g%=mine.gunptr_have.size();
@@ -233,6 +234,17 @@ public:
 									mine.set_chara(VGet(0, 0, 0), this->sel_g, this->ScopeScreen, hand);
 									mine.pos = pos;
 									gunpos_TPS = VGet(0, 0, 0);
+								}
+								bee = true;
+							}
+							else {
+								if(bee){
+									auto pos = mine.pos;
+									mine.delete_chara();
+									mine.set_chara(VGet(0, 0, 0), -1, this->ScopeScreen, hand);
+									mine.pos = pos;
+									gunpos_TPS = VGet(0, 0, 0);
+									bee = false;
 								}
 							}
 							if (settings->useVR_e) {
@@ -393,7 +405,13 @@ public:
 										//セレクター
 										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first) ? 2 : 0);
 										//武装変更
-										change_gun = std::clamp<uint8_t>(change_gun + 1, 0, ((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) ? 2 : 0);
+										if (usegun.first) {
+											change_gun = std::clamp<uint8_t>(change_gun + 1, 0, ((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) ? 2 : 0);
+										}
+										else {
+											change_gun = 1;
+										}
+										usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);//<---
 									}
 								}
 								if (vrparts->get_hand2_num() != -1) {
@@ -444,7 +462,13 @@ public:
 								//銃変更
 								chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
 								//武装変更
-								change_gun = std::clamp<uint8_t>(change_gun + 1, 0, (CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0);
+								if (usegun.first) {
+									change_gun = std::clamp<uint8_t>(change_gun + 1, 0, (GetMouseWheelRotVol() != 0) ? 2 : 0);
+								}
+								else {
+									change_gun = 1;
+								}
+								usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);
 							}
 							//タイマー処理
 							scoreparts->move_timer();

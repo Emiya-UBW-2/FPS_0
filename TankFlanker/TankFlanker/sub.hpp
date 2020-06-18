@@ -459,6 +459,7 @@ public:
 		size_t gndsmk_use = 0;
 		Gun* gunptr=nullptr;
 
+		Gun* gunptr_backup;
 		std::array<Gun*, 3> gunptr_have;
 		Audios audio;
 		MV1 obj, mag,hand;
@@ -504,7 +505,8 @@ public:
 
 		bool canget;
 		std::string canget_gun;
-		void set_list(Gun*gundata) {
+		void set_list(Gun*gundata, Gun*gundata_backup) {
+			this->gunptr_backup = gundata_backup;
 			this->gunptr_have[0] = gundata;
 			this->gunptr_have[1] = nullptr;
 			this->gunptr_have[2] = nullptr;
@@ -533,8 +535,12 @@ public:
 				}
 			}
 			*/
-			this->gunptr = gunptr_have[gunid];
-
+			if (gunid >= 0) {
+				this->gunptr = gunptr_have[gunid];
+			}
+			else {
+				this->gunptr = gunptr_backup;
+			}
 			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {
 				this->obj.SetTextureGraphHandle(1, scope, false);	//スコープ
