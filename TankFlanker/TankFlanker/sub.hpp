@@ -84,7 +84,7 @@ public:
 		float power = 0.f;
 		bool LR = true,isMOVE=true;
 		template<class Y, class D>
-		void set(std::unique_ptr<Y, D>& tgtparts) {
+		void set(std::unique_ptr<Y, D>& tgtparts,const VECTOR_ref& pos) {
 			obj = tgtparts->tgt.Duplicate();
 			pic = GraphHandle::Make(tgtparts->tgt_pic_x, tgtparts->tgt_pic_y);
 			pic.SetDraw_Screen(false);
@@ -95,6 +95,8 @@ public:
 			x_frame = 4;
 			y_frame = 3;
 			LR = true;
+
+			obj.SetPosition(pos);
 		}
 	};
 	//score
@@ -257,7 +259,9 @@ public:
 			GraphHandle UIScreen;
 			GraphHandle lenzScreen;
 			MV1 obj;
+			std::string name;
 			void set(std::string named) {
+				name = named;
 				MV1::Load("data/gun/" + named + "/model.mv1", &obj, true);
 				lenzScreen = GraphHandle::Load("data/gun/" + named + "/lenz.png");
 				UIScreen = GraphHandle::Load("data/gun/" + named + "/pic.bmp");
@@ -285,6 +289,7 @@ public:
 		Mags mag;
 
 		void set_data() {
+			this->name = this->mod.name;
 			this->mod.obj.SetMatrix(MGetIdent());
 			{
 				//ƒtƒŒ[ƒ€
@@ -401,7 +406,7 @@ public:
 		MV1 obj;
 		Gun* gunptr = nullptr;
 
-		void set_chara(const VECTOR_ref& pos_, Gun*gundata) {
+		void set(Gun*gundata, const VECTOR_ref& pos_) {
 			this->pos = pos_;
 			this->add = VGet(0, 0, 0);
 			this->mat = MGetIdent();
@@ -409,7 +414,11 @@ public:
 			this->gunptr = gundata;
 			this->obj = this->gunptr->mod.obj.Duplicate();
 		}
-
+		void draw() {
+			if (this->gunptr != nullptr) {
+				this->obj.DrawModel();
+			}
+		}
 		void delete_chara() {
 			this->gunptr = nullptr;
 			this->obj.Dispose();
@@ -586,6 +595,34 @@ public:
 			SetCreate3DSoundFlag(FALSE);
 		}
 
+		void draw() {
+			this->hand.DrawModel();
+			if (this->gunptr->cate == 1) {
+				if (!this->reloadf || this->down_mag) {
+					this->mag.DrawModel();
+				}
+				for (auto& a : this->magazine) {
+					if (a.cnt < 0.f) { continue; }
+					a.second.DrawModel();
+				}
+			}
+
+			this->obj.DrawModel();
+			if (this->gunptr->cate == 1) {
+				for (auto& a : this->ammo) {
+					if (a.cnt < 0.f) { continue; }
+					a.second.DrawModel();
+				}
+			}
+		}
+		void draw_ammo() {
+			if (this->gunptr->cate == 1) {
+				for (auto& a : this->bullet) {
+					if (!a.flug) { continue; }
+					DXDraw::Capsule3D(a.pos, a.repos, ((a.spec->caliber - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+				}
+			}
+		}
 		void delete_chara() {
 			this->gunptr = nullptr;
 			this->obj.Dispose();

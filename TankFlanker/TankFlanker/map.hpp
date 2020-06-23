@@ -49,6 +49,9 @@ public:
 		for (int i = 0; i < map_col.mesh_num(); i++) {
 			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, i);
 		}
+
+		SetFogStartEnd(0.0f, 300.f);
+		SetFogColor(128, 128, 128);
 	}
 
 	void start_map() {

@@ -1,6 +1,6 @@
 #pragma once
 
-class main_c {
+class main_c : Mainclass {
 	int dispx, dispy;			//描画
 	int out_dispx, out_dispy;		//ウィンドウ
 	//スクリーン
@@ -8,17 +8,16 @@ class main_c {
 	GraphHandle BufScreen;
 	GraphHandle ScopeScreen;
 	//データ
-	MV1 hand;
-	std::vector<Mainclass::Gun> gun_data;		//GUNデータ
-	std::vector<Mainclass::Chara> chara;		//キャラ
-	std::vector<Mainclass::tgts> tgt_pic;		//ターゲット
-	std::vector<Mainclass::Gun_item> gunitem;	//拾える銃
+	MV1 body_obj;
+	std::vector<Gun> gun_data;		//GUNデータ
+	std::vector<Chara> chara;		//キャラ
+	std::vector<tgts> tgt_pic;		//ターゲット
+	std::vector<Gun_item> gunitem;	//拾える銃
 	//
 	bool ending = true;
-	int sel_g = 0;
+	int sel_g2 = 0;
 public:
 	main_c() {
-		//ラムダ式のいざこざが治ったら戻す
 		//
 		auto settings = std::make_unique<Setting>();			//設定読み込み
 		auto vrparts = std::make_unique<VRDraw>(&settings->useVR_e);	//DXLib描画
@@ -45,19 +44,16 @@ public:
 		this->BufScreen = GraphHandle::Make(this->dispx, this->dispy);				//
 		this->ScopeScreen = GraphHandle::Make(1080, 1080);					//
 		settings->ready_draw_setting();								//セッティング
-		MV1::Load("data/model/hand/model_h.mv1", &hand, true);					//身体
+		MV1::Load("data/model/hand/model_h.mv1", &body_obj, true);					//身体
 		auto mapparts = std::make_unique<Mapclass>(this->dispx, this->dispy);			//map
-		auto tgtparts = std::make_unique<Mainclass::tgttmp>();					//ターゲット
+		auto tgtparts = std::make_unique<tgttmp>();					//ターゲット
 		//GUNデータ
 		gun_data.resize(5);
-		gun_data[0].name = "Knife";
-		gun_data[1].name = "1911";
-		gun_data[2].name = "M82A2";
-		gun_data[3].name = "CAR15_M4";
-		gun_data[4].name = "AK74";
-		for (auto& g : gun_data) {
-			g.mod.set(g.name);
-		}
+		gun_data[0].mod.set("Knife");
+		gun_data[1].mod.set("1911");
+		gun_data[2].mod.set("M82A2");
+		gun_data[3].mod.set("CAR15_M4");
+		gun_data[4].mod.set("AK74");
 		//ロード画面
 		UIparts->load_window("銃モデル");
 		//GUNデータ取得
@@ -66,28 +62,31 @@ public:
 		}
 		//ロード画面
 		UIparts->load_window("銃モデル");
-		tgtparts->set();						//ターゲット
-		auto scoreparts = std::make_unique<Mainclass::scores>();	//スコア
-		vrparts->Set_Device();						//VRセット
+		tgtparts->set();				//ターゲット
+		auto scoreparts = std::make_unique<scores>();	//スコア
+		vrparts->Set_Device();				//VRセット
 		do {
 			//キャラ設定
-			this->sel_g = UIparts->select_window(settings->useVR_e, gun_data, vrparts, settings);
-			chara.resize(1);
-			if (this->sel_g >= 0) {
-				chara[0].set_list(&gun_data[this->sel_g], &gun_data[0]);
-				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, hand);
-				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
-				this->sel_g = 0;
+			{
+				int sel_g = UIparts->select_window(settings->useVR_e, gun_data, vrparts, settings);
+				chara.resize(1);
+				if (sel_g >= 0) {
+					chara[0].set_list(&gun_data[sel_g], &gun_data[0]);
+					chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, body_obj);
+					chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
+				}
+				else {
+					break;
+				}
 			}
-			else {
-				break;
-			}
+			//
+			this->sel_g2 = 0;
 			gunitem.resize(5);
-			gunitem[0].set_chara(VGet( 4.f, 1.f, 0.0f), &gun_data[0]);
-			gunitem[1].set_chara(VGet( 2.f, 1.f, 0.0f), &gun_data[1]);
-			gunitem[2].set_chara(VGet( 0.f, 1.f, 0.0f), &gun_data[2]);
-			gunitem[3].set_chara(VGet(-2.f, 1.f, 0.0f), &gun_data[3]);
-			gunitem[4].set_chara(VGet(-4.f, 1.f, 0.0f), &gun_data[4]);
+			gunitem[0].set(&gun_data[0], VGet(4.f, 1.f, 0.0f));
+			gunitem[1].set(&gun_data[1], VGet(2.f, 1.f, 0.0f));
+			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f));
+			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f));
+			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f));
 			//マップ読み込み
 			mapparts->set_map_pre();
 			UIparts->load_window("マップモデル");
@@ -95,14 +94,11 @@ public:
 			//ターゲット
 			{
 				tgt_pic.resize(5);
-				for (auto& p : tgt_pic) {
-					p.set(tgtparts);
-				}
-				tgt_pic[0].obj.SetPosition(VGet(4, 0, 12.f));
-				tgt_pic[1].obj.SetPosition(VGet(-4, 0, 18.f));
-				tgt_pic[2].obj.SetPosition(VGet(2, 0, 27.f));
-				tgt_pic[3].obj.SetPosition(VGet(-2, 0, 36.f));
-				tgt_pic[4].obj.SetPosition(VGet(0, 0, 45.f));
+				tgt_pic[0].set(tgtparts, VGet(4, 0, 12.f));
+				tgt_pic[1].set(tgtparts, VGet(-4, 0, 18.f));
+				tgt_pic[2].set(tgtparts, VGet(2, 0, 27.f));
+				tgt_pic[3].set(tgtparts, VGet(-2, 0, 36.f));
+				tgt_pic[4].set(tgtparts, VGet(0, 0, 45.f));
 				for (auto& p : tgt_pic) {
 					p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
 				}
@@ -115,74 +111,29 @@ public:
 					p.obj.DrawModel();
 				}
 				for (auto& c : this->chara) {
-					c.hand.DrawModel();
-					if (c.gunptr->cate == 1) {
-						if (!c.reloadf || c.down_mag) {
-							c.mag.DrawModel();
-						}
-						for (auto& a : c.magazine) {
-							if (a.cnt < 0.f) { continue; }
-							a.second.DrawModel();
-						}
-					}
-
-					c.obj.DrawModel();
-					if (c.gunptr->cate == 1) {
-						for (auto& a : c.ammo) {
-							if (a.cnt < 0.f) { continue; }
-							a.second.DrawModel();
-						}
-					}
+					c.draw();
 				}
 				for (auto& g : this->gunitem) {
-					if (g.gunptr != nullptr) {
-						g.obj.DrawModel();
-					}
+					g.draw();
 				}
 			};
 			auto draw_by_shadow = [&] {
 				Drawparts->Draw_by_Shadow([&] {
-					SetFogStartEnd(0.0f, 300.f);
-					SetFogColor(128, 128, 128);
 					mapparts->map_get().DrawModel();
 					for (auto& p : this->tgt_pic) {
 						p.obj.DrawModel();
 					}
 					for (auto& c : this->chara) {
-						c.hand.DrawModel();
-						if (c.gunptr->cate == 1) {
-							if (!c.reloadf || c.down_mag) {
-								c.mag.DrawModel();
-							}
-							for (auto& a : c.magazine) {
-								if (a.cnt < 0.f) { continue; }
-								a.second.DrawModel();
-							}
-						}
-
-						c.obj.DrawModel();
-						if (c.gunptr->cate == 1) {
-							for (auto& a : c.ammo) {
-								if (a.cnt < 0.f) { continue; }
-								a.second.DrawModel();
-							}
-						}
+						c.draw();
 					}
 					for (auto& g : this->gunitem) {
-						if (g.gunptr != nullptr) {
-							g.obj.DrawModel();
-						}
+						g.draw();
 					}
 					//銃弾
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);
 					for (auto& c : this->chara) {
-						if (c.gunptr->cate == 1) {
-							for (auto& a : c.bullet) {
-								if (!a.flug) { continue; }
-								DXDraw::Capsule3D(a.pos, a.repos, ((a.spec->caliber - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
-							}
-						}
+						c.draw_ammo();
 					}
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
@@ -226,12 +177,12 @@ public:
 							if (usegun.first) {
 								if (change_gun == 1) {
 									auto pos = mine.pos;
-									++this->sel_g%=mine.gunptr_have.size();
-									if (mine.gunptr_have[this->sel_g] == nullptr) {
-										this->sel_g = 0;
+									++this->sel_g2%=mine.gunptr_have.size();
+									if (mine.gunptr_have[this->sel_g2] == nullptr) {
+										this->sel_g2 = 0;
 									}
 									mine.delete_chara();
-									mine.set_chara(VGet(0, 0, 0), this->sel_g, this->ScopeScreen, hand);
+									mine.set_chara(VGet(0, 0, 0), this->sel_g2, this->ScopeScreen, body_obj);
 									mine.pos = pos;
 									gunpos_TPS = VGet(0, 0, 0);
 								}
@@ -241,9 +192,26 @@ public:
 								if(bee){
 									auto pos = mine.pos;
 									mine.delete_chara();
-									mine.set_chara(VGet(0, 0, 0), -1, this->ScopeScreen, hand);
+									mine.set_chara(VGet(0, 0, 0), -1, this->ScopeScreen, body_obj);
 									mine.pos = pos;
 									gunpos_TPS = VGet(0, 0, 0);
+
+									if (this->sel_g2 != 0) {
+										--this->sel_g2;
+									}
+									else {
+										this->sel_g2 = mine.gunptr_have.size()-1;
+										while (true){
+											if (mine.gunptr_have[this->sel_g2] == nullptr) {
+												this->sel_g2--;
+											}
+											else {
+												break;
+											}
+										}
+
+									}
+
 									bee = false;
 								}
 							}
@@ -895,29 +863,30 @@ public:
 											if (chgun.second == 1) {
 												for (size_t i = 0; i < mine.gunptr_have.size(); i++) {
 													if (mine.gunptr_have[i] == nullptr) {
+														this->sel_g2 = int(i);
+														//
+														c.gunptr_have[this->sel_g2] = g.gunptr;
+														g.delete_chara();
+														//
 														VECTOR_ref pos_t = c.pos;
-														c.gunptr_have[i] = g.gunptr;
-														g.delete_chara();//
-
 														c.delete_chara();
-														c.set_chara(pos_t, int(i), this->ScopeScreen, hand);
+														c.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
 														gunpos_TPS = VGet(0, 0, 0);
-														this->sel_g = int(i);
+														//
 														break;
 													}
 													if (i == mine.gunptr_have.size() - 1) {
-														//
-														Mainclass::Gun*ptr = g.gunptr;
+														c.gunptr_have[this->sel_g2] = g.gunptr;
 														g.delete_chara();
-														g.set_chara(c.pos + c.pos_LHAND, c.gunptr);
+														//
+														g.set(c.gunptr,c.pos + c.pos_LHAND);
 														g.mat = c.mat_LHAND;
 														//
 														VECTOR_ref pos_t = c.pos;
-														MATRIX_ref mat_t = c.mat_LHAND;
 														c.delete_chara();
-														c.gunptr_have[this->sel_g] = ptr;
-														c.set_chara(pos_t, this->sel_g, this->ScopeScreen, hand);
+														c.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
 														gunpos_TPS = VGet(0, 0, 0);
+														//
 													}
 												}
 											}
