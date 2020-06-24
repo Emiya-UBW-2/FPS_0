@@ -16,6 +16,14 @@ class main_c : Mainclass {
 	//
 	bool ending = true;
 	int sel_g2 = 0;
+	//プレイヤー操作変数群
+	switchs TPS, ads, chgun, usegun;					//
+	uint8_t change_gun = 0;						//
+	VECTOR_ref gunpos_TPS;						//
+	float xrad_p = 0.f;						//マウスエイム
+	VECTOR_ref add_pos, add_pos_buf;				//移動
+	VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
+	float fov, fov_fps;
 public:
 	main_c() {
 		//
@@ -44,9 +52,9 @@ public:
 		this->BufScreen = GraphHandle::Make(this->dispx, this->dispy);				//
 		this->ScopeScreen = GraphHandle::Make(1080, 1080);					//
 		settings->ready_draw_setting();								//セッティング
-		MV1::Load("data/model/hand/model_h.mv1", &body_obj, true);					//身体
+		MV1::Load("data/model/hand/model_h.mv1", &body_obj, true);				//身体
 		auto mapparts = std::make_unique<Mapclass>(this->dispx, this->dispy);			//map
-		auto tgtparts = std::make_unique<tgttmp>();					//ターゲット
+		auto tgtparts = std::make_unique<tgttmp>();						//ターゲット
 		//GUNデータ
 		gun_data.resize(5);
 		gun_data[0].mod.set("Knife");
@@ -57,9 +65,7 @@ public:
 		//ロード画面
 		UIparts->load_window("銃モデル");
 		//GUNデータ取得
-		for (auto& g : gun_data) {
-			g.set_data();
-		}
+		for (auto& g : gun_data) { g.set_data(); }
 		//ロード画面
 		UIparts->load_window("銃モデル");
 		tgtparts->set();				//ターゲット
@@ -69,39 +75,33 @@ public:
 			//キャラ設定
 			{
 				int sel_g = UIparts->select_window(settings->useVR_e, gun_data, vrparts, settings);
+				if (sel_g > 0) { break; }
 				chara.resize(1);
-				if (sel_g >= 0) {
-					chara[0].set_list(&gun_data[sel_g], &gun_data[0]);
-					chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, body_obj);
-					chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
-				}
-				else {
-					break;
-				}
+				chara[0].set_list(&gun_data[sel_g], &gun_data[0]);
+				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, body_obj);
+				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
+				this->sel_g2 = 0;
 			}
-			//
-			this->sel_g2 = 0;
+			//マップ読み込み
+			mapparts->set_map_pre();
+			UIparts->load_window("マップモデル");
+			mapparts->set_map();
+			//銃アイテム配置
 			gunitem.resize(5);
 			gunitem[0].set(&gun_data[0], VGet(4.f, 1.f, 0.0f));
 			gunitem[1].set(&gun_data[1], VGet(2.f, 1.f, 0.0f));
 			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f));
 			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f));
 			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f));
-			//マップ読み込み
-			mapparts->set_map_pre();
-			UIparts->load_window("マップモデル");
-			mapparts->set_map();
 			//ターゲット
-			{
-				tgt_pic.resize(5);
-				tgt_pic[0].set(tgtparts, VGet(4, 0, 12.f));
-				tgt_pic[1].set(tgtparts, VGet(-4, 0, 18.f));
-				tgt_pic[2].set(tgtparts, VGet(2, 0, 27.f));
-				tgt_pic[3].set(tgtparts, VGet(-2, 0, 36.f));
-				tgt_pic[4].set(tgtparts, VGet(0, 0, 45.f));
-				for (auto& p : tgt_pic) {
-					p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
-				}
+			tgt_pic.resize(5);
+			tgt_pic[0].set(tgtparts, VGet(4, 0, 12.f));
+			tgt_pic[1].set(tgtparts, VGet(-4, 0, 18.f));
+			tgt_pic[2].set(tgtparts, VGet(2, 0, 27.f));
+			tgt_pic[3].set(tgtparts, VGet(-2, 0, 36.f));
+			tgt_pic[4].set(tgtparts, VGet(0, 0, 45.f));
+			for (auto& p : tgt_pic) {
+				p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
 			}
 			//ライティング
 			Drawparts->Set_Light_Shadow(settings->shadow_level_e, VGet(50.f, 20.f, 50.f), VGet(0.05f, -0.5f, 0.75f), [&mapparts] {mapparts->map_get().DrawModel(); });
@@ -120,21 +120,13 @@ public:
 			auto draw_by_shadow = [&] {
 				Drawparts->Draw_by_Shadow([&] {
 					mapparts->map_get().DrawModel();
-					for (auto& p : this->tgt_pic) {
-						p.obj.DrawModel();
-					}
-					for (auto& c : this->chara) {
-						c.draw();
-					}
-					for (auto& g : this->gunitem) {
-						g.draw();
-					}
+					for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
+					for (auto& c : this->chara) { c.draw(); }
+					for (auto& g : this->gunitem) { g.draw(); }
 					//銃弾
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);
-					for (auto& c : this->chara) {
-						c.draw_ammo();
-					}
+					for (auto& c : this->chara) { c.draw_ammo(); }
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
 				});
@@ -146,16 +138,11 @@ public:
 				mine.safety.second = 0;
 				scoreparts->reset();
 				//プレイヤー操作変数群
-				switchs TPS, ads,chgun,usegun;					//
-				uint8_t change_gun = 0;						//
-				VECTOR_ref gunpos_TPS;						//
-				float xrad_p = 0.f;						//マウスエイム
-				VECTOR_ref add_pos, add_pos_buf;				//移動
-				VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
-				float fov = deg2rad(settings->useVR_e ? 90 : 45);		//
-				float fov_fps = fov;						//
-
-				TPS.first = true;
+				this->change_gun = 0;						//
+				this->xrad_p = 0.f;						//マウスエイム
+				this->fov = deg2rad(settings->useVR_e ? 90 : 45);		//
+				this->fov_fps = this->fov;						//
+				this->TPS.first = true;
 				SetMousePoint(deskx / 2, desky / 2);
 				//envi
 				mapparts->start_map();
@@ -174,8 +161,8 @@ public:
 						//プレイヤー操作
 						{
 							//銃変更
-							if (usegun.first) {
-								if (change_gun == 1) {
+							if (this->usegun.first) {
+								if (this->change_gun == 1) {
 									auto pos = mine.pos;
 									++this->sel_g2%=mine.gunptr_have.size();
 									if (mine.gunptr_have[this->sel_g2] == nullptr) {
@@ -184,7 +171,7 @@ public:
 									mine.delete_chara();
 									mine.set_chara(VGet(0, 0, 0), this->sel_g2, this->ScopeScreen, body_obj);
 									mine.pos = pos;
-									gunpos_TPS = VGet(0, 0, 0);
+									this->gunpos_TPS = VGet(0, 0, 0);
 								}
 								bee = true;
 							}
@@ -194,13 +181,13 @@ public:
 									mine.delete_chara();
 									mine.set_chara(VGet(0, 0, 0), -1, this->ScopeScreen, body_obj);
 									mine.pos = pos;
-									gunpos_TPS = VGet(0, 0, 0);
+									this->gunpos_TPS = VGet(0, 0, 0);
 
 									if (this->sel_g2 != 0) {
 										--this->sel_g2;
 									}
 									else {
-										this->sel_g2 = mine.gunptr_have.size()-1;
+										this->sel_g2 = int(mine.gunptr_have.size() - 1);
 										while (true){
 											if (mine.gunptr_have[this->sel_g2] == nullptr) {
 												this->sel_g2--;
@@ -224,23 +211,23 @@ public:
 										auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
 										if (ptr_.turn && ptr_.now) {
 											if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
-												easing_set(&add_pos_buf,
+												easing_set(&this->add_pos_buf,
 													(
 													mine.mat_HMD.zvec()*ptr_.touch.y() +
 													mine.mat_HMD.xvec()*ptr_.touch.x()
 													)*-4.f / fps, 0.95f, fps);
 											}
 											else {
-												easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
+												easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
 											}
 											if (mine.add_ypos == 0.f) {
 												if ((ptr_.on[0] & BUTTON_SIDE) != 0) {
 													mine.add_ypos = 0.05f;
 												}
-												add_pos = add_pos_buf;
+												this->add_pos = this->add_pos_buf;
 											}
 											else {
-												easing_set(&add_pos, VGet(0, 0, 0), 0.995f, fps);
+												easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f, fps);
 											}
 										}
 									}
@@ -252,10 +239,10 @@ public:
 									mine.pos_HMD = VGet(0.f, 1.5f, 0.f);
 									int x_m, y_m;
 									GetMousePoint(&x_m, &y_m);
-									mine.mat_HMD = MATRIX_ref::RotX(-xrad_p)*mine.mat_HMD;
-									xrad_p = std::clamp(xrad_p - deg2rad(y_m - desky / 2)*0.1f*fov_fps / fov, deg2rad(-45), deg2rad(45));
-									mine.mat_HMD *= MATRIX_ref::RotY(deg2rad(x_m - deskx / 2)*0.1f*fov_fps / fov);
-									mine.mat_HMD = MATRIX_ref::RotX(xrad_p)*mine.mat_HMD;
+									mine.mat_HMD = MATRIX_ref::RotX(-this->xrad_p)*mine.mat_HMD;
+									this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m - desky / 2)*0.1f*this->fov_fps / this->fov, deg2rad(-45), deg2rad(45));
+									mine.mat_HMD *= MATRIX_ref::RotY(deg2rad(x_m - deskx / 2)*0.1f*this->fov_fps / this->fov);
+									mine.mat_HMD = MATRIX_ref::RotX(this->xrad_p)*mine.mat_HMD;
 									SetMousePoint(deskx / 2, desky / 2);
 									SetMouseDispFlag(FALSE);
 								}
@@ -268,34 +255,34 @@ public:
 									auto jampkey = (CheckHitKey(KEY_INPUT_SPACE) != 0);
 									auto runkey = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
 									if (wkey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.zvec()*-(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
+										easing_set(&this->add_pos_buf, mine.mat_HMD.zvec()*-(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (skey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.zvec()*(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
+										easing_set(&this->add_pos_buf, mine.mat_HMD.zvec()*(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (akey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.xvec()*(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
+										easing_set(&this->add_pos_buf, mine.mat_HMD.xvec()*(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (dkey) {
-										easing_set(&add_pos_buf, mine.mat_HMD.xvec()*-(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
+										easing_set(&this->add_pos_buf, mine.mat_HMD.xvec()*-(runkey ? 8.f : 4.f) / fps, 0.95f, fps);
 									}
 									if (!wkey && !skey && !akey && !dkey) {
-										easing_set(&add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
+										easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
 									}
 									if (mine.add_ypos == 0.f) {
 										if (jampkey) {
 											mine.add_ypos = 0.05f;
 										}
-										add_pos = add_pos_buf;
+										this->add_pos = this->add_pos_buf;
 									}
 									else {
-										easing_set(&add_pos, VGet(0, 0, 0), 0.995f, fps);
+										easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f, fps);
 									}
 								}
 							}
 							//移動共通
 							{
-								mine.pos += add_pos;
+								mine.pos += this->add_pos;
 								auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos + VGet(0, -0.1f, 0), 0);
 								if (mine.add_ypos <= 0.f && pp.HitFlag == 1) {
 									mine.pos = pp.HitPosition;
@@ -316,7 +303,7 @@ public:
 								{
 									vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &mine.pos_LHAND, &mine.mat_LHAND);
 									mine.mat_LHAND = mine.mat_LHAND*MATRIX_ref::RotAxis(mine.mat_LHAND.xvec(), deg2rad(-60));
-									easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
+									easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
 								}
 								//RHAND
 								{
@@ -334,17 +321,17 @@ public:
 									else if (mine.gunptr->frame[7].first != INT_MAX) {
 										pv = mine.gunptr->frame[7].second;
 									}
-									if (ads.first) {
-										easing_set(&gunpos_TPS, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.3f), 0.75f, fps);
-										easing_set(&fov_fps, (fov*0.6f) / ((mine.gunptr->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-										easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
+									if (this->ads.first) {
+										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.3f), 0.75f, fps);
+										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.gunptr->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
 									}
 									else {
-										easing_set(&gunpos_TPS, mine.pos_HMD + VGet(-0.15f, -0.05f - pv.y(), -0.5f), 0.75f, fps);
-										easing_set(&fov_fps, fov, 0.9f, fps);
-										easing_set(&campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
+										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.15f, -0.05f - pv.y(), -0.5f), 0.75f, fps);
+										easing_set(&this->fov_fps, this->fov, 0.9f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
 									}
-									mine.pos_LHAND = mine.pos_HMD + MATRIX_ref::Vtrans(gunpos_TPS - mine.pos_HMD, mine.mat_HMD);
+									mine.pos_LHAND = mine.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS - mine.pos_HMD, mine.mat_HMD);
 									mine.mat_LHAND = mine.mat_HMD;
 								}
 								//RHAND
@@ -373,13 +360,13 @@ public:
 										//セレクター
 										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f) && !mine.safety.first) ? 2 : 0);
 										//武装変更
-										if (usegun.first) {
-											change_gun = std::clamp<uint8_t>(change_gun + 1, 0, ((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) ? 2 : 0);
+										if (this->usegun.first) {
+											this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, ((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) ? 2 : 0);
 										}
 										else {
-											change_gun = 1;
+											this->change_gun = 1;
 										}
-										usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);//<---
+										this->usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);//<---
 									}
 								}
 								if (vrparts->get_hand2_num() != -1) {
@@ -396,7 +383,7 @@ public:
 											}
 										}
 										//銃変更
-										chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
+										this->chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
 									}
 								}
 							}
@@ -405,7 +392,7 @@ public:
 								easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 && !mine.safety.first), 0.5f, fps);
 								//ADS
 								if (mine.gunptr->cate == 1) {
-									ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+									this->ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
 								}
 								//マグキャッチ(Rキー)
 								easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
@@ -428,15 +415,15 @@ public:
 									}
 								}
 								//銃変更
-								chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
+								this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
 								//武装変更
-								if (usegun.first) {
-									change_gun = std::clamp<uint8_t>(change_gun + 1, 0, (GetMouseWheelRotVol() != 0) ? 2 : 0);
+								if (this->usegun.first) {
+									this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, (GetMouseWheelRotVol() != 0) ? 2 : 0);
 								}
 								else {
-									change_gun = 1;
+									this->change_gun = 1;
 								}
-								usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);
+								this->usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);
 							}
 							//タイマー処理
 							scoreparts->move_timer();
@@ -860,7 +847,7 @@ public:
 									if (((c.pos + c.pos_RHAND) - g.pos).size() <= 1.5f) {
 										c.canget_gun = g.gunptr->name;
 										if (&c == &mine) {
-											if (chgun.second == 1) {
+											if (this->chgun.second == 1) {
 												for (size_t i = 0; i < mine.gunptr_have.size(); i++) {
 													if (mine.gunptr_have[i] == nullptr) {
 														this->sel_g2 = int(i);
@@ -871,7 +858,7 @@ public:
 														VECTOR_ref pos_t = c.pos;
 														c.delete_chara();
 														c.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
-														gunpos_TPS = VGet(0, 0, 0);
+														this->gunpos_TPS = VGet(0, 0, 0);
 														//
 														break;
 													}
@@ -885,7 +872,7 @@ public:
 														VECTOR_ref pos_t = c.pos;
 														c.delete_chara();
 														c.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
-														gunpos_TPS = VGet(0, 0, 0);
+														this->gunpos_TPS = VGet(0, 0, 0);
 														//
 													}
 												}
@@ -916,13 +903,13 @@ public:
 							tp.time += deg2rad(180.f / fps);
 						}
 						//campos,camvec,camupの指定
-						campos_buf = mine.pos + mine.pos_HMD;
-						camvec = mine.mat_HMD.zvec()*-1.f;
-						camup = mine.mat_HMD.yvec();
-						Set3DSoundListenerPosAndFrontPosAndUpVec(campos_buf.get(), (campos_buf + camvec).get(), camup.get());
+						this->campos_buf = mine.pos + mine.pos_HMD;
+						this->camvec = mine.mat_HMD.zvec()*-1.f;
+						this->camup = mine.mat_HMD.yvec();
+						Set3DSoundListenerPosAndFrontPosAndUpVec(this->campos_buf.get(), (this->campos_buf + this->camvec).get(), this->camup.get());
 						UpdateEffekseer3D();
 						//影用意
-						Drawparts->Ready_Shadow(campos_buf, draw_in_shadow, VGet(5.f, 2.5f, 5.f));
+						Drawparts->Ready_Shadow(this->campos_buf, draw_in_shadow, VGet(5.f, 2.5f, 5.f));
 						//VR空間に適用
 						vrparts->Move_Player();
 						//スコープ
@@ -930,22 +917,22 @@ public:
 							VECTOR_ref cam = mine.obj.frame(mine.gunptr->frame[4].first);
 							VECTOR_ref vec = cam - mine.mat_LHAND.zvec();
 							VECTOR_ref yvec = mine.mat_LHAND.yvec();
-							Hostpassparts->draw(&this->ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (fov / 7.5f) / 4.f), draw_by_shadow, cam, vec, yvec, (fov / 7.5f) / 4.f, 100.f, 0.1f);
+							Hostpassparts->draw(&this->ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (this->fov / 7.5f) / 4.f), draw_by_shadow, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);
 							mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
 						}
 						//描画
 						UIparts->set_draw(mine, scoreparts, settings->useVR_e);
 						if (settings->useVR_e) {
 							for (char i = 0; i < 2; i++) {
-								campos = campos_buf + vrparts->GetEyePosition_minVR(i);
+								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
 								//被写体深度描画
-								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(campos, campos + camvec, camup, fov), draw_by_shadow, campos, campos + camvec, camup, fov, 100.f, 0.1f);
+								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);
 								//描画
-								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, fov_fps, campos, campos + camvec, camup);
+								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 								{
 									Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 									UIparts->draw();//UI
-									UIparts->Gunitem_draw(this->gunitem, campos_buf);
+									UIparts->Gunitem_draw(this->gunitem, this->campos_buf);
 								}
 								//VRに移す
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
@@ -957,26 +944,26 @@ public:
 							}
 						}
 						else {
-							campos = campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), mine.mat_HMD);
+							this->campos = this->campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), mine.mat_HMD);
 							//被写体深度描画
-							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(campos, campos + camvec, camup, fov_fps), draw_by_shadow, campos, campos + camvec, camup, fov_fps, 100.f, 0.1f);
+							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);
 							//描画
-							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, fov_fps, campos, campos + camvec, camup);
+							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 							{
 								Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 								UIparts->draw();//UI
-								UIparts->Gunitem_draw(this->gunitem,campos_buf);
+								UIparts->Gunitem_draw(this->gunitem, this->campos_buf);
 							}
 						}
 						//ディスプレイ描画
 						{
-							TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
+							this->TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
 
-							VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(campos_TPS, mine.mat_HMD);
+							VECTOR_ref cam = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mine.mat_HMD);
 							VECTOR_ref vec = mine.pos + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 0.f), mine.mat_HMD);
-							if (TPS.first) {//TPS視点
-								Hostpassparts->draw(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), fov, 100.f, 0.1f);
-								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, fov, cam, vec, VGet(0, 1.f, 0));
+							if (this->TPS.first) {//TPS視点
+								Hostpassparts->draw(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), this->fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
+								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, this->fov, cam, vec, VGet(0, 1.f, 0));
 								{
 									this->outScreen[2].DrawExtendGraph(0, 0, this->out_dispx, this->out_dispy, false);
 									//ターゲットを映す
