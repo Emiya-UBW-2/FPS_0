@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<BoneTemplate2>
+    <Group id="1" name="砲塔"/>
+    <Group id="2" name="機銃"/>
+    <Group id="3" name="転輪"/>
+    <Group id="4" name="車体調整"/>
+    <Bone id="2" name="センター" pos="0,0,0" movable="1" color="c057d4"/>
+    <Bone id="17" name="砲塔旋回" parent="2" pos="0,1.55999994,0" color="579705" maxAngle="180,0,0" minAngle="-180,0,0" group="1"/>
+    <Bone id="5" name="A転輪回転" pos="1.27919996,0.421200007,-1.79399991" color="018802" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="6" name="B転輪回転" pos="-1.27919996,0.421200007,-1.79399991" color="301dea" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="7" name="C転輪回転" pos="1.27919996,0.421200007,-0.912246644" color="402c83" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="8" name="D転輪回転" pos="-1.27919996,0.421200007,-0.912246644" color="6fcc47" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="9" name="E転輪回転" pos="1.27919996,0.421200007,-0.0361506194" color="25a85e" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="10" name="F転輪回転" pos="-1.27919996,0.421200007,-0.0361506194" color="822c2f" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="11" name="G転輪回転" pos="1.27919996,0.421200007,0.840569437" color="62bcf6" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="12" name="H転輪回転" pos="-1.27919996,0.421200007,0.840569317" color="8b3c2e" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="13" name="I転輪回転" pos="1.27919996,0.421200007,2.05799341" color="6372e6" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="14" name="J転輪回転" pos="-1.27919996,0.421200007,2.05799317" color="6426b0" maxAngle="180,0,0" minAngle="-180,0,0" group="3"/>
+    <Bone id="19" name="砲塔仰角" parent="17" pos="0,1.69000006,1.23000002" color="982c9a" maxAngle="180,0,0" minAngle="-180,0,0" group="2"/>
+    <Bone id="20" name="機銃旋回" parent="17" pos="-0.779999971,2.00927997,-0.157559991" color="036f86" maxAngle="180,0,0" minAngle="-180,0,0" group="2"/>
+    <Bone id="21" name="機銃仰角" parent="20" pos="-0.779999971,2.51999998,-0.191880003" color="825506" maxAngle="180,0,0" minAngle="-180,0,0" group="2"/>
+    <Bone id="22" name="砲身" parent="19" pos="0,1.69000006,5.9000001" color="94b340"/>
+    <Bone id="23" name="銃身" parent="21" pos="-0.779999971,2.51999998,1.2202915" color="6f23df"/>
+    <Bone id="25" name="min" pos="-1.65645981,0,3.3725853" color="e52f82"/>
+    <Bone id="26" name="max" pos="1.65186954,0,-3.11922002" color="89c712"/>
+    <Bone id="27" name="誘導輪" pos="1.30491102,0.797602355,2.8754456" color="21999a"/>
+    <Bone id="28" name="誘導輪2" pos="1.30491102,0.748858273,-2.53434849" color="11808f"/>
+    <Bone id="29" name="誘導輪_Mirror" pos="-1.30491102,0.797602355,2.8754456" color="ac954d"/>
+    <Bone id="30" name="誘導輪2_Mirror" pos="-1.30491102,0.748858273,-2.53434849" color="39f76e"/>
+    <Bone id="31" name="bone31" parent="51" pos="1.2855221,0.0193295926,2.07983589" color="a12bc4"/>
+    <Bone id="32" name="bone32" parent="51" pos="1.28971601,0.0193296075,0.863605499" color="e22030"/>
+    <Bone id="33" name="bone33" parent="51" pos="1.31313753,0.0193288922,-0.0332727656" color="4982ac"/>
+    <Bone id="34" name="bone34" parent="51" pos="1.28705764,0.0193312764,-0.944204032" color="e9e70c"/>
+    <Bone id="35" name="bone35" parent="51" pos="1.29631281,0.0193303227,-1.7861402" color="4cd34a"/>
+    <Bone id="36" name="bone36" parent="50" pos="1.32046509,0.95414573,-1.8803041" color="54ebcd"/>
+    <Bone id="37" name="bone37" parent="50" pos="1.34287524,0.935923815,-1.41143298" color="1bff8d"/>
+    <Bone id="38" name="bone38" parent="50" pos="1.30415511,0.954497278,-1.08218193" color="bf73fb"/>
+    <Bone id="39" name="bone39" parent="50" pos="1.30785799,0.936449349,-0.655133843" color="45c66a"/>
+    <Bone id="40" name="bone40" parent="50" pos="1.28316927,0.968230486,-2.55309057" color="3d8b39"/>
+    <Bone id="41" name="bone41" parent="50" pos="1.30344129,0.954844832,-0.309365481" color="64bb15"/>
+    <Bone id="42" name="bone42" parent="50" pos="1.26888072,0.936699033,0.144631982" color="5f3d8c"/>
+    <Bone id="43" name="bone43" parent="50" pos="1.21834671,0.954772711,0.518077254" color="b452ab"/>
+    <Bone id="44" name="bone44" parent="50" pos="1.21066141,0.937280416,0.903800726" color="f17392"/>
+    <Bone id="45" name="bone45" parent="50" pos="1.28077888,0.955215037,1.30713964" color="9d59d7"/>
+    <Bone id="46" name="bone46" parent="50" pos="1.25530648,0.936531126,1.67909944" color="822d3f"/>
+    <Bone id="47" name="bone47" parent="50" pos="1.26044834,0.956012428,1.94551897" color="4e428d"/>
+    <Bone id="48" name="bone48" parent="50" pos="1.26272035,0.958528697,2.41215086" color="5d1be5"/>
+    <Bone id="49" name="bone49" parent="50" pos="1.28177071,0.982636809,3.00083065" color="2e869d"/>
+    <Bone id="50" name="２D物理" pos="0,0,0" color="0c8e34"/>
+    <Bone id="51" name="履帯設置部" pos="0,0,0" color="bf5c9a"/>
+    <Bone id="52" name="bone31_Mirror" parent="51" pos="-1.2855221,0.0193295926,2.07983589" color="9721f4"/>
+    <Bone id="53" name="bone32_Mirror" parent="51" pos="-1.28971601,0.0193296075,0.863605499" color="e66988"/>
+    <Bone id="54" name="bone33_Mirror" parent="51" pos="-1.31313753,0.0193288922,-0.0332727656" color="56c5bd"/>
+    <Bone id="55" name="bone34_Mirror" parent="51" pos="-1.28705764,0.0193312764,-0.944204032" color="f357a5"/>
+    <Bone id="56" name="bone35_Mirror" parent="51" pos="-1.29631281,0.0193303227,-1.7861402" color="6f4ff5"/>
+    <Bone id="57" name="bone36_Mirror" parent="50" pos="-1.32046509,0.95414573,-1.8803041" color="7f2dc4"/>
+    <Bone id="58" name="bone37_Mirror" parent="50" pos="-1.34287524,0.935923815,-1.41143298" color="4354d5"/>
+    <Bone id="59" name="bone38_Mirror" parent="50" pos="-1.30415511,0.954497278,-1.08218193" color="13dacd"/>
+    <Bone id="60" name="bone39_Mirror" parent="50" pos="-1.30785799,0.936449349,-0.655133843" color="c92e41"/>
+    <Bone id="61" name="bone40_Mirror" parent="50" pos="-1.28316927,0.968230486,-2.55309057" color="33a91d"/>
+    <Bone id="62" name="bone41_Mirror" parent="50" pos="-1.30344129,0.954844832,-0.309365481" color="3d8262"/>
+    <Bone id="63" name="bone42_Mirror" parent="50" pos="-1.26888072,0.936699033,0.144631982" color="228266"/>
+    <Bone id="64" name="bone43_Mirror" parent="50" pos="-1.21834671,0.954772711,0.518077254" color="ace659"/>
+    <Bone id="65" name="bone44_Mirror" parent="50" pos="-1.21066141,0.937280416,0.903800726" color="407cd8"/>
+    <Bone id="66" name="bone45_Mirror" parent="50" pos="-1.28077888,0.955215037,1.30713964" color="cb8243"/>
+    <Bone id="67" name="bone46_Mirror" parent="50" pos="-1.25530648,0.936531126,1.67909944" color="3a2e87"/>
+    <Bone id="68" name="bone47_Mirror" parent="50" pos="-1.26044834,0.956012428,1.94551897" color="82a94c"/>
+    <Bone id="69" name="bone48_Mirror" parent="50" pos="-1.26272035,0.958528697,2.41215086" color="ad7322"/>
+    <Bone id="70" name="bone49_Mirror" parent="50" pos="-1.28177071,0.982636809,3.00083065" color="6a1393"/>
+</BoneTemplate2>
