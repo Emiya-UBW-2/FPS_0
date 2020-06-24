@@ -17,7 +17,7 @@ class main_c : Mainclass {
 	bool ending = true;
 	int sel_g2 = 0;
 	//プレイヤー操作変数群
-	switchs TPS, ads, chgun, usegun;					//
+	switchs TPS, ads, chgun, usegun;				//
 	uint8_t change_gun = 0;						//
 	VECTOR_ref gunpos_TPS;						//
 	float xrad_p = 0.f;						//マウスエイム
@@ -385,7 +385,12 @@ public:
 											}
 										}
 										//銃変更
-										this->chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
+										if (this->usegun.first) {
+											this->chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
+										}
+										else {
+											this->chgun.second = 0;
+										}
 									}
 								}
 							}
@@ -417,7 +422,12 @@ public:
 									}
 								}
 								//銃変更
-								this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
+								if (this->usegun.first) {
+									this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
+								}
+								else {
+									this->chgun.second = 0;
+								}
 								//武装変更
 								if (this->usegun.first) {
 									this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, (GetMouseWheelRotVol() != 0) ? 2 : 0);

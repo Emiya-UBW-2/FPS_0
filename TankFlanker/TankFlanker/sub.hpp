@@ -457,6 +457,10 @@ public:
 			VECTOR_ref add;
 			MATRIX_ref mat;
 		};
+		struct gun_state {
+			std::vector<size_t> mag_in;//マガジンごとの装弾数
+			uint8_t select = 0;//セレクター
+		};
 	public:
 		std::array<ef_guns, 60> effcs_gun;    /*effect*/
 		size_t gun_effcnt = 0;
@@ -470,6 +474,7 @@ public:
 
 		Gun* gunptr_backup;
 		std::array<Gun*, 3> gunptr_have;
+		std::array<gun_state, 3> gun_have_state;
 		Audios audio;
 		MV1 obj, mag,hand;
 		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
@@ -517,6 +522,9 @@ public:
 		void set_list(Gun*gundata, Gun*gundata_backup) {
 			this->gunptr_backup = gundata_backup;
 			this->gunptr_have[0] = gundata;
+			this->gun_have_state[0].mag_in.resize(1);
+			this->gun_have_state[0].mag_in[0] = this->gunptr_have[0]->ammo_max;
+			this->gun_have_state[0].select = 0;
 			this->gunptr_have[1] = nullptr;
 			this->gunptr_have[2] = nullptr;
 		}
@@ -569,7 +577,9 @@ public:
 			this->LEFT_hand = false;
 
 			this->guncnt = 0;
+
 			this->ammoc = this->gunptr->ammo_max + 1;
+
 			this->gunf = false;
 			this->vecadd_LHAND = VGet(0, 0, 1.f);
 			this->vecadd_LHAND_p = this->vecadd_LHAND;
