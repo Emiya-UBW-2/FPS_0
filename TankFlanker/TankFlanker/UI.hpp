@@ -473,7 +473,6 @@ public:
 					ys = y_r(12, disp_y);
 					yp = disp_y / 2 + disp_y / 6 + y_r(20, disp_y);
 				}
-				int i = 0;
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
 				{
 					int x, y;
@@ -529,7 +528,10 @@ public:
 					font->DrawStringFormat(
 						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gunptr->ammo_max),
 						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gunptr->ammo_max);
-					i++;
+
+					font->DrawStringFormat(
+						xp + xs,
+						yp + ys + y_r(2, disp_y) + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 255, 255), "%04d", chara.gun_have_state[4].in);
 				}
 			}
 			if (vr) {

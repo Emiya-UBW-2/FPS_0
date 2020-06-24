@@ -84,7 +84,7 @@ public:
 		}
 		SetWindowSize(o_xd, o_yd);
 		SetWindowPosition(
-			//*
+			/*
 			deskx+
 			//*/
 			(deskx - o_xd) / 2 - 8, (desky - o_yd) / 2 - 32);

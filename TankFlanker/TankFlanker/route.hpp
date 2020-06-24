@@ -65,6 +65,7 @@ public:
 		//ロード画面
 		UIparts->load_window("銃モデル");
 		//GUNデータ取得
+		fill_id(gun_data);
 		for (auto& g : gun_data) { g.set_data(); }
 		//ロード画面
 		UIparts->load_window("銃モデル");
@@ -78,6 +79,11 @@ public:
 				if (sel_g < 0) { break; }
 				chara.resize(1);
 				chara[0].set_list(&gun_data[sel_g], &gun_data[0]);
+				chara[0].gun_have_state.resize(gun_data.size());
+
+				chara[0].gun_have_state[sel_g].in = chara[0].gunptr_have[0]->ammo_max;
+				chara[0].gun_have_state[sel_g].select = 0;
+
 				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, body_obj);
 				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
 				this->sel_g2 = 0;
@@ -90,10 +96,10 @@ public:
 			mapparts->set_map();
 			//銃アイテム配置
 			gunitem.resize(5);
-			gunitem[0].set(&gun_data[0], VGet(4.f, 1.f, 0.0f));
-			gunitem[1].set(&gun_data[1], VGet(2.f, 1.f, 0.0f));
-			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f));
-			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f));
+			gunitem[0].set(&gun_data[4], VGet(4.f, 1.f, 0.0f));
+			gunitem[1].set(&gun_data[4], VGet(2.f, 1.f, 0.0f));
+			gunitem[2].set(&gun_data[4], VGet(0.f, 1.f, 0.0f));
+			gunitem[3].set(&gun_data[4], VGet(-2.f, 1.f, 0.0f));
 			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f));
 			//ターゲット
 			tgt_pic.resize(5);
@@ -395,44 +401,51 @@ public:
 								}
 							}
 							else {
-								//引き金(左クリック)
-								easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 && !mine.safety.first), 0.5f, fps);
-								//ADS
-								if (mine.gunptr->cate == 1) {
-									this->ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
-								}
-								//マグキャッチ(Rキー)
-								easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
-								//セフティ(Tキー)
-								if (mine.gunptr->cate == 1) {
-									mine.safety.get_in(CheckHitKey(KEY_INPUT_T) != 0);
-								}
-								else {
-									mine.safety.first = false;
-									mine.safety.second = 0;
-								}
-								//セレクター(中ボタン)
-								mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
 								//タイマーオン(Bキー)
 								scoreparts->c_ready |= (CheckHitKey(KEY_INPUT_B) != 0);
 								//計測リセット(Vキー)
-								if (CheckHitKey(KEY_INPUT_V) != 0) {
-									if (scoreparts->c_end) {
-										scoreparts->reset();
+								if (CheckHitKey(KEY_INPUT_V) != 0 && scoreparts->c_end) {
+									scoreparts->reset();
+								}
+
+								//引き金(左クリック)
+								easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 && !mine.safety.first), 0.5f, fps);
+
+								if (this->usegun.first) {
+									if (mine.gunptr->cate == 1) {
+										//ADS
+										this->ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+										//セフティ(Tキー)
+										mine.safety.get_in(CheckHitKey(KEY_INPUT_T) != 0);
 									}
-								}
-								//銃変更
-								if (this->usegun.first) {
+									else {
+										//ADS
+										//セフティ(Tキー)
+										mine.safety.first = false;
+										mine.safety.second = 0;
+									}
+									//マグキャッチ(Rキー)
+									easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
+									//セレクター(中ボタン)
+									mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
+									//銃変更
 									this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
-								}
-								else {
-									this->chgun.second = 0;
-								}
-								//武装変更
-								if (this->usegun.first) {
+									//武装変更
 									this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, (GetMouseWheelRotVol() != 0) ? 2 : 0);
 								}
 								else {
+									//ADS
+									this->ads.first = false;
+									//セフティ(Tキー)
+									mine.safety.first = false;
+									mine.safety.second = 0;
+									//マグキャッチ(Rキー)
+									mine.obj.get_anime(5).per=0.f;
+									//セレクター(中ボタン)
+									mine.selkey = 0;
+									//銃変更
+									this->chgun.second = 0;
+									//武装変更
 									this->change_gun = 1;
 								}
 								this->usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);
@@ -537,7 +550,7 @@ public:
 												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 											}
 											c.ammoc--;
-											++c.guncnt;
+											c.gun_have_state[c.gunptr_have[this->sel_g2]->id].in--;
 											c.gunf = true;
 											if (scoreparts->c_start && !scoreparts->c_end) {
 												scoreparts->sub(-4);
@@ -597,7 +610,7 @@ public:
 													c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
 
 													c.reloadf = false;
-													c.ammoc += c.gunptr->ammo_max;
+													c.ammoc = std::clamp<size_t>(c.gun_have_state[c.gunptr_have[this->sel_g2]->id].in, 0, c.gunptr->ammo_max);//改良
 												}
 											}
 										}
@@ -865,6 +878,10 @@ public:
 														this->sel_g2 = int(i);
 														//
 														c.gunptr_have[this->sel_g2] = g.gunptr;
+														//所持弾数++
+														c.gun_have_state[c.gunptr_have[this->sel_g2]->id].in += c.gunptr_have[this->sel_g2]->ammo_max;
+														c.gun_have_state[c.gunptr_have[this->sel_g2]->id].select = 0;
+														//
 														g.delete_chara();
 														//
 														VECTOR_ref pos_t = c.pos;

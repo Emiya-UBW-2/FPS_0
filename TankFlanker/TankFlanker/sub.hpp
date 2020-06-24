@@ -268,6 +268,7 @@ public:
 			}
 		};
 	public:
+		int id;
 		uint8_t cate = 0;
 		std::string name;
 		std::vector<frames> frame;
@@ -458,7 +459,7 @@ public:
 			MATRIX_ref mat;
 		};
 		struct gun_state {
-			std::vector<size_t> mag_in;//マガジンごとの装弾数
+			size_t in;//所持弾数
 			uint8_t select = 0;//セレクター
 		};
 	public:
@@ -474,7 +475,7 @@ public:
 
 		Gun* gunptr_backup;
 		std::array<Gun*, 3> gunptr_have;
-		std::array<gun_state, 3> gun_have_state;
+		std::vector<gun_state> gun_have_state;
 		Audios audio;
 		MV1 obj, mag,hand;
 		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
@@ -491,7 +492,6 @@ public:
 		size_t ammoc = 0;//装弾数カウント
 
 		bool gunf=false;
-		uint8_t guncnt = 0;
 
 		bool LEFT_hand=false;
 
@@ -522,9 +522,6 @@ public:
 		void set_list(Gun*gundata, Gun*gundata_backup) {
 			this->gunptr_backup = gundata_backup;
 			this->gunptr_have[0] = gundata;
-			this->gun_have_state[0].mag_in.resize(1);
-			this->gun_have_state[0].mag_in[0] = this->gunptr_have[0]->ammo_max;
-			this->gun_have_state[0].select = 0;
 			this->gunptr_have[1] = nullptr;
 			this->gunptr_have[2] = nullptr;
 		}
@@ -576,9 +573,7 @@ public:
 			}
 			this->LEFT_hand = false;
 
-			this->guncnt = 0;
-
-			this->ammoc = this->gunptr->ammo_max + 1;
+			this->ammoc = std::clamp<size_t>(this->gun_have_state[this->gunptr_have[gunid]->id].in,0, this->gunptr->ammo_max);//改良
 
 			this->gunf = false;
 			this->vecadd_LHAND = VGet(0, 0, 1.f);
