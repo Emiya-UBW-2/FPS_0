@@ -273,7 +273,8 @@ public:
 	void set_draw(
 		Mainclass::Chara& chara,
 		std::unique_ptr<Y, D>& scoreparts,
-		const bool& vr
+		const bool& vr,
+		const bool& usegun
 	) {
 		//
 		const float fps = GetFPS();
@@ -445,7 +446,7 @@ public:
 				}
 			}
 			//ƒAƒCƒeƒ€E‚¢
-			{
+			if (usegun) {
 				int xp = disp_x / 2;
 				int yp = disp_y / 2 + disp_y / 12;
 				if (chara.canget) {
@@ -458,7 +459,7 @@ public:
 				}
 			}
 			//’e–ò
-			{
+			if (usegun) {
 				int xp = 0, xs = 0, yp = 0, ys = 0;
 				if (!vr) {
 					xs = x_r(200, disp_y);

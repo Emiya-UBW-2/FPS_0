@@ -75,12 +75,14 @@ public:
 			//キャラ設定
 			{
 				int sel_g = UIparts->select_window(settings->useVR_e, gun_data, vrparts, settings);
-				if (sel_g > 0) { break; }
+				if (sel_g < 0) { break; }
 				chara.resize(1);
 				chara[0].set_list(&gun_data[sel_g], &gun_data[0]);
 				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, body_obj);
 				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
 				this->sel_g2 = 0;
+				this->usegun.first = true;
+				this->usegun.second = 0;
 			}
 			//マップ読み込み
 			mapparts->set_map_pre();
@@ -921,7 +923,7 @@ public:
 							mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
 						}
 						//描画
-						UIparts->set_draw(mine, scoreparts, settings->useVR_e);
+						UIparts->set_draw(mine, scoreparts, settings->useVR_e, this->usegun.first);
 						if (settings->useVR_e) {
 							for (char i = 0; i < 2; i++) {
 								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
