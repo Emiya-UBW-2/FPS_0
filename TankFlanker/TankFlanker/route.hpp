@@ -86,7 +86,7 @@ public:
 					s.in = 0;
 				}
 
-				chara[0].set_chara(VGet(0, 0, -0.5f), 0, this->ScopeScreen, body_obj);
+				chara[0].set_chara(VGet(0, 0, -0.5f),MGetIdent(), 0, this->ScopeScreen, body_obj);
 				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
 				this->sel_g2 = 0;
 				this->usegun.first = true;
@@ -145,8 +145,8 @@ public:
 					mapparts->map_get().DrawModel();
 					for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
 					for (auto& c : this->chara) { c.draw(); }
-					for (auto& g : this->gunitem) { g.draw(); }
-					for (auto& g : this->magitem) { g.draw(); }
+					for (auto& g : this->gunitem) { g.draw(this->chara[0].canget, this->chara[0].canget_gun); }
+					for (auto& g : this->magitem) { g.draw(this->chara[0].cangetm, this->chara[0].canget_mag); }
 					//e’e
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);
@@ -187,24 +187,24 @@ public:
 							//e•ÏX
 							if (this->usegun.first) {
 								if (this->change_gun == 1 || bee == false) {
-									auto pos = mine.pos;
 									++this->sel_g2%=mine.gunptr_have.size();
 									if (mine.gunptr_have[this->sel_g2] == nullptr) {
 										this->sel_g2 = 0;
 									}
+									auto pos_t = mine.pos;
+									auto mat_t = mine.mat;
 									mine.delete_chara();
-									mine.set_chara(VGet(0, 0, 0), this->sel_g2, this->ScopeScreen, body_obj);
-									mine.pos = pos;
+									mine.set_chara(pos_t, mat_t, this->sel_g2, this->ScopeScreen, body_obj);
 									this->gunpos_TPS = VGet(0, 0, 0);
 								}
 								bee = true;
 							}
 							else {
 								if(bee){
-									auto pos = mine.pos;
+									auto pos_t = mine.pos;
+									auto mat_t = mine.mat;
 									mine.delete_chara();
-									mine.set_chara(VGet(0, 0, 0), -1, this->ScopeScreen, body_obj);
-									mine.pos = pos;
+									mine.set_chara(pos_t, mat_t, -1, this->ScopeScreen, body_obj);
 									this->gunpos_TPS = VGet(0, 0, 0);
 
 									if (this->sel_g2 != 0) {
@@ -893,7 +893,15 @@ public:
 								//
 								{
 									bool cng = false;
-									cng = ((mine.pos + mine.pos_RHAND) - g.pos).size() <= 1.5f;//Žæ“¾
+
+									VECTOR_ref startpos = mine.obj.frame(mine.gunptr->frame[3].first);
+									VECTOR_ref endpos = mine.obj.frame(mine.gunptr->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
+									auto p = mapparts->map_col_line(startpos, endpos, 0);
+									if (p.HitFlag == 1) {
+										endpos = p.HitPosition;
+									}
+									cng = (Segment_Point_MinLength(startpos.get(), endpos.get(), g.pos.get()) <= 0.3f);
+
 									mine.canget |= cng;
 									if (cng) {
 										mine.canget_gun = g.gunptr->name;
@@ -908,9 +916,10 @@ public:
 													//
 													g.delete_chara();
 													//
-													VECTOR_ref pos_t = mine.pos;
+													auto pos_t = mine.pos;
+													auto mat_t = mine.mat;
 													mine.delete_chara();
-													mine.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
+													mine.set_chara(pos_t, mat_t, this->sel_g2, this->ScopeScreen, body_obj);
 													this->gunpos_TPS = VGet(0, 0, 0);
 													//
 													break;
@@ -922,9 +931,10 @@ public:
 													g.set(mine.gunptr, mine.pos + mine.pos_LHAND);
 													g.mat = mine.mat_LHAND;
 													//
-													VECTOR_ref pos_t = mine.pos;
+													auto pos_t = mine.pos;
+													auto mat_t = mine.mat;
 													mine.delete_chara();
-													mine.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
+													mine.set_chara(pos_t, mat_t, this->sel_g2, this->ScopeScreen, body_obj);
 													this->gunpos_TPS = VGet(0, 0, 0);
 													//
 												}
@@ -976,9 +986,10 @@ public:
 										}
 									}
 									//
-									VECTOR_ref pos_t = c.pos;
+									auto pos_t = c.pos;
+									auto mat_t = c.mat;
 									c.delete_chara();
-									c.set_chara(pos_t, this->sel_g2, this->ScopeScreen, body_obj);
+									c.set_chara(pos_t, mat_t, this->sel_g2, this->ScopeScreen, body_obj);
 									this->gunpos_TPS = VGet(0, 0, 0);
 									//
 									if (this->sel_g2 == -1) {
@@ -1008,7 +1019,14 @@ public:
 									bool cng = false;
 									if (&c == &mine) {
 
-										cng = ((c.pos + c.pos_RHAND) - g.pos).size() <= 1.5f;//Žæ“¾
+										VECTOR_ref startpos = mine.obj.frame(mine.gunptr->frame[3].first);
+										VECTOR_ref endpos = mine.obj.frame(mine.gunptr->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
+										auto p = mapparts->map_col_line(startpos, endpos, 0);
+										if (p.HitFlag == 1) {
+											endpos = p.HitPosition;
+										}
+										cng = (Segment_Point_MinLength(startpos.get(), endpos.get(), g.pos.get()) <= 0.3f);
+
 
 										c.cangetm |= cng;
 										if (cng) {

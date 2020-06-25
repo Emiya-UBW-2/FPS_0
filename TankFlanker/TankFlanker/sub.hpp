@@ -420,6 +420,21 @@ public:
 				this->obj.DrawModel();
 			}
 		}
+		void draw(const bool& canget, std::string& name) {
+			if (this->gunptr != nullptr) {
+
+				if (canget && name == this->gunptr->name) {
+					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
+					auto c = MV1GetDifColorScale(this->obj.get());
+					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
+					this->obj.DrawModel();
+					MV1SetDifColorScale(this->obj.get(), c);
+				}
+				else {
+					this->obj.DrawModel();
+				}
+			}
+		}
 		void delete_chara() {
 			this->gunptr = nullptr;
 			this->obj.Dispose();
@@ -448,6 +463,23 @@ public:
 				this->obj.DrawModel();
 			}
 		}
+
+		void draw(const bool& canget, std::string& name) {
+			if (this->gunptr != nullptr) {
+
+				if (canget && name == this->gunptr->name) {
+					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
+					auto c = MV1GetDifColorScale(this->obj.get());
+					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
+					this->obj.DrawModel();
+					MV1SetDifColorScale(this->obj.get(), c);
+				}
+				else {
+					this->obj.DrawModel();
+				}
+			}
+		}
+
 		void delete_chara() {
 			this->gunptr = nullptr;
 			this->obj.Dispose();
@@ -554,9 +586,9 @@ public:
 			this->gunptr_have[1] = nullptr;
 			this->gunptr_have[2] = nullptr;
 		}
-		void set_chara(const VECTOR_ref& pos_, int gunid, const GraphHandle& scope,MV1& hand_) {
+		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid, const GraphHandle& scope,MV1& hand_) {
 			this->pos = pos_;
-			this->mat = MGetIdent();
+			this->mat = mat_;
 			//Žè
 			this->body = hand_.Duplicate();// .Duplicate();
 			/*
