@@ -425,6 +425,34 @@ public:
 			this->obj.Dispose();
 		}
 	};
+	//アイテム
+	class Mag_item {
+	public:
+		VECTOR_ref pos, add;
+		MATRIX_ref mat;
+		MV1 obj;
+		Gun* gunptr = nullptr;
+
+		size_t cap = 0;
+
+		void set(Gun*gundata, const VECTOR_ref& pos_) {
+			this->pos = pos_;
+			this->add = VGet(0, 0, 0);
+			this->mat = MGetIdent();
+			//手
+			this->gunptr = gundata;
+			this->obj = this->gunptr->mag.mag.Duplicate();
+		}
+		void draw() {
+			if (this->gunptr != nullptr) {
+				this->obj.DrawModel();
+			}
+		}
+		void delete_chara() {
+			this->gunptr = nullptr;
+			this->obj.Dispose();
+		}
+	};
 	//実際に発射される弾
 	struct ammos {
 		bool hit{ false };
@@ -460,7 +488,7 @@ public:
 		};
 		struct gun_state {
 			size_t in;//所持弾数
-			uint8_t select = 0;//セレクター
+			std::vector<size_t> mag_in;//マガジン内
 		};
 	public:
 		std::array<ef_guns, 60> effcs_gun;    /*effect*/
@@ -477,10 +505,8 @@ public:
 		std::array<Gun*, 3> gunptr_have;
 		std::vector<gun_state> gun_have_state;
 		Audios audio;
-		MV1 obj, mag,hand;
+		MV1 obj, mag,body;
 		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
-		std::array<mag_obj, 8> magazine;	/*確保する弾*/
-		size_t usemag = 0;		      /*使用弾*/
 
 		VECTOR_ref pos;
 		MATRIX_ref mat;
@@ -519,6 +545,9 @@ public:
 
 		bool canget;
 		std::string canget_gun;
+
+		bool cangetm;
+		std::string canget_mag;
 		void set_list(Gun*gundata, Gun*gundata_backup) {
 			this->gunptr_backup = gundata_backup;
 			this->gunptr_have[0] = gundata;
@@ -529,7 +558,7 @@ public:
 			this->pos = pos_;
 			this->mat = MGetIdent();
 			//手
-			this->hand = hand_.Duplicate();// .Duplicate();
+			this->body = hand_.Duplicate();// .Duplicate();
 			/*
 			hand.DuplicateonAnime(&this->hand);
 			this->frame_hand.resize(3);
@@ -550,10 +579,10 @@ public:
 			}
 			*/
 			if (gunid >= 0) {
-				this->gunptr = gunptr_have[gunid];
+				this->gunptr = this->gunptr_have[gunid];
 			}
 			else {
-				this->gunptr = gunptr_backup;
+				this->gunptr = this->gunptr_backup;
 			}
 			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {
@@ -565,15 +594,10 @@ public:
 				a.pos = VGet(0, 0, 0);
 				a.mat = MGetIdent();
 			}
-
-			for (auto& a : this->magazine) {
-				a.cnt = -1.f;
-				a.pos = VGet(0, 0, 0);
-				a.mat = MGetIdent();
-			}
 			this->LEFT_hand = false;
 
-			this->ammoc = std::clamp<size_t>(this->gun_have_state[this->gunptr_have[gunid]->id].in,0, this->gunptr->ammo_max);//改良
+			this->ammoc = std::clamp<size_t>(this->gun_have_state[this->gunptr->id].in, 0, this->gunptr->ammo_max);//改良
+
 
 			this->gunf = false;
 			this->vecadd_LHAND = VGet(0, 0, 1.f);
@@ -601,14 +625,10 @@ public:
 		}
 
 		void draw() {
-			this->hand.DrawModel();
+			this->body.DrawModel();
 			if (this->gunptr->cate == 1) {
-				if (!this->reloadf || this->down_mag) {
+				if ((!this->reloadf || this->down_mag) && this->gun_have_state[this->gunptr->id].mag_in.size() >= 1) {
 					this->mag.DrawModel();
-				}
-				for (auto& a : this->magazine) {
-					if (a.cnt < 0.f) { continue; }
-					a.second.DrawModel();
 				}
 			}
 
@@ -633,9 +653,6 @@ public:
 			this->obj.Dispose();
 			this->mag.Dispose();
 			for (auto& a : this->ammo) {
-				a.second.Dispose();
-			}
-			for (auto& a : this->magazine) {
 				a.second.Dispose();
 			}
 			this->audio.shot.Dispose();

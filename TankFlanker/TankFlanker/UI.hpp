@@ -274,7 +274,8 @@ public:
 		Mainclass::Chara& chara,
 		std::unique_ptr<Y, D>& scoreparts,
 		const bool& vr,
-		const bool& usegun
+		const bool& usegun,
+		const int& sel_gun
 	) {
 		//
 		const float fps = GetFPS();
@@ -446,7 +447,7 @@ public:
 				}
 			}
 			//ƒAƒCƒeƒ€E‚¢
-			if (usegun) {
+			{
 				int xp = disp_x / 2;
 				int yp = disp_y / 2 + disp_y / 12;
 				if (chara.canget) {
@@ -455,6 +456,18 @@ public:
 					}
 					else {
 						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "‚ðE‚¤ : Z") / 2, yp, chara.canget_gun + "‚ðE‚¤ : Z", GetColor(255, 128, 0));
+					}
+				}
+			}
+			{
+				int xp = disp_x / 2;
+				int yp = disp_y / 2 + disp_y / 12+y_r(18,disp_y);
+				if (chara.cangetm) {
+					if (!vr) {
+						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "‚ðE‚¤ : F") / 2, yp, chara.canget_mag + "‚ðE‚¤ : F", GetColor(255, 128, 0));
+					}
+					else {
+						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "‚ðE‚¤ : Z") / 2, yp, chara.canget_mag + "‚ðE‚¤ : Z", GetColor(255, 128, 0));
 					}
 				}
 			}
@@ -497,11 +510,12 @@ public:
 					xp2 = xp + y_r(200, disp_y);
 					yp2 = yp - y_r(180, disp_y) * 4 / 10;
 
+					int i = 0;
 					for (auto& gp : chara.gunptr_have) {
 						int xst2 = y_r(50, disp_y);
 						int yst2 = y_r(50, disp_y) * 4 / 10;
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-						DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(0,0,0), TRUE);
+						DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(0, 0, 0), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
 						if (gp == nullptr) {
@@ -517,21 +531,18 @@ public:
 								xp2, yp2 + (yst2 - ys2) / 2,
 								xp2 + xs2, yp2 + ys2 + (yst2 - ys2) / 2, true);
 						}
-						if (gp == chara.gunptr) {
+						if (i == sel_gun) {
 							DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(255, 0, 0), FALSE);
 						}
+						i++;
 						yp2 += y_r(60, disp_y) * 4 / 10;
 					}
 				}
 				{
 					font->DrawString(xp, yp, chara.gunptr->name, GetColor(255, 255, 255));
 					font->DrawStringFormat(
-						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gunptr->ammo_max),
-						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gunptr->ammo_max);
-
-					font->DrawStringFormat(
-						xp + xs,
-						yp + ys + y_r(2, disp_y) + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 255, 255), "%04d", chara.gun_have_state[4].in);
+						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in - chara.ammoc),
+						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in - chara.ammoc);
 				}
 			}
 			if (vr) {
@@ -723,6 +734,30 @@ public:
 						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
 						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->name, GetColor(255, 0, 0));
+
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					}
+				}
+			}
+		}
+	}
+
+	template <class T2>
+	void Magitem_draw(std::vector<T2> &magitem, const VECTOR_ref& pos) {
+		for (auto& g : magitem) {
+			if (g.gunptr != nullptr) {
+				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+				if (p.z() >= 0.f&&p.z() <= 1.f) {
+					float r_ = (g.pos - pos).size();
+					if (r_ <= 1.f) {
+						r_ = 1.f;
+					}
+					if (r_ <= 10.f && g.gunptr->mag.name.find("none")==std::string::npos) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+
+						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
+						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->mag.name, GetColor(255, 0, 0));
 
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
