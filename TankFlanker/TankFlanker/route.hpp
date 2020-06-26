@@ -1012,14 +1012,14 @@ public:
 														this->usegun.first = true;
 														this->change_gun = 1;
 													}
-													auto p = mine.gunptr_have[ii].ptr;
+													auto pt = mine.gunptr_have[ii].ptr;
 													mine.gunptr_have[ii].obj.Dispose();
 													//
 													mine.gunptr_have[ii].ptr = g.gunptr;
 													mine.gunptr_have[ii].obj = mine.gunptr_have[ii].ptr->mod.obj.Duplicate();
 													g.delete_chara();
 													//
-													g.set(p, mine.pos + mine.pos_LHAND);
+													g.set(pt, mine.pos + mine.pos_LHAND);
 													g.mat = mine.mat_LHAND;
 													//
 													auto pos_t = mine.pos;
@@ -1057,13 +1057,10 @@ public:
 									//
 									for (size_t i = 0; i < c.gunptr_have.size(); i++) {
 										if (this->sel_g2 == i) {
-											if (this->sel_g2 == c.gunptr_have.size() - 1) {
-												c.gunptr_have[this->sel_g2].ptr = nullptr;
-												c.gunptr_have[this->sel_g2].obj.Dispose();
-												this->sel_g2--;
-												break;
-											}
-											if (c.gunptr_have[this->sel_g2 + 1].ptr == nullptr) {
+											if (
+												(this->sel_g2 == c.gunptr_have.size() - 1) ||
+												c.gunptr_have[std::clamp<size_t>(this->sel_g2 + 1, 0, c.gunptr_have.size() - 1)].ptr == nullptr
+											) {
 												c.gunptr_have[this->sel_g2].ptr = nullptr;
 												c.gunptr_have[this->sel_g2].obj.Dispose();
 												this->sel_g2--;
