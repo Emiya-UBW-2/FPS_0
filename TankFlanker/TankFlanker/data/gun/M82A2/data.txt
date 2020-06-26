@@ -15,3 +15,4 @@ recoil_x(deg)+=1.0
 recoil_x(deg)-=-1.0
 recoil_y(deg)+=6.0
 recoil_y(deg)-=-3.0
+reload_time(sec)=1.5f

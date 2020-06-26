@@ -282,6 +282,8 @@ public:
 		float recoil_yup = 0.f;
 		float recoil_ydn = 0.f;
 
+		float reload_time = 1.f;//再装填時間
+
 		float ammo_speed = 100.f;//弾速
 		float ammo_pene = 10.f;//貫通
 		float ammo_damege = 10.f;//ダメージ
@@ -306,7 +308,7 @@ public:
 				for (int i = 0; i < this->mod.obj.frame_num(); i++) {
 					std::string s = this->mod.obj.frame_name(i);
 					if (s.find("mag_fall") != std::string::npos) {
-						this->frame[0].first = i;//排莢
+						this->frame[0].first = i;//マガジン
 						this->frame[0].second = this->mod.obj.frame(i);
 						this->frame[1].first = i + 1;
 						this->frame[1].second = this->mod.obj.frame(i + 1);
@@ -335,60 +337,62 @@ public:
 				//テキスト
 				{
 					int mdata = FileRead_open(("data/gun/" + this->name + "/data.txt").c_str(), FALSE);
-					//カテゴリ
-					{
-						auto p = getparams::_str(mdata);
-						if (getright(p.c_str()).find("knife") != std::string::npos) {
-							this->cate = 0;
+						//カテゴリ
+						{
+							auto p = getparams::_str(mdata);
+							if (getright(p.c_str()).find("knife") != std::string::npos) {
+								this->cate = 0;
+							}
+							else if (getright(p.c_str()).find("gun") != std::string::npos) {
+								this->cate = 1;
+							}
 						}
-						else if (getright(p.c_str()).find("gun") != std::string::npos) {
-							this->cate = 1;
+						//セレクター設定
+						while (true) {
+							auto p = getparams::_str(mdata);
+							if (getright(p.c_str()).find("end") != std::string::npos) {
+								break;
+							}
+							else if (getright(p.c_str()).find("semi") != std::string::npos) {
+								this->select.emplace_back(uint8_t(1));					//セミオート=1
+							}
+							else if (getright(p.c_str()).find("full") != std::string::npos) {
+								this->select.emplace_back(uint8_t(2));					//フルオート=2
+							}
+							else if (getright(p.c_str()).find("3b") != std::string::npos) {
+								this->select.emplace_back(uint8_t(3));					//3連バースト=3
+							}
+							else if (getright(p.c_str()).find("2b") != std::string::npos) {
+								this->select.emplace_back(uint8_t(4));					//2連バースト=4
+							}
+							else {
+								this->select.emplace_back(uint8_t(1));
+							}
 						}
-					}
-					//セレクター設定
-					while (true) {
-						auto p = getparams::_str(mdata);
-						if (getright(p.c_str()).find("end") != std::string::npos) {
-							break;
+						//サウンド
+						this->audio.set(mdata);
+						//装弾数
+						this->ammo_max = getparams::_long(mdata);
+						//弾データ
+						while (true) {
+							auto p = getparams::_str(mdata);
+							if (getright(p.c_str()).find("end") != std::string::npos) {
+								break;
+							}
+							else {
+								this->ammo.resize(this->ammo.size()+1);
+								this->ammo.back().name = p;
+							}
 						}
-						else if (getright(p.c_str()).find("semi") != std::string::npos) {
-							this->select.emplace_back(uint8_t(1));					//セミオート=1
-						}
-						else if (getright(p.c_str()).find("full") != std::string::npos) {
-							this->select.emplace_back(uint8_t(2));					//フルオート=2
-						}
-						else if (getright(p.c_str()).find("3b") != std::string::npos) {
-							this->select.emplace_back(uint8_t(3));					//3連バースト=3
-						}
-						else if (getright(p.c_str()).find("2b") != std::string::npos) {
-							this->select.emplace_back(uint8_t(4));					//2連バースト=4
-						}
-						else {
-							this->select.emplace_back(uint8_t(1));
-						}
-					}
-					//サウンド
-					this->audio.set(mdata);
-					//装弾数
-					this->ammo_max = getparams::_long(mdata);
-					//弾データ
-					while (true) {
-						auto p = getparams::_str(mdata);
-						if (getright(p.c_str()).find("end") != std::string::npos) {
-							break;
-						}
-						else {
-							this->ammo.resize(this->ammo.size()+1);
-							this->ammo.back().name = p;
-						}
-					}
-					//マガジン
-					this->mag.name = getparams::_str(mdata);
-					//反動
-					this->recoil_xup = getparams::_float(mdata);
-					this->recoil_xdn = getparams::_float(mdata);
-					this->recoil_yup = getparams::_float(mdata);
-					this->recoil_ydn = getparams::_float(mdata);
+						//マガジン
+						this->mag.name = getparams::_str(mdata);
+						//反動
+						this->recoil_xup = getparams::_float(mdata);
+						this->recoil_xdn = getparams::_float(mdata);
+						this->recoil_yup = getparams::_float(mdata);
+						this->recoil_ydn = getparams::_float(mdata);
+						//リロードタイム
+						this->reload_time = getparams::_float(mdata);
 					FileRead_close(mdata);
 					//
 					for (auto& a : this->ammo) {
@@ -510,17 +514,13 @@ public:
 			VECTOR_ref add;
 			MATRIX_ref mat;
 		};
-		struct mag_obj {
-			MV1 second;
-			float cnt = -1.f;
-			bool down = false;
-			VECTOR_ref pos;
-			VECTOR_ref add;
-			MATRIX_ref mat;
-		};
 		struct gun_state {
 			size_t in;//所持弾数
 			std::vector<size_t> mag_in;//マガジン内
+		};
+		struct Gun_have {
+			Gun* ptr;
+			MV1 obj;
 		};
 	public:
 		std::array<ef_guns, 60> effcs_gun;    /*effect*/
@@ -534,15 +534,17 @@ public:
 		Gun* gunptr=nullptr;
 
 		Gun* gunptr_backup;
-		std::array<Gun*, 3> gunptr_have;
+
+		std::array<Gun_have, 3> gunptr_have;
 		std::vector<gun_state> gun_have_state;
 		Audios audio;
 		MV1 obj, mag,body;
 		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
 
+		float reload_cnt = 0.f;
+
 		VECTOR_ref pos;
 		MATRIX_ref mat;
-		switchs safety;
 		uint8_t trigger=0;
 
 		uint8_t selkey=0;
@@ -582,9 +584,10 @@ public:
 		std::string canget_mag;
 		void set_list(Gun*gundata, Gun*gundata_backup) {
 			this->gunptr_backup = gundata_backup;
-			this->gunptr_have[0] = gundata;
-			this->gunptr_have[1] = nullptr;
-			this->gunptr_have[2] = nullptr;
+			this->gunptr_have[0].ptr = gundata;
+			this->gunptr_have[0].obj = this->gunptr_have[0].ptr->mod.obj.Duplicate();
+			this->gunptr_have[1].ptr = nullptr;
+			this->gunptr_have[2].ptr = nullptr;
 		}
 		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid, const GraphHandle& scope,MV1& hand_) {
 			this->pos = pos_;
@@ -611,7 +614,7 @@ public:
 			}
 			*/
 			if (gunid >= 0) {
-				this->gunptr = this->gunptr_have[gunid];
+				this->gunptr = this->gunptr_have[gunid].ptr;
 			}
 			else {
 				this->gunptr = this->gunptr_backup;
@@ -627,8 +630,12 @@ public:
 				a.mat = MGetIdent();
 			}
 			this->LEFT_hand = false;
-
-			this->ammoc = std::clamp<size_t>(this->gun_have_state[this->gunptr->id].in, 0, this->gunptr->ammo_max);//改良
+			if (this->gun_have_state[this->gunptr->id].mag_in.size() >= 1) {
+				this->ammoc = this->gun_have_state[this->gunptr->id].mag_in.front();//改良
+			}
+			else {
+				this->ammoc = std::clamp<size_t>(this->gun_have_state[this->gunptr->id].in, 0, this->gunptr->ammo_max);//改良
+			}
 
 
 			this->gunf = false;
@@ -702,7 +709,10 @@ public:
 		}
 		void init() {
 			delete_chara();
-			std::fill(gunptr_have.begin(), gunptr_have.end(), nullptr);
+			for (auto& h : gunptr_have) {
+				h.ptr = nullptr;
+				h.obj.Dispose();
+			}
 		}
 	};
 };

@@ -418,9 +418,6 @@ public:
 					if (chara.ammoc == 0) {
 						font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
 					}
-					if (chara.safety.first) {
-						font->DrawString(xp - font->GetDrawWidth("SAFETY") / 2, yp, "SAFETY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
-					}
 				}
 				time_tmp += 1.f / fps;
 				if (time_tmp >= 0.5f) {
@@ -518,16 +515,16 @@ public:
 						DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(0, 0, 0), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-						if (gp == nullptr) {
+						if (gp.ptr == nullptr) {
 
 						}
 						else {
-							GetGraphSize(gp->mod.UIScreen.get(), &x, &y);
+							GetGraphSize(gp.ptr->mod.UIScreen.get(), &x, &y);
 							int xs2;
 							int ys2;
 							xs2 = xst2;
 							ys2 = xst2 * y / x;
-							gp->mod.UIScreen.DrawExtendGraph(
+							gp.ptr->mod.UIScreen.DrawExtendGraph(
 								xp2, yp2 + (yst2 - ys2) / 2,
 								xp2 + xs2, yp2 + ys2 + (yst2 - ys2) / 2, true);
 						}
@@ -541,8 +538,8 @@ public:
 				{
 					font->DrawString(xp, yp, chara.gunptr->name, GetColor(255, 255, 255));
 					font->DrawStringFormat(
-						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in - chara.ammoc),
-						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in - chara.ammoc);
+						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in),
+						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in);
 				}
 			}
 			if (vr) {
@@ -569,10 +566,7 @@ public:
 					}
 				}
 				{
-					if (display_c1 == 0 && chara.safety.first) {
-						pt_pr2 = 1.f;
-					}
-					if (display_c1 == 1 && !chara.gunf) {
+					if (display_c1 == 0 && !chara.gunf) {
 						pt_pr2 = 1.f;
 					}
 
@@ -588,26 +582,15 @@ public:
 					font->DrawString(xp, yp + ys, "Tutorial", GetColor(255, 0, 0));
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					if (pt_pr2 >= 0.f) {
-						if (display_c1 == 0 && chara.safety.first) {
-							UI_safty.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-							font->DrawString(xp, yp, "SAFETY OFF", GetColor(2555, 128, 0));
-						}
-						if (display_c1 == 1 && !chara.gunf) {
+						if (display_c1 == 0 && !chara.gunf) {
 							UI_trigger.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 							font->DrawString(xp, yp, "FIRE", GetColor(2555, 128, 0));
 						}
-						/*
-							UI_select.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-							font->DrawString(xp, yp, "FIRE", GetColor(2555, 128, 0));
-						*/
 						pt_pr2 -= 1.f / fps;
 					}
 
-					if (display_c1 == 0 && !chara.safety.first) {
+					if (display_c1 == 0 && chara.gunf) {
 						display_c1 = 1;
-					}
-					if (display_c1 == 1 && chara.gunf) {
-						display_c1 = 2;
 					}
 				}
 				//ç∂éË
@@ -640,7 +623,7 @@ public:
 					}
 				}
 				{
-					if (display_c1 <= 1) {
+					if (display_c1 <= 0) {
 						pt_pl2 = 1.f;
 					}
 					int xs = 500 / 4;
@@ -666,6 +649,21 @@ public:
 					a.hit = false;
 				}
 			}
+
+
+			int px = 300;
+			int py = 500;
+			size_t pp = 0;
+			for (auto& a : chara.gun_have_state[3].mag_in) {
+				pp += a;
+				font24.DrawStringFormat(px,py, GetColor(255, 0, 0), "%d/%d total:%d",
+					a,
+					chara.gunptr->ammo_max,
+					pp
+				);
+				py += y_r(18, disp_y);
+			}
+
 		}
 	}
 	void draw() {
@@ -759,6 +757,12 @@ public:
 						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
 						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->mag.name, GetColor(255, 0, 0));
 
+						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0),"%d/%d",
+							g.cap,
+							g.gunptr->ammo_max
+							);
+
+						//mine.gun_have_state[mine.gunptr->id].mag_in.size()
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
