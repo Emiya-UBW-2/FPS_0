@@ -18,11 +18,11 @@ class main_c : Mainclass {
 	bool ending = true;
 	int sel_g2 = 0;
 	//プレイヤー操作変数群
-	switchs TPS, ads, chgun, delgun, usegun;				//
-	uint8_t change_gun = 0;						//
-	VECTOR_ref gunpos_TPS;						//
-	float xrad_p = 0.f;						//マウスエイム
-	VECTOR_ref add_pos, add_pos_buf;				//移動
+	switchs TPS, ads, chgun, delgun, usegun;					//
+	uint8_t change_gun = 0;										//
+	VECTOR_ref gunpos_TPS;										//
+	float xrad_p = 0.f;											//マウスエイム
+	VECTOR_ref add_pos, add_pos_buf;							//移動
 	VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
 	float fov = 0.f, fov_fps = 0.f;
 public:
@@ -92,18 +92,18 @@ public:
 			mapparts->set_map();
 			//銃アイテム配置
 			gunitem.resize(5);
-			gunitem[0].set(&gun_data[0], VGet(4.f, 1.f, 0.0f));
-			gunitem[1].set(&gun_data[1], VGet(2.f, 1.f, 0.0f));
-			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f));
-			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f));
-			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f));
+			gunitem[0].set(&gun_data[0], VGet(4.f, 1.f, 0.0f), MGetIdent());
+			gunitem[1].set(&gun_data[1], VGet(2.f, 1.f, 0.0f), MGetIdent());
+			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f), MGetIdent());
+			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f), MGetIdent());
+			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f), MGetIdent());
 			//マガジン配置
 			magitem.resize(5);
-			magitem[0].set(&gun_data[0], VGet(4.f, 1.f, 4.0f));
-			magitem[1].set(&gun_data[3], VGet(2.f, 1.f, 4.0f));
-			magitem[2].set(&gun_data[3], VGet(0.f, 1.f, 4.0f));
-			magitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 4.0f));
-			magitem[4].set(&gun_data[3], VGet(-4.f, 1.f, 4.0f));
+			magitem[0].set(&gun_data[0], VGet(4.f, 1.f, 4.0f), MGetIdent());
+			magitem[1].set(&gun_data[3], VGet(2.f, 1.f, 4.0f), MGetIdent());
+			magitem[2].set(&gun_data[3], VGet(0.f, 1.f, 4.0f), MGetIdent());
+			magitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 4.0f), MGetIdent());
+			magitem[4].set(&gun_data[3], VGet(-4.f, 1.f, 4.0f), MGetIdent());
 			for (auto& p : magitem) {
 				if (p.gunptr != nullptr) {
 					p.cap = p.gunptr->ammo_max;
@@ -133,8 +133,8 @@ public:
 					mapparts->map_get().DrawModel();
 					for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
 					for (auto& c : this->chara) { c.draw(this->usegun.first, this->sel_g2); }
-					for (auto& g : this->gunitem) { g.draw(this->chara[0].canget, this->chara[0].canget_gun); }
-					for (auto& g : this->magitem) { g.draw(this->chara[0].cangetm, this->chara[0].canget_mag); }
+					for (auto& g : this->gunitem) { g.draw(this->chara[0].canget_gunitem, this->chara[0].canget_gun); }
+					for (auto& g : this->magitem) { g.draw(this->chara[0].canget_magitem, this->chara[0].canget_mag); }
 					//銃弾
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);
@@ -173,8 +173,8 @@ public:
 							//銃変更
 							if (this->usegun.first) {
 								if (this->change_gun == 1 || bee == false) {
-									++this->sel_g2 %= mine.gunptr_have.size();
-									if (mine.gunptr_have[this->sel_g2].ptr == nullptr) {
+									++this->sel_g2 %= mine.gun_slot.size();
+									if (mine.gun_slot[this->sel_g2].ptr == nullptr) {
 										this->sel_g2 = 0;
 									}
 									auto pos_t = mine.pos;
@@ -197,9 +197,9 @@ public:
 										--this->sel_g2;
 									}
 									else {
-										this->sel_g2 = int(mine.gunptr_have.size() - 1);
+										this->sel_g2 = int(mine.gun_slot.size() - 1);
 										while (true) {
-											if (mine.gunptr_have[this->sel_g2].ptr == nullptr) {
+											if (mine.gun_slot[this->sel_g2].ptr == nullptr) {
 												this->sel_g2--;
 											}
 											else {
@@ -291,7 +291,7 @@ public:
 							//移動共通
 							{
 								mine.pos += this->add_pos;
-								auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.f, 0), mine.pos + VGet(0, -0.1f, 0), 0);
+								auto pp = mapparts->map_col_line(mine.pos + VGet(0, 1.8f, 0), mine.pos + VGet(0, -0.1f, 0), 0);
 								if (mine.add_ypos <= 0.f && pp.HitFlag == 1) {
 									mine.pos = pp.HitPosition;
 									mine.add_ypos = 0.f;
@@ -299,6 +299,7 @@ public:
 								else {
 									mine.pos.yadd(mine.add_ypos);
 									mine.add_ypos -= 9.8f / std::powf(fps, 2.f);
+									//復帰
 									if (mine.pos.y() <= -5.f) {
 										mine.pos = VGet(0.f, 5.f, 0.f);
 										mine.add_ypos = 0.f;
@@ -345,11 +346,10 @@ public:
 								//RHAND
 								{
 									mine.pos_RHAND = mine.obj.frame(mine.gunptr->frame[6].first) - mine.pos;
+									if (mine.down_mag) {
+										mine.pos_RHAND = mine.obj.frame(mine.gunptr->frame[0].first) + mine.mat_LHAND.yvec()*-0.05f - mine.pos;
+									}
 									mine.mat_RHAND = mine.mat_HMD;
-								}
-
-								if (mine.down_mag) {
-									mine.pos_RHAND = mine.obj.frame(mine.gunptr->frame[0].first) + mine.mat_LHAND.yvec()*-0.05f - mine.pos;
 								}
 							}
 							//LHAND共通
@@ -369,42 +369,28 @@ public:
 										easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[0] & BUTTON_SIDE) != 0), 0.5f, fps);
 										//セレクター
 										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f)) ? 2 : 0);
-										//武装変更
-										if (this->sel_g2 != -1) {
-											this->usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);//<---
-										}
-										else {
+										//銃の使用
+										this->usegun.get_in((CheckHitKey(KEY_INPUT_P) != 0) && (this->sel_g2 != -1));//<---
+										if (this->sel_g2 == -1) {
 											this->usegun.first = false;
-											this->usegun.second = 0;
 										}
-										if (this->usegun.first) {
-											this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, ((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) ? 2 : 0);
-										}
+										//武装変更
+										this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, (((ptr_.on[0] & BUTTON_TOPBUTTON) != 0)&& this->usegun.first) ? 2 : 0);
 									}
 								}
 								if (vrparts->get_hand2_num() != -1) {
 									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
 									if (ptr_.turn && ptr_.now) {
 										//マガジン取得
-										if (mine.gun_have_state[mine.gunptr->id].mag_in.size() >= 1) {
-											mine.down_mag |= ((ptr_.on[0] & BUTTON_TRIGGER) != 0);
-										}
+										mine.down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (mine.gun_stat[mine.gunptr->id].mag_in.size() >= 1));
 										//銃変更
 										this->chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
-
-										if (this->usegun.first) {
-											this->delgun.get_in(CheckHitKey(KEY_INPUT_G) != 0);
-										}
-										else {
-											this->delgun.second = 0;
-										}
-
+										//銃破棄
+										this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
 										//タイマーオン
 										scoreparts->c_ready |= ((ptr_.on[0] & BUTTON_SIDE) != 0);
 										//計測リセット
-										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0 && scoreparts->c_end) {
-											scoreparts->reset();
-										}
+										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0 && scoreparts->c_end) { scoreparts->reset(); }
 									}
 								}
 							}
@@ -421,44 +407,21 @@ public:
 								easing_set(&mine.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
 								//銃変更
 								this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
-
-								if (this->sel_g2 != -1) {
-									this->usegun.get_in(CheckHitKey(KEY_INPUT_P) != 0);//<---
-								}
-								else {
+								//銃の使用
+								this->usegun.get_in((CheckHitKey(KEY_INPUT_P) != 0) && (this->sel_g2 != -1));//<---
+								if (this->sel_g2 == -1) {
 									this->usegun.first = false;
-									this->usegun.second = 0;
 								}
-
-								if (this->usegun.first) {
-									if (mine.gunptr->cate == 1) {
-										//ADS
-										this->ads.first = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
-									}
-									else {
-										//ADS
-										this->ads.first = false;
-										/*なし*/
-									}
-									//マグキャッチ(Rキー)
-									easing_set(&mine.obj.get_anime(5).per, float(CheckHitKey(KEY_INPUT_R) != 0), 0.5f, fps);
-									//セレクター(中ボタン)
-									mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) ? 2 : 0);
-									//銃変更
-									this->delgun.get_in(CheckHitKey(KEY_INPUT_G) != 0);
-									//武装変更
-									this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, (GetMouseWheelRotVol() != 0) ? 2 : 0);
-								}
-								else {
-									//ADS
-									this->ads.first = false;
-									//マグキャッチ(Rキー)
-									mine.obj.get_anime(5).per = 0.f;
-									//セレクター(中ボタン)
-									mine.selkey = 0;
-									//銃変更
-									this->delgun.second = 0;
-								}
+								//ADS
+								this->ads.first = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) && (this->usegun.first && mine.gunptr->cate == 1);
+								//セレクター(中ボタン)
+								mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) && (this->usegun.first)) ? 2 : 0);
+								//銃破棄
+								this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
+								//マグキャッチ(Rキー)
+								easing_set(&mine.obj.get_anime(5).per, float((CheckHitKey(KEY_INPUT_R) != 0) && this->usegun.first), 0.5f, fps);
+								//武装変更
+								this->change_gun = std::clamp<uint8_t>(this->change_gun + 1, 0, ((GetMouseWheelRotVol() != 0) && this->usegun.first) ? 2 : 0);
 							}
 							//タイマー処理
 							scoreparts->move_timer();
@@ -497,7 +460,7 @@ public:
 								}
 								if (c.gunptr->cate == 1) {
 									//マガジン排出
-									if (c.obj.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
+									if (c.obj.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_stat[c.gunptr->id].mag_in.size() >= 1) {
 										c.audio.mag_down.play_3D(c.pos + c.pos_LHAND, 1.f);
 										int dnm = int(c.ammoc) - 1;
 										//弾数
@@ -507,7 +470,7 @@ public:
 										else {
 											dnm = 0;
 										}
-										c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].in -= dnm;
+										c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].in -= dnm;
 										//バイブレーション　バッテリー消費が激しいためコメントアウト
 										/*
 										if (&c == &mine) {
@@ -516,15 +479,14 @@ public:
 										*/
 										//マガジン排出
 										c.reload_cnt = 0.f;
-										c.gun_have_state[c.gunptr->id].mag_in.erase(c.gun_have_state[c.gunptr->id].mag_in.begin());
+										c.gun_stat[c.gunptr->id].mag_in.erase(c.gun_stat[c.gunptr->id].mag_in.begin());
 										//マガジン排出
 										bool tt = false;
 										for (auto& g : this->magitem) {
 											if (g.gunptr == nullptr) {
 												tt = true;
-												g.set(c.gunptr, c.pos_mag);
+												g.set(c.gunptr, c.pos_mag,c.mat_mag);
 												g.add = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
-												g.mat = c.mat_mag;
 												g.cap = dnm;
 												break;
 											}
@@ -532,9 +494,8 @@ public:
 										if (!tt) {
 											this->magitem.resize(this->magitem.size() + 1);
 											auto& g = this->magitem.back();
-											g.set(c.gunptr, c.pos_mag);
+											g.set(c.gunptr, c.pos_mag,c.mat_mag);
 											g.add = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
-											g.mat = c.mat_mag;
 											g.cap = dnm;
 										}
 										//
@@ -546,7 +507,7 @@ public:
 									}
 								}
 								//
-								if (c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
+								if (c.reloadf && c.gun_stat[c.gunptr->id].mag_in.size() >= 1) {
 									c.reload_cnt += 1.f / fps;
 									if (c.reload_cnt < c.gunptr->reload_time) {
 										c.down_mag = false;
@@ -596,9 +557,9 @@ public:
 										*/
 										//弾数管理
 										c.ammoc--;
-										c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].in--;
-										if (!c.reloadf && c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.size() >= 1 && c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front() > 0) {
-											c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front()--;
+										c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].in--;
+										if (!c.reloadf && c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.size() >= 1 && c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front() > 0) {
+											c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front()--;
 										}
 										//持ち手を持つとココが相殺される
 										c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p,
@@ -626,7 +587,7 @@ public:
 										}
 									}
 									//マガジン取得
-									if (c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
+									if (c.reloadf && c.gun_stat[c.gunptr->id].mag_in.size() >= 1) {
 										if (c.down_mag) {
 											auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
 											c.mat_mag = c.mag.GetFrameLocalMatrix(3)* (c.mat_RHAND*p);
@@ -639,7 +600,7 @@ public:
 													c.obj.get_anime(3).per = 1.f;
 												}
 												c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
-												c.ammoc += c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front();
+												c.ammoc += c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front();
 												c.reloadf = false;
 											}
 										}
@@ -685,12 +646,9 @@ public:
 											MATRIX_ref::RotY(DX_PI_F + c.body_yrad)*c.mat_HMD.Inverse()*
 											MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
 										);
-										for (size_t i = 0; i < c.gunptr_have.size(); i++) {
-											if (c.gunptr_have[i].ptr != nullptr) {
-												c.gunptr_have[i].obj.SetMatrix(
-													MATRIX_ref::RotY(DX_PI_F)*MATRIX_ref::RotX(DX_PI_F / 2)*MATRIX_ref::RotY(c.body_yrad)*
-													MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet((float(i) - float(c.gunptr_have.size()) *0.5f)*0.1f, -0.15f, -0.3f), MATRIX_ref::RotY(c.body_yrad)) + (c.pos_HMD + c.pos))
-												);
+										for (size_t i = 0; i < c.gun_slot.size(); i++) {
+											if (c.gun_slot[i].ptr != nullptr) {
+												c.gun_slot[i].obj.SetMatrix(MATRIX_ref::RotY(DX_PI_F)*MATRIX_ref::RotX(DX_PI_F / 2)*MATRIX_ref::RotY(c.body_yrad)* MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet((float(i) - float(c.gun_slot.size()) *0.5f)*0.1f, -0.15f, -0.3f), MATRIX_ref::RotY(c.body_yrad)) + (c.pos_HMD + c.pos)));
 											}
 										}
 
@@ -711,13 +669,6 @@ public:
 										if (p.HitFlag == TRUE) {
 											a.pos = p.HitPosition;
 										}
-										/*
-										auto p2 = mapparts->map_col_line(a.repos, a.pos, 1);
-										if (p2.HitFlag == TRUE) {
-											a.pos = p2.HitPosition;
-											p = p2;
-										}
-										*/
 										for (auto& tp : tgt_pic) {
 											auto q = tp.obj.CollCheck_Line(a.repos, a.pos, 0, 1);
 											if (q.HitFlag == TRUE) {
@@ -772,32 +723,21 @@ public:
 												//
 												a.hit = true;
 												a.flug = false;
-												for (auto& b : c.effcs_gun) {
-													if (b.second == &a) {
-														b.cnt = 2.5f;
-														b.first.handle.SetPos(b.second->pos);
-														break;
-													}
-												}
 												break;
 											}
 										}
 										if (p.HitFlag == TRUE && a.flug) {
 											a.flug = false;
-											for (auto& b : c.effcs_gun) {
-												if (b.second == &a) {
-													b.cnt = 2.5f;
-													b.first.handle.SetPos(b.second->pos);
-													break;
-												}
-											}
 											set_effect(&c.gndsmkeffcs[c.gndsmk_use], a.pos, p.Normal, 0.025f / 0.1f);
 											++c.gndsmk_use %= c.gndsmkeffcs.size();
 										}
 									}
-									//消す(2秒たった、スピードが100以下、貫通が0以下)
+									//消す(3秒たった、スピードが0以下、貫通が0以下)
 									if (a.cnt >= 3.f || a.spec->speed < 0.f || a.spec->pene <= 0.f) {
 										a.flug = false;
+									}
+									//終了
+									if (!a.flug) {
 										for (auto& b : c.effcs_gun) {
 											if (b.second == &a) {
 												b.cnt = 2.5f;
@@ -806,6 +746,7 @@ public:
 											}
 										}
 									}
+									//
 								}
 							}
 							for (auto& a : c.ammo) {
@@ -865,7 +806,7 @@ public:
 						}
 						//gunitem
 						for (auto& c : chara) {
-							c.canget = false;
+							c.canget_gunitem = false;
 						}
 						for (auto& g : this->gunitem) {
 							//
@@ -902,7 +843,7 @@ public:
 									}
 									cng = (Segment_Point_MinLength(startpos.get(), endpos.get(), g.pos.get()) <= 0.3f);
 
-									mine.canget |= cng;
+									mine.canget_gunitem |= cng;
 									if (cng) {
 										mine.canget_gun = g.gunptr->name;
 										if (this->chgun.second == 1) {
@@ -911,21 +852,20 @@ public:
 											int sel_t = this->sel_g2;
 											Gun* gun_t = g.gunptr;
 											g.delete_chara();
-											for (size_t i = 0; i < mine.gunptr_have.size(); i++) {
-												if (mine.gunptr_have[i].ptr == nullptr) {
+											for (size_t i = 0; i < mine.gun_slot.size(); i++) {
+												if (mine.gun_slot[i].ptr == nullptr) {
 													sel_t = this->sel_g2 = int(i);
 													break;
 												}
-												if (i == mine.gunptr_have.size() - 1) {
+												if (i == mine.gun_slot.size() - 1) {
 													sel_t = this->sel_g2;
 													if (!this->usegun.first) {
-														++sel_t %= mine.gunptr_have.size();
-														if (mine.gunptr_have[sel_t].ptr == nullptr) {
+														++sel_t %= mine.gun_slot.size();
+														if (mine.gun_slot[sel_t].ptr == nullptr) {
 															sel_t = 0;
 														}
 													}
-													g.set(mine.gunptr_have[sel_t].ptr, mine.pos + mine.pos_LHAND);
-													g.mat = mine.mat_LHAND;
+													g.set(mine.gun_slot[sel_t].ptr, mine.pos + mine.pos_LHAND, mine.mat_LHAND);
 												}
 
 											}
@@ -934,8 +874,8 @@ public:
 												this->change_gun = 1;
 											}
 											//
-											mine.gunptr_have[sel_t].delete_gun();
-											mine.gunptr_have[sel_t].set(gun_t);
+											mine.gun_slot[sel_t].delete_gun();
+											mine.gun_slot[sel_t].set(gun_t);
 											mine.delete_chara();
 											mine.set_chara(pos_t, mat_t, sel_t, this->ScopeScreen, body_obj);
 											this->gunpos_TPS = VGet(0, 0, 0);
@@ -947,41 +887,38 @@ public:
 						for (auto& c : chara) {
 							if (&c == &mine) {
 								if (this->delgun.second == 1) {
-									//
 									bool tt = false;
 									for (auto& g : this->gunitem) {
 										if (g.gunptr == nullptr) {
 											tt = true;
-											g.set(c.gunptr, c.pos + c.pos_LHAND);
-											g.mat = c.mat_LHAND;
+											g.set(c.gunptr, c.pos + c.pos_LHAND, c.mat_LHAND);
 											break;
 										}
 									}
 									if (!tt) {
 										this->gunitem.resize(this->gunitem.size() + 1);
 										auto& g = this->gunitem.back();
-										g.set(c.gunptr, c.pos + c.pos_LHAND);
-										g.mat = c.mat_LHAND;
+										g.set(c.gunptr, c.pos + c.pos_LHAND, c.mat_LHAND);
 									}
 									//
-									for (size_t i = 0; i < c.gunptr_have.size(); i++) {
+									for (size_t i = 0; i < c.gun_slot.size(); i++) {
 										if (this->sel_g2 == i) {
-											if ((this->sel_g2 == c.gunptr_have.size() - 1) || c.gunptr_have[
+											if ((this->sel_g2 == c.gun_slot.size() - 1) || c.gun_slot[
 
-												std::clamp(this->sel_g2 + 1, 0, int(c.gunptr_have.size()) - 1)
+												std::clamp(this->sel_g2 + 1, 0, int(c.gun_slot.size()) - 1)
 
 											].ptr == nullptr) {
-												c.gunptr_have[this->sel_g2].ptr = nullptr;
-												c.gunptr_have[this->sel_g2].obj.Dispose();
+												c.gun_slot[this->sel_g2].ptr = nullptr;
+												c.gun_slot[this->sel_g2].obj.Dispose();
 												this->sel_g2--;
 												break;
 											}
 											else {
-												for (size_t j = i; j < c.gunptr_have.size() - 1; j++) {
-													c.gunptr_have[j].delete_gun();
-													c.gunptr_have[j].set(c.gunptr_have[j + 1].ptr);
+												for (size_t j = i; j < c.gun_slot.size() - 1; j++) {
+													c.gun_slot[j].delete_gun();
+													c.gun_slot[j].set(c.gun_slot[j + 1].ptr);
 												}
-												c.gunptr_have.back().delete_gun();
+												c.gun_slot.back().delete_gun();
 												break;
 											}
 										}
@@ -1001,7 +938,7 @@ public:
 						}
 						//magitem
 						for (auto& c : chara) {
-							c.cangetm = false;
+							c.canget_magitem = false;
 						}
 						for (auto& g : this->magitem) {
 							//
@@ -1041,13 +978,13 @@ public:
 										cng = (Segment_Point_MinLength(startpos.get(), endpos.get(), g.pos.get()) <= 0.3f);
 
 
-										c.cangetm |= cng;
+										c.canget_magitem |= cng;
 										if (cng) {
 											c.canget_mag = g.gunptr->mag.name;
 											if (this->chgun.second == 1) {
-												c.gun_have_state[g.gunptr->id].in += g.cap;
-												c.gun_have_state[g.gunptr->id].mag_in.insert(c.gun_have_state[g.gunptr->id].mag_in.end(), g.cap);
-												if (c.gun_have_state[g.gunptr->id].mag_in.size() == 1) {
+												c.gun_stat[g.gunptr->id].in += g.cap;
+												c.gun_stat[g.gunptr->id].mag_in.insert(c.gun_stat[g.gunptr->id].mag_in.end(), g.cap);
+												if (c.gun_stat[g.gunptr->id].mag_in.size() == 1) {
 													c.reloadf = true;
 												}
 												g.delete_chara();

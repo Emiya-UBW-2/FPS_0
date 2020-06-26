@@ -450,7 +450,7 @@ public:
 			{
 				int xp = disp_x / 2;
 				int yp = disp_y / 2 + disp_y / 12;
-				if (chara.canget) {
+				if (chara.canget_gunitem) {
 					if (!vr) {
 						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "‚ðE‚¤ : F") / 2, yp, chara.canget_gun + "‚ðE‚¤ : F", GetColor(255, 128, 0));
 					}
@@ -462,7 +462,7 @@ public:
 			{
 				int xp = disp_x / 2;
 				int yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
-				if (chara.cangetm) {
+				if (chara.canget_magitem) {
 					if (!vr) {
 						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "‚ðE‚¤ : F") / 2, yp, chara.canget_mag + "‚ðE‚¤ : F", GetColor(255, 128, 0));
 					}
@@ -511,7 +511,7 @@ public:
 					yp2 = yp - y_r(180, disp_y) * 4 / 10;
 
 					int i = 0;
-					for (auto& gp : chara.gunptr_have) {
+					for (auto& gp : chara.gun_slot) {
 						int xst2 = y_r(50, disp_y);
 						int yst2 = y_r(50, disp_y) * 4 / 10;
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
@@ -541,8 +541,8 @@ public:
 				{
 					font->DrawString(xp, yp, chara.gunptr->name, GetColor(255, 255, 255));
 					font->DrawStringFormat(
-						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in),
-						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gun_have_state[chara.gunptr->id].in);
+						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gun_stat[chara.gunptr->id].in),
+						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gun_stat[chara.gunptr->id].in);
 				}
 			}
 			if (vr) {
@@ -601,7 +601,7 @@ public:
 					if (chara.reloadf && !chara.down_mag) {
 						pt_pl = 2.f;
 					}
-					if (chara.canget) {
+					if (chara.canget_gunitem) {
 						pt_pl = 2.f;
 					}
 					int xs = 500 / 4;
@@ -618,7 +618,7 @@ public:
 							UI_mag_set.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 							font->DrawString(xp, yp, "GET MAG", GetColor(2555, 128, 0));
 						}
-						if (chara.canget) {
+						if (chara.canget_gunitem) {
 							UI_get.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 							font->DrawString(xp, yp, "GET GUN", GetColor(2555, 128, 0));
 						}
@@ -657,7 +657,7 @@ public:
 			int px = 300;
 			int py = 500;
 			size_t pp = 0;
-			for (auto& a : chara.gun_have_state[3].mag_in) {
+			for (auto& a : chara.gun_stat[3].mag_in) {
 				pp += a;
 				font24.DrawStringFormat(px, py, GetColor(255, 0, 0), "%d/%d total:%d",
 					a,
@@ -765,7 +765,7 @@ public:
 							g.gunptr->ammo_max
 						);
 
-						//mine.gun_have_state[mine.gunptr->id].mag_in.size()
+						//mine.gun_stat[mine.gunptr->id].mag_in.size()
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}

@@ -372,10 +372,10 @@ public:
 		MV1 obj;
 		Gun* gunptr = nullptr;
 
-		void set(Gun*gundata, const VECTOR_ref& pos_) {
+		void set(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_) {
 			this->pos = pos_;
 			this->add = VGet(0, 0, 0);
-			this->mat = MGetIdent();
+			this->mat = mat_;
 			//手
 			this->gunptr = gundata;
 			this->obj = this->gunptr->mod.obj.Duplicate();
@@ -387,7 +387,6 @@ public:
 		}
 		void draw(const bool& canget, std::string& name) {
 			if (this->gunptr != nullptr) {
-
 				if (canget && name == this->gunptr->name) {
 					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
 					auto c = MV1GetDifColorScale(this->obj.get());
@@ -415,11 +414,11 @@ public:
 
 		size_t cap = 0;
 
-		void set(Gun*gundata, const VECTOR_ref& pos_) {
+		void set(Gun*gundata, const VECTOR_ref& pos_,const MATRIX_ref& mat_) {
 			if (gundata->mag.name.find("none") == std::string::npos) {
 				this->pos = pos_;
 				this->add = VGet(0, 0, 0);
-				this->mat = MGetIdent();
+				this->mat = mat_;
 				//手
 				this->gunptr = gundata;
 				this->obj = this->gunptr->mag.mag.Duplicate();
@@ -521,103 +520,83 @@ public:
 			}
 		};
 	public:
-		std::array<ef_guns, 60> effcs_gun;    /*effect*/
+		std::array<ef_guns, 60> effcs_gun;	/*effect*/
 		size_t gun_effcnt = 0;
-		std::array<ammos, 64> bullet;	      /*確保する弾*/
-		size_t usebullet = 0;		      /*使用弾*/
+
+		std::array<ammos, 64> bullet;		/*確保する弾*/
+		size_t usebullet = 0;				/*使用弾*/
 
 		std::array<EffectS, effects> effcs; /*effect*/
 		std::array<EffectS, 12> gndsmkeffcs; /*effect*/
 		size_t gndsmk_use = 0;
-		Gun* gunptr = nullptr;
 
-		Gun* gunptr_backup = nullptr;
+		Gun* gunptr = nullptr;//現在使用中の武装
+		std::vector<gun_state> gun_stat;//所持弾数などのデータ
 
-		std::array<Gun_have, 3> gunptr_have;
-		std::vector<gun_state> gun_have_state;
+		std::array<Gun_have, 3> gun_slot;//銃スロット
+		Gun* gun_slot_bu = nullptr;//バックアップ武器スロット
+
 		Audios audio;
 		MV1 obj, mag, body;
 		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
 
 		float reload_cnt = 0.f;
 
-		VECTOR_ref pos;
-		MATRIX_ref mat;
-		uint8_t trigger = 0;
+		uint8_t trigger = 0;//トリガー
+		bool gunf = false;//射撃フラグ
 
-		uint8_t selkey = 0;
-		uint8_t select = 0;//セレクター
+		uint8_t selkey = 0,select = 0;//セレクター
+
 		size_t ammoc = 0;//装弾数カウント
 
-		bool gunf = false;
-
-		bool LEFT_hand = false;
-
+		bool LEFT_hand = false;//左手を添えているか
 
 		bool reloadf = false;
-		VECTOR_ref pos_mag;
-		VECTOR_ref add_mag;
-		MATRIX_ref mat_mag;
 		bool down_mag = false;
 
+		//プレイヤー座標系
+		VECTOR_ref pos;
+		MATRIX_ref mat;
+		//マガジン座標系
+		VECTOR_ref pos_mag;
+		MATRIX_ref mat_mag;
+		//頭部座標系
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
-		float add_ypos = 0.f;
-		float body_yrad = 0.f;
-
+		float add_ypos = 0.f;//垂直加速度
+		float body_yrad = 0.f;//胴体角度
+		//左手座標系
 		VECTOR_ref pos_LHAND;
 		MATRIX_ref mat_LHAND;
-		VECTOR_ref vecadd_LHAND;
-		VECTOR_ref vecadd_LHAND_p;
-
+		VECTOR_ref vecadd_LHAND, vecadd_LHAND_p;//
+		//右手座標系
 		VECTOR_ref pos_RHAND;
 		MATRIX_ref mat_RHAND;
-
-		std::vector<frames> frame_hand;
-
-		bool canget = false;
+		//
+		bool canget_gunitem = false;
 		std::string canget_gun;
-
-		bool cangetm = false;
+		//
+		bool canget_magitem = false;
 		std::string canget_mag;
-
+		//
 		void ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s) {
-			this->gunptr_backup = gundata_backup;
-			this->gunptr_have[0].set(gundata);
-			this->gunptr_have[1].delete_gun();
-			this->gunptr_have[2].delete_gun();
-			this->gun_have_state.resize(state_s);
-			for (auto& s : this->gun_have_state) { s.in = 0; }
+			this->gun_slot_bu = gundata_backup;
+			this->gun_slot[0].set(gundata);
+			this->gun_slot[1].delete_gun();
+			this->gun_slot[2].delete_gun();
+			this->gun_stat.resize(state_s);
+			for (auto& s : this->gun_stat) { s.in = 0; }
 		}
 		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid, const GraphHandle& scope, MV1& hand_) {
 			this->pos = pos_;
 			this->mat = mat_;
 			//手
 			this->body = hand_.Duplicate();// .Duplicate();
-			/*
-			hand.DuplicateonAnime(&this->hand);
-			this->frame_hand.resize(3);
-			for (int i = 0; i < this->hand.frame_num(); i++) {
-				std::string s = this->hand.frame_name(i);
-				if (s.find("RIGHT") != std::string::npos) {
-					this->frame_hand[0].first = i + 1;
-					this->frame_hand[0].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->hand.GetFrameLocalMatrix(this->frame_hand[0].first));//mag
-
-					this->frame_hand[1].first = i + 2;
-					this->frame_hand[1].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->hand.GetFrameLocalMatrix(this->frame_hand[1].first));//mag
-
-					this->frame_hand[2].first = i + 3;
-					this->frame_hand[2].second = MATRIX_ref::Vtrans(VGet(0, 0, 0), this->hand.GetFrameLocalMatrix(this->frame_hand[2].first));//mag
-				}
-				else if (s.find("LEFT") != std::string::npos) {
-				}
-			}
-			*/
 			if (gunid >= 0) {
-				this->gunptr = this->gunptr_have[gunid].ptr;
+				this->gunptr = this->gun_slot[gunid].ptr;
 			}
 			else {
-				this->gunptr = this->gunptr_backup;
+				this->gunptr = this->gun_slot_bu;
 			}
 			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->gunptr->frame[4].first != INT_MAX) {
@@ -630,11 +609,11 @@ public:
 				a.mat = MGetIdent();
 			}
 			this->LEFT_hand = false;
-			if (this->gun_have_state[this->gunptr->id].mag_in.size() >= 1) {
-				this->ammoc = this->gun_have_state[this->gunptr->id].mag_in.front();//改良
+			if (this->gun_stat[this->gunptr->id].mag_in.size() >= 1) {
+				this->ammoc = this->gun_stat[this->gunptr->id].mag_in.front();//改良
 			}
 			else {
-				this->ammoc = std::clamp<size_t>(this->gun_have_state[this->gunptr->id].in, 0, this->gunptr->ammo_max);//改良
+				this->ammoc = std::clamp<size_t>(this->gun_stat[this->gunptr->id].in, 0, this->gunptr->ammo_max);//改良
 			}
 
 
@@ -665,7 +644,7 @@ public:
 		void draw(const bool& usegun, const int& sel_gun) {
 			this->body.DrawModel();
 			if (this->gunptr->cate == 1) {
-				if ((!this->reloadf || this->down_mag) && this->gun_have_state[this->gunptr->id].mag_in.size() >= 1) {
+				if ((!this->reloadf || this->down_mag) && this->gun_stat[this->gunptr->id].mag_in.size() >= 1) {
 					this->mag.DrawModel();
 				}
 			}
@@ -678,9 +657,9 @@ public:
 				}
 			}
 
-			for (size_t i = 0; i < this->gunptr_have.size(); i++) {
-				if ((!usegun || int(i) != sel_gun) && this->gunptr_have[i].ptr != nullptr) {
-					this->gunptr_have[i].obj.DrawModel();
+			for (size_t i = 0; i < this->gun_slot.size(); i++) {
+				if ((!usegun || int(i) != sel_gun) && this->gun_slot[i].ptr != nullptr) {
+					this->gun_slot[i].obj.DrawModel();
 				}
 			}
 		}
@@ -714,7 +693,7 @@ public:
 		}
 		void init() {
 			delete_chara();
-			for (auto& h : gunptr_have) {
+			for (auto& h : gun_slot) {
 				h.delete_gun();
 			}
 		}
