@@ -903,11 +903,7 @@ public:
 									//
 									for (size_t i = 0; i < c.gun_slot.size(); i++) {
 										if (this->sel_g2 == i) {
-											if ((this->sel_g2 == c.gun_slot.size() - 1) || c.gun_slot[
-
-												std::clamp(this->sel_g2 + 1, 0, int(c.gun_slot.size()) - 1)
-
-											].ptr == nullptr) {
+											if ((this->sel_g2 == c.gun_slot.size() - 1) || c.gun_slot[std::clamp(this->sel_g2 + 1, 0, int(c.gun_slot.size()) - 1)].ptr == nullptr) {
 												c.gun_slot[this->sel_g2].ptr = nullptr;
 												c.gun_slot[this->sel_g2].obj.Dispose();
 												this->sel_g2--;
