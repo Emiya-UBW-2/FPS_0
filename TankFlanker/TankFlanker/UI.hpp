@@ -46,8 +46,8 @@ private:
 	int tgt_pic_sel = -1;
 	float tgt_pic_on = 1.f;
 	//
-	SoundHandle timer, decision, cancel, cursor, whistle, start,hit;
-	float c_readytimer_old=3.f;
+	SoundHandle timer, decision, cancel, cursor, whistle, start, hit;
+	float c_readytimer_old = 3.f;
 	bool c_end_f = false;
 
 	float time_tmp = 0.f;
@@ -158,7 +158,7 @@ public:
 			{
 				if (!startp) {
 					campos = mat_HMD.zvec() * 0.6f;
-					gun_yrad += 10.f/fps;
+					gun_yrad += 10.f / fps;
 					if (gun_yrad >= 180.f) {
 						gun_yrad = -180.f;
 					}
@@ -268,6 +268,9 @@ public:
 				}
 			}
 		}
+		SetDrawScreen(DX_SCREEN_BACK);
+		ClearDrawScreen();
+		ScreenFlip();
 	}
 	template<class Y, class D>
 	void set_draw(
@@ -458,7 +461,7 @@ public:
 			}
 			{
 				int xp = disp_x / 2;
-				int yp = disp_y / 2 + disp_y / 12+y_r(18,disp_y);
+				int yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
 				if (chara.cangetm) {
 					if (!vr) {
 						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "‚ðE‚¤ : F") / 2, yp, chara.canget_mag + "‚ðE‚¤ : F", GetColor(255, 128, 0));
@@ -656,7 +659,7 @@ public:
 			size_t pp = 0;
 			for (auto& a : chara.gun_have_state[3].mag_in) {
 				pp += a;
-				font24.DrawStringFormat(px,py, GetColor(255, 0, 0), "%d/%d total:%d",
+				font24.DrawStringFormat(px, py, GetColor(255, 0, 0), "%d/%d total:%d",
 					a,
 					chara.gunptr->ammo_max,
 					pp
@@ -750,17 +753,17 @@ public:
 					if (r_ <= 1.f) {
 						r_ = 1.f;
 					}
-					if (r_ <= 10.f && g.gunptr->mag.name.find("none")==std::string::npos) {
+					if (r_ <= 10.f && g.gunptr->mag.name.find("none") == std::string::npos) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
 
 						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
 						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->mag.name, GetColor(255, 0, 0));
 
-						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0),"%d/%d",
+						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d",
 							g.cap,
 							g.gunptr->ammo_max
-							);
+						);
 
 						//mine.gun_have_state[mine.gunptr->id].mag_in.size()
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);

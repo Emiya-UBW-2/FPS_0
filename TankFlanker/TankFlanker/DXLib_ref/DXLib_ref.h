@@ -172,3 +172,40 @@ public:
 	}
 
 };
+
+void set_effect(EffectS* efh, VECTOR_ref pos, VECTOR_ref nor, float scale = 1.f) {
+	efh->flug = true;
+	efh->pos = pos;
+	efh->nor = nor;
+	efh->scale = scale;
+}
+void set_pos_effect(EffectS* efh, const EffekseerEffectHandle& handle) {
+	if (efh->flug) {
+		if (efh->handle.IsPlaying()) {
+			efh->handle.Stop();
+		}
+		efh->handle = handle.Play3D();
+		efh->handle.SetPos(efh->pos);
+		efh->handle.SetRotation(atan2(efh->nor.y(), std::hypot(efh->nor.x(), efh->nor.z())), atan2(-efh->nor.x(), -efh->nor.z()), 0);
+		efh->handle.SetScale(efh->scale);
+		efh->flug = false;
+	}
+	//IsEffekseer3DEffectPlaying(player[0].effcs[i].handle)
+}
+typedef std::pair<int, VECTOR_ref> frames;
+class switchs {
+public:
+	bool first;
+	uint8_t second;
+
+	switchs() {
+		first = false;
+		second = 0;
+	};
+	void get_in(bool key) {
+		second = std::clamp<uint8_t>(second + 1, 0, (key ? 2 : 0));
+		if (second == 1) {
+			first ^= 1;
+		}
+	}
+};

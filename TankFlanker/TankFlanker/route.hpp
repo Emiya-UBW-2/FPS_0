@@ -18,13 +18,13 @@ class main_c : Mainclass {
 	bool ending = true;
 	int sel_g2 = 0;
 	//プレイヤー操作変数群
-	switchs TPS, ads, chgun,delgun, usegun;				//
+	switchs TPS, ads, chgun, delgun, usegun;				//
 	uint8_t change_gun = 0;						//
 	VECTOR_ref gunpos_TPS;						//
 	float xrad_p = 0.f;						//マウスエイム
 	VECTOR_ref add_pos, add_pos_buf;				//移動
 	VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
-	float fov, fov_fps;
+	float fov = 0.f, fov_fps = 0.f;
 public:
 	main_c() {
 		//
@@ -56,37 +56,31 @@ public:
 		MV1::Load("data/model/hand/model_h.mv1", &body_obj, true);				//身体
 		auto mapparts = std::make_unique<Mapclass>(this->dispx, this->dispy);			//map
 		auto tgtparts = std::make_unique<tgttmp>();						//ターゲット
+		{
+			gun_data.resize(5);
+			gun_data[0].mod.set("Knife");
+			gun_data[1].mod.set("1911");
+			gun_data[2].mod.set("M82A2");
+			gun_data[3].mod.set("CAR15_M4");
+			gun_data[4].mod.set("AK74");
+			fill_id(gun_data);
+		}
 		//GUNデータ
-		gun_data.resize(5);
-		gun_data[0].mod.set("Knife");
-		gun_data[1].mod.set("1911");
-		gun_data[2].mod.set("M82A2");
-		gun_data[3].mod.set("CAR15_M4");
-		gun_data[4].mod.set("AK74");
-		//ロード画面
-		UIparts->load_window("銃モデル");
-		//GUNデータ取得
-		fill_id(gun_data);
-		for (auto& g : gun_data) { g.set_data(); }
-		//ロード画面
-		UIparts->load_window("銃モデル");
-		tgtparts->set();				//ターゲット
+		UIparts->load_window("銃モデル");				//ロード画面
+		for (auto& g : gun_data) { g.set_data(); }		//GUNデータ取得
+		UIparts->load_window("銃モデル");				//ロード画面
+		tgtparts->set();								//ターゲット
 		auto scoreparts = std::make_unique<scores>();	//スコア
-		vrparts->Set_Device();				//VRセット
+		vrparts->Set_Device();							//VRセット
 		do {
 			//キャラ設定
 			{
 				int sel_g = UIparts->select_window(settings->useVR_e, gun_data, vrparts, settings);
 				if (sel_g < 0) { break; }
 				chara.resize(1);
-				chara[0].set_list(&gun_data[sel_g], &gun_data[0]);
-				chara[0].gun_have_state.resize(gun_data.size());
-				
-				for (auto& s : chara[0].gun_have_state) {
-					s.in = 0;
-				}
+				chara[0].ready_chara(&gun_data[sel_g], &gun_data[0], gun_data.size());
 
-				chara[0].set_chara(VGet(0, 0, -0.5f),MGetIdent(), 0, this->ScopeScreen, body_obj);
+				chara[0].set_chara(VGet(0, 0, -0.5f), MGetIdent(), 0, this->ScopeScreen, body_obj);
 				chara[0].mat_HMD = MATRIX_ref::RotY(deg2rad(180));
 				this->sel_g2 = 0;
 				this->usegun.first = true;
@@ -103,25 +97,18 @@ public:
 			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f));
 			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f));
 			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f));
-			//マガジン
-			magitem.resize(10);
-			magitem[0].set(&gun_data[3], VGet(4.f, 1.f, 4.0f));
+			//マガジン配置
+			magitem.resize(5);
+			magitem[0].set(&gun_data[0], VGet(4.f, 1.f, 4.0f));
 			magitem[1].set(&gun_data[3], VGet(2.f, 1.f, 4.0f));
 			magitem[2].set(&gun_data[3], VGet(0.f, 1.f, 4.0f));
 			magitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 4.0f));
 			magitem[4].set(&gun_data[3], VGet(-4.f, 1.f, 4.0f));
-
-			magitem[5].set(&gun_data[3], VGet(4.f, 2.f, 6.0f));
-			magitem[6].set(&gun_data[3], VGet(2.f, 2.f, 6.0f));
-			magitem[7].set(&gun_data[3], VGet(0.f, 2.f, 6.0f));
-			magitem[8].set(&gun_data[3], VGet(-2.f, 2.f, 6.0f));
-			magitem[9].set(&gun_data[3], VGet(-4.f, 2.f, 6.0f));
-
-
 			for (auto& p : magitem) {
-				p.cap = p.gunptr->ammo_max;
+				if (p.gunptr != nullptr) {
+					p.cap = p.gunptr->ammo_max;
+				}
 			}
-
 			//ターゲット
 			tgt_pic.resize(5);
 			tgt_pic[0].set(tgtparts, VGet(4, 0, 12.f));
@@ -137,29 +124,7 @@ public:
 			//影に描画するものを指定する(仮)
 			auto draw_in_shadow = [&] {
 				for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
-				for (auto& c : this->chara) { c.draw(); 
-				
-					for (size_t i = 0; i < c.gunptr_have.size(); i++) {
-						if (
-							(this->usegun.first || int(i) != this->sel_g2)
-							&&
-							c.gunptr_have[i].ptr != nullptr
-
-							) {
-							c.gunptr_have[i].obj.SetMatrix(
-
-								MATRIX_ref::RotY(DX_PI_F)*
-								MATRIX_ref::RotX(DX_PI_F / 2)*
-								MATRIX_ref::RotY(c.body_yrad)*
-
-								MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet((float(i) - float(c.gunptr_have.size()) *0.5f)*0.1f, -0.15f, -0.3f), MATRIX_ref::RotY(c.body_yrad)))*
-								MATRIX_ref::Mtrans(c.pos_HMD + c.pos)
-							);
-							c.gunptr_have[i].obj.DrawModel();
-						}
-					}
-
-				}
+				for (auto& c : this->chara) { c.draw(this->usegun.first, this->sel_g2); }
 				for (auto& g : this->gunitem) { g.draw(); }
 				for (auto& g : this->magitem) { g.draw(); }
 			};
@@ -167,29 +132,7 @@ public:
 				Drawparts->Draw_by_Shadow([&] {
 					mapparts->map_get().DrawModel();
 					for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
-					for (auto& c : this->chara) { c.draw(); 
-
-						for (size_t i = 0; i < c.gunptr_have.size(); i++) {
-							if (
-								(!this->usegun.first || int(i) != this->sel_g2)
-								&&
-								c.gunptr_have[i].ptr != nullptr
-
-								) {
-								c.gunptr_have[i].obj.SetMatrix(
-
-									MATRIX_ref::RotY(DX_PI_F)*
-									MATRIX_ref::RotX(DX_PI_F / 2)*
-									MATRIX_ref::RotY(c.body_yrad)*
-
-									MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet((float(i) - float(c.gunptr_have.size()) *0.5f)*0.1f, -0.15f, -0.3f), MATRIX_ref::RotY(c.body_yrad)))*
-									MATRIX_ref::Mtrans(c.pos_HMD + c.pos)
-								);
-								c.gunptr_have[i].obj.DrawModel();
-							}
-						}
-
-					}
+					for (auto& c : this->chara) { c.draw(this->usegun.first, this->sel_g2); }
 					for (auto& g : this->gunitem) { g.draw(this->chara[0].canget, this->chara[0].canget_gun); }
 					for (auto& g : this->magitem) { g.draw(this->chara[0].cangetm, this->chara[0].canget_mag); }
 					//銃弾
@@ -230,7 +173,7 @@ public:
 							//銃変更
 							if (this->usegun.first) {
 								if (this->change_gun == 1 || bee == false) {
-									++this->sel_g2%=mine.gunptr_have.size();
+									++this->sel_g2 %= mine.gunptr_have.size();
 									if (mine.gunptr_have[this->sel_g2].ptr == nullptr) {
 										this->sel_g2 = 0;
 									}
@@ -243,7 +186,7 @@ public:
 								bee = true;
 							}
 							else {
-								if(bee){
+								if (bee) {
 									auto pos_t = mine.pos;
 									auto mat_t = mine.mat;
 									mine.delete_chara();
@@ -255,7 +198,7 @@ public:
 									}
 									else {
 										this->sel_g2 = int(mine.gunptr_have.size() - 1);
-										while (true){
+										while (true) {
 											if (mine.gunptr_have[this->sel_g2].ptr == nullptr) {
 												this->sel_g2--;
 											}
@@ -510,7 +453,7 @@ public:
 									//ADS
 									this->ads.first = false;
 									//マグキャッチ(Rキー)
-									mine.obj.get_anime(5).per=0.f;
+									mine.obj.get_anime(5).per = 0.f;
 									//セレクター(中ボタン)
 									mine.selkey = 0;
 									//銃変更
@@ -554,7 +497,7 @@ public:
 								}
 								if (c.gunptr->cate == 1) {
 									//マガジン排出
-									if (c.obj.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size()>=1) {
+									if (c.obj.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
 										c.audio.mag_down.play_3D(c.pos + c.pos_LHAND, 1.f);
 										int dnm = int(c.ammoc) - 1;
 										//弾数
@@ -605,7 +548,7 @@ public:
 								//
 								if (c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
 									c.reload_cnt += 1.f / fps;
-									if (c.reload_cnt<c.gunptr->reload_time) {
+									if (c.reload_cnt < c.gunptr->reload_time) {
 										c.down_mag = false;
 									}
 								}
@@ -623,105 +566,91 @@ public:
 								}
 								switch (c.gunptr->cate) {
 								case 0:
-									{
-										//近接
-										if (c.trigger == 1 && !c.gunf) {
-											if (&c == &mine) {
-												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
-											}
-											c.gunf = true;
-											if (scoreparts->c_start && !scoreparts->c_end) {
-												scoreparts->sub(-4);
-											}
-											c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
-											c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
+								{
+									//近接
+									if (c.trigger == 1 && !c.gunf) {
+										c.gunf = true;
+										/*
+										if (&c == &mine) {
+											vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 										}
-										break;
+										*/
+										//サウンド
+										c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
+										c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
+										//スコア
+										if (scoreparts->c_start && !scoreparts->c_end) {
+											scoreparts->sub(-4);
+										}
 									}
+									break;
+								}
 								case 1:
-									{
-										if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
-											if (&c == &mine) {
-												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
-											}
-											c.ammoc--;
-											c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].in--;
-											if (!c.reloadf && c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.size()>=1) {
-												if (c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front() > 0) {
-													c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front()--;
-												}
-											}
-											c.gunf = true;
-											if (scoreparts->c_start && !scoreparts->c_end) {
-												scoreparts->sub(-4);
-											}
-											//持ち手を持つとココが相殺される
-											c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p,
-												MATRIX_ref::RotY(deg2rad(float(int(c.gunptr->recoil_xdn*100.f) + GetRand(int((c.gunptr->recoil_xup - c.gunptr->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
-												MATRIX_ref::RotX(deg2rad(float(int(c.gunptr->recoil_ydn*100.f) + GetRand(int((c.gunptr->recoil_yup - c.gunptr->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
-											c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
-											c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
-											auto& u = c.bullet[c.usebullet];
-											auto& a = c.ammo[c.usebullet];
-											++c.usebullet %= c.bullet.size();
-											//ココだけ変化
-											u.spec = &c.gunptr->ammo[0];
-											u.pos = c.obj.frame(c.gunptr->frame[3].first);
-											u.vec = c.mat_LHAND.zvec()*-1.f;
-											u.hit = false;
-											u.flug = true;
-											u.cnt = 0.f;
-											u.yadd = 0.f;
-											u.repos = u.pos;
-
-											set_effect(&c.effcs[ef_fire], u.pos, u.vec, 0.0025f / 0.1f);
-											{
-												set_effect(&c.effcs_gun[c.gun_effcnt].first, u.pos, u.vec, 0.11f / 0.1f);
-												set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
-												c.effcs_gun[c.gun_effcnt].second = &u;
-												c.effcs_gun[c.gun_effcnt].cnt = 0.f;
-												++c.gun_effcnt %= c.effcs_gun.size();
-											}
-											a.second.Dispose();
-											a.second = u.spec->ammo.Duplicate();
-											a.cnt = 0.f;
-											a.pos = c.obj.frame(c.gunptr->frame[2].first);//排莢
-											a.add = (c.obj.frame(c.gunptr->frame[2].first + 1) - a.pos).Norm()*2.5f / fps;//排莢ベクトル
-											a.mat = c.mat_LHAND;
+								{
+									if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
+										c.gunf = true;
+										/*
+										if (&c == &mine) {
+											vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 										}
-										//マガジン取得
-										if (c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
-											if (c.down_mag) {
-												auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
-												VECTOR_ref xvec = MATRIX_ref::Vtrans(c.mat_RHAND.xvec(), p);
-												VECTOR_ref yvec = MATRIX_ref::Vtrans(c.mat_RHAND.yvec(), p);
-												VECTOR_ref zvec = MATRIX_ref::Vtrans(c.mat_RHAND.zvec(), p);
-
-												c.mat_mag = c.mag.GetFrameLocalMatrix(3)* MATRIX_ref::Axis1(xvec, yvec, zvec);
-												c.pos_mag = c.pos_RHAND + c.pos;
-												if ((c.mag.frame(3) - c.obj.frame(c.gunptr->frame[0].first)).size() <= 0.1f) {
-													c.obj.get_anime(1).time = 0.f;
-													c.obj.get_anime(0).per = 1.f;
-													c.obj.get_anime(1).per = 0.f;
-													if (c.ammoc == 0) {
-														c.obj.get_anime(3).per = 1.f;
-													}
-													c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
-
-													c.ammoc += c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front();
-
-
-													c.reloadf = false;
-												}
-											}
+										*/
+										//弾数管理
+										c.ammoc--;
+										c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].in--;
+										if (!c.reloadf && c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.size() >= 1 && c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front() > 0) {
+											c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front()--;
 										}
-										else {
-											c.down_mag = false;
-											c.mat_mag = c.mat_LHAND;
-											c.pos_mag = c.obj.frame(c.gunptr->frame[1].first);
+										//持ち手を持つとココが相殺される
+										c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p,
+											MATRIX_ref::RotY(deg2rad(float(int(c.gunptr->recoil_xdn*100.f) + GetRand(int((c.gunptr->recoil_xup - c.gunptr->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
+											MATRIX_ref::RotX(deg2rad(float(int(c.gunptr->recoil_ydn*100.f) + GetRand(int((c.gunptr->recoil_yup - c.gunptr->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
+										//弾
+										c.bullet[c.usebullet].set(&c.gunptr->ammo[0], c.obj.frame(c.gunptr->frame[3].first), c.mat_LHAND.zvec()*-1.f);
+										//薬莢
+										c.ammo[c.usebullet].set(&c.gunptr->ammo[0], c.obj.frame(c.gunptr->frame[2].first), (c.obj.frame(c.gunptr->frame[2].first + 1) - c.obj.frame(c.gunptr->frame[2].first)).Norm()*2.5f / fps, c.mat_LHAND);
+										//エフェクト
+										set_effect(&c.effcs[ef_fire], c.obj.frame(c.gunptr->frame[3].first), c.mat_LHAND.zvec()*-1.f, 0.0025f / 0.1f);
+										set_effect(&c.effcs_gun[c.gun_effcnt].first, c.obj.frame(c.gunptr->frame[3].first), c.mat_LHAND.zvec()*-1.f, 0.11f / 0.1f);
+										set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
+										c.effcs_gun[c.gun_effcnt].second = &c.bullet[c.usebullet];
+										c.effcs_gun[c.gun_effcnt].cnt = 0.f;
+										++c.gun_effcnt %= c.effcs_gun.size();
+										//サウンド
+										c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
+										c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
+										//次のIDへ
+										++c.usebullet %= c.bullet.size();
+										//スコア
+										if (scoreparts->c_start && !scoreparts->c_end) {
+											scoreparts->sub(-4);
 										}
-										break;
 									}
+									//マガジン取得
+									if (c.reloadf && c.gun_have_state[c.gunptr->id].mag_in.size() >= 1) {
+										if (c.down_mag) {
+											auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
+											c.mat_mag = c.mag.GetFrameLocalMatrix(3)* (c.mat_RHAND*p);
+											c.pos_mag = c.pos_RHAND + c.pos;
+											if ((c.mag.frame(3) - c.obj.frame(c.gunptr->frame[0].first)).size() <= 0.1f) {
+												c.obj.get_anime(1).time = 0.f;
+												c.obj.get_anime(0).per = 1.f;
+												c.obj.get_anime(1).per = 0.f;
+												if (c.ammoc == 0) {
+													c.obj.get_anime(3).per = 1.f;
+												}
+												c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
+												c.ammoc += c.gun_have_state[c.gunptr_have[this->sel_g2].ptr->id].mag_in.front();
+												c.reloadf = false;
+											}
+										}
+									}
+									else {
+										c.down_mag = false;
+										c.mat_mag = c.mat_LHAND;
+										c.pos_mag = c.obj.frame(c.gunptr->frame[1].first);
+									}
+									break;
+								}
 								}
 								{
 									//右手
@@ -756,18 +685,15 @@ public:
 											MATRIX_ref::RotY(DX_PI_F + c.body_yrad)*c.mat_HMD.Inverse()*
 											MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))
 										);
-										/*
 										for (size_t i = 0; i < c.gunptr_have.size(); i++) {
-											if (int(i) != this->sel_g2 && c.gunptr_have[i]!=nullptr) {
-												c.gunptr_have[i]->mod.obj.SetMatrix(
-													MATRIX_ref::RotY(DX_PI_F + c.body_yrad)*
-													MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet(0.f, -0.15f, 0.f), c.mat_HMD.Inverse()))*
-													MATRIX_ref::Mtrans(c.pos_HMD + c.pos)
+											if (c.gunptr_have[i].ptr != nullptr) {
+												c.gunptr_have[i].obj.SetMatrix(
+													MATRIX_ref::RotY(DX_PI_F)*MATRIX_ref::RotX(DX_PI_F / 2)*MATRIX_ref::RotY(c.body_yrad)*
+													MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(VGet((float(i) - float(c.gunptr_have.size()) *0.5f)*0.1f, -0.15f, -0.3f), MATRIX_ref::RotY(c.body_yrad)) + (c.pos_HMD + c.pos))
 												);
-												c.gunptr_have[i]->mod.obj.DrawModel();
 											}
 										}
-										*/
+
 									}
 								}
 								c.mag.SetMatrix(c.mat_mag* MATRIX_ref::Mtrans(c.pos_mag));
@@ -980,56 +906,39 @@ public:
 									if (cng) {
 										mine.canget_gun = g.gunptr->name;
 										if (this->chgun.second == 1) {
+											auto pos_t = mine.pos;
+											auto mat_t = mine.mat;
+											int sel_t = this->sel_g2;
+											Gun* gun_t = g.gunptr;
+											g.delete_chara();
 											for (size_t i = 0; i < mine.gunptr_have.size(); i++) {
 												if (mine.gunptr_have[i].ptr == nullptr) {
-													this->sel_g2 = int(i);
-													if (!this->usegun.first) {
-														this->usegun.first = true;
-														this->change_gun = 1;
-													}
-													//
-													mine.gunptr_have[this->sel_g2].ptr = g.gunptr;
-													mine.gunptr_have[this->sel_g2].obj = mine.gunptr_have[this->sel_g2].ptr->mod.obj.Duplicate();
-													g.delete_chara();
-													//
-
-													//
-													auto pos_t = mine.pos;
-													auto mat_t = mine.mat;
-													mine.delete_chara();
-													mine.set_chara(pos_t, mat_t, this->sel_g2, this->ScopeScreen, body_obj);
-													this->gunpos_TPS = VGet(0, 0, 0);
-													//
+													sel_t = this->sel_g2 = int(i);
 													break;
 												}
 												if (i == mine.gunptr_have.size() - 1) {
-													int ii = this->sel_g2;
+													sel_t = this->sel_g2;
 													if (!this->usegun.first) {
-														++ii %= mine.gunptr_have.size();
-														if (mine.gunptr_have[ii].ptr == nullptr) {
-															ii = 0;
+														++sel_t %= mine.gunptr_have.size();
+														if (mine.gunptr_have[sel_t].ptr == nullptr) {
+															sel_t = 0;
 														}
-														this->usegun.first = true;
-														this->change_gun = 1;
 													}
-													auto pt = mine.gunptr_have[ii].ptr;
-													mine.gunptr_have[ii].obj.Dispose();
-													//
-													mine.gunptr_have[ii].ptr = g.gunptr;
-													mine.gunptr_have[ii].obj = mine.gunptr_have[ii].ptr->mod.obj.Duplicate();
-													g.delete_chara();
-													//
-													g.set(pt, mine.pos + mine.pos_LHAND);
+													g.set(mine.gunptr_have[sel_t].ptr, mine.pos + mine.pos_LHAND);
 													g.mat = mine.mat_LHAND;
-													//
-													auto pos_t = mine.pos;
-													auto mat_t = mine.mat;
-													mine.delete_chara();
-													mine.set_chara(pos_t, mat_t, ii, this->ScopeScreen, body_obj);
-													this->gunpos_TPS = VGet(0, 0, 0);
-													//
 												}
+
 											}
+											if (!this->usegun.first) {
+												this->usegun.first = true;
+												this->change_gun = 1;
+											}
+											//
+											mine.gunptr_have[sel_t].delete_gun();
+											mine.gunptr_have[sel_t].set(gun_t);
+											mine.delete_chara();
+											mine.set_chara(pos_t, mat_t, sel_t, this->ScopeScreen, body_obj);
+											this->gunpos_TPS = VGet(0, 0, 0);
 										}
 									}
 								}
@@ -1057,10 +966,11 @@ public:
 									//
 									for (size_t i = 0; i < c.gunptr_have.size(); i++) {
 										if (this->sel_g2 == i) {
-											if (
-												(this->sel_g2 == c.gunptr_have.size() - 1) ||
-												c.gunptr_have[std::clamp<size_t>(this->sel_g2 + 1, 0, c.gunptr_have.size() - 1)].ptr == nullptr
-											) {
+											if ((this->sel_g2 == c.gunptr_have.size() - 1) || c.gunptr_have[
+
+												std::clamp(this->sel_g2 + 1, 0, int(c.gunptr_have.size()) - 1)
+
+											].ptr == nullptr) {
 												c.gunptr_have[this->sel_g2].ptr = nullptr;
 												c.gunptr_have[this->sel_g2].obj.Dispose();
 												this->sel_g2--;
@@ -1068,14 +978,10 @@ public:
 											}
 											else {
 												for (size_t j = i; j < c.gunptr_have.size() - 1; j++) {
-													c.gunptr_have[j].ptr = c.gunptr_have[j + 1].ptr;
-													c.gunptr_have[j].obj.Dispose();
-													if (c.gunptr_have[j].ptr != nullptr) {
-														c.gunptr_have[j].obj = c.gunptr_have[j].ptr->mod.obj.Duplicate();
-													}
+													c.gunptr_have[j].delete_gun();
+													c.gunptr_have[j].set(c.gunptr_have[j + 1].ptr);
 												}
-												c.gunptr_have[c.gunptr_have.size() - 1].ptr = nullptr;
-												c.gunptr_have[c.gunptr_have.size() - 1].obj.Dispose();
+												c.gunptr_have.back().delete_gun();
 												break;
 											}
 										}
