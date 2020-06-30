@@ -17,126 +17,125 @@ public:
 	//tgt
 	class tgttmp {
 	public:
-		MV1 tgt;
-		GraphHandle tgt_pic_tmp;
-		int tgt_col = 0;
-		int tgt_pic_x = 0;
-		int tgt_pic_y = 0;
-		frames tgt_f;
-
+		MV1 obj;
+		GraphHandle tex;
+		int col_tex = 0;
+		int x_size = 0;
+		int y_size = 0;
+		frames frame;
 		tgttmp() {
-			MV1::Load("data/model/tgt/model.mv1", &this->tgt, true);
-			this->tgt_col = LoadSoftImage("data/model/tgt/point.bmp");
-			this->tgt_pic_tmp = GraphHandle::Load("data/model/tgt/Target-A2.png");
+			MV1::Load("data/model/tgt/model.mv1", &this->obj, true);
+			this->col_tex = LoadSoftImage("data/model/tgt/point.bmp");
+			this->tex = GraphHandle::Load("data/model/tgt/Target-A2.png");
 		}
-
 		void set() {
-			this->tgt_pic_tmp.GetSize(&this->tgt_pic_x, &this->tgt_pic_y);
-			this->tgt_f = { 2,this->tgt.frame(2) };
+			this->tex.GetSize(&this->x_size, &this->y_size);
+			this->frame = { 2,this->obj.frame(2) };
 		}
 	};
 	class tgts {
 	public:
+		int id;
 		MV1 obj;
 		GraphHandle pic;
-		int x_frame = 0, y_frame = 0;
+		frames frame_x, frame_y;
 		float rad = 0.f;
 		float time = 0.f;
 		float power = 0.f;
 		bool LR = true, isMOVE = true;
 		template<class Y, class D>
 		void set(std::unique_ptr<Y, D>& tgtparts, const VECTOR_ref& pos) {
-			obj = tgtparts->tgt.Duplicate();
-			pic = GraphHandle::Make(tgtparts->tgt_pic_x, tgtparts->tgt_pic_y);
+			obj = tgtparts->obj.Duplicate();
+			pic = GraphHandle::Make(tgtparts->x_size, tgtparts->y_size);
 			pic.SetDraw_Screen(false);
-			tgtparts->tgt_pic_tmp.DrawGraph(0, 0, true);
+			tgtparts->tex.DrawGraph(0, 0, true);
 
 			obj.SetupCollInfo(8, 8, 8, 0, 1);
 			obj.SetTextureGraphHandle(2, pic, false);
-			x_frame = 4;
-			y_frame = 3;
+			frame_x.first = 4;
+			frame_y.first = 3;
 			LR = true;
-
+			isMOVE = true;
 			obj.SetPosition(pos);
 		}
 	};
 	//score
 	class scores {
 	public:
-		std::vector<int> score_s;
-		int point = 0;
-		int p_up = 0;
-		int p_down = 0;
+		std::vector<int> stack;
 
-		bool c_ready = false;
-		float c_readytimer = 4.f;
-		bool c_start = false;
-		bool c_end = false;
-		float c_timer = 30.f;
+		int point = 0;
+		int pointup = 0;
+		int pointdown = 0;
+		bool ready_f = false;
+		bool start_f = false;
+		bool end_f = false;
+		float readytimer = 4.f;
+		float timer = 30.f;
 
 		scores() {
 			SetOutApplicationLogValidFlag(FALSE);  /*log*/
 			int mdata = FileRead_open("data/score.txt", FALSE);
 			while (FileRead_eof(mdata) == 0) {
-				this->score_s.emplace_back(getparams::_int(mdata));
+				this->stack.emplace_back(getparams::_int(mdata));
 			}
 			FileRead_close(mdata);
 		}
 		~scores() {
 			std::ofstream outputfile("data/score.txt");
-			for (auto& s : this->score_s) {
+			for (auto& s : this->stack) {
 				outputfile << s << "\n";
 			}
 			outputfile.close();
 		}
-		void ins() {
+		void insert() {
 			int i = 0;
-			for (auto& c : this->score_s) {
+			for (auto& c : this->stack) {
 				if (c < this->point) {
 					break;
 				}
 				i++;
 			}
-			this->score_s.insert(this->score_s.begin() + i, this->point);
+			this->stack.insert(this->stack.begin() + i, this->point);
 		}
 
 		void reset() {
 			this->point = 0;
-			this->p_up = 0;
-			this->p_down = 0;
-			this->c_ready = false;
-			this->c_readytimer = 4.f;
-			this->c_start = false;
-			this->c_end = false;
-			this->c_timer = 30.f;
+			this->pointup = 0;
+			this->pointdown = 0;
+			this->ready_f = false;
+			this->readytimer = 4.f;
+			this->start_f = false;
+			this->end_f = false;
+			this->timer = 30.f;
 		}
 
 		void sub(const int& pt) {
-			this->p_down = pt;
-			if (this->point + this->p_down >= 0) {
-				this->point += this->p_down;
+			this->pointdown = pt;
+			if (this->point + this->pointdown >= 0) {
+				this->point += this->pointdown;
 			}
 		}
 
 		void add(const int& pt) {
-			this->p_up = pt;
-			this->point += this->p_up;
+			this->pointup = pt;
+			this->point += this->pointup;
 		}
 
-		void move_timer() {
+		void move_timer(void) {
 			float fps = GetFPS();
-			if (this->c_ready && !this->c_start) {
-				this->c_readytimer -= 1.f / fps;
-				if (this->c_readytimer <= 0.f) {
-					this->c_start = true;
+			if (this->ready_f && !this->start_f) {
+				this->readytimer -= 1.f / fps;
+				if (this->readytimer <= 0.f) {
+					this->start_f = true;
 				}
 			}
-			if (this->c_start && !this->c_end) {
-				this->c_timer -= 1.f / fps;
-				if (this->c_timer <= 0.f) {
-					this->c_timer = 0.f;
-					this->c_end = true;//
-					this->ins();//データベースにデータを挿入
+			if (this->start_f && !this->end_f) {
+				this->timer -= 1.f / fps;
+				if (this->timer <= 0.f) {
+					this->timer = 0.f;
+					this->end_f = true;
+					this->insert();
 				}
 			}
 		}
@@ -370,24 +369,24 @@ public:
 		VECTOR_ref pos, add;
 		MATRIX_ref mat;
 		MV1 obj;
-		Gun* gunptr = nullptr;
+		Gun* ptr = nullptr;
 
 		void set(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_) {
 			this->pos = pos_;
 			this->add = VGet(0, 0, 0);
 			this->mat = mat_;
 			//手
-			this->gunptr = gundata;
-			this->obj = this->gunptr->mod.obj.Duplicate();
+			this->ptr = gundata;
+			this->obj = this->ptr->mod.obj.Duplicate();
 		}
 		void draw() {
-			if (this->gunptr != nullptr) {
+			if (this->ptr != nullptr) {
 				this->obj.DrawModel();
 			}
 		}
 		void draw(const bool& canget, std::string& name) {
-			if (this->gunptr != nullptr) {
-				if (canget && name == this->gunptr->name) {
+			if (this->ptr != nullptr) {
+				if (canget && name == this->ptr->name) {
 					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
 					auto c = MV1GetDifColorScale(this->obj.get());
 					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
@@ -399,18 +398,17 @@ public:
 				}
 			}
 		}
-		void delete_chara() {
-			this->gunptr = nullptr;
+		void delete_item() {
+			this->ptr = nullptr;
 			this->obj.Dispose();
 		}
 	};
-	//アイテム
 	class Mag_item {
 	public:
 		VECTOR_ref pos, add;
 		MATRIX_ref mat;
 		MV1 obj;
-		Gun* gunptr = nullptr;
+		Gun* ptr = nullptr;
 
 		size_t cap = 0;
 
@@ -420,23 +418,21 @@ public:
 				this->add = VGet(0, 0, 0);
 				this->mat = mat_;
 				//手
-				this->gunptr = gundata;
-				this->obj = this->gunptr->mag.mag.Duplicate();
+				this->ptr = gundata;
+				this->obj = this->ptr->mag.mag.Duplicate();
 			}
 			else {
-				this->delete_chara();
+				this->delete_item();
 			}
 		}
 		void draw() {
-			if (this->gunptr != nullptr) {
+			if (this->ptr != nullptr) {
 				this->obj.DrawModel();
 			}
 		}
-
 		void draw(const bool& canget, std::string& name) {
-			if (this->gunptr != nullptr) {
-
-				if (canget && name == this->gunptr->name) {
+			if (this->ptr != nullptr) {
+				if (canget && name == this->ptr->name) {
 					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
 					auto c = MV1GetDifColorScale(this->obj.get());
 					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
@@ -448,9 +444,8 @@ public:
 				}
 			}
 		}
-
-		void delete_chara() {
-			this->gunptr = nullptr;
+		void delete_item() {
+			this->ptr = nullptr;
 			this->obj.Dispose();
 		}
 	};
@@ -479,8 +474,8 @@ public:
 	//player
 	class Chara {
 		struct ef_guns {
-			EffectS first;
-			ammos* second = nullptr;
+			EffectS effect;
+			ammos* ptr = nullptr;
 			float cnt = -1.f;
 		};
 		class ammo_obj {
@@ -501,15 +496,17 @@ public:
 			}
 		};
 		struct gun_state {
-			size_t in = 0;//所持弾数
-			std::vector<size_t> mag_in;//マガジン内
+			size_t in = 0;				//所持弾数
+			std::vector<size_t> mag_in;	//マガジン内
+			uint8_t select = 0;			//セレクター
 		};
-		class Gun_have {
+		class gun_have {
 		public:
+			int id = 0;
 			Gun* ptr = nullptr;
 			MV1 obj;
-			void set(Gun* ptr_t) {
-				this->ptr = ptr_t;
+			void set(Gun* ptr_) {
+				this->ptr = ptr_;
 				if (this->ptr != nullptr) {
 					this->obj = this->ptr->mod.obj.Duplicate();
 				}
@@ -520,40 +517,34 @@ public:
 			}
 		};
 	public:
-		std::array<ef_guns, 60> effcs_gun;	/*effect*/
-		size_t gun_effcnt = 0;
-
-		std::array<ammos, 64> bullet;		/*確保する弾*/
-		size_t usebullet = 0;				/*使用弾*/
-
-		std::array<EffectS, effects> effcs; /*effect*/
-		std::array<EffectS, 12> gndsmkeffcs; /*effect*/
-		size_t gndsmk_use = 0;
-
-		Gun* gunptr = nullptr;//現在使用中の武装
-		std::vector<gun_state> gun_stat;//所持弾数などのデータ
-
-		std::array<Gun_have, 3> gun_slot;//銃スロット
-		Gun* gun_slot_bu = nullptr;//バックアップ武器スロット
-
+		/*エフェクト*/
+		std::array<EffectS, effects> effcs;
+		std::array<ef_guns, 60> effcs_gun;
+		size_t use_effcsgun = 0;
+		std::array<EffectS, 12> effcs_gndhit;
+		size_t use_effcsgndhit = 0;
+		/*確保する弾*/
+		std::array<ammos, 64> bullet;
+		size_t use_bullet = 0;
+		std::array<ammo_obj, 64> cart;
+		//所持弾数などのデータ
+		std::vector<gun_state> gun_stat;
+		/*武器ポインタ*/
+		Gun* ptr_now = nullptr;				//現在使用中の武装
+		size_t ammo_cnt = 0;				//装弾数カウント
+		std::array<gun_have, 3> gun_slot;	//銃スロット
+		Gun* gun_slot_backup = nullptr;		//バックアップ武器スロット
+		/*モデル、音声*/
 		Audios audio;
 		MV1 obj, mag, body;
-		std::array<ammo_obj, 64> ammo;		/*確保する弾*/
-
-		float reload_cnt = 0.f;
-
-		uint8_t trigger = 0;//トリガー
+		/**/
+		float reload_cnt = 0.f;//リロード開始までのカウント
+		switchs trigger;//トリガー
 		bool gunf = false;//射撃フラグ
-
-		uint8_t selkey = 0,select = 0;//セレクター
-
-		size_t ammoc = 0;//装弾数カウント
-
+		switchs selkey;//トリガー
 		bool LEFT_hand = false;//左手を添えているか
-
 		bool reloadf = false;
 		bool down_mag = false;
-
 		//プレイヤー座標系
 		VECTOR_ref pos;
 		MATRIX_ref mat;
@@ -580,12 +571,16 @@ public:
 		std::string canget_mag;
 		//
 		void ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s) {
-			this->gun_slot_bu = gundata_backup;
+			this->gun_slot_backup = gundata_backup;
 			this->gun_slot[0].set(gundata);
 			this->gun_slot[1].delete_gun();
 			this->gun_slot[2].delete_gun();
+			fill_id(this->gun_slot);
 			this->gun_stat.resize(state_s);
-			for (auto& s : this->gun_stat) { s.in = 0; }
+			for (auto& s : this->gun_stat) {
+				s.in = 0;
+				s.select = 0;
+			}
 		}
 		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid, const GraphHandle& scope, MV1& hand_) {
 			this->pos = pos_;
@@ -593,27 +588,27 @@ public:
 			//手
 			this->body = hand_.Duplicate();// .Duplicate();
 			if (gunid >= 0) {
-				this->gunptr = this->gun_slot[gunid].ptr;
+				this->ptr_now = this->gun_slot[gunid].ptr;
 			}
 			else {
-				this->gunptr = this->gun_slot_bu;
+				this->ptr_now = this->gun_slot_backup;
 			}
-			this->gunptr->mod.obj.DuplicateonAnime(&this->obj);
-			if (this->gunptr->frame[4].first != INT_MAX) {
+			this->ptr_now->mod.obj.DuplicateonAnime(&this->obj);
+			if (this->ptr_now->frame[4].first != INT_MAX) {
 				this->obj.SetTextureGraphHandle(1, scope, false);	//スコープ
 			}
-			this->mag = this->gunptr->mag.mag.Duplicate();
-			for (auto& a : this->ammo) {
+			this->mag = this->ptr_now->mag.mag.Duplicate();
+			for (auto& a : this->cart) {
 				a.cnt = -1.f;
 				a.pos = VGet(0, 0, 0);
 				a.mat = MGetIdent();
 			}
 			this->LEFT_hand = false;
-			if (this->gun_stat[this->gunptr->id].mag_in.size() >= 1) {
-				this->ammoc = this->gun_stat[this->gunptr->id].mag_in.front();//改良
+			if (this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
+				this->ammo_cnt = this->gun_stat[this->ptr_now->id].mag_in.front();//改良
 			}
 			else {
-				this->ammoc = std::clamp<size_t>(this->gun_stat[this->gunptr->id].in, 0, this->gunptr->ammo_max);//改良
+				this->ammo_cnt = std::clamp<size_t>(this->gun_stat[this->ptr_now->id].in, 0, this->ptr_now->ammo_max);//改良
 			}
 
 
@@ -622,8 +617,7 @@ public:
 			this->vecadd_LHAND_p = this->vecadd_LHAND;
 			this->reloadf = false;
 			this->down_mag = true;
-			this->select = 0;
-			this->selkey = 0;
+			this->selkey.second = 0;
 			for (auto& a : this->obj.get_anime()) {
 				a.per = 0.f;
 			}
@@ -633,38 +627,34 @@ public:
 				a.color = GetColor(255, 255, 172);
 			}
 			SetCreate3DSoundFlag(TRUE);
-			this->audio.shot = this->gunptr->audio.shot.Duplicate();
-			this->audio.slide = this->gunptr->audio.slide.Duplicate();
-			this->audio.trigger = this->gunptr->audio.trigger.Duplicate();
-			this->audio.mag_down = this->gunptr->audio.mag_down.Duplicate();
-			this->audio.mag_set = this->gunptr->audio.mag_set.Duplicate();
-			this->audio.case_down = this->gunptr->audio.case_down.Duplicate();
+			this->audio.shot = this->ptr_now->audio.shot.Duplicate();
+			this->audio.slide = this->ptr_now->audio.slide.Duplicate();
+			this->audio.trigger = this->ptr_now->audio.trigger.Duplicate();
+			this->audio.mag_down = this->ptr_now->audio.mag_down.Duplicate();
+			this->audio.mag_set = this->ptr_now->audio.mag_set.Duplicate();
+			this->audio.case_down = this->ptr_now->audio.case_down.Duplicate();
 			SetCreate3DSoundFlag(FALSE);
 		}
 		void draw(const bool& usegun, const int& sel_gun) {
 			this->body.DrawModel();
-			if (this->gunptr->cate == 1) {
-				if ((!this->reloadf || this->down_mag) && this->gun_stat[this->gunptr->id].mag_in.size() >= 1) {
+			this->obj.DrawModel();
+			if (this->ptr_now->cate == 1) {
+				if ((!this->reloadf || this->down_mag) && this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
 					this->mag.DrawModel();
 				}
-			}
-
-			this->obj.DrawModel();
-			if (this->gunptr->cate == 1) {
-				for (auto& a : this->ammo) {
+				for (auto& a : this->cart) {
 					if (a.cnt < 0.f) { continue; }
 					a.second.DrawModel();
 				}
 			}
-
-			for (size_t i = 0; i < this->gun_slot.size(); i++) {
-				if ((!usegun || int(i) != sel_gun) && this->gun_slot[i].ptr != nullptr) {
-					this->gun_slot[i].obj.DrawModel();
+			for (auto& s : this->gun_slot) {
+				if ((!usegun || s.id != sel_gun) && s.ptr != nullptr) {
+					s.obj.DrawModel();
 				}
 			}
 		}
 		void draw_ammo() {
-			if (this->gunptr->cate == 1) {
+			if (this->ptr_now->cate == 1) {
 				for (auto& a : this->bullet) {
 					if (!a.flug) { continue; }
 					DXDraw::Capsule3D(a.pos, a.repos, ((a.spec->caliber - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
@@ -672,10 +662,10 @@ public:
 			}
 		}
 		void delete_chara() {
-			this->gunptr = nullptr;
+			this->ptr_now = nullptr;
 			this->obj.Dispose();
 			this->mag.Dispose();
-			for (auto& a : this->ammo) {
+			for (auto& a : this->cart) {
 				a.second.Dispose();
 			}
 			this->audio.shot.Dispose();
@@ -685,7 +675,7 @@ public:
 			this->audio.mag_set.Dispose();
 			this->audio.case_down.Dispose();
 			for (auto& t : this->effcs_gun) {
-				t.first.handle.Dispose();
+				t.effect.handle.Dispose();
 			}
 			for (auto& t : this->effcs) {
 				t.handle.Dispose();

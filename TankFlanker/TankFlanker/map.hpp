@@ -1,5 +1,5 @@
 #pragma once
-class Mapclass {
+class Mapclass:Mainclass {
 private:
 	MV1 map, map_col;					    //’n–Ê
 	//MV1 tree_model, tree_far;				    //–Ø
@@ -29,10 +29,12 @@ public:
 		envi = SoundHandle::Load("data/audio/envi.wav");
 		SetUseASyncLoadFlag(FALSE);
 	}
-
-	void set_map() {
+	void set_map(const char* item_txt,
+			std::vector<Gun_item>& gunitem,
+			std::vector<Mag_item>& magitem,
+			std::vector<Gun>& gun_data
+		) {
 		map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
-
 		VECTOR_ref size;
 		for (int i = 0; i < map_col.mesh_num(); i++) {
 			VECTOR_ref sizetmp = map_col.mesh_maxpos(i) - map_col.mesh_minpos(i);
@@ -49,9 +51,64 @@ public:
 		for (int i = 0; i < map_col.mesh_num(); i++) {
 			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, i);
 		}
-
 		SetFogStartEnd(0.0f, 300.f);
 		SetFogColor(128, 128, 128);
+
+		gunitem.clear();
+		magitem.clear();
+		{
+			int mdata = FileRead_open(item_txt, FALSE);
+			//gunitem
+			while (true) {
+				auto p = getparams::_str(mdata);
+				if (getright(p.c_str()).find("end") == std::string::npos) {
+					int p1 = 0;
+					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
+					for (auto& g : gun_data) {
+						if (p.find(g.name) != std::string::npos) {
+							p1 = g.id;
+							break;
+						}
+					}
+					p2 = getparams::_float(mdata);
+					p3 = getparams::_float(mdata);
+					p4 = getparams::_float(mdata);
+
+					gunitem.resize(gunitem.size() + 1);
+					gunitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent());
+				}
+				else {
+					break;
+				}
+			}
+			//magitem
+			while (true) {
+				auto p = getparams::_str(mdata);
+				if (getright(p.c_str()).find("end") == std::string::npos) {
+					int p1 = 0;
+					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
+					for (auto& g : gun_data) {
+						if (p.find(g.mag.name) != std::string::npos) {
+							p1 = g.id;
+							break;
+						}
+					}
+					p2 = getparams::_float(mdata);
+					p3 = getparams::_float(mdata);
+					p4 = getparams::_float(mdata);
+
+					magitem.resize(magitem.size() + 1);
+					magitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent());
+					if (magitem.back().ptr != nullptr) {
+						magitem.back().cap = magitem.back().ptr->ammo_max;
+					}
+				}
+				else {
+					break;
+				}
+			}
+			FileRead_close(mdata);
+		}
 	}
 
 	void start_map() {

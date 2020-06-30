@@ -25,6 +25,7 @@ class main_c : Mainclass {
 	VECTOR_ref add_pos, add_pos_buf;							//移動
 	VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
 	float fov = 0.f, fov_fps = 0.f;
+	bool cansh_gun = true;
 public:
 	main_c() {
 		//
@@ -56,18 +57,17 @@ public:
 		MV1::Load("data/model/hand/model_h.mv1", &body_obj, true);				//身体
 		auto mapparts = std::make_unique<Mapclass>(this->dispx, this->dispy);			//map
 		auto tgtparts = std::make_unique<tgttmp>();						//ターゲット
-		{
-			gun_data.resize(5);
-			gun_data[0].mod.set("Knife");
-			gun_data[1].mod.set("1911");
-			gun_data[2].mod.set("M82A2");
-			gun_data[3].mod.set("CAR15_M4");
-			gun_data[4].mod.set("AK74");
-			fill_id(gun_data);
-		}
 		//GUNデータ
+		gun_data.resize(5);
+		gun_data[0].mod.set("Knife");
+		gun_data[1].mod.set("1911");
+		gun_data[2].mod.set("M82A2");
+		gun_data[3].mod.set("CAR15_M4");
+		gun_data[4].mod.set("AK74");
 		UIparts->load_window("銃モデル");				//ロード画面
-		for (auto& g : gun_data) { g.set_data(); }		//GUNデータ取得
+		//GUNデータ取得
+		fill_id(gun_data);
+		for (auto& g : gun_data) { g.set_data(); }
 		UIparts->load_window("銃モデル");				//ロード画面
 		tgtparts->set();								//ターゲット
 		auto scoreparts = std::make_unique<scores>();	//スコア
@@ -89,26 +89,7 @@ public:
 			//マップ読み込み
 			mapparts->set_map_pre();
 			UIparts->load_window("マップモデル");
-			mapparts->set_map();
-			//銃アイテム配置
-			gunitem.resize(5);
-			gunitem[0].set(&gun_data[0], VGet(4.f, 1.f, 0.0f), MGetIdent());
-			gunitem[1].set(&gun_data[1], VGet(2.f, 1.f, 0.0f), MGetIdent());
-			gunitem[2].set(&gun_data[2], VGet(0.f, 1.f, 0.0f), MGetIdent());
-			gunitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 0.0f), MGetIdent());
-			gunitem[4].set(&gun_data[4], VGet(-4.f, 1.f, 0.0f), MGetIdent());
-			//マガジン配置
-			magitem.resize(5);
-			magitem[0].set(&gun_data[0], VGet(4.f, 1.f, 4.0f), MGetIdent());
-			magitem[1].set(&gun_data[3], VGet(2.f, 1.f, 4.0f), MGetIdent());
-			magitem[2].set(&gun_data[3], VGet(0.f, 1.f, 4.0f), MGetIdent());
-			magitem[3].set(&gun_data[3], VGet(-2.f, 1.f, 4.0f), MGetIdent());
-			magitem[4].set(&gun_data[3], VGet(-4.f, 1.f, 4.0f), MGetIdent());
-			for (auto& p : magitem) {
-				if (p.gunptr != nullptr) {
-					p.cap = p.gunptr->ammo_max;
-				}
-			}
+			mapparts->set_map("data/maps/set.txt",this->gunitem,this->magitem, this->gun_data);
 			//ターゲット
 			tgt_pic.resize(5);
 			tgt_pic[0].set(tgtparts, VGet(4, 0, 12.f));
@@ -116,9 +97,8 @@ public:
 			tgt_pic[2].set(tgtparts, VGet(2, 0, 27.f));
 			tgt_pic[3].set(tgtparts, VGet(-2, 0, 36.f));
 			tgt_pic[4].set(tgtparts, VGet(0, 0, 45.f));
-			for (auto& p : tgt_pic) {
-				p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition);
-			}
+			fill_id(tgt_pic);
+			for (auto& p : tgt_pic) { p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition); }
 			//ライティング
 			Drawparts->Set_Light_Shadow(settings->shadow_level_e, VGet(50.f, 20.f, 50.f), VGet(0.05f, -0.5f, 0.75f), [&mapparts] {mapparts->map_get().DrawModel(); });
 			//影に描画するものを指定する(仮)
@@ -148,21 +128,19 @@ public:
 				auto& mine = chara[0];
 				scoreparts->reset();
 				//プレイヤー操作変数群
-				this->change_gun = 0;						//
-				this->xrad_p = 0.f;						//マウスエイム
-				this->fov = deg2rad(settings->useVR_e ? 90 : 45);		//
-				this->fov_fps = this->fov;						//
+				this->change_gun = 0;								//
+				this->xrad_p = 0.f;									//マウスエイム
+				this->fov = deg2rad(settings->useVR_e ? 90 : 45);	//
+				this->fov_fps = this->fov;							//
 				this->TPS.first = true;
 				SetMousePoint(deskx / 2, desky / 2);
-				//envi
+				//環境
 				mapparts->start_map();
 				//
-				/*
 				for (auto& tp : tgt_pic) {
-					//tp.isMOVE=false;
+					tp.isMOVE = false;
 				}
-				*/
-				bool bee = true;
+				this->cansh_gun = true;
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
@@ -172,7 +150,7 @@ public:
 						{
 							//銃変更
 							if (this->usegun.first) {
-								if (this->change_gun == 1 || bee == false) {
+								if (this->change_gun == 1 || this->cansh_gun == false) {
 									++this->sel_g2 %= mine.gun_slot.size();
 									if (mine.gun_slot[this->sel_g2].ptr == nullptr) {
 										this->sel_g2 = 0;
@@ -183,34 +161,30 @@ public:
 									mine.set_chara(pos_t, mat_t, this->sel_g2, this->ScopeScreen, body_obj);
 									this->gunpos_TPS = VGet(0, 0, 0);
 								}
-								bee = true;
+								this->cansh_gun = true;
 							}
-							else {
-								if (bee) {
-									auto pos_t = mine.pos;
-									auto mat_t = mine.mat;
-									mine.delete_chara();
-									mine.set_chara(pos_t, mat_t, -1, this->ScopeScreen, body_obj);
-									this->gunpos_TPS = VGet(0, 0, 0);
+							else if (this->cansh_gun) {
+								auto pos_t = mine.pos;
+								auto mat_t = mine.mat;
+								mine.delete_chara();
+								mine.set_chara(pos_t, mat_t, -1, this->ScopeScreen, body_obj);
+								this->gunpos_TPS = VGet(0, 0, 0);
 
-									if (this->sel_g2 > 0) {
-										--this->sel_g2;
-									}
-									else {
-										this->sel_g2 = int(mine.gun_slot.size() - 1);
-										while (true) {
-											if (mine.gun_slot[this->sel_g2].ptr == nullptr) {
-												this->sel_g2--;
-											}
-											else {
-												break;
-											}
-										}
-
-									}
-
-									bee = false;
+								if (this->sel_g2 > 0) {
+									--this->sel_g2;
 								}
+								else {
+									this->sel_g2 = int(mine.gun_slot.size() - 1);
+									while (true) {
+										if (mine.gun_slot[this->sel_g2].ptr == nullptr) {
+											this->sel_g2--;
+										}
+										else {
+											break;
+										}
+									}
+								}
+								this->cansh_gun = false;
 							}
 							if (settings->useVR_e) {
 								//HMD
@@ -324,15 +298,15 @@ public:
 								//LHAND
 								{
 									VECTOR_ref pv = VGet(0, 0, 0);
-									if (mine.gunptr->frame[4].first != INT_MAX) {
-										pv = mine.gunptr->frame[4].second;
+									if (mine.ptr_now->frame[4].first != INT_MAX) {
+										pv = mine.ptr_now->frame[4].second;
 									}
-									else if (mine.gunptr->frame[7].first != INT_MAX) {
-										pv = mine.gunptr->frame[7].second;
+									else if (mine.ptr_now->frame[7].first != INT_MAX) {
+										pv = mine.ptr_now->frame[7].second;
 									}
 									if (this->ads.first) {
 										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.3f), 0.75f, fps);
-										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.gunptr->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
+										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
 										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
 									}
 									else {
@@ -345,9 +319,9 @@ public:
 								}
 								//RHAND
 								{
-									mine.pos_RHAND = mine.obj.frame(mine.gunptr->frame[6].first) - mine.pos;
+									mine.pos_RHAND = mine.obj.frame(mine.ptr_now->frame[6].first) - mine.pos;
 									if (mine.down_mag) {
-										mine.pos_RHAND = mine.obj.frame(mine.gunptr->frame[0].first) + mine.mat_LHAND.yvec()*-0.05f - mine.pos;
+										mine.pos_RHAND = mine.obj.frame(mine.ptr_now->frame[0].first) + mine.mat_LHAND.yvec()*-0.05f - mine.pos;
 									}
 									mine.mat_RHAND = mine.mat_HMD;
 								}
@@ -368,7 +342,7 @@ public:
 										//マグキャッチ
 										easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[0] & BUTTON_SIDE) != 0), 0.5f, fps);
 										//セレクター
-										mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f)) ? 2 : 0);
+										mine.selkey.get_in(((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f));
 										//銃の使用
 										this->usegun.get_in((CheckHitKey(KEY_INPUT_P) != 0) && (this->sel_g2 != -1));//<---
 										if (this->sel_g2 == -1) {
@@ -382,23 +356,23 @@ public:
 									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
 									if (ptr_.turn && ptr_.now) {
 										//マガジン取得
-										mine.down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (mine.gun_stat[mine.gunptr->id].mag_in.size() >= 1));
+										mine.down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (mine.gun_stat[mine.ptr_now->id].mag_in.size() >= 1));
 										//銃変更
 										this->chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
 										//銃破棄
 										this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
 										//タイマーオン
-										scoreparts->c_ready |= ((ptr_.on[0] & BUTTON_SIDE) != 0);
+										scoreparts->ready_f |= ((ptr_.on[0] & BUTTON_SIDE) != 0);
 										//計測リセット
-										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0 && scoreparts->c_end) { scoreparts->reset(); }
+										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0 && scoreparts->end_f) { scoreparts->reset(); }
 									}
 								}
 							}
 							else {
 								//タイマーオン(Bキー)
-								scoreparts->c_ready |= (CheckHitKey(KEY_INPUT_B) != 0);
+								scoreparts->ready_f |= (CheckHitKey(KEY_INPUT_B) != 0);
 								//計測リセット(Vキー)
-								if (CheckHitKey(KEY_INPUT_V) != 0 && scoreparts->c_end) {
+								if (CheckHitKey(KEY_INPUT_V) != 0 && scoreparts->end_f) {
 									scoreparts->reset();
 								}
 								//マガジン取得
@@ -413,9 +387,9 @@ public:
 									this->usegun.first = false;
 								}
 								//ADS
-								this->ads.first = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) && (this->usegun.first && mine.gunptr->cate == 1);
+								this->ads.first = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) && (this->usegun.first && mine.ptr_now->cate == 1);
 								//セレクター(中ボタン)
-								mine.selkey = std::clamp<uint8_t>(mine.selkey + 1, 0, (((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) && (this->usegun.first)) ? 2 : 0);
+								mine.selkey.get_in(((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) && (this->usegun.first));
 								//銃破棄
 								this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
 								//マグキャッチ(Rキー)
@@ -438,7 +412,7 @@ public:
 								easing_set(&c.vecadd_LHAND_p, VGet(0, 0, 1.f), 0.975f, fps);
 								//リコイル
 								if (c.gunf) {
-									if (c.ammoc >= 1) {
+									if (c.ammo_cnt >= 1) {
 										c.obj.get_anime(0).per = 1.f;
 										c.obj.get_anime(1).per = 0.f;
 										c.obj.get_anime(0).time += 60.f / fps;
@@ -458,14 +432,14 @@ public:
 									}
 
 								}
-								if (c.gunptr->cate == 1) {
+								if (c.ptr_now->cate == 1) {
 									//マガジン排出
-									if (c.obj.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_stat[c.gunptr->id].mag_in.size() >= 1) {
+									if (c.obj.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 										c.audio.mag_down.play_3D(c.pos + c.pos_LHAND, 1.f);
-										int dnm = int(c.ammoc) - 1;
+										int dnm = int(c.ammo_cnt) - 1;
 										//弾数
-										if (c.ammoc >= 1) {
-											c.ammoc = 1;
+										if (c.ammo_cnt >= 1) {
+											c.ammo_cnt = 1;
 										}
 										else {
 											dnm = 0;
@@ -479,14 +453,14 @@ public:
 										*/
 										//マガジン排出
 										c.reload_cnt = 0.f;
-										c.gun_stat[c.gunptr->id].mag_in.erase(c.gun_stat[c.gunptr->id].mag_in.begin());
+										c.gun_stat[c.ptr_now->id].mag_in.erase(c.gun_stat[c.ptr_now->id].mag_in.begin());
 										//マガジン排出
 										bool tt = false;
 										for (auto& g : this->magitem) {
-											if (g.gunptr == nullptr) {
+											if (g.ptr == nullptr) {
 												tt = true;
-												g.set(c.gunptr, c.pos_mag,c.mat_mag);
-												g.add = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
+												g.set(c.ptr_now, c.pos_mag,c.mat_mag);
+												g.add = (c.obj.frame(c.ptr_now->frame[1].first) - c.obj.frame(c.ptr_now->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
 												g.cap = dnm;
 												break;
 											}
@@ -494,42 +468,42 @@ public:
 										if (!tt) {
 											this->magitem.resize(this->magitem.size() + 1);
 											auto& g = this->magitem.back();
-											g.set(c.gunptr, c.pos_mag,c.mat_mag);
-											g.add = (c.obj.frame(c.gunptr->frame[1].first) - c.obj.frame(c.gunptr->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
+											g.set(c.ptr_now, c.pos_mag,c.mat_mag);
+											g.add = (c.obj.frame(c.ptr_now->frame[1].first) - c.obj.frame(c.ptr_now->frame[0].first)).Norm()*-1.f / fps;//排莢ベクトル
 											g.cap = dnm;
 										}
 										//
 										c.reloadf = true;
 									}
 									//セレクター
-									if (c.selkey == 1) {
-										++c.select %= c.gunptr->select.size();
+									if (c.selkey.second == 1) {
+										++c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].select %= c.ptr_now->select.size();
 									}
 								}
 								//
-								if (c.reloadf && c.gun_stat[c.gunptr->id].mag_in.size() >= 1) {
+								if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 									c.reload_cnt += 1.f / fps;
-									if (c.reload_cnt < c.gunptr->reload_time) {
+									if (c.reload_cnt < c.ptr_now->reload_time) {
 										c.down_mag = false;
 									}
 								}
 								//セフティ
 								easing_set(&c.obj.get_anime(4).per, float(0.f), 0.5f, fps);
 								//射撃
-								if (!c.gunf && c.ammoc >= 1) {
-									if (c.gunptr->select[c.select] == 2) {//フルオート用
-										c.trigger = 0;
+								if (!c.gunf && c.ammo_cnt >= 1) {
+									if (c.ptr_now->select[c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].select] == 2) {//フルオート用
+										c.trigger.second = 0;
 									}
 								}
-								c.trigger = std::clamp<uint8_t>(c.trigger + 1, 0, (c.obj.get_anime(2).per >= 0.5f) ? 2 : 0);
-								if (c.trigger == 1) {
+								c.trigger.get_in(c.obj.get_anime(2).per >= 0.5f);
+								if (c.trigger.second == 1) {
 									c.audio.trigger.play_3D(c.pos + c.pos_LHAND, 1.f);
 								}
-								switch (c.gunptr->cate) {
+								switch (c.ptr_now->cate) {
 								case 0:
 								{
 									//近接
-									if (c.trigger == 1 && !c.gunf) {
+									if (c.trigger.second == 1 && !c.gunf) {
 										c.gunf = true;
 										/*
 										if (&c == &mine) {
@@ -540,7 +514,7 @@ public:
 										c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
 										c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
 										//スコア
-										if (scoreparts->c_start && !scoreparts->c_end) {
+										if (scoreparts->start_f && !scoreparts->end_f) {
 											scoreparts->sub(-4);
 										}
 									}
@@ -548,7 +522,7 @@ public:
 								}
 								case 1:
 								{
-									if (c.trigger == 1 && !c.gunf && c.ammoc >= 1) {
+									if (c.trigger.second == 1 && !c.gunf && c.ammo_cnt >= 1) {
 										c.gunf = true;
 										/*
 										if (&c == &mine) {
@@ -556,51 +530,52 @@ public:
 										}
 										*/
 										//弾数管理
-										c.ammoc--;
+										c.ammo_cnt--;
 										c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].in--;
 										if (!c.reloadf && c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.size() >= 1 && c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front() > 0) {
 											c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front()--;
 										}
 										//持ち手を持つとココが相殺される
 										c.vecadd_LHAND_p = MATRIX_ref::Vtrans(c.vecadd_LHAND_p,
-											MATRIX_ref::RotY(deg2rad(float(int(c.gunptr->recoil_xdn*100.f) + GetRand(int((c.gunptr->recoil_xup - c.gunptr->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
-											MATRIX_ref::RotX(deg2rad(float(int(c.gunptr->recoil_ydn*100.f) + GetRand(int((c.gunptr->recoil_yup - c.gunptr->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
+											MATRIX_ref::RotY(deg2rad(float(int(c.ptr_now->recoil_xdn*100.f) + GetRand(int((c.ptr_now->recoil_xup - c.ptr_now->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
+											MATRIX_ref::RotX(deg2rad(float(int(c.ptr_now->recoil_ydn*100.f) + GetRand(int((c.ptr_now->recoil_yup - c.ptr_now->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
 										//弾
-										c.bullet[c.usebullet].set(&c.gunptr->ammo[0], c.obj.frame(c.gunptr->frame[3].first), c.mat_LHAND.zvec()*-1.f);
+										c.bullet[c.use_bullet].set(&c.ptr_now->ammo[0], c.obj.frame(c.ptr_now->frame[3].first), c.mat_LHAND.zvec()*-1.f);
 										//薬莢
-										c.ammo[c.usebullet].set(&c.gunptr->ammo[0], c.obj.frame(c.gunptr->frame[2].first), (c.obj.frame(c.gunptr->frame[2].first + 1) - c.obj.frame(c.gunptr->frame[2].first)).Norm()*2.5f / fps, c.mat_LHAND);
+										c.cart[c.use_bullet].set(&c.ptr_now->ammo[0], c.obj.frame(c.ptr_now->frame[2].first), (c.obj.frame(c.ptr_now->frame[2].first + 1) - c.obj.frame(c.ptr_now->frame[2].first)).Norm()*2.5f / fps, c.mat_LHAND);
 										//エフェクト
-										set_effect(&c.effcs[ef_fire], c.obj.frame(c.gunptr->frame[3].first), c.mat_LHAND.zvec()*-1.f, 0.0025f / 0.1f);
-										set_effect(&c.effcs_gun[c.gun_effcnt].first, c.obj.frame(c.gunptr->frame[3].first), c.mat_LHAND.zvec()*-1.f, 0.11f / 0.1f);
-										set_pos_effect(&c.effcs_gun[c.gun_effcnt].first, Drawparts->get_effHandle(ef_smoke));
-										c.effcs_gun[c.gun_effcnt].second = &c.bullet[c.usebullet];
-										c.effcs_gun[c.gun_effcnt].cnt = 0.f;
-										++c.gun_effcnt %= c.effcs_gun.size();
+										set_effect(&c.effcs[ef_fire], c.obj.frame(c.ptr_now->frame[3].first), c.mat_LHAND.zvec()*-1.f, 0.0025f / 0.1f);
+
+										set_effect(&c.effcs_gun[c.use_effcsgun].effect, c.obj.frame(c.ptr_now->frame[3].first), c.mat_LHAND.zvec()*-1.f, 0.11f / 0.1f);
+										set_pos_effect(&c.effcs_gun[c.use_effcsgun].effect, Drawparts->get_effHandle(ef_smoke));
+										c.effcs_gun[c.use_effcsgun].ptr = &c.bullet[c.use_bullet];
+										c.effcs_gun[c.use_effcsgun].cnt = 0.f;
+										++c.use_effcsgun %= c.effcs_gun.size();
 										//サウンド
 										c.audio.shot.play_3D(c.pos + c.pos_LHAND, 1.f);
 										c.audio.slide.play_3D(c.pos + c.pos_LHAND, 1.f);
 										//次のIDへ
-										++c.usebullet %= c.bullet.size();
+										++c.use_bullet %= c.bullet.size();
 										//スコア
-										if (scoreparts->c_start && !scoreparts->c_end) {
+										if (scoreparts->start_f && !scoreparts->end_f) {
 											scoreparts->sub(-4);
 										}
 									}
 									//マガジン取得
-									if (c.reloadf && c.gun_stat[c.gunptr->id].mag_in.size() >= 1) {
+									if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 										if (c.down_mag) {
-											auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.gunptr->frame[0].first) - (c.pos_RHAND + c.pos)));
+											auto p = MATRIX_ref::RotVec2(c.mat_RHAND.yvec(), (c.obj.frame(c.ptr_now->frame[0].first) - (c.pos_RHAND + c.pos)));
 											c.mat_mag = c.mag.GetFrameLocalMatrix(3)* (c.mat_RHAND*p);
 											c.pos_mag = c.pos_RHAND + c.pos;
-											if ((c.mag.frame(3) - c.obj.frame(c.gunptr->frame[0].first)).size() <= 0.1f) {
+											if ((c.mag.frame(3) - c.obj.frame(c.ptr_now->frame[0].first)).size() <= 0.1f) {
 												c.obj.get_anime(1).time = 0.f;
 												c.obj.get_anime(0).per = 1.f;
 												c.obj.get_anime(1).per = 0.f;
-												if (c.ammoc == 0) {
+												if (c.ammo_cnt == 0) {
 													c.obj.get_anime(3).per = 1.f;
 												}
 												c.audio.mag_set.play_3D(c.pos + c.pos_LHAND, 1.f);
-												c.ammoc += c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front();
+												c.ammo_cnt += c.gun_stat[c.gun_slot[this->sel_g2].ptr->id].mag_in.front();
 												c.reloadf = false;
 											}
 										}
@@ -608,7 +583,7 @@ public:
 									else {
 										c.down_mag = false;
 										c.mat_mag = c.mat_LHAND;
-										c.pos_mag = c.obj.frame(c.gunptr->frame[1].first);
+										c.pos_mag = c.obj.frame(c.ptr_now->frame[1].first);
 									}
 									break;
 								}
@@ -621,11 +596,11 @@ public:
 									}
 									//左手
 									{
-										float dist_ = ((c.pos_RHAND + c.pos) - c.obj.frame(c.gunptr->frame[6].first)).size();
+										float dist_ = ((c.pos_RHAND + c.pos) - c.obj.frame(c.ptr_now->frame[6].first)).size();
 										if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
 											c.LEFT_hand = true;
 											MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90));
-											c.body.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.obj.frame(c.gunptr->frame[6].first) - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
+											c.body.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.obj.frame(c.ptr_now->frame[6].first) - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 										}
 										else {
 											c.LEFT_hand = false;
@@ -674,24 +649,24 @@ public:
 											if (q.HitFlag == TRUE) {
 												a.pos = q.HitPosition;
 												//
-												tp.power = (tp.obj.frame(tgtparts->tgt_f.first) - a.pos).y();
+												tp.power = (tp.obj.frame(tgtparts->frame.first) - a.pos).y();
 												tp.time = 0.f;
 												int UI_xpos = 0;
 												int UI_ypos = 0;
 												//弾痕処理
 												{
 													tp.pic.SetDraw_Screen(false);
-													VECTOR_ref pvecp = (a.pos - tp.obj.frame(tgtparts->tgt_f.first));
-													VECTOR_ref xvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.x_frame));
-													VECTOR_ref yvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.y_frame));
-													UI_xpos = int(float(tgtparts->tgt_pic_x)*(xvecp.Norm().dot(pvecp)) / xvecp.size());//X方向
-													UI_ypos = int(float(tgtparts->tgt_pic_y)*(yvecp.Norm().dot(pvecp)) / yvecp.size());//Y方向
+													VECTOR_ref pvecp = (a.pos - tp.obj.frame(tgtparts->frame.first));
+													VECTOR_ref xvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.frame_x.first));
+													VECTOR_ref yvecp = MATRIX_ref::Vtrans(VGet(0, 0, 0), tp.obj.GetFrameLocalMatrix(tp.frame_y.first));
+													UI_xpos = int(float(tgtparts->x_size)*(xvecp.Norm().dot(pvecp)) / xvecp.size());//X方向
+													UI_ypos = int(float(tgtparts->y_size)*(yvecp.Norm().dot(pvecp)) / yvecp.size());//Y方向
 													DrawCircle(UI_xpos, UI_ypos, 10, GetColor(255, 0, 0));//弾痕
 												}
 												//ポイント判定
-												if (scoreparts->c_start && !scoreparts->c_end) {
+												if (scoreparts->start_f && !scoreparts->end_f) {
 													int r_, g_, b_, a_;
-													GetPixelSoftImage(tgtparts->tgt_col, UI_xpos, UI_ypos, &r_, &g_, &b_, &a_);
+													GetPixelSoftImage(tgtparts->col_tex, UI_xpos, UI_ypos, &r_, &g_, &b_, &a_);
 													int pt = 0;
 													switch (r_) {
 													case 0:
@@ -728,8 +703,8 @@ public:
 										}
 										if (p.HitFlag == TRUE && a.flug) {
 											a.flug = false;
-											set_effect(&c.gndsmkeffcs[c.gndsmk_use], a.pos, p.Normal, 0.025f / 0.1f);
-											++c.gndsmk_use %= c.gndsmkeffcs.size();
+											set_effect(&c.effcs_gndhit[c.use_effcsgndhit], a.pos, p.Normal, 0.025f / 0.1f);
+											++c.use_effcsgndhit %= c.effcs_gndhit.size();
 										}
 									}
 									//消す(3秒たった、スピードが0以下、貫通が0以下)
@@ -739,9 +714,9 @@ public:
 									//終了
 									if (!a.flug) {
 										for (auto& b : c.effcs_gun) {
-											if (b.second == &a) {
+											if (b.ptr == &a) {
 												b.cnt = 2.5f;
-												b.first.handle.SetPos(b.second->pos);
+												b.effect.handle.SetPos(b.ptr->pos);
 												break;
 											}
 										}
@@ -749,7 +724,7 @@ public:
 									//
 								}
 							}
-							for (auto& a : c.ammo) {
+							for (auto& a : c.cart) {
 								if (a.cnt >= 0.f) {
 									a.cnt += 1.f / fps;
 									a.pos += a.add*(float(200 + GetRand(1000)) / 1000.f);
@@ -786,18 +761,18 @@ public:
 									set_pos_effect(&t, Drawparts->get_effHandle(int(t.id)));
 								}
 							}
-							for (auto& t : c.gndsmkeffcs) {
+							for (auto& t : c.effcs_gndhit) {
 								set_pos_effect(&t, Drawparts->get_gndhitHandle());
 							}
 							for (auto& a : c.effcs_gun) {
-								if (a.second != nullptr) {
-									if (a.second->flug) {
-										a.first.handle.SetPos(a.second->pos);
+								if (a.ptr != nullptr) {
+									if (a.ptr->flug) {
+										a.effect.handle.SetPos(a.ptr->pos);
 									}
 									if (a.cnt >= 0.f) {
 										a.cnt += 1.f / fps;
 										if (a.cnt >= 3.f) {
-											a.first.handle.Stop();
+											a.effect.handle.Stop();
 											a.cnt = -1.f;
 										}
 									}
@@ -810,13 +785,13 @@ public:
 						}
 						for (auto& g : this->gunitem) {
 							//
-							if (g.gunptr != nullptr) {
+							if (g.ptr != nullptr) {
 								g.obj.SetMatrix(g.mat*MATRIX_ref::Mtrans(g.pos));
 								g.pos += g.add;
 								g.add.yadd(-9.8f / powf(fps, 2.f));
 
 								for (auto& p : this->gunitem) {
-									if (p.gunptr != nullptr && &p != &g) {
+									if (p.ptr != nullptr && &p != &g) {
 										if ((p.pos - g.pos).size() <= 0.1f) {
 											p.add.xadd((p.pos - g.pos).x()*10.f / fps);
 											p.add.zadd((p.pos - g.pos).z()*10.f / fps);
@@ -835,8 +810,8 @@ public:
 								{
 									bool cng = false;
 
-									VECTOR_ref startpos = mine.obj.frame(mine.gunptr->frame[3].first);
-									VECTOR_ref endpos = mine.obj.frame(mine.gunptr->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
+									VECTOR_ref startpos = mine.obj.frame(mine.ptr_now->frame[3].first);
+									VECTOR_ref endpos = mine.obj.frame(mine.ptr_now->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
 									auto p = mapparts->map_col_line(startpos, endpos, 0);
 									if (p.HitFlag == 1) {
 										endpos = p.HitPosition;
@@ -845,13 +820,13 @@ public:
 
 									mine.canget_gunitem |= cng;
 									if (cng) {
-										mine.canget_gun = g.gunptr->name;
+										mine.canget_gun = g.ptr->name;
 										if (this->chgun.second == 1) {
 											auto pos_t = mine.pos;
 											auto mat_t = mine.mat;
 											int sel_t = this->sel_g2;
-											Gun* gun_t = g.gunptr;
-											g.delete_chara();
+											Gun* gun_t = g.ptr;
+											g.delete_item();
 											for (size_t i = 0; i < mine.gun_slot.size(); i++) {
 												if (mine.gun_slot[i].ptr == nullptr) {
 													sel_t = this->sel_g2 = int(i);
@@ -889,16 +864,16 @@ public:
 								if (this->delgun.second == 1) {
 									bool tt = false;
 									for (auto& g : this->gunitem) {
-										if (g.gunptr == nullptr) {
+										if (g.ptr == nullptr) {
 											tt = true;
-											g.set(c.gunptr, c.pos + c.pos_LHAND, c.mat_LHAND);
+											g.set(c.ptr_now, c.pos + c.pos_LHAND, c.mat_LHAND);
 											break;
 										}
 									}
 									if (!tt) {
 										this->gunitem.resize(this->gunitem.size() + 1);
 										auto& g = this->gunitem.back();
-										g.set(c.gunptr, c.pos + c.pos_LHAND, c.mat_LHAND);
+										g.set(c.ptr_now, c.pos + c.pos_LHAND, c.mat_LHAND);
 									}
 									//
 									for (size_t i = 0; i < c.gun_slot.size(); i++) {
@@ -938,13 +913,13 @@ public:
 						}
 						for (auto& g : this->magitem) {
 							//
-							if (g.gunptr != nullptr) {
+							if (g.ptr != nullptr) {
 								g.obj.SetMatrix(g.mat*MATRIX_ref::Mtrans(g.pos));
 								g.pos += g.add;
 								g.add.yadd(-9.8f / powf(fps, 2.f));
 
 								for (auto& p : this->magitem) {
-									if (p.gunptr != nullptr && &p != &g) {
+									if (p.ptr != nullptr && &p != &g) {
 										if ((p.pos - g.pos).size() <= 0.1f) {
 											p.add.xadd((p.pos - g.pos).x()*10.f / fps);
 											p.add.zadd((p.pos - g.pos).z()*10.f / fps);
@@ -965,8 +940,8 @@ public:
 									bool cng = false;
 									if (&c == &mine) {
 
-										VECTOR_ref startpos = mine.obj.frame(mine.gunptr->frame[3].first);
-										VECTOR_ref endpos = mine.obj.frame(mine.gunptr->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
+										VECTOR_ref startpos = mine.obj.frame(mine.ptr_now->frame[3].first);
+										VECTOR_ref endpos = mine.obj.frame(mine.ptr_now->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
 										auto p = mapparts->map_col_line(startpos, endpos, 0);
 										if (p.HitFlag == 1) {
 											endpos = p.HitPosition;
@@ -976,14 +951,14 @@ public:
 
 										c.canget_magitem |= cng;
 										if (cng) {
-											c.canget_mag = g.gunptr->mag.name;
+											c.canget_mag = g.ptr->mag.name;
 											if (this->chgun.second == 1) {
-												c.gun_stat[g.gunptr->id].in += g.cap;
-												c.gun_stat[g.gunptr->id].mag_in.insert(c.gun_stat[g.gunptr->id].mag_in.end(), g.cap);
-												if (c.gun_stat[g.gunptr->id].mag_in.size() == 1) {
+												c.gun_stat[g.ptr->id].in += g.cap;
+												c.gun_stat[g.ptr->id].mag_in.insert(c.gun_stat[g.ptr->id].mag_in.end(), g.cap);
+												if (c.gun_stat[g.ptr->id].mag_in.size() == 1) {
 													c.reloadf = true;
 												}
-												g.delete_chara();
+												g.delete_item();
 											}
 										}
 
@@ -1004,7 +979,7 @@ public:
 								}
 							}
 							tp.rad = std::clamp(tp.rad + (-cos(tp.time)*deg2rad(tp.power)), deg2rad(-90), deg2rad(90));
-							tp.obj.SetFrameLocalMatrix(tgtparts->tgt_f.first, MATRIX_ref::RotX(tp.rad)* MATRIX_ref::Mtrans(tgtparts->tgt_f.second));
+							tp.obj.SetFrameLocalMatrix(tgtparts->frame.first, MATRIX_ref::RotX(tp.rad)* MATRIX_ref::Mtrans(tgtparts->frame.second));
 							tp.obj.RefreshCollInfo(0, 1);
 
 							easing_set(&tp.rad, 0.f, 0.995f, fps);
@@ -1022,12 +997,12 @@ public:
 						//VR空間に適用
 						vrparts->Move_Player();
 						//スコープ
-						if (mine.gunptr->frame[4].first != INT_MAX) {
-							VECTOR_ref cam = mine.obj.frame(mine.gunptr->frame[4].first);
+						if (mine.ptr_now->frame[4].first != INT_MAX) {
+							VECTOR_ref cam = mine.obj.frame(mine.ptr_now->frame[4].first);
 							VECTOR_ref vec = cam - mine.mat_LHAND.zvec();
 							VECTOR_ref yvec = mine.mat_LHAND.yvec();
 							Hostpassparts->draw(&this->ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (this->fov / 7.5f) / 4.f), draw_by_shadow, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);
-							mine.gunptr->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
+							mine.ptr_now->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
 						}
 						//描画
 						UIparts->set_draw(mine, scoreparts, settings->useVR_e, this->usegun.first, this->sel_g2);
@@ -1077,9 +1052,9 @@ public:
 								{
 									this->outScreen[2].DrawExtendGraph(0, 0, this->out_dispx, this->out_dispy, false);
 									//ターゲットを映す
-									UIparts->TGT_drw(tgt_pic, mine.obj.frame(mine.gunptr->frame[3].first), MATRIX_ref::Vtrans(VGet(0, 0, -1.f), mine.mat_LHAND), tgtparts->tgt_pic_x, tgtparts->tgt_pic_y);
+									UIparts->TGT_drw(tgt_pic, mine.obj.frame(mine.ptr_now->frame[3].first), MATRIX_ref::Vtrans(VGet(0, 0, -1.f), mine.mat_LHAND), tgtparts->x_size, tgtparts->y_size);
 									//スコープのエイム
-									if (mine.gunptr->frame[4].first != INT_MAX) {
+									if (mine.ptr_now->frame[4].first != INT_MAX) {
 										this->ScopeScreen.DrawExtendGraph(this->out_dispx - 200, 0, this->out_dispx, 200, true);
 									}
 								}

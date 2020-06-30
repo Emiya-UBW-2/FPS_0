@@ -105,7 +105,7 @@ public:
 		float gun_yrad = 90.f;
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
-		uint8_t changecnt = 0;
+		switchs changecnt;
 		bool endp = false;
 		bool startp = false;
 		float ber_r = 0.f;
@@ -119,28 +119,24 @@ public:
 			const auto waits = GetNowHiPerformanceCount();
 			if (!startp) {
 				//VR用
-				vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
-				if (useVR_e) {
-					if (vrparts->get_hand1_num() != -1) {
-						auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
-						if (ptr_.turn && ptr_.now) {
-							changecnt = std::clamp<uint8_t>(changecnt + 1, 0, (((ptr_.on[1] & BUTTON_SIDE) != 0) ? 2 : 0));
-							//引き金
-							if ((ptr_.on[0] & BUTTON_TRIGGER) != 0) {
-								startp = true;
+				if (!setf.first) {
+					if (useVR_e) {
+						vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
+						if (vrparts->get_hand1_num() != -1) {
+							auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
+							if (ptr_.turn && ptr_.now) {
+								changecnt.get_in((ptr_.on[1] & BUTTON_SIDE) != 0);
+								if ((ptr_.on[0] & BUTTON_TRIGGER) != 0) { startp = true; }
 							}
 						}
 					}
-				}
-				else {
-					changecnt = std::clamp<uint8_t>(changecnt + 1, 0, ((CheckHitKey(KEY_INPUT_P) != 0) ? 2 : 0));
-					if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-						startp = true;
+					else {
+						changecnt.get_in(CheckHitKey(KEY_INPUT_P) != 0);
+						if (CheckHitKey(KEY_INPUT_SPACE) != 0) { startp = true; }
 					}
-					//マウスで回転
 				}
 				//
-				if (changecnt == 1) {
+				if (changecnt.second == 1) {
 					++sel_g %= gun_data.size();
 					ber_r = 0.f;
 					cursor.play(DX_PLAYTYPE_BACK, TRUE);
@@ -150,26 +146,24 @@ public:
 				}
 			}
 			else {
-				changecnt = 0;
+				changecnt.second = 0;
 			}
 
 			easing_set(&ber_r, float(out_disp_y / 4), 0.95f, fps);
 
-			{
-				if (!startp) {
-					campos = mat_HMD.zvec() * 0.6f;
-					gun_yrad += 10.f / fps;
-					if (gun_yrad >= 180.f) {
-						gun_yrad = -180.f;
-					}
+			if (!startp) {
+				campos = mat_HMD.zvec() * 0.6f;
+				gun_yrad += 10.f / fps;
+				if (gun_yrad >= 180.f) {
+					gun_yrad = -180.f;
 				}
-				else {
-					easing_set(&campos, VGet(0.f, 0.f, 1.f), 0.95f, fps);
-					easing_set(&gun_yrad, 90.f, 0.95f, fps);
-					start_fl += 1.f / fps;
-					if (start_fl > 3.f) {
-						endp = true;
-					}
+			}
+			else {
+				easing_set(&campos, VGet(0.f, 0.f, 1.f), 0.95f, fps);
+				easing_set(&gun_yrad, 90.f, 0.95f, fps);
+				start_fl += 1.f / fps;
+				if (start_fl > 3.f) {
+					endp = true;
 				}
 			}
 			//VR空間に適用
@@ -198,7 +192,7 @@ public:
 				{
 					v.mod.obj.SetMatrix(MATRIX_ref::RotY(deg2rad(gun_yrad)));
 					v.mod.obj.DrawModel();
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 1.f), 0, 255));
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 3.f), 0, 255));
 					bufScreen.DrawExtendGraph(0, 0, disp_x, disp_y, true);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * start_fl / 3.f), 0, 255));
 					DrawBox(0, 0, disp_x, disp_y, GetColor(255, 255, 255), TRUE);
@@ -273,35 +267,40 @@ public:
 		ScreenFlip();
 	}
 	template<class Y, class D>
-	void set_draw(
-		Mainclass::Chara& chara,
-		std::unique_ptr<Y, D>& scoreparts,
-		const bool& vr,
-		const bool& usegun,
-		const int& sel_gun
-	) {
+	void set_draw(Mainclass::Chara& chara, std::unique_ptr<Y, D>& scoreparts, const bool& vr, const bool& usegun, const int& sel_gun) {
 		//
 		const float fps = GetFPS();
 		bufScreen.SetDraw_Screen();
 		{
 			FontHandle* font_big = (!vr) ? &font36 : &font24;
 			FontHandle* font = (!vr) ? &font18 : &font12;
+			int xs = 0, ys = 0, xp = 0, yp = 0;
 			//ダメージ
 			{
-				if (!scoreparts->c_start) {
+				if (!scoreparts->start_f) {
 					point_r = float(scoreparts->point);
 				}
 			}
 			{
-				int xp = disp_x / 2, yp = disp_y / 2 + disp_y / 12;
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12;
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12;
+				}
 
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_df), 0, 255));
-				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(50, 150, 255), " +%d", scoreparts->p_down);
+				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(50, 150, 255), " +%d", scoreparts->pointdown);
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_uf), 0, 255));
-				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 255, 0), " +%d", scoreparts->p_up);
+				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 255, 0), " +%d", scoreparts->pointup);
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*std::max(point_uf, point_df)), 0, 255));
 				font_big->DrawStringFormat(xp - font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 0, 0), "[%d]", int(point_r));
-
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
 				if (scoreparts->point - 50.f / fps > point_r) {
@@ -322,21 +321,32 @@ public:
 			}
 			//開始
 			{
-				int xp = disp_x / 2;
-				int yp = disp_y / 2 - int(ready_yp);
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 - int(ready_yp);
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 - int(ready_yp);
+				}
+
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ready_f), 0, 255));
-				if (!scoreparts->c_end) {
-					if (!scoreparts->c_start) {
+				if (!scoreparts->end_f) {
+					if (!scoreparts->start_f) {
 						font->DrawString(xp - font->GetDrawWidth("READY") / 2, yp, "READY", GetColor(255, 0, 0));
-						if (scoreparts->c_ready) {
+						if (scoreparts->ready_f) {
 							font_big->DrawStringFormat(
-								xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, scoreparts->c_readytimer) / 2,
-								yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->c_readytimer);
-							if (int(c_readytimer_old) != int(scoreparts->c_readytimer)) {
+								xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, scoreparts->readytimer) / 2,
+								yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->readytimer);
+							if (int(c_readytimer_old) != int(scoreparts->readytimer)) {
 								timer.play(DX_PLAYTYPE_BACK, TRUE);
 							}
 						}
-						c_readytimer_old = scoreparts->c_readytimer;
+						c_readytimer_old = scoreparts->readytimer;
 
 						ready_f = 1.f;
 						ready_yp = float(disp_y / 12);
@@ -351,7 +361,7 @@ public:
 							ready_f = 0.75f;
 							easing_set(&ready_yp, float(disp_y / 6), 0.95f, fps);
 
-							font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", int(scoreparts->c_timer / 60.f), scoreparts->c_timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", int(scoreparts->c_timer / 60.f), scoreparts->c_timer);
+							font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", int(scoreparts->timer / 60.f), scoreparts->timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", int(scoreparts->timer / 60.f), scoreparts->timer);
 						}
 						else {
 							font->DrawString(xp - font->GetDrawWidth("START!") / 2, yp, "START!", GetColor(255, 0, 0));
@@ -370,12 +380,7 @@ public:
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 			//スコアボード
-			if (scoreparts->c_end) {
-				int xs = 0;
-				int ys = 0;
-				int xp = 0;
-				int yp = 0;
-
+			if (scoreparts->end_f) {
 				if (vr) {
 					xs = disp_y / 4;
 					ys = disp_y / 4;
@@ -396,7 +401,7 @@ public:
 					font->DrawStringFormat(xp, yp, GetColor(255, 128, 0), "TOTAL POINT : %d", scoreparts->point); yp += y_r(48, disp_y);
 					int i = 1;
 					bool ss = false;
-					for (auto& s : scoreparts->score_s) {
+					for (auto& s : scoreparts->stack) {
 						if (yp > disp_y / 2 + ys / 2) {
 							break;
 						}
@@ -414,11 +419,21 @@ public:
 			}
 			//モードその他
 			{
-				int xp = disp_x / 2;
-				int yp = disp_y / 2 + disp_y / 8;
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 8;
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 8;
+				}
 				//元
 				if (time_tmp >= 0.25f) {
-					if (chara.ammoc == 0) {
+					if (chara.ammo_cnt == 0) {
 						font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
 					}
 				}
@@ -429,9 +444,19 @@ public:
 			}
 			//セレクター
 			{
-				int xp = disp_x / 2 - disp_y / 10;
-				int yp = disp_y / 2 + disp_y / 8;
-				switch (chara.gunptr->select[chara.select]) {
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2 - disp_y / 10;
+					yp = disp_y / 2 + disp_y / 8;
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2 - disp_y / 10;
+					yp = disp_y / 2 + disp_y / 8;
+				}
+				switch (chara.ptr_now->select[chara.gun_stat[chara.gun_slot[sel_gun].ptr->id].select]) {
 				case 1:
 					font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(0, 255, 0));
 					break;
@@ -448,8 +473,18 @@ public:
 			}
 			//アイテム拾い
 			{
-				int xp = disp_x / 2;
-				int yp = disp_y / 2 + disp_y / 12;
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12;
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12;
+				}
 				if (chara.canget_gunitem) {
 					if (!vr) {
 						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "を拾う : F") / 2, yp, chara.canget_gun + "を拾う : F", GetColor(255, 128, 0));
@@ -460,8 +495,18 @@ public:
 				}
 			}
 			{
-				int xp = disp_x / 2;
-				int yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
+				}
 				if (chara.canget_magitem) {
 					if (!vr) {
 						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "を拾う : F") / 2, yp, chara.canget_mag + "を拾う : F", GetColor(255, 128, 0));
@@ -473,7 +518,6 @@ public:
 			}
 			//弾薬
 			if (usegun) {
-				int xp = 0, xs = 0, yp = 0, ys = 0;
 				if (!vr) {
 					xs = x_r(200, disp_y);
 					xp = x_r(20, disp_y);
@@ -489,7 +533,7 @@ public:
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
 				{
 					int x, y;
-					GetGraphSize(chara.gunptr->mod.UIScreen.get(), &x, &y);
+					GetGraphSize(chara.ptr_now->mod.UIScreen.get(), &x, &y);
 					int xp2;
 					int yp2;
 					if (!vr) {
@@ -500,7 +544,7 @@ public:
 						xp2 = y_r(120, disp_y);
 						yp2 = y_r(120, disp_y) * y / x;
 					}
-					chara.gunptr->mod.UIScreen.DrawExtendGraph(xp, yp - yp2, xp + xp2, yp, true);
+					chara.ptr_now->mod.UIScreen.DrawExtendGraph(xp, yp - yp2, xp + xp2, yp, true);
 				}
 				{
 					int x, y;
@@ -539,46 +583,56 @@ public:
 					}
 				}
 				{
-					font->DrawString(xp, yp, chara.gunptr->name, GetColor(255, 255, 255));
+					font->DrawString(xp, yp, chara.ptr_now->name, GetColor(255, 255, 255));
 					font->DrawStringFormat(
-						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammoc, chara.gun_stat[chara.gunptr->id].in),
-						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammoc, chara.gun_stat[chara.gunptr->id].in);
+						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt),
+						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt);
 				}
 			}
 			if (vr) {
 				//右手
 				{
-					if (!chara.reloadf && chara.ammoc == 0) {
+					if (!vr) {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 + disp_y / 6 - xs;
+						yp = disp_y / 2 + disp_y / 6 - ys;
+					}
+					else {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 + disp_y / 6 - xs;
+						yp = disp_y / 2 + disp_y / 6 - ys;
+					}
+					if (!chara.reloadf && chara.ammo_cnt == 0) {
 						pt_pr = 2.f;
 					}
-
-					int xs = 500 / 4;
-					int ys = 408 / 4;
-
-					int xp = disp_x / 2 + disp_y / 6 - xs;
-					int yp = disp_y / 2 + disp_y / 6 - ys;
-					//元
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pr), 0, 192));
 					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					if (pt_pr >= 0.f) {
-						if (!chara.reloadf && chara.ammoc == 0) {
+						if (!chara.reloadf && chara.ammo_cnt == 0) {
 							UI_mag_fall.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 						}
 						pt_pr -= 1.f / fps;
 					}
 				}
 				{
+					if (!vr) {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 + disp_y / 6 - xs;
+						yp = disp_y / 2 - ys / 2;
+					}
+					else {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 + disp_y / 6 - xs;
+						yp = disp_y / 2 - ys / 2;
+					}
 					if (display_c1 == 0 && !chara.gunf) {
 						pt_pr2 = 1.f;
 					}
-
-					int xs = 500 / 4;
-					int ys = 408 / 4;
-
-					int xp = disp_x / 2 + disp_y / 6 - xs;
-					int yp = disp_y / 2 - ys / 2;
-					//元
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pr2), 0, 192));
 					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 					DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
@@ -591,25 +645,30 @@ public:
 						}
 						pt_pr2 -= 1.f / fps;
 					}
-
 					if (display_c1 == 0 && chara.gunf) {
 						display_c1 = 1;
 					}
 				}
 				//左手
 				{
+					if (!vr) {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 - disp_y / 6;
+						yp = disp_y / 2 + disp_y / 6 - ys;
+					}
+					else {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 - disp_y / 6;
+						yp = disp_y / 2 + disp_y / 6 - ys;
+					}
 					if (chara.reloadf && !chara.down_mag) {
 						pt_pl = 2.f;
 					}
 					if (chara.canget_gunitem) {
 						pt_pl = 2.f;
 					}
-					int xs = 500 / 4;
-					int ys = 408 / 4;
-
-					int xp = disp_x / 2 - disp_y / 6;
-					int yp = disp_y / 2 + disp_y / 6 - ys;
-					//元
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pl), 0, 192));
 					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -626,22 +685,27 @@ public:
 					}
 				}
 				{
+					if (!vr) {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 - disp_y / 6;
+						yp = disp_y / 2 - ys / 2;
+					}
+					else {
+						xs = 500 / 4;
+						ys = 408 / 4;
+						xp = disp_x / 2 - disp_y / 6;
+						yp = disp_y / 2 - ys / 2;
+					}
 					if (display_c1 <= 0) {
 						pt_pl2 = 1.f;
 					}
-					int xs = 500 / 4;
-					int ys = 408 / 4;
-
-					int xp = disp_x / 2 - disp_y / 6;
-					int yp = disp_y / 2 - ys / 2;
-					//元
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(192.f*pt_pl2), 0, 192));
 					UI_VIVE.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
 					DrawBox(xp, yp, xp + xs, yp + ys, GetColor(255, 0, 0), FALSE);
 					font->DrawString(xp, yp + ys, "Tutorial", GetColor(255, 0, 0));
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					if (pt_pl2 >= 0.f) {
-						//
 						pt_pl2 -= 1.f / fps;
 					}
 				}
@@ -652,46 +716,47 @@ public:
 					a.hit = false;
 				}
 			}
-
-
-			int px = 300;
-			int py = 500;
-			size_t pp = 0;
-			for (auto& a : chara.gun_stat[3].mag_in) {
-				pp += a;
-				font24.DrawStringFormat(px, py, GetColor(255, 0, 0), "%d/%d total:%d",
-					a,
-					chara.gunptr->ammo_max,
-					pp
-				);
-				py += y_r(18, disp_y);
+			//マガジン関連(仮)
+			{
+				if (vr) {
+					xs = 0;
+					ys = 0;
+					xp = 300;
+					yp = 500;
+				}
+				else {
+					xs = 0;
+					ys = 0;
+					xp = 300;
+					yp = 500;
+				}
+				size_t pp = 0;
+				for (auto& a : chara.gun_stat[3].mag_in) {
+					pp += a;
+					font24.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d total:%d",
+						a,
+						chara.ptr_now->ammo_max,
+						pp
+					);
+					yp += y_r(18, disp_y);
+				}
 			}
-
 		}
 	}
-	void draw() {
+	void draw(void) {
 		bufScreen.DrawExtendGraph(0, 0, disp_x, disp_y, true);
 	}
-
 	template <class T>
-	void TGT_drw(
-		std::vector<T> &tgt_pic,
-		const VECTOR_ref& pos,
-		const VECTOR_ref& vec,
-		const int& tgt_pic_x,
-		const int& tgt_pic_y
-	) {
+	void TGT_drw(std::vector<T> &tgt_pic, const VECTOR_ref& pos, const VECTOR_ref& vec, const int& tgt_pic_x, const int& tgt_pic_y) {
 		const float fps = GetFPS();
 		{
-			int i = 0;
 			bool fl = false;
 			for (auto& tp : tgt_pic) {
 				auto q = tp.obj.CollCheck_Line(pos, VECTOR_ref(pos) + vec * 100.f, 0, 1);
 				if (q.HitFlag == TRUE) {
-					tgt_pic_sel = i;
+					tgt_pic_sel = tp.id;
 					fl = true;
 				}
-				i++;
 			}
 			if (fl) {
 				easing_set(&tgt_pic_on, 1.f, 0.9f, fps);
@@ -707,7 +772,7 @@ public:
 			int ys = 160 * tgt_pic_y / tgt_pic_x;
 
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f* tgt_pic_on));
-			VECTOR_ref p = ConvWorldPosToScreenPos(((tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].x_frame) + tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].y_frame)) / 2.f).get());
+			VECTOR_ref p = ConvWorldPosToScreenPos(((tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].frame_x.first) + tgt_pic[tgt_pic_sel].obj.frame(tgt_pic[tgt_pic_sel].frame_y.first)) / 2.f).get());
 			if (p.z() >= 0.f&&p.z() <= 1.f) {
 				DrawLine(xp + xs / 2, yp + ys / 2, int(p.x()*out_disp_x / disp_x), int(p.y()*out_disp_y / disp_y), GetColor(255, 0, 0), 2);
 			}
@@ -722,7 +787,7 @@ public:
 	template <class T>
 	void Gunitem_draw(std::vector<T> &gunitem, const VECTOR_ref& pos) {
 		for (auto& g : gunitem) {
-			if (g.gunptr != nullptr) {
+			if (g.ptr != nullptr) {
 				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					float r_ = (g.pos - pos).size();
@@ -734,7 +799,7 @@ public:
 
 						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
-						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->name, GetColor(255, 0, 0));
+						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->name, GetColor(255, 0, 0));
 
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
@@ -746,26 +811,21 @@ public:
 	template <class T2>
 	void Magitem_draw(std::vector<T2> &magitem, const VECTOR_ref& pos) {
 		for (auto& g : magitem) {
-			if (g.gunptr != nullptr) {
+			if (g.ptr != nullptr) {
 				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					float r_ = (g.pos - pos).size();
 					if (r_ <= 1.f) {
 						r_ = 1.f;
 					}
-					if (r_ <= 10.f && g.gunptr->mag.name.find("none") == std::string::npos) {
+					if (r_ <= 10.f && g.ptr->mag.name.find("none") == std::string::npos) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
 
 						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
-						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.gunptr->mag.name, GetColor(255, 0, 0));
-
-						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d",
-							g.cap,
-							g.gunptr->ammo_max
-						);
-
-						//mine.gun_stat[mine.gunptr->id].mag_in.size()
+						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->mag.name, GetColor(255, 0, 0));
+						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d", g.cap, g.ptr->ammo_max);
+						//mine.gun_stat[mine.ptr->id].mag_in.size()
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}

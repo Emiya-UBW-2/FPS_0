@@ -190,7 +190,6 @@ void set_pos_effect(EffectS* efh, const EffekseerEffectHandle& handle) {
 		efh->handle.SetScale(efh->scale);
 		efh->flug = false;
 	}
-	//IsEffekseer3DEffectPlaying(player[0].effcs[i].handle)
 }
 typedef std::pair<int, VECTOR_ref> frames;
 class switchs {
