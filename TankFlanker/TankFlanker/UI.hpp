@@ -518,6 +518,10 @@ public:
 			}
 			//弾薬
 			if (usegun) {
+				int xp2;
+				int yp2;
+				int xs2;
+				int ys2;
 				if (!vr) {
 					xs = x_r(200, disp_y);
 					xp = x_r(20, disp_y);
@@ -534,51 +538,48 @@ public:
 				{
 					int x, y;
 					GetGraphSize(chara.ptr_now->mod.UIScreen.get(), &x, &y);
-					int xp2;
-					int yp2;
 					if (!vr) {
-						xp2 = y_r(180, disp_y);
-						yp2 = y_r(180, disp_y) * y / x;
+						xs2 = y_r(180, disp_y);
+						ys2 = xs2 * y / x;
+						xp2 = xp;
+						yp2 = yp - ys2;
 					}
 					else {
-						xp2 = y_r(120, disp_y);
-						yp2 = y_r(120, disp_y) * y / x;
+						xs2 = y_r(120, disp_y);
+						ys2 = xs2 * y / x;
+						xp2 = xp;
+						yp2 = yp - ys2;
 					}
-					chara.ptr_now->mod.UIScreen.DrawExtendGraph(xp, yp - yp2, xp + xp2, yp, true);
+					chara.ptr_now->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2+ys2, true);
 				}
 				{
-					int x, y;
-					int xp2;
-					int yp2;
-
-					xp2 = xp + y_r(200, disp_y);
-					yp2 = yp - y_r(180, disp_y) * 4 / 10;
-
-					int i = 0;
+					if (!vr) {
+						xp2 = xp + y_r(200, disp_y);
+						yp2 = yp - y_r(180, disp_y) * 4 / 10;
+						xs2 = y_r(50, disp_y);
+						ys2 = xs2 * 4 / 10;
+					}
+					else {
+						xp2 = xp + y_r(200, disp_y);
+						yp2 = yp - y_r(180, disp_y) * 4 / 10;
+						xs2 = y_r(50, disp_y);
+						ys2 = xs2 * 4 / 10;
+					}
 					for (auto& gp : chara.gun_slot) {
-						int xst2 = y_r(50, disp_y);
-						int yst2 = y_r(50, disp_y) * 4 / 10;
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-						DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(0, 0, 0), TRUE);
+						DrawBox(xp2, yp2, xp2 + xs2, yp2 + ys2, GetColor(0, 0, 0), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-						if (gp.ptr == nullptr) {
-
-						}
-						else {
+						if (gp.ptr != nullptr) {
+							int x, y;
 							GetGraphSize(gp.ptr->mod.UIScreen.get(), &x, &y);
-							int xs2;
-							int ys2;
-							xs2 = xst2;
-							ys2 = xst2 * y / x;
-							gp.ptr->mod.UIScreen.DrawExtendGraph(
-								xp2, yp2 + (yst2 - ys2) / 2,
-								xp2 + xs2, yp2 + ys2 + (yst2 - ys2) / 2, true);
+							int xs_t2 = xs2;
+							int ys_t2 = xs2 * y / x;
+							gp.ptr->mod.UIScreen.DrawExtendGraph(xp2, yp2 + (ys2 - ys_t2) / 2, xp2 + xs_t2, yp2 + ys_t2 + (ys2 - ys_t2) / 2, true);
 						}
-						if (i == sel_gun) {
-							DrawBox(xp2, yp2, xp2 + xst2, yp2 + yst2, GetColor(255, 0, 0), FALSE);
+						if (gp.id == sel_gun) {
+							DrawBox(xp2, yp2, xp2 + xs2, yp2 + ys2, GetColor(255, 0, 0), FALSE);
 						}
-						i++;
 						yp2 += y_r(60, disp_y) * 4 / 10;
 					}
 				}
@@ -589,21 +590,14 @@ public:
 						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt);
 				}
 			}
+			//VR用のチュートリアル
 			if (vr) {
 				//右手
 				{
-					if (!vr) {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 + disp_y / 6 - xs;
-						yp = disp_y / 2 + disp_y / 6 - ys;
-					}
-					else {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 + disp_y / 6 - xs;
-						yp = disp_y / 2 + disp_y / 6 - ys;
-					}
+					xs = 500 / 4;
+					ys = 408 / 4;
+					xp = disp_x / 2 + disp_y / 6 - xs;
+					yp = disp_y / 2 + disp_y / 6 - ys;
 					if (!chara.reloadf && chara.ammo_cnt == 0) {
 						pt_pr = 2.f;
 					}
@@ -618,18 +612,10 @@ public:
 					}
 				}
 				{
-					if (!vr) {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 + disp_y / 6 - xs;
-						yp = disp_y / 2 - ys / 2;
-					}
-					else {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 + disp_y / 6 - xs;
-						yp = disp_y / 2 - ys / 2;
-					}
+					xs = 500 / 4;
+					ys = 408 / 4;
+					xp = disp_x / 2 + disp_y / 6 - xs;
+					yp = disp_y / 2 - ys / 2;
 					if (display_c1 == 0 && !chara.gunf) {
 						pt_pr2 = 1.f;
 					}
@@ -651,18 +637,10 @@ public:
 				}
 				//左手
 				{
-					if (!vr) {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 - disp_y / 6;
-						yp = disp_y / 2 + disp_y / 6 - ys;
-					}
-					else {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 - disp_y / 6;
-						yp = disp_y / 2 + disp_y / 6 - ys;
-					}
+					xs = 500 / 4;
+					ys = 408 / 4;
+					xp = disp_x / 2 - disp_y / 6;
+					yp = disp_y / 2 + disp_y / 6 - ys;
 					if (chara.reloadf && !chara.down_mag) {
 						pt_pl = 2.f;
 					}
@@ -685,18 +663,10 @@ public:
 					}
 				}
 				{
-					if (!vr) {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 - disp_y / 6;
-						yp = disp_y / 2 - ys / 2;
-					}
-					else {
-						xs = 500 / 4;
-						ys = 408 / 4;
-						xp = disp_x / 2 - disp_y / 6;
-						yp = disp_y / 2 - ys / 2;
-					}
+					xs = 500 / 4;
+					ys = 408 / 4;
+					xp = disp_x / 2 - disp_y / 6;
+					yp = disp_y / 2 - ys / 2;
 					if (display_c1 <= 0) {
 						pt_pl2 = 1.f;
 					}
@@ -710,6 +680,7 @@ public:
 					}
 				}
 			}
+			//ヒットサウンド(ほかの床に置け)
 			for (auto& a : chara.bullet) {
 				if (a.hit) {
 					hit.play(DX_PLAYTYPE_BACK, TRUE);
@@ -717,7 +688,7 @@ public:
 				}
 			}
 			//マガジン関連(仮)
-			{
+			if (!vr){
 				if (vr) {
 					xs = 0;
 					ys = 0;
@@ -785,51 +756,46 @@ public:
 	}
 
 	template <class T>
-	void Gunitem_draw(std::vector<T> &gunitem, const VECTOR_ref& pos) {
-		for (auto& g : gunitem) {
-			if (g.ptr != nullptr) {
-				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
-				if (p.z() >= 0.f&&p.z() <= 1.f) {
-					float r_ = (g.pos - pos).size();
-					if (r_ <= 1.f) {
-						r_ = 1.f;
-					}
-					if (r_ <= 10.f) {
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-
-						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
-						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
-						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->name, GetColor(255, 0, 0));
-
-						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+	void item_draw(std::vector<T> &gunitem, const VECTOR_ref& pos,int cate) {
+		switch (cate) {
+		case 0:
+			for (auto& g : gunitem) {
+				if (g.ptr != nullptr) {
+					VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+					if (p.z() >= 0.f&&p.z() <= 1.f) {
+						float r_ = std::max((g.pos - pos).size(), 1.f);
+						if (r_ <= 10.f) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+							DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
+							DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
+							font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->name, GetColor(255, 0, 0));
+							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						}
 					}
 				}
 			}
-		}
-	}
-
-	template <class T2>
-	void Magitem_draw(std::vector<T2> &magitem, const VECTOR_ref& pos) {
-		for (auto& g : magitem) {
-			if (g.ptr != nullptr) {
-				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
-				if (p.z() >= 0.f&&p.z() <= 1.f) {
-					float r_ = (g.pos - pos).size();
-					if (r_ <= 1.f) {
-						r_ = 1.f;
-					}
-					if (r_ <= 10.f && g.ptr->mag.name.find("none") == std::string::npos) {
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-
-						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
-						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
-						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->mag.name, GetColor(255, 0, 0));
-						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d", g.cap, g.ptr->ammo_max);
-						//mine.gun_stat[mine.ptr->id].mag_in.size()
-						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			break;
+		case 1:
+			for (auto& g : gunitem) {
+				if (g.ptr != nullptr) {
+					VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+					if (p.z() >= 0.f&&p.z() <= 1.f) {
+						float r_ = std::max((g.pos - pos).size(), 1.f);
+						if (r_ <= 10.f && g.ptr->mag.name.find("none") == std::string::npos) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+							DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
+							DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
+							font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->mag.name, GetColor(255, 0, 0));
+							font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d", g.cap, g.ptr->ammo_max);
+							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						}
 					}
 				}
 			}
+			break;
+		default:
+			break;
 		}
+
 	}
 };

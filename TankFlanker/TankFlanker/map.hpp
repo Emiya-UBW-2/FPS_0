@@ -30,8 +30,8 @@ public:
 		SetUseASyncLoadFlag(FALSE);
 	}
 	void set_map(const char* item_txt,
-			std::vector<Gun_item>& gunitem,
-			std::vector<Mag_item>& magitem,
+			std::vector<Items>& gunitem,
+			std::vector<Items>& magitem,
 			std::vector<Gun>& gun_data
 		) {
 		map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
@@ -75,7 +75,7 @@ public:
 					p4 = getparams::_float(mdata);
 
 					gunitem.resize(gunitem.size() + 1);
-					gunitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent());
+					gunitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),0);
 				}
 				else {
 					break;
@@ -98,7 +98,7 @@ public:
 					p4 = getparams::_float(mdata);
 
 					magitem.resize(magitem.size() + 1);
-					magitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent());
+					magitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),1);
 					if (magitem.back().ptr != nullptr) {
 						magitem.back().cap = magitem.back().ptr->ammo_max;
 					}

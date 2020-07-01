@@ -58,6 +58,11 @@ public:
 			isMOVE = true;
 			obj.SetPosition(pos);
 		}
+
+		void delete_tgt() {
+			this->obj.Dispose();
+			this->pic.Dispose();
+		}
 	};
 	//score
 	class scores {
@@ -363,92 +368,6 @@ public:
 			}
 		}
 	};
-	//アイテム
-	class Gun_item {
-	public:
-		VECTOR_ref pos, add;
-		MATRIX_ref mat;
-		MV1 obj;
-		Gun* ptr = nullptr;
-
-		void set(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_) {
-			this->pos = pos_;
-			this->add = VGet(0, 0, 0);
-			this->mat = mat_;
-			//手
-			this->ptr = gundata;
-			this->obj = this->ptr->mod.obj.Duplicate();
-		}
-		void draw() {
-			if (this->ptr != nullptr) {
-				this->obj.DrawModel();
-			}
-		}
-		void draw(const bool& canget, std::string& name) {
-			if (this->ptr != nullptr) {
-				if (canget && name == this->ptr->name) {
-					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
-					auto c = MV1GetDifColorScale(this->obj.get());
-					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
-					this->obj.DrawModel();
-					MV1SetDifColorScale(this->obj.get(), c);
-				}
-				else {
-					this->obj.DrawModel();
-				}
-			}
-		}
-		void delete_item() {
-			this->ptr = nullptr;
-			this->obj.Dispose();
-		}
-	};
-	class Mag_item {
-	public:
-		VECTOR_ref pos, add;
-		MATRIX_ref mat;
-		MV1 obj;
-		Gun* ptr = nullptr;
-
-		size_t cap = 0;
-
-		void set(Gun*gundata, const VECTOR_ref& pos_,const MATRIX_ref& mat_) {
-			if (gundata->mag.name.find("none") == std::string::npos) {
-				this->pos = pos_;
-				this->add = VGet(0, 0, 0);
-				this->mat = mat_;
-				//手
-				this->ptr = gundata;
-				this->obj = this->ptr->mag.mag.Duplicate();
-			}
-			else {
-				this->delete_item();
-			}
-		}
-		void draw() {
-			if (this->ptr != nullptr) {
-				this->obj.DrawModel();
-			}
-		}
-		void draw(const bool& canget, std::string& name) {
-			if (this->ptr != nullptr) {
-				if (canget && name == this->ptr->name) {
-					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
-					auto c = MV1GetDifColorScale(this->obj.get());
-					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
-					this->obj.DrawModel();
-					MV1SetDifColorScale(this->obj.get(), c);
-				}
-				else {
-					this->obj.DrawModel();
-				}
-			}
-		}
-		void delete_item() {
-			this->ptr = nullptr;
-			this->obj.Dispose();
-		}
-	};
 	//実際に発射される弾
 	class ammos {
 	public:
@@ -460,6 +379,10 @@ public:
 		float yadd = 0.f;
 		VECTOR_ref pos, repos, vec;
 
+		void ready() {
+			this->flug = false;
+			this->color = GetColor(255, 255, 172);
+		}
 		void set(Ammos* spec_t, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t) {
 			this->spec = spec_t;
 			this->pos = pos_t;
@@ -469,6 +392,11 @@ public:
 			this->cnt = 0.f;
 			this->yadd = 0.f;
 			this->repos = this->pos;
+		}
+		void draw() {
+			if (this->flug) {
+				DXDraw::Capsule3D(this->pos, this->repos, ((this->spec->caliber - 0.00762f) * 0.1f + 0.00762f), this->color, GetColor(255, 255, 255));
+			}
 		}
 	};
 	//player
@@ -486,6 +414,11 @@ public:
 			VECTOR_ref pos;
 			VECTOR_ref add;
 			MATRIX_ref mat;
+			void ready() {
+				this->cnt = -1.f;
+				this->pos = VGet(0, 0, 0);
+				this->mat = MGetIdent();
+			}
 			void set(Ammos* spec_t, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t, const MATRIX_ref& mat_t) {
 				this->second.Dispose();
 				this->second = spec_t->ammo.Duplicate();
@@ -493,6 +426,49 @@ public:
 				this->pos = pos_t;//排莢
 				this->add = vec_t;//排莢ベクトル
 				this->mat = mat_t;
+			}
+			template<class Y, class D>
+			void get(std::unique_ptr<Y, D>& mapparts,Chara&c) {
+				if (this->cnt >= 0.f) {
+					float fps = GetFPS();
+
+					this->cnt += 1.f / fps;
+					this->pos += this->add*(float(200 + GetRand(1000)) / 1000.f);
+					this->add.yadd(-9.8f / powf(fps, 2.f));
+
+					auto pp = mapparts->map_col_line(this->pos + VGet(0, 1.f, 0), this->pos - VGet(0, 0.008f, 0), 0);
+					if (pp.HitFlag == 1) {
+						this->pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.008f, 0);
+						this->add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(this->add*-1.f)*1.25f);
+						easing_set(&this->add, VGet(0, 0, 0), 0.95f, fps);
+						if (!this->down) {
+							c.audio.case_down.play_3D(c.pos + c.pos_LHAND, 1.f);
+						}
+
+						this->mat *= MATRIX_ref::RotVec2(this->mat.yvec(), VECTOR_ref(pp.Normal));
+
+						this->down = true;
+					}
+					else {
+						this->mat *= MATRIX_ref::RotY(deg2rad(360 * 10 + GetRand(360 * 20)) / fps);
+					}
+					if (this->cnt >= 3.f) {
+						this->cnt = -1.f;
+					}
+
+					this->second.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
+				}
+				else {
+					this->down = false;
+				}
+			}
+			void draw() {
+				if (this->cnt >= 0.f) {
+					this->second.DrawModel();
+				}
+			}
+			void delete_cart() {
+				this->second.Dispose();
 			}
 		};
 		struct gun_state {
@@ -516,6 +492,8 @@ public:
 				this->obj.Dispose();
 			}
 		};
+
+		GraphHandle* ScopeScreen;
 	public:
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
@@ -570,7 +548,7 @@ public:
 		bool canget_magitem = false;
 		std::string canget_mag;
 		//
-		void ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s) {
+		void ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s, MV1& hand_, GraphHandle* scope) {
 			this->gun_slot_backup = gundata_backup;
 			this->gun_slot[0].set(gundata);
 			this->gun_slot[1].delete_gun();
@@ -581,12 +559,13 @@ public:
 				s.in = 0;
 				s.select = 0;
 			}
+			//手
+			this->body = hand_.Duplicate();
+			ScopeScreen = scope;
 		}
-		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid, const GraphHandle& scope, MV1& hand_) {
+		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid) {
 			this->pos = pos_;
 			this->mat = mat_;
-			//手
-			this->body = hand_.Duplicate();// .Duplicate();
 			if (gunid >= 0) {
 				this->ptr_now = this->gun_slot[gunid].ptr;
 			}
@@ -595,13 +574,11 @@ public:
 			}
 			this->ptr_now->mod.obj.DuplicateonAnime(&this->obj);
 			if (this->ptr_now->frame[4].first != INT_MAX) {
-				this->obj.SetTextureGraphHandle(1, scope, false);	//スコープ
+				this->obj.SetTextureGraphHandle(1, *ScopeScreen, false);	//スコープ
 			}
 			this->mag = this->ptr_now->mag.mag.Duplicate();
 			for (auto& a : this->cart) {
-				a.cnt = -1.f;
-				a.pos = VGet(0, 0, 0);
-				a.mat = MGetIdent();
+				a.ready();
 			}
 			this->LEFT_hand = false;
 			if (this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
@@ -623,8 +600,7 @@ public:
 			}
 			fill_id(this->effcs);			      //エフェクト
 			for (auto& a : this->bullet) {
-				a.flug = false;
-				a.color = GetColor(255, 255, 172);
+				a.ready();
 			}
 			SetCreate3DSoundFlag(TRUE);
 			this->audio.shot = this->ptr_now->audio.shot.Duplicate();
@@ -635,7 +611,7 @@ public:
 			this->audio.case_down = this->ptr_now->audio.case_down.Duplicate();
 			SetCreate3DSoundFlag(FALSE);
 		}
-		void draw(const bool& usegun, const int& sel_gun) {
+		void draw_chara(const bool& usegun, const int& sel_gun) {
 			this->body.DrawModel();
 			this->obj.DrawModel();
 			if (this->ptr_now->cate == 1) {
@@ -643,8 +619,7 @@ public:
 					this->mag.DrawModel();
 				}
 				for (auto& a : this->cart) {
-					if (a.cnt < 0.f) { continue; }
-					a.second.DrawModel();
+					a.draw();
 				}
 			}
 			for (auto& s : this->gun_slot) {
@@ -656,8 +631,7 @@ public:
 		void draw_ammo() {
 			if (this->ptr_now->cate == 1) {
 				for (auto& a : this->bullet) {
-					if (!a.flug) { continue; }
-					DXDraw::Capsule3D(a.pos, a.repos, ((a.spec->caliber - 0.00762f) * 0.1f + 0.00762f), a.color, GetColor(255, 255, 255));
+					a.draw();
 				}
 			}
 		}
@@ -666,7 +640,7 @@ public:
 			this->obj.Dispose();
 			this->mag.Dispose();
 			for (auto& a : this->cart) {
-				a.second.Dispose();
+				a.delete_cart();
 			}
 			this->audio.shot.Dispose();
 			this->audio.slide.Dispose();
@@ -681,11 +655,188 @@ public:
 				t.handle.Dispose();
 			}
 		}
-		void init() {
+		void init_chara() {
+			this->body.Dispose();
 			delete_chara();
 			for (auto& h : gun_slot) {
 				h.delete_gun();
 			}
+		}
+	};
+
+
+	//アイテム
+	class Items {
+	public:
+		//共通
+		VECTOR_ref pos, add;
+		MATRIX_ref mat;
+		MV1 obj;
+		Gun* ptr = nullptr;
+		//マガジン専用パラメーター
+		size_t cap = 0;
+		//
+		void set(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
+			bool choose = true;
+
+			switch (cat) {
+			case 0:
+				choose = true;
+				break;
+			case 1:
+				choose = gundata->mag.name.find("none") == std::string::npos;
+				break;
+			default:
+				choose = true;
+				break;
+			}
+
+			if (choose) {
+				this->pos = pos_;
+				this->add = VGet(0, 0, 0);
+				this->mat = mat_;
+				//手
+				this->ptr = gundata;
+				switch (cat) {
+				case 0:
+					this->obj = this->ptr->mod.obj.Duplicate();
+					break;
+				case 1:
+					this->obj = this->ptr->mag.mag.Duplicate();
+					break;
+				default:
+					this->obj = this->ptr->mod.obj.Duplicate();
+					break;
+				}
+			}
+			else {
+				this->delete_item();
+			}
+		}
+
+		template<class Y, class D>
+		void get(
+			Chara& mine, std::vector<Items>& item,
+			std::unique_ptr<Y, D>& mapparts,
+			switchs& chgun,
+			int& sel_g2,
+			switchs& usegun,
+			uint8_t& change_gun,
+			VECTOR_ref& gunpos_TPS,
+			int cat
+		) {
+			if (this->ptr != nullptr) {
+				float fps = GetFPS();
+				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
+				this->pos += this->add;
+				this->add.yadd(-9.8f / powf(fps, 2.f));
+				for (auto& p : item) {
+					if (p.ptr != nullptr && &p != &*this) {
+						if ((p.pos - this->pos).size() <= 0.1f) {
+							p.add.xadd((p.pos - this->pos).x()*10.f / fps);
+							p.add.zadd((p.pos - this->pos).z()*10.f / fps);
+							this->add.xadd((this->pos - p.pos).x()*10.f / fps);
+							this->add.zadd((this->pos - p.pos).z()*10.f / fps);
+						}
+					}
+				}
+				auto pp = mapparts->map_col_line(this->pos + VGet(0, 1.f, 0), this->pos - VGet(0, 0.05f, 0), 0);
+				if (pp.HitFlag == 1) {
+					this->pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
+					this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal));
+					easing_set(&this->add, VGet(0, 0, 0), 0.8f, fps);
+				}
+				//
+				VECTOR_ref startpos = mine.obj.frame(mine.ptr_now->frame[3].first);
+				VECTOR_ref endpos = mine.obj.frame(mine.ptr_now->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
+				auto p = mapparts->map_col_line(startpos, endpos, 0);
+				if (p.HitFlag == 1) {
+					endpos = p.HitPosition;
+				}
+				switch (cat){
+				case 0:
+					mine.canget_gunitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
+					if (mine.canget_gunitem) {
+						mine.canget_gun = this->ptr->name;
+						if (chgun.second == 1) {
+							auto pos_t = mine.pos;
+							auto mat_t = mine.mat;
+							int sel_t = sel_g2;
+							Gun* gun_t = this->ptr;
+							this->delete_item();
+							for (size_t i = 0; i < mine.gun_slot.size(); i++) {
+								if (mine.gun_slot[i].ptr == nullptr) {
+									sel_t = sel_g2 = int(i);
+									break;
+								}
+								if (i == mine.gun_slot.size() - 1) {
+									sel_t = sel_g2;
+									if (!usegun.first) {
+										++sel_t %= mine.gun_slot.size();
+										if (mine.gun_slot[sel_t].ptr == nullptr) {
+											sel_t = 0;
+										}
+									}
+									this->set(mine.gun_slot[sel_t].ptr, mine.pos + mine.pos_LHAND, mine.mat_LHAND, 0);
+								}
+
+							}
+							if (!usegun.first) {
+								usegun.first = true;
+								change_gun = 1;
+							}
+							//
+							mine.gun_slot[sel_t].delete_gun();
+							mine.gun_slot[sel_t].set(gun_t);
+							mine.delete_chara();
+							mine.set_chara(pos_t, mat_t, sel_t);
+							gunpos_TPS = VGet(0, 0, 0);
+						}
+					}
+					break;
+				case 1:
+					mine.canget_magitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
+					if (mine.canget_magitem) {
+						mine.canget_mag = this->ptr->mag.name;
+						if (chgun.second == 1) {
+							mine.gun_stat[this->ptr->id].in += this->cap;
+							mine.gun_stat[this->ptr->id].mag_in.insert(mine.gun_stat[this->ptr->id].mag_in.end(), this->cap);
+							if (mine.gun_stat[this->ptr->id].mag_in.size() == 1) {
+								mine.reloadf = true;
+							}
+							this->delete_item();
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+			//個別
+		}
+
+		void draw() {
+			if (this->ptr != nullptr) {
+				this->obj.DrawModel();
+			}
+		}
+		void draw(const bool& canget, std::string& name) {
+			if (this->ptr != nullptr) {
+				if (canget && name == this->ptr->name) {
+					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
+					auto c = MV1GetDifColorScale(this->obj.get());
+					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
+					this->obj.DrawModel();
+					MV1SetDifColorScale(this->obj.get(), c);
+				}
+				else {
+					this->obj.DrawModel();
+				}
+			}
+		}
+		void delete_item() {
+			this->ptr = nullptr;
+			this->obj.Dispose();
 		}
 	};
 };
