@@ -534,13 +534,21 @@ public:
 		MATRIX_ref mat_HMD;
 		float add_ypos = 0.f;//垂直加速度
 		float body_yrad = 0.f;//胴体角度
-		//左手座標系
+		frames head_f;
+		//
+		frames bodyb_f;
+		frames body_f;
+		//右手座標系
 		VECTOR_ref pos_LHAND;
 		MATRIX_ref mat_LHAND;
 		VECTOR_ref vecadd_LHAND, vecadd_LHAND_p;//
-		//右手座標系
+		frames RIGHThand_f;
+		frames RIGHTarm2_f;
+		frames RIGHTarm1_f;
+		//左手座標系
 		VECTOR_ref pos_RHAND;
 		MATRIX_ref mat_RHAND;
+		frames LEFThand_f;
 		//
 		bool canget_gunitem = false;
 		std::string canget_gun;
@@ -561,6 +569,97 @@ public:
 			}
 			//手
 			this->body = hand_.Duplicate();
+			for (size_t i = 0; i < this->body.frame_num();i++) {
+				std::string p = this->body.frame_name(i);
+				if (p.find("下半身") != std::string::npos) {
+
+				}
+				else if (p.find("左足") != std::string::npos) {
+
+				}
+				else if (p.find("左ひざ") != std::string::npos) {
+
+				}
+				else if (p.find("左足首") != std::string::npos) {
+
+				}
+				else if (p.find("左足首先") != std::string::npos) {
+
+				}
+				else if (p.find("右足") != std::string::npos) {
+
+				}
+				else if (p.find("右ひざ") != std::string::npos) {
+
+				}
+				else if (p.find("右足首") != std::string::npos) {
+
+				}
+				else if (p.find("右足首先") != std::string::npos) {
+
+				}
+				else if (p.find("下半身先") != std::string::npos) {
+
+				}
+				else if (p.find("上半身") != std::string::npos && p.find("上半身2") == std::string::npos) {
+					bodyb_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("上半身2") != std::string::npos) {
+					body_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("首") != std::string::npos && p.find("手") == std::string::npos) {
+
+				}
+				else if (p.find("頭") != std::string::npos && p.find("先") == std::string::npos) {
+					head_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("頭先") != std::string::npos) {
+
+				}
+				else if (p.find("右肩") != std::string::npos) {
+
+				}
+				else if (p.find("右腕") != std::string::npos && p.find("右腕捩") == std::string::npos) {
+					RIGHTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("右腕捩") != std::string::npos) {
+
+				}
+				else if (p.find("右ひじ") != std::string::npos) {
+					RIGHTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("右手捩") != std::string::npos) {
+
+				}
+				else if (p.find("右手首") != std::string::npos && p.find("先") == std::string::npos) {
+					RIGHThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("右手首先") != std::string::npos) {
+
+				}
+				else if (p.find("左肩") != std::string::npos) {
+
+				}
+				else if (p.find("左腕") != std::string::npos) {
+
+				}
+				else if (p.find("左腕捩") != std::string::npos) {
+
+				}
+				else if (p.find("左ひじ") != std::string::npos) {
+
+				}
+				else if (p.find("左手捩") != std::string::npos) {
+
+				}
+				else if (p.find("左手首") != std::string::npos && p.find("先") == std::string::npos) {
+					LEFThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("左手首先") != std::string::npos) {
+
+				}
+			}
+
 			ScopeScreen = scope;
 		}
 		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid) {

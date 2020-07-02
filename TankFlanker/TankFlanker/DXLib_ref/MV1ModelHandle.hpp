@@ -54,7 +54,7 @@ public:
 
 
 	bool DrawFrame(const int& p1) const noexcept { return MV1DrawFrame(this->handle_, p1) == TRUE; }
-	std::string frame_name(const int& p1) noexcept { return MV1GetFrameName(this->handle_, p1); }
+	std::string frame_name(const size_t& p1) noexcept { return MV1GetFrameName(this->handle_, int(p1)); }
 
 	void frame_reset(const int& p1) const noexcept { MV1ResetFrameUserLocalMatrix(this->handle_, p1); }
 	/*マテリアル*/
