@@ -21,19 +21,15 @@ public:
 	~Mapclass() {
 
 	}
-	void set_map_pre() {
-		MV1::Load("data/map/model.mv1", &map, true);		   //map
-		MV1::Load("data/map/col.mv1", &map_col, true);		   //mapコリジョン
-		MV1::Load("data/model/sky/model.mv1", &sky, true);	 //空
+	void Ready_map(std::string dir) {
+		MV1::Load(dir + "/model.mv1", &map, true);		   //map
+		MV1::Load(dir + "/col.mv1", &map_col, true);		   //mapコリジョン
+		MV1::Load(dir + "/sky/model.mv1", &sky, true);	 //空
 		SetUseASyncLoadFlag(TRUE);
-		envi = SoundHandle::Load("data/audio/envi.wav");
+		envi = SoundHandle::Load(dir + "/envi.wav");
 		SetUseASyncLoadFlag(FALSE);
 	}
-	void set_map(const char* item_txt,
-			std::vector<Items>& gunitem,
-			std::vector<Items>& magitem,
-			std::vector<Gun>& gun_data
-		) {
+	void Set_map(const char* item_txt, std::vector<Items>& item_data, std::vector<Gun>& gun_data) {
 		map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 		VECTOR_ref size;
 		for (int i = 0; i < map_col.mesh_num(); i++) {
@@ -54,11 +50,10 @@ public:
 		SetFogStartEnd(0.0f, 300.f);
 		SetFogColor(128, 128, 128);
 
-		gunitem.clear();
-		magitem.clear();
+		item_data.clear();
 		{
 			int mdata = FileRead_open(item_txt, FALSE);
-			//gunitem
+			//item_data
 			while (true) {
 				auto p = getparams::_str(mdata);
 				if (getright(p.c_str()).find("end") == std::string::npos) {
@@ -74,8 +69,8 @@ public:
 					p3 = getparams::_float(mdata);
 					p4 = getparams::_float(mdata);
 
-					gunitem.resize(gunitem.size() + 1);
-					gunitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),0);
+					item_data.resize(item_data.size() + 1);
+					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),0);
 				}
 				else {
 					break;
@@ -97,10 +92,10 @@ public:
 					p3 = getparams::_float(mdata);
 					p4 = getparams::_float(mdata);
 
-					magitem.resize(magitem.size() + 1);
-					magitem.back().set(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),1);
-					if (magitem.back().ptr != nullptr) {
-						magitem.back().cap = magitem.back().ptr->ammo_max;
+					item_data.resize(item_data.size() + 1);
+					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),1);
+					if (item_data.back().ptr != nullptr) {
+						item_data.back().cap = item_data.back().ptr->ammo_max;
 					}
 				}
 				else {
@@ -110,11 +105,10 @@ public:
 			FileRead_close(mdata);
 		}
 	}
-
-	void start_map() {
+	void Start_map() {
 		envi.play(DX_PLAYTYPE_LOOP, TRUE);
 	}
-	void delete_map() {
+	void Delete_map() {
 		map.Dispose();		   //map
 		map_col.Dispose();		   //mapコリジョン
 		sky.Dispose();	 //空

@@ -32,9 +32,10 @@ struct EffectS {
 
 class DXDraw {
 private:
-	bool use_shadow = true;			     /*影描画*/
-	int shadow_near = 0;			     /*近影*/
-	int shadow_far = 0;			     /*遠影*/
+	bool use_shadow = true;			/*影描画*/
+	int shadow_near = 0;			/*近影*/
+	int shadow_far = 0;				/*遠影*/
+	size_t shadow_size = 10;		/*影サイズ*/
 	bool use_pixellighting = true;			     /**/
 	bool use_vsync = false;				     /*垂直同期*/
 	float frate = 60.f;				     /*フレームレート*/
@@ -47,18 +48,19 @@ public:
 	const EffekseerEffectHandle& get_effHandle(int p1) const noexcept { return effHndle[p1]; }
 	EffekseerEffectHandle& get_gndhitHandle() noexcept { return gndsmkHndle; }
 	const EffekseerEffectHandle& get_gndhitHandle() const noexcept { return gndsmkHndle; }
-
-	DXDraw(const char* title, const int& xd, const int& yd, const int& o_xd, const int& o_yd, const float& fps = 60.f, const bool& usesdw = true, const bool& getlog = false) {
-		use_shadow = usesdw;
-		disp_x = xd;
-		disp_y = yd;
+	template<class Y, class D>
+	DXDraw(const char* title, const int& xd, const int& yd, const int& o_xd, const int& o_yd, std::unique_ptr<Y, D>& settings, const float& fps = 60.f) {
+		this->use_shadow = settings->shadow_e;
+		this->shadow_size = settings->shadow_level_e;
+		this->disp_x = xd;
+		this->disp_y = yd;
 
 		frate = fps;
-		SetOutApplicationLogValidFlag(getlog ? TRUE : FALSE);  /*log*/
+		SetOutApplicationLogValidFlag(settings->getlog_e ? TRUE : FALSE);  /*log*/
 		SetMainWindowText(title);			       /*タイトル*/
 		ChangeWindowMode(TRUE);				       /*窓表示*/
 		SetUseDirect3DVersion(DX_DIRECT3D_11);		       /*directX ver*/
-		SetGraphMode(disp_x, disp_y, 32);		       /*解像度*/
+		SetGraphMode(this->disp_x, this->disp_y, 32);		       /*解像度*/
 		SetUseDirectInputFlag(TRUE);			       /**/
 		SetDirectInputMouseMode(TRUE);			       /**/
 		SetWindowSizeChangeEnableFlag(FALSE, FALSE);	       /*ウインドウサイズを手動不可、ウインドウサイズに合わせて拡大もしないようにする*/
@@ -85,7 +87,7 @@ public:
 		SetWindowSize(o_xd, o_yd);
 		SetWindowPosition(
 			//*
-			deskx+
+			//deskx+
 			//*/
 			(deskx - o_xd) / 2 - 8, (desky - o_yd) / 2 - 32);
 	}
@@ -94,12 +96,12 @@ public:
 		DxLib_End();
 	}
 	template <typename T>
-	bool Set_Light_Shadow(const size_t& scale, const VECTOR_ref& farsize, const VECTOR_ref& Light_dir, T doing) {
+	bool Set_Light_Shadow(const VECTOR_ref& farsize, const VECTOR_ref& Light_dir, T doing) {
 		SetGlobalAmbientLight(GetColorF(0.12f, 0.11f, 0.10f, 0.0f));
 		SetLightDirection(Light_dir.get());
-		if (use_shadow) {
-			shadow_near = MakeShadowMap(int(pow(2, scale)), int(pow(2, scale)));
-			shadow_far = MakeShadowMap(int(pow(2, scale)), int(pow(2, scale)));
+		if (this->use_shadow) {
+			shadow_near = MakeShadowMap(int(pow(2, this->shadow_size)), int(pow(2, this->shadow_size)));
+			shadow_far = MakeShadowMap(int(pow(2, this->shadow_size)), int(pow(2, this->shadow_size)));
 			SetShadowMapAdjustDepth(shadow_near, 0.0005f);
 			SetShadowMapLightDirection(shadow_near, Light_dir.get());
 			SetShadowMapLightDirection(shadow_far, Light_dir.get());
@@ -111,7 +113,7 @@ public:
 		return true;
 	}
 	bool Delete_Shadow() {
-		if (use_shadow) {
+		if (this->use_shadow) {
 			DeleteShadowMap(shadow_near);
 			DeleteShadowMap(shadow_far);
 		}
@@ -120,7 +122,7 @@ public:
 
 	template <typename T>
 	bool Ready_Shadow(const VECTOR_ref& pos, T doing, const VECTOR_ref& nearsize) {
-		if (use_shadow) {
+		if (this->use_shadow) {
 			SetShadowMapDrawArea(shadow_near, (nearsize*(-1.f) + pos).get(), (VECTOR_ref(nearsize) + pos).get());
 			ShadowMap_DrawSetup(shadow_near);
 			doing();
@@ -131,12 +133,12 @@ public:
 	}
 	template <typename T>
 	bool Draw_by_Shadow(T doing) {
-		if (use_shadow) {
+		if (this->use_shadow) {
 			SetUseShadowMap(0, shadow_near);
 			SetUseShadowMap(1, shadow_far);
 		}
 		doing();
-		if (use_shadow) {
+		if (this->use_shadow) {
 			SetUseShadowMap(0, -1);
 			SetUseShadowMap(1, -1);
 		}

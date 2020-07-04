@@ -12,11 +12,12 @@ private:
 	int disp_x = 1920;
 	int disp_y = 1080;
 public:
-	HostPassEffect(const bool& dof_, const bool& bloom_, const int& xd, const int& yd) {
+	template<class Y, class D>
+	HostPassEffect(const int& xd, const int& yd, std::unique_ptr<Y, D>& settings) {
 		disp_x = xd;
 		disp_y = yd;
-		dof_flag = dof_;
-		bloom_flag = bloom_;
+		dof_flag = settings->dof_e;
+		bloom_flag = settings->bloom_e;
 		FarScreen = GraphHandle::Make(disp_x, disp_y, true);
 		MainScreen = GraphHandle::Make(disp_x, disp_y, true);
 		NearScreen = GraphHandle::Make(disp_x, disp_y, true);

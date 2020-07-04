@@ -45,15 +45,16 @@ public:
 	const auto& get_hand1_num(void) { return hand1_num; }
 	const auto& get_hand2_num(void) { return hand2_num; }
 	auto* get_device(void) { return &ctrl; }
-	VRDraw(bool* usevr) {
-		use_vr = *usevr;
+	template<class Y, class D>
+	VRDraw(std::unique_ptr<Y, D>& settings) {
+		use_vr = settings->useVR_e;
 		if (use_vr) {
 			eError = vr::VRInitError_None;
 			m_pHMD = vr::VR_Init(&eError, vr::VRApplication_Scene);
 			if (eError != vr::VRInitError_None) {
 				m_pHMD = nullptr;
 				use_vr = false;
-				*usevr = false;
+				settings->useVR_e = false;
 			}
 		}
 	}

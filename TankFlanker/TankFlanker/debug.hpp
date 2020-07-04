@@ -10,8 +10,8 @@ private:
 	FontHandle font;
 	const int fontsize = 12;
 public:
-	DeBuG(const int& fps_rate = 60) {
-		frate = fps_rate;
+	DeBuG(const float& fps_rate = 60.f) {
+		frate = int(fps_rate);
 		font = FontHandle::Create(fontsize, DX_FONTTYPE_EDGE);
 		deb.resize(frate);
 	}

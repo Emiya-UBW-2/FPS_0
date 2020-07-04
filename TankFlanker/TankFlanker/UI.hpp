@@ -54,7 +54,7 @@ private:
 	//チュートリアル
 	int display_c1 = 0;
 public:
-	UI(const int& o_xd, const int& o_yd, const int& xd, const int& yd) {
+	UI(const int& xd, const int& yd, const int& o_xd, const int& o_yd) {
 		out_disp_x = o_xd;
 		out_disp_y = o_yd;
 		disp_x = xd;
@@ -93,13 +93,8 @@ public:
 	~UI() {
 	}
 	template<class Y, class D, class H, class T>
-	int select_window(
-		bool useVR_e,
-		std::vector<Mainclass::Gun>& gun_data,
-		std::unique_ptr<Y, D>& vrparts,
-		std::unique_ptr<H, T>& settings
-	) {
-		float fov = deg2rad(useVR_e ? 90 : 45);
+	int select_window(std::vector<Mainclass::Gun>& gun_data, std::unique_ptr<Y, D>& vrparts, std::unique_ptr<H, T>& settings) {
+		float fov = deg2rad(settings->useVR_e ? 90 : 45);
 		int sel_g = 0;
 		VECTOR_ref campos;
 		float gun_yrad = 90.f;
@@ -120,7 +115,7 @@ public:
 			if (!startp) {
 				//VR用
 				if (!setf.first) {
-					if (useVR_e) {
+					if (settings->useVR_e) {
 						vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
 						if (vrparts->get_hand1_num() != -1) {
 							auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
@@ -198,7 +193,7 @@ public:
 					DrawBox(0, 0, disp_x, disp_y, GetColor(255, 255, 255), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
-				if (useVR_e) {
+				if (settings->useVR_e) {
 					for (char i = 0; i < 2; i++) {
 						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 						outScreen.DrawGraph(0, 0, false);
@@ -758,46 +753,35 @@ public:
 	}
 
 	template <class T>
-	void item_draw(std::vector<T> &gunitem, const VECTOR_ref& pos,int cate) {
-		switch (cate) {
-		case 0:
-			for (auto& g : gunitem) {
-				if (g.ptr != nullptr) {
-					VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
-					if (p.z() >= 0.f&&p.z() <= 1.f) {
-						float r_ = std::max((g.pos - pos).size(), 1.f);
-						if (r_ <= 10.f) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-							DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
-							DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
-							font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->name, GetColor(255, 0, 0));
-							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						}
+	void item_draw(std::vector<T> &item_data, const VECTOR_ref& pos) {
+		for (auto& g : item_data) {
+			if (g.ptr != nullptr && g.cate == 0) {
+				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+				if (p.z() >= 0.f&&p.z() <= 1.f) {
+					float r_ = std::max((g.pos - pos).size(), 1.f);
+					if (r_ <= 10.f) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
+						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->name, GetColor(255, 0, 0));
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
 			}
-			break;
-		case 1:
-			for (auto& g : gunitem) {
-				if (g.ptr != nullptr) {
-					VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
-					if (p.z() >= 0.f&&p.z() <= 1.f) {
-						float r_ = std::max((g.pos - pos).size(), 1.f);
-						if (r_ <= 10.f && g.ptr->mag.name.find("none") == std::string::npos) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-							DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
-							DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
-							font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->mag.name, GetColor(255, 0, 0));
-							font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d", g.cap, g.ptr->ammo_max);
-							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						}
+			else if (g.ptr != nullptr && g.cate == 1) {
+				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+				if (p.z() >= 0.f&&p.z() <= 1.f) {
+					float r_ = std::max((g.pos - pos).size(), 1.f);
+					if (r_ <= 10.f && g.ptr->mag.name.find("none") == std::string::npos) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+						DrawCircle(int(p.x()), int(p.y()), y_r(36, disp_y), GetColor(255, 0, 0), FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24, disp_y), GetColor(255, 0, 0));
+						font24.DrawString(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y), g.ptr->mag.name, GetColor(255, 0, 0));
+						font24.DrawStringFormat(int(p.x()) + y_r(36, disp_y), int(p.y()) + y_r(36, disp_y) + y_r(18, disp_y), GetColor(255, 0, 0), "%d/%d", g.cap, g.ptr->ammo_max);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
 			}
-			break;
-		default:
-			break;
 		}
-
 	}
 };

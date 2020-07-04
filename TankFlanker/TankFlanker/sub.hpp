@@ -28,7 +28,12 @@ public:
 			this->col_tex = LoadSoftImage("data/model/tgt/point.bmp");
 			this->tex = GraphHandle::Load("data/model/tgt/Target-A2.png");
 		}
-		void set() {
+		~tgttmp() {
+			this->obj.Dispose();
+			DeleteSoftImage(this->col_tex);
+			this->tex.Dispose();
+		}
+		void Set_tgtdata() {
 			this->tex.GetSize(&this->x_size, &this->y_size);
 			this->frame = { 2,this->obj.frame(2) };
 		}
@@ -44,7 +49,7 @@ public:
 		float power = 0.f;
 		bool LR = true, isMOVE = true;
 		template<class Y, class D>
-		void set(std::unique_ptr<Y, D>& tgtparts, const VECTOR_ref& pos) {
+		void Set_tgt(std::unique_ptr<Y, D>& tgtparts, const VECTOR_ref& pos) {
 			obj = tgtparts->obj.Duplicate();
 			pic = GraphHandle::Make(tgtparts->x_size, tgtparts->y_size);
 			pic.SetDraw_Screen(false);
@@ -58,8 +63,7 @@ public:
 			isMOVE = true;
 			obj.SetPosition(pos);
 		}
-
-		void delete_tgt() {
+		void Delete_tgt() {
 			this->obj.Dispose();
 			this->pic.Dispose();
 		}
@@ -103,7 +107,6 @@ public:
 			}
 			this->stack.insert(this->stack.begin() + i, this->point);
 		}
-
 		void reset() {
 			this->point = 0;
 			this->pointup = 0;
@@ -114,19 +117,16 @@ public:
 			this->end_f = false;
 			this->timer = 30.f;
 		}
-
 		void sub(const int& pt) {
 			this->pointdown = pt;
 			if (this->point + this->pointdown >= 0) {
 				this->point += this->pointdown;
 			}
 		}
-
 		void add(const int& pt) {
 			this->pointup = pt;
 			this->point += this->pointup;
 		}
-
 		void move_timer(void) {
 			float fps = GetFPS();
 			if (this->ready_f && !this->start_f) {
@@ -240,22 +240,17 @@ public:
 		std::vector <uint8_t> select;//セレクター
 		Models mod;
 		Audios audio;
-
 		size_t ammo_max = 0;//マガジンの装弾数
 		float recoil_xup = 0.f;
 		float recoil_xdn = 0.f;
 		float recoil_yup = 0.f;
 		float recoil_ydn = 0.f;
-
 		float reload_time = 1.f;//再装填時間
-
 		float ammo_speed = 100.f;//弾速
 		float ammo_pene = 10.f;//貫通
 		float ammo_damege = 10.f;//ダメージ
-
 		std::vector<Ammos> ammo;
 		Mags mag;
-
 		void set_data() {
 			this->name = this->mod.name;
 			this->mod.obj.SetMatrix(MGetIdent());
@@ -442,7 +437,7 @@ public:
 						this->add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(this->add*-1.f)*1.25f);
 						easing_set(&this->add, VGet(0, 0, 0), 0.95f, fps);
 						if (!this->down) {
-							c.audio.case_down.play_3D(c.pos + c.pos_LHAND, 1.f);
+							c.audio.case_down.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 						}
 
 						this->mat *= MATRIX_ref::RotVec2(this->mat.yvec(), VECTOR_ref(pp.Normal));
@@ -492,7 +487,6 @@ public:
 				this->obj.Dispose();
 			}
 		};
-
 		GraphHandle* ScopeScreen;
 	public:
 		/*エフェクト*/
@@ -539,18 +533,16 @@ public:
 		frames bodyb_f;
 		frames body_f;
 		//右手座標系
-		VECTOR_ref pos_LHAND;
-		MATRIX_ref mat_LHAND;
-		VECTOR_ref vecadd_LHAND, vecadd_LHAND_p;//
+		VECTOR_ref pos_RIGHTHAND;
+		MATRIX_ref mat_RIGHTHAND;
+		VECTOR_ref vecadd_RIGHTHAND, vecadd_RIGHTHAND_p;//
 		frames RIGHThand_f;
-		frames RIGHTarm3_f;
 		frames RIGHTarm2_f;
 		frames RIGHTarm1_f;
 		//左手座標系
-		VECTOR_ref pos_RHAND;
-		MATRIX_ref mat_RHAND;
+		VECTOR_ref pos_LEFTHAND;
+		MATRIX_ref mat_LEFTHAND;
 		frames LEFThand_f;
-		frames LEFTarm3_f;
 		frames LEFTarm2_f;
 		frames LEFTarm1_f;
 		//
@@ -560,7 +552,7 @@ public:
 		bool canget_magitem = false;
 		std::string canget_mag;
 		//
-		void ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s, MV1& hand_, GraphHandle* scope) {
+		void Ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s, MV1& hand_, GraphHandle* scope) {
 			this->gun_slot_backup = gundata_backup;
 			this->gun_slot[0].set(gundata);
 			this->gun_slot[1].delete_gun();
@@ -573,7 +565,7 @@ public:
 			}
 			//手
 			this->body = hand_.Duplicate();
-			for (size_t i = 0; i < this->body.frame_num();i++) {
+			for (int i = 0; i < int(this->body.frame_num());i++) {
 				std::string p = this->body.frame_name(i);
 				if (p.find("下半身") != std::string::npos) {
 
@@ -623,13 +615,13 @@ public:
 				else if (p.find("右肩") != std::string::npos) {
 
 				}
-				else if (p.find("右腕") != std::string::npos && p.find("右腕捩") == std::string::npos) {
+				else if (p.find("右腕") != std::string::npos && p.find("捩") == std::string::npos) {
 					RIGHTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("右腕捩") != std::string::npos) {
 				}
 				else if (p.find("右ひじ") != std::string::npos) {
-					RIGHTarm3_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+					RIGHTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("右手捩") != std::string::npos) {
 				}
@@ -642,14 +634,14 @@ public:
 				else if (p.find("左肩") != std::string::npos) {
 
 				}
-				else if (p.find("左腕") != std::string::npos && p.find("左腕捩") == std::string::npos) {
+				else if (p.find("左腕") != std::string::npos && p.find("捩") == std::string::npos) {
 					LEFTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("左腕捩") != std::string::npos) {
 
 				}
 				else if (p.find("左ひじ") != std::string::npos) {
-					LEFTarm3_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+					LEFTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("左手捩") != std::string::npos) {
 
@@ -664,9 +656,12 @@ public:
 
 			ScopeScreen = scope;
 		}
-		void set_chara(const VECTOR_ref& pos_, const MATRIX_ref& mat_, int gunid) {
+		void Set_chara_Position(const VECTOR_ref& pos_, const MATRIX_ref& mat_, const MATRIX_ref& mat_H) {
 			this->pos = pos_;
 			this->mat = mat_;
+			this->mat_HMD = mat_H;
+		}
+		void Set_chara(int gunid) {
 			if (gunid >= 0) {
 				this->ptr_now = this->gun_slot[gunid].ptr;
 			}
@@ -691,8 +686,8 @@ public:
 
 
 			this->gunf = false;
-			this->vecadd_LHAND = VGet(0, 0, 1.f);
-			this->vecadd_LHAND_p = this->vecadd_LHAND;
+			this->vecadd_RIGHTHAND = VGet(0, 0, 1.f);
+			this->vecadd_RIGHTHAND_p = this->vecadd_RIGHTHAND;
 			this->reloadf = false;
 			this->down_mag = true;
 			this->selkey.second = 0;
@@ -712,7 +707,7 @@ public:
 			this->audio.case_down = this->ptr_now->audio.case_down.Duplicate();
 			SetCreate3DSoundFlag(FALSE);
 		}
-		void draw_chara(const bool& usegun, const int& sel_gun) {
+		void Draw_chara(const bool& usegun, const int& sel_gun) {
 			this->body.DrawModel();
 			this->obj.DrawModel();
 			if (this->ptr_now->cate == 1) {
@@ -729,14 +724,14 @@ public:
 				}
 			}
 		}
-		void draw_ammo() {
+		void Draw_ammo() {
 			if (this->ptr_now->cate == 1) {
 				for (auto& a : this->bullet) {
 					a.draw();
 				}
 			}
 		}
-		void delete_chara() {
+		void Delete_chara() {
 			this->ptr_now = nullptr;
 			this->obj.Dispose();
 			this->mag.Dispose();
@@ -756,9 +751,9 @@ public:
 				t.handle.Dispose();
 			}
 		}
-		void init_chara() {
+		void Init_chara() {
 			this->body.Dispose();
-			delete_chara();
+			Delete_chara();
 			for (auto& h : gun_slot) {
 				h.delete_gun();
 			}
@@ -769,6 +764,8 @@ public:
 	//アイテム
 	class Items {
 	public:
+		//種類
+		int cate = 0;
 		//共通
 		VECTOR_ref pos, add;
 		MATRIX_ref mat;
@@ -777,10 +774,10 @@ public:
 		//マガジン専用パラメーター
 		size_t cap = 0;
 		//
-		void set(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
+		void Set_item(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
 			bool choose = true;
-
-			switch (cat) {
+			this->cate = cat;
+			switch (this->cate) {
 			case 0:
 				choose = true;
 				break;
@@ -798,7 +795,7 @@ public:
 				this->mat = mat_;
 				//手
 				this->ptr = gundata;
-				switch (cat) {
+				switch (this->cate) {
 				case 0:
 					this->obj = this->ptr->mod.obj.Duplicate();
 					break;
@@ -811,21 +808,11 @@ public:
 				}
 			}
 			else {
-				this->delete_item();
+				this->Delete_item();
 			}
 		}
-
 		template<class Y, class D>
-		void get(
-			Chara& mine, std::vector<Items>& item,
-			std::unique_ptr<Y, D>& mapparts,
-			switchs& chgun,
-			int& sel_g2,
-			switchs& usegun,
-			uint8_t& change_gun,
-			VECTOR_ref& gunpos_TPS,
-			int cat
-		) {
+		void Get_item( Chara& chara, std::vector<Items>& item, std::unique_ptr<Y, D>& mapparts, switchs& chgun, int& sel_g2, switchs& usegun, uint8_t& change_gun, VECTOR_ref& gunpos_TPS) {
 			if (this->ptr != nullptr) {
 				float fps = GetFPS();
 				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
@@ -848,37 +835,35 @@ public:
 					easing_set(&this->add, VGet(0, 0, 0), 0.8f, fps);
 				}
 				//
-				VECTOR_ref startpos = mine.obj.frame(mine.ptr_now->frame[3].first);
-				VECTOR_ref endpos = mine.obj.frame(mine.ptr_now->frame[3].first) + mine.mat_RHAND.zvec()*-3.f;
+				VECTOR_ref startpos = chara.obj.frame(chara.ptr_now->frame[3].first);
+				VECTOR_ref endpos = chara.obj.frame(chara.ptr_now->frame[3].first) + chara.mat_LEFTHAND.zvec()*-3.f;
 				auto p = mapparts->map_col_line(startpos, endpos, 0);
 				if (p.HitFlag == 1) {
 					endpos = p.HitPosition;
 				}
-				switch (cat){
+				switch (this->cate){
 				case 0:
-					mine.canget_gunitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
-					if (mine.canget_gunitem) {
-						mine.canget_gun = this->ptr->name;
+					chara.canget_gunitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
+					if (chara.canget_gunitem) {
+						chara.canget_gun = this->ptr->name;
 						if (chgun.second == 1) {
-							auto pos_t = mine.pos;
-							auto mat_t = mine.mat;
 							int sel_t = sel_g2;
 							Gun* gun_t = this->ptr;
-							this->delete_item();
-							for (size_t i = 0; i < mine.gun_slot.size(); i++) {
-								if (mine.gun_slot[i].ptr == nullptr) {
+							this->Delete_item();
+							for (size_t i = 0; i < chara.gun_slot.size(); i++) {
+								if (chara.gun_slot[i].ptr == nullptr) {
 									sel_t = sel_g2 = int(i);
 									break;
 								}
-								if (i == mine.gun_slot.size() - 1) {
+								if (i == chara.gun_slot.size() - 1) {
 									sel_t = sel_g2;
 									if (!usegun.first) {
-										++sel_t %= mine.gun_slot.size();
-										if (mine.gun_slot[sel_t].ptr == nullptr) {
+										++sel_t %= chara.gun_slot.size();
+										if (chara.gun_slot[sel_t].ptr == nullptr) {
 											sel_t = 0;
 										}
 									}
-									this->set(mine.gun_slot[sel_t].ptr, mine.pos + mine.pos_LHAND, mine.mat_LHAND, 0);
+									this->Set_item(chara.gun_slot[sel_t].ptr, chara.pos + chara.pos_RIGHTHAND, chara.mat_RIGHTHAND, 0);
 								}
 
 							}
@@ -887,25 +872,25 @@ public:
 								change_gun = 1;
 							}
 							//
-							mine.gun_slot[sel_t].delete_gun();
-							mine.gun_slot[sel_t].set(gun_t);
-							mine.delete_chara();
-							mine.set_chara(pos_t, mat_t, sel_t);
+							chara.gun_slot[sel_t].delete_gun();
+							chara.gun_slot[sel_t].set(gun_t);
+							chara.Delete_chara();
+							chara.Set_chara(sel_t);
 							gunpos_TPS = VGet(0, 0, 0);
 						}
 					}
 					break;
 				case 1:
-					mine.canget_magitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
-					if (mine.canget_magitem) {
-						mine.canget_mag = this->ptr->mag.name;
+					chara.canget_magitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
+					if (chara.canget_magitem) {
+						chara.canget_mag = this->ptr->mag.name;
 						if (chgun.second == 1) {
-							mine.gun_stat[this->ptr->id].in += this->cap;
-							mine.gun_stat[this->ptr->id].mag_in.insert(mine.gun_stat[this->ptr->id].mag_in.end(), this->cap);
-							if (mine.gun_stat[this->ptr->id].mag_in.size() == 1) {
-								mine.reloadf = true;
+							chara.gun_stat[this->ptr->id].in += this->cap;
+							chara.gun_stat[this->ptr->id].mag_in.insert(chara.gun_stat[this->ptr->id].mag_in.end(), this->cap);
+							if (chara.gun_stat[this->ptr->id].mag_in.size() == 1) {
+								chara.reloadf = true;
 							}
-							this->delete_item();
+							this->Delete_item();
 						}
 					}
 					break;
@@ -915,27 +900,40 @@ public:
 			}
 			//個別
 		}
-
-		void draw() {
+		void Draw_item() {
 			if (this->ptr != nullptr) {
 				this->obj.DrawModel();
 			}
 		}
-		void draw(const bool& canget, std::string& name) {
+		void Draw_item(Chara& chara) {
 			if (this->ptr != nullptr) {
-				if (canget && name == this->ptr->name) {
-					DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
-					auto c = MV1GetDifColorScale(this->obj.get());
-					MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
-					this->obj.DrawModel();
-					MV1SetDifColorScale(this->obj.get(), c);
+				if (this->cate == 0) {
+					if (chara.canget_gunitem && chara.canget_gun == this->ptr->name) {
+						DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
+						auto c = MV1GetDifColorScale(this->obj.get());
+						MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
+						this->obj.DrawModel();
+						MV1SetDifColorScale(this->obj.get(), c);
+					}
+					else {
+						this->obj.DrawModel();
+					}
 				}
-				else {
-					this->obj.DrawModel();
+				else if (this->cate == 1) {
+					if (chara.canget_magitem && chara.canget_mag == this->ptr->name) {
+						DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
+						auto c = MV1GetDifColorScale(this->obj.get());
+						MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));
+						this->obj.DrawModel();
+						MV1SetDifColorScale(this->obj.get(), c);
+					}
+					else {
+						this->obj.DrawModel();
+					}
 				}
 			}
 		}
-		void delete_item() {
+		void Delete_item() {
 			this->ptr = nullptr;
 			this->obj.Dispose();
 		}
