@@ -113,7 +113,7 @@ void fill_id(std::array<T, N>& vect) {
 }
 //cosAを出す
 float getcos_tri(const float& a, const float& b, const float& c) {
-	if (a + b > c && b + c > a && c + a > b) {
+	if (b + c > a && c + a > b && a + b > c) {
 		return std::clamp((b * b + c * c - a * a) / (2.f * b*c), -1.f, 1.f);
 	}
 	return 1.f;

@@ -456,19 +456,21 @@ public:
 					xp = disp_x / 2 - disp_y / 10;
 					yp = disp_y / 2 + disp_y / 8;
 				}
-				switch (chara.ptr_now->select[chara.gun_stat[chara.gun_slot[sel_gun].ptr->id].select]) {
-				case 1:
-					font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(0, 255, 0));
-					break;
-				case 2:
-					font->DrawString(xp - font->GetDrawWidth("FULL AUTO") / 2, yp, "FULL AUTO", GetColor(0, 255, 0));
-					break;
-				case 3:
-					font->DrawString(xp - font->GetDrawWidth("3B") / 2, yp, "3B", GetColor(0, 255, 0));
-					break;
-				case 4:
-					font->DrawString(xp - font->GetDrawWidth("2B") / 2, yp, "2B", GetColor(0, 255, 0));
-					break;
+				if (sel_gun >= 0) {
+					switch (chara.ptr_now->select[chara.gun_stat[chara.gun_slot[sel_gun].ptr->id].select]) {
+					case 1:
+						font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(0, 255, 0));
+						break;
+					case 2:
+						font->DrawString(xp - font->GetDrawWidth("FULL AUTO") / 2, yp, "FULL AUTO", GetColor(0, 255, 0));
+						break;
+					case 3:
+						font->DrawString(xp - font->GetDrawWidth("3B") / 2, yp, "3B", GetColor(0, 255, 0));
+						break;
+					case 4:
+						font->DrawString(xp - font->GetDrawWidth("2B") / 2, yp, "2B", GetColor(0, 255, 0));
+						break;
+					}
 				}
 			}
 			//ƒAƒCƒeƒ€E‚¢

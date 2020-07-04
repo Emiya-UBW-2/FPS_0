@@ -543,12 +543,16 @@ public:
 		MATRIX_ref mat_LHAND;
 		VECTOR_ref vecadd_LHAND, vecadd_LHAND_p;//
 		frames RIGHThand_f;
+		frames RIGHTarm3_f;
 		frames RIGHTarm2_f;
 		frames RIGHTarm1_f;
 		//¶èÀ•WŒn
 		VECTOR_ref pos_RHAND;
 		MATRIX_ref mat_RHAND;
 		frames LEFThand_f;
+		frames LEFTarm3_f;
+		frames LEFTarm2_f;
+		frames LEFTarm1_f;
 		//
 		bool canget_gunitem = false;
 		std::string canget_gun;
@@ -623,13 +627,11 @@ public:
 					RIGHTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("‰E˜r€") != std::string::npos) {
-
 				}
 				else if (p.find("‰E‚Ğ‚¶") != std::string::npos) {
-					RIGHTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+					RIGHTarm3_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("‰Eè€") != std::string::npos) {
-
 				}
 				else if (p.find("‰Eèñ") != std::string::npos && p.find("æ") == std::string::npos) {
 					RIGHThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
@@ -640,14 +642,14 @@ public:
 				else if (p.find("¶Œ¨") != std::string::npos) {
 
 				}
-				else if (p.find("¶˜r") != std::string::npos) {
-
+				else if (p.find("¶˜r") != std::string::npos && p.find("¶˜r€") == std::string::npos) {
+					LEFTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("¶˜r€") != std::string::npos) {
 
 				}
 				else if (p.find("¶‚Ğ‚¶") != std::string::npos) {
-
+					LEFTarm3_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("¶è€") != std::string::npos) {
 

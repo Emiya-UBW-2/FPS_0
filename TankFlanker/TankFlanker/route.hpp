@@ -120,15 +120,6 @@ public:
 					for (auto& c : this->chara) { c.draw_ammo(); }
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
-					for (auto& c : this->chara) {
-						VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_LHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm()*0.3f, MATRIX_ref::RotY(DX_PI_F + c.body_yrad).Inverse());//äÓèÄ
-						VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm()*0.3f;//x=0Ç∆Ç∑ÇÈ
-						VECTOR_ref vec_a1L2 = VECTOR_ref(VGet(-1.f, 0.f, vec_a1.x() / vec_a1.z())).Norm()*0.3f;//y=0Ç∆Ç∑ÇÈ
-						float rad_t = cos(deg2rad(30));
-						VECTOR_ref vec_t = vec_a1 * rad_t + vec_a1L1 * std::sqrtf(1.f - rad_t * rad_t);
-						DrawLine3D(c.body.frame(c.RIGHTarm1_f.first).get(), (c.body.frame(c.RIGHTarm1_f.first) + vec_a1).get(), GetColor(255, 0, 0));
-						DrawLine3D(c.body.frame(c.RIGHTarm1_f.first).get(), (c.body.frame(c.RIGHTarm1_f.first) + vec_t).get(), GetColor(255, 0, 0));
-					}
 				});
 			};
 			//äJén
@@ -184,6 +175,9 @@ public:
 								else {
 									this->sel_g2 = int(mine.gun_slot.size() - 1);
 									while (true) {
+										if (this->sel_g2 == -1) {
+											break;
+										}
 										if (mine.gun_slot[this->sel_g2].ptr == nullptr) {
 											this->sel_g2--;
 										}
@@ -313,12 +307,12 @@ public:
 										pv = mine.ptr_now->frame[7].second;
 									}
 									if (this->ads.first) {
-										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.3f), 0.75f, fps);
+										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.035f, 0.f - pv.y(), -0.25f), 0.75f, fps);
 										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 2.f), 0.9f, fps);
 									}
 									else {
-										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.15f, -0.05f - pv.y(), -0.5f), 0.75f, fps);
+										easing_set(&this->gunpos_TPS, mine.pos_HMD + VGet(-0.15f, -0.05f - pv.y(), -0.3f), 0.75f, fps);
 										easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 2.f), 0.95f, fps);
 									}
@@ -617,25 +611,29 @@ public:
 									MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad).Inverse();
 									//âEéË
 									{
-										VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_LHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm()*0.3f, MATRIX_ref::RotY(DX_PI_F + c.body_yrad).Inverse());//äÓèÄ
+										VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_LHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm()*0.3f, m_inv);//äÓèÄ
 										VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm()*0.3f;//x=0Ç∆Ç∑ÇÈ
 										VECTOR_ref vec_a1L2 = VECTOR_ref(VGet(-1.f, 0.f, vec_a1.x() / vec_a1.z())).Norm()*0.3f;//y=0Ç∆Ç∑ÇÈ
-
-										float cos_a1 = getcos_tri(c.RIGHTarm2_f.second.size(), c.RIGHThand_f.second.size(), (c.body.frame(c.RIGHTarm1_f.first) - (c.pos + c.pos_LHAND)).size());
-
-										VECTOR_ref vec_t = vec_a1 * cos_a1 + vec_a1L1 * std::sqrtf(1.f - cos_a1 * cos_a1);
-										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, m_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-
-										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(
-											c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), 
-											vec_t
+										float rad_t = getcos_tri(
+											(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm3_f.first)).size(),
+											(c.body.frame(c.RIGHTarm3_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(),
+											(c.body.frame(c.RIGHTarm1_f.first) - (c.pos + c.pos_LHAND)).size()
 										);
-
-										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*m_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-										MATRIX_ref a2_inv = MGetIdent();
-										c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
+										VECTOR_ref vec_t = vec_a1 * rad_t + vec_a1L1 * std::sqrtf(1.f - rad_t * rad_t);
+										//
+										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, m_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
+										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHTarm3_f.first) - c.body.frame(c.RIGHTarm1_f.first), vec_t);
+										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
+										//
+										c.body.SetFrameLocalMatrix(c.RIGHTarm3_f.first, m_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm3_f.second));
+										MATRIX_ref a3_inv = MATRIX_ref::RotVec2(
+											c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm3_f.first),
+											(c.pos + c.pos_LHAND) - c.body.frame(c.RIGHTarm3_f.first)
+										);
+										c.body.SetFrameLocalMatrix(c.RIGHTarm3_f.first, a3_inv*m_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm3_f.second));
+										//
 										MATRIX_ref hand_inv = MGetIdent();
-										c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+										c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a3_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
 									}
 									//ç∂éË
 									{
@@ -645,6 +643,32 @@ public:
 											MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90));
 											//	c.body.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.obj.frame(c.ptr_now->frame[6].first) - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 											c.body.SetFrameLocalMatrix(c.LEFThand_f.first, c.mat_RHAND*m_inv*MATRIX_ref::Mtrans(c.LEFThand_f.second));
+
+											{
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_RHAND) - c.body.frame(c.LEFTarm1_f.first)).Norm()*0.3f, m_inv);//äÓèÄ
+												VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm()*0.3f;//x=0Ç∆Ç∑ÇÈ
+												VECTOR_ref vec_a1L2 = VECTOR_ref(VGet(-1.f, 0.f, vec_a1.x() / vec_a1.z())).Norm()*0.3f;//y=0Ç∆Ç∑ÇÈ
+												float rad_t = getcos_tri(
+													(c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm3_f.first)).size(),
+													(c.body.frame(c.LEFTarm3_f.first) - c.body.frame(c.LEFTarm1_f.first)).size(),
+													(c.body.frame(c.LEFTarm1_f.first) - (c.pos + c.pos_RHAND)).size()
+												);
+												VECTOR_ref vec_t = vec_a1 * rad_t + vec_a1L1 * std::sqrtf(1.f - rad_t * rad_t);
+												//
+												c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, m_inv*MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(c.body.frame(c.LEFTarm3_f.first) - c.body.frame(c.LEFTarm1_f.first), vec_t);
+												c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
+												//
+												c.body.SetFrameLocalMatrix(c.LEFTarm3_f.first, m_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFTarm3_f.second));
+												MATRIX_ref a3_inv = MATRIX_ref::RotVec2(
+													c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm3_f.first),
+													(c.pos + c.pos_RHAND) - c.body.frame(c.LEFTarm3_f.first)
+												);
+												c.body.SetFrameLocalMatrix(c.LEFTarm3_f.first, a3_inv*m_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFTarm3_f.second));
+												//
+												MATRIX_ref hand_inv = MGetIdent();
+												c.body.SetFrameLocalMatrix(c.LEFThand_f.first, hand_inv*a3_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
+											}
 										}
 										else {
 											c.LEFT_hand = false;
