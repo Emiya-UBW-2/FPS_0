@@ -527,6 +527,7 @@ public:
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
 		float add_ypos = 0.f;//‚’¼‰Á‘¬“x
+		float body_xrad = 0.f;//“·‘ÌŠp“x
 		float body_yrad = 0.f;//“·‘ÌŠp“x
 		frames head_f;
 		//
@@ -536,12 +537,14 @@ public:
 		VECTOR_ref pos_RIGHTHAND;
 		MATRIX_ref mat_RIGHTHAND;
 		VECTOR_ref vecadd_RIGHTHAND, vecadd_RIGHTHAND_p;//
+		frames RIGHThand2_f;
 		frames RIGHThand_f;
 		frames RIGHTarm2_f;
 		frames RIGHTarm1_f;
 		//¶ŽèÀ•WŒn
 		VECTOR_ref pos_LEFTHAND;
 		MATRIX_ref mat_LEFTHAND;
+		frames LEFThand2_f;
 		frames LEFThand_f;
 		frames LEFTarm2_f;
 		frames LEFTarm1_f;
@@ -629,7 +632,7 @@ public:
 					RIGHThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("‰EŽèŽñæ") != std::string::npos) {
-
+					RIGHThand2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("¶Œ¨") != std::string::npos) {
 
@@ -650,7 +653,7 @@ public:
 					LEFThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("¶ŽèŽñæ") != std::string::npos) {
-
+					LEFThand2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 			}
 
