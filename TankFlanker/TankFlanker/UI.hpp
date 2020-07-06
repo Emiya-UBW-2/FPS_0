@@ -452,12 +452,7 @@ public:
 					yp = disp_y / 2 + disp_y / 8;
 				}
 				if (sel_gun >= 0&& chara.ptr_now->select.size()>=1) {
-					switch (chara.ptr_now->select[
-						std::clamp(
-						chara.gun_stat[chara.gun_slot[sel_gun].ptr->id,
-							0,
-							chara.ptr_now->select.size()-1)
-						].select]) {
+					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_slot[sel_gun].ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
 					case 1:
 						font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;
