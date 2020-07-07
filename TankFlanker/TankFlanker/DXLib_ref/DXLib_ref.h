@@ -49,11 +49,11 @@ public:
 	EffekseerEffectHandle& get_gndhitHandle() noexcept { return gndsmkHndle; }
 	const EffekseerEffectHandle& get_gndhitHandle() const noexcept { return gndsmkHndle; }
 	template<class Y, class D>
-	DXDraw(const char* title, const int& xd, const int& yd, const int& o_xd, const int& o_yd, std::unique_ptr<Y, D>& settings, const float& fps = 60.f) {
+	DXDraw(const char* title, std::unique_ptr<Y, D>& settings, const float& fps = 60.f) {
 		this->use_shadow = settings->shadow_e;
 		this->shadow_size = settings->shadow_level_e;
-		this->disp_x = xd;
-		this->disp_y = yd;
+		this->disp_x = settings->dispx;
+		this->disp_y = settings->dispy;
 
 		frate = fps;
 		SetOutApplicationLogValidFlag(settings->getlog_e ? TRUE : FALSE);  /*log*/
@@ -84,12 +84,12 @@ public:
 			}
 			gndsmkHndle = EffekseerEffectHandle::load("data/effect/gndsmk.efk");
 		}
-		SetWindowSize(o_xd, o_yd);
+		SetWindowSize(settings->out_dispx, settings->out_dispy);
 		SetWindowPosition(
-			/*
+			//*
 			deskx+
 			//*/
-			(deskx - o_xd) / 2 - 8, (desky - o_yd) / 2 - 32);
+			(deskx - settings->out_dispx) / 2 - 8, (desky - settings->out_dispy) / 2 - 32);
 	}
 	~DXDraw(void) {
 		Effkseer_End();
@@ -203,6 +203,12 @@ public:
 		first = false;
 		second = 0;
 	};
+
+	void ready(bool on) {
+		first = on;
+		second = 0;
+	}
+
 	void get_in(bool key) {
 		second = std::clamp<uint8_t>(second + 1, 0, (key ? 2 : 0));
 		if (second == 1) {

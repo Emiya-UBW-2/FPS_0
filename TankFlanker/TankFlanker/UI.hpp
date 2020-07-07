@@ -54,11 +54,12 @@ private:
 	//チュートリアル
 	int display_c1 = 0;
 public:
-	UI(const int& xd, const int& yd, const int& o_xd, const int& o_yd) {
-		out_disp_x = o_xd;
-		out_disp_y = o_yd;
-		disp_x = xd;
-		disp_y = yd;
+	template<class Y, class D>
+	UI(std::unique_ptr<Y, D>& settings) {
+		out_disp_x = settings->out_dispx;
+		out_disp_y = settings->out_dispy;
+		disp_x = settings->dispx;
+		disp_y = settings->dispy;
 		SetUseASyncLoadFlag(TRUE);
 
 		font36 = FontHandle::Create(y_r(36, disp_y), DX_FONTTYPE_EDGE);

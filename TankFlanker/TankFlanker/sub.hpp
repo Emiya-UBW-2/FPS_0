@@ -815,7 +815,7 @@ public:
 			}
 		}
 		template<class Y, class D>
-		void Get_item( Chara& chara, std::vector<Items>& item, std::unique_ptr<Y, D>& mapparts, switchs& chgun, int& sel_g2, switchs& usegun, uint8_t& change_gun, VECTOR_ref& gunpos_TPS) {
+		void Get_item( Chara& chara, std::vector<Items>& item, std::unique_ptr<Y, D>& mapparts, switchs& chgun, int& sel_gun, switchs& usegun, switchs& change_gun, VECTOR_ref& gunpos_TPS) {
 			if (this->ptr != nullptr) {
 				float fps = GetFPS();
 				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
@@ -850,16 +850,16 @@ public:
 					if (chara.canget_gunitem) {
 						chara.canget_gun = this->ptr->name;
 						if (chgun.second == 1) {
-							int sel_t = sel_g2;
+							int sel_t = sel_gun;
 							Gun* gun_t = this->ptr;
 							this->Delete_item();
 							for (size_t i = 0; i < chara.gun_slot.size(); i++) {
 								if (chara.gun_slot[i].ptr == nullptr) {
-									sel_t = sel_g2 = int(i);
+									sel_t = sel_gun = int(i);
 									break;
 								}
 								if (i == chara.gun_slot.size() - 1) {
-									sel_t = sel_g2;
+									sel_t = sel_gun;
 									if (!usegun.first) {
 										++sel_t %= chara.gun_slot.size();
 										if (chara.gun_slot[sel_t].ptr == nullptr) {
@@ -872,7 +872,7 @@ public:
 							}
 							if (!usegun.first) {
 								usegun.first = true;
-								change_gun = 1;
+								change_gun.first = 1;
 							}
 							//
 							chara.gun_slot[sel_t].delete_gun();

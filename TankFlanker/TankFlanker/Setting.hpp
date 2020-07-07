@@ -32,6 +32,9 @@ public:
 	bool useVR_e = true;
 	bool getlog_e = true;
 
+	int dispx, dispy;						//描画サイズ
+	int out_dispx, out_dispy;				//ウィンドウサイズ
+
 	Setting() {
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
 		int mdata = FileRead_open("data/setting.txt", FALSE);
@@ -61,6 +64,21 @@ public:
 		getlog_o = getlog_e;
 		words[0][5] = "Get Log";
 		words[2][5] = "DXLibのログファイルを出力するか否か";
+	}
+
+	void set_dispsize() {
+		if (this->useVR_e) {
+			this->dispx = 1080 * 2;
+			this->dispy = 1200 * 2;
+			this->out_dispx = this->dispx * (desky * 8 / 9) / this->dispy;
+			this->out_dispy = this->dispy * (desky * 8 / 9) / this->dispy;
+		}
+		else {
+			this->dispx = deskx;
+			this->dispy = desky;
+			this->out_dispx = this->dispx;
+			this->out_dispy = this->dispy;
+		}
 	}
 
 	~Setting() {
