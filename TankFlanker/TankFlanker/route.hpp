@@ -20,6 +20,7 @@ class main_c : Mainclass {
 	float fov = 0.f, fov_fps = 0.f;								//カメラ
 	size_t id_mine = 0;											//自機ID
 	MV1 body_obj;												//身体モデル
+	int rad_r = 0;
 public:
 	main_c() {
 		//
@@ -38,6 +39,7 @@ public:
 		this->ScopeScreen = GraphHandle::Make(1080, 1080);								//
 		settings->ready_draw_setting();													//セッティング
 		MV1::Load("data/model/hand/model_b.mv1", &this->body_obj, true);				//身体
+		//MV1::Load("data/model/body/model.mv1", &this->body_obj, true);					//身体
 		auto mapparts = std::make_unique<Mapclass>(settings->dispx, settings->dispy);	//map
 		auto tgtparts = std::make_unique<tgttmp>();										//ターゲット
 		//GUNデータ
@@ -235,7 +237,7 @@ public:
 										float y_1 = cosf(c.body_yrad);
 										float x_2 = v_.x();
 										float y_2 = -v_.z();
-										c.body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 10.f;
+										c.body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 2.f;
 									}
 									{
 										VECTOR_ref v_ = c.mat_HMD.zvec();
@@ -243,7 +245,7 @@ public:
 										float y_1 = -cosf(c.body_xrad);
 										float x_2 = -v_.y();
 										float y_2 = -std::hypotf(v_.x(), v_.z());
-										c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 10.f;
+										c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 2.f;
 									}
 									MATRIX_ref m_inv = MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 									{
@@ -787,7 +789,7 @@ public:
 										float x_2 = v_.x();
 										float y_2 = -v_.z();
 										float r_ = std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
-										c.body_yrad += r_ * FRAME_RATE / fps / 10.f;
+										c.body_yrad += r_ * FRAME_RATE / fps / 2.f;
 									}
 									{
 										VECTOR_ref v_ = c.mat_HMD.zvec();
@@ -797,7 +799,7 @@ public:
 										float y_2 = -std::hypotf(v_.x(), v_.z());
 										c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
 									}
-									MATRIX_ref m_inv = (MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad));
+									MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(50))*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 									{
 										c.body.SetFrameLocalMatrix(c.body_f.first, m_inv*MATRIX_ref::Mtrans(c.body_f.second));
 										//
@@ -812,7 +814,7 @@ public:
 									//視点取得
 									{
 										c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
-										c.pos_HMD = (c.body.frame(/*c.body_f.first*/21) + (c.body.frame(/*c.body_f.first*/19) - c.body.frame(/*c.body_f.first*/21))*0.5f) - c.pos;
+										c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 									}
 									//右手
 									{
@@ -824,18 +826,18 @@ public:
 											pv = c.ptr_now->frame[7].second;
 										}
 										if (this->ads.first) {
-											easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.25f), 0.75f, fps);
+											easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.175f), 0.75f, fps);
 											easing_set(&this->fov_fps, (this->fov*0.6f) / ((c.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 0.5f), 0.9f, fps);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 2.f), 0.9f, fps);
 										}
 										else {
 											if (running) {
-												easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.15f - pv.y(), -0.3f), 0.9f, fps);
+												easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f, fps);
 												easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f, fps);
 												easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 2.5f), 0.95f, fps);
 											}
 											else {
-												easing_set(&this->gunpos_TPS, VGet(-0.125f, -0.075f - pv.y(), -0.3f), 0.75f, fps);
+												easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.19f), 0.75f, fps);
 												easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 												easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.0f), 0.95f, fps);
 											}
@@ -845,21 +847,39 @@ public:
 
 										VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//基準
 										VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0とする
-										VECTOR_ref vec_a1L2 = VECTOR_ref(VGet(-1.f, 0.f, vec_a1.x() / vec_a1.z())).Norm();//y=0とする
+										VECTOR_ref vec_a1L2 = vec_a1.cross(vec_a1L1);
 										float rad_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - (c.pos + c.pos_RIGHTHAND)).size());
-										VECTOR_ref vec_t = vec_a1 * rad_t + vec_a1L1 * std::sqrtf(1.f - rad_t * rad_t);
+										VECTOR_ref vec_t = 
+											vec_a1 * rad_t + 
+											(vec_a1L1 * cos(deg2rad(this->rad_r)) + vec_a1L2 * sin(deg2rad(this->rad_r)))*std::sqrtf(1.f - rad_t * rad_t)
+											;
+										this->rad_r++;
+										this->rad_r %= 90;
 										//
-										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, m_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), vec_t);
-										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
+										//*
+										//c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
+										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
+										//c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
 										//
-										c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, m_inv.Inverse()*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
-										MATRIX_ref a2_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), MATRIX_ref::Vtrans(((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm2_f.first)).Norm(), m_inv.Inverse()));
-										c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
+										//c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
+										MATRIX_ref a2_inv = 
+											MATRIX_ref::RotVec2(
+												MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()),
+												MATRIX_ref::Vtrans((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse())
+											);
+										//c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
 										//
-										c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, m_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
-										MATRIX_ref hand_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first), MATRIX_ref::Vtrans(c.mat_RIGHTHAND.zvec()*-1.f, m_inv.Inverse()));
-										c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+										//c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+										MATRIX_ref hand_inv =
+											MATRIX_ref::RotVec2(
+												MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first), m_inv.Inverse()),
+												MATRIX_ref::Vtrans(c.mat_RIGHTHAND.zvec()*-1.f, m_inv.Inverse())
+											);
+										//c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+										c.body.get_anime(0).per=1.f;
+										c.body.work_anime();
+										//MV1SetAttachAnimTime(int MHandle, int AttachIndex, float Time);
+										//*/
 									}
 									//銃器
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
@@ -1375,14 +1395,14 @@ break;
 							VECTOR_ref cam = c.pos + c.pos_HMD +
 								MATRIX_ref::Vtrans(
 									this->campos_TPS
-									, c.mat_HMD)
-									//, MATRIX_ref::RotY(deg2rad(-89)))
+									//, c.mat_HMD)
+									, MATRIX_ref::RotY(deg2rad(-89)))
 								;
 							VECTOR_ref vec = c.pos + c.pos_HMD +
 								MATRIX_ref::Vtrans(
 									VGet(-0.35f, 0.15f, 0.f)
-									, c.mat_HMD)
-									//, MATRIX_ref::RotY(deg2rad(-89)))
+									//, c.mat_HMD)
+									, MATRIX_ref::RotY(deg2rad(-89)))
 								;
 							if (this->TPS.first) {//TPS視点
 								Hostpassparts->draw(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), this->fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);

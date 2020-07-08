@@ -530,6 +530,8 @@ public:
 		float body_xrad = 0.f;//胴体角度
 		float body_yrad = 0.f;//胴体角度
 		frames head_f;
+		frames LEFTeye_f;
+		frames RIGHTeye_f;
 		//
 		frames bodyb_f;
 		frames body_f;
@@ -567,7 +569,7 @@ public:
 				s.select = 0;
 			}
 			//手
-			this->body = hand_.Duplicate();
+			hand_.DuplicateonAnime(&this->body);
 			for (int i = 0; i < int(this->body.frame_num());i++) {
 				std::string p = this->body.frame_name(i);
 				if (p.find("下半身") != std::string::npos) {
@@ -612,6 +614,12 @@ public:
 				else if (p.find("頭") != std::string::npos && p.find("先") == std::string::npos) {
 					head_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
+				else if (p.find("右目先") != std::string::npos) {
+					RIGHTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p.find("左目先") != std::string::npos) {
+					LEFTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
 				else if (p.find("頭先") != std::string::npos) {
 
 				}
@@ -628,7 +636,7 @@ public:
 				}
 				else if (p.find("右手捩") != std::string::npos) {
 				}
-				else if (p.find("右手首") != std::string::npos && p.find("先") == std::string::npos) {
+				else if (p == std::string("右手首")) {
 					RIGHThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("右手首先") != std::string::npos) {
@@ -649,7 +657,7 @@ public:
 				else if (p.find("左手捩") != std::string::npos) {
 
 				}
-				else if (p.find("左手首") != std::string::npos && p.find("先") == std::string::npos) {
+				else if (p == std::string("左手首")) {
 					LEFThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("左手首先") != std::string::npos) {
