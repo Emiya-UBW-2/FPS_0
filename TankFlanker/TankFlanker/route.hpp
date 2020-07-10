@@ -257,6 +257,7 @@ public:
 								//ì™ïî
 								c.body.SetFrameLocalMatrix(c.head_f.first, c.mat_HMD*m_inv.Inverse()*MATRIX_ref::Mtrans(c.head_f.second));
 								//éãì_éÊìæ
+								c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
 								//âEéË
 								{
 									VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
@@ -277,6 +278,8 @@ public:
 									MATRIX_ref hand_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first), MATRIX_ref::Vtrans(c.mat_RIGHTHAND.zvec()*-1.f, m_inv.Inverse()));
 									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
 								}
+								//èeäÌ
+								c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 								//ç∂éË
 								{
 									float dist_ = ((c.pos_LEFTHAND + c.pos) - c.obj.frame(c.ptr_now->frame[6].first)).size();
@@ -312,9 +315,6 @@ public:
 									}
 								}
 							}
-							c.mag.SetMatrix(c.mat_mag* MATRIX_ref::Mtrans(c.pos_mag));
-							c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
-							c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
 							//èeã§í 
 							if (c.obj.get_anime(3).per == 1.f) {
 								c.audio.slide.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
@@ -539,6 +539,7 @@ public:
 									}
 									}
 								}
+								c.mag.SetMatrix(c.mat_mag* MATRIX_ref::Mtrans(c.pos_mag));
 								c.obj.work_anime();
 								for (auto& a : c.bullet) {
 									if (a.flug) {
