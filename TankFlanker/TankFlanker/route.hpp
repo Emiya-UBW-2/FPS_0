@@ -129,7 +129,7 @@ public:
 						{
 							auto& c = chara[id_mine];
 							if (this->usegun.first) {
-								if (this->change_gun.first == 1 || cansh_gun == false) {
+								if (this->change_gun.first == true || cansh_gun == false) {
 									++this->sel_gun %= c.gun_slot.size();
 									if (c.gun_slot[this->sel_gun].ptr == nullptr) {
 										this->sel_gun = 0;
@@ -137,6 +137,7 @@ public:
 									c.Delete_chara();
 									c.Set_chara(this->sel_gun);
 									this->gunpos_TPS = VGet(0, 0, 0);
+									this->change_gun.first = false;
 								}
 								cansh_gun = true;
 							}
@@ -714,8 +715,16 @@ public:
 								int x_m, y_m;
 								GetMousePoint(&x_m, &y_m);
 								c.mat_HMD = MATRIX_ref::RotX(-this->xrad_p)*c.mat_HMD;
-								this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m - desky / 2)*0.1f*this->fov_fps / this->fov, deg2rad(-45), deg2rad(45));
-								c.mat_HMD *= MATRIX_ref::RotY(deg2rad(x_m - deskx / 2)*0.1f*this->fov_fps / this->fov);
+								this->xrad_p = std::clamp(this->xrad_p - deg2rad(
+									
+									std::clamp(y_m - desky / 2, -120, 120)
+								
+								)*0.1f*this->fov_fps / this->fov, deg2rad(-45), deg2rad(45));
+								c.mat_HMD *= MATRIX_ref::RotY(deg2rad(
+									
+									std::clamp(x_m - deskx / 2, -120, 120)
+								
+								)*0.1f*this->fov_fps / this->fov);
 								c.mat_HMD = MATRIX_ref::RotX(this->xrad_p)*c.mat_HMD;
 								SetMousePoint(deskx / 2, desky / 2);
 								SetMouseDispFlag(FALSE);
@@ -778,6 +787,7 @@ public:
 									if (c.pos.y() <= -5.f) {
 										c.pos = VGet(0.f, 5.f, 0.f);
 										c.add_ypos = 0.f;
+										c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
 										c.body.PhysicsResetState();
 									}
 								}
@@ -834,12 +844,12 @@ public:
 								}
 								else if (this->ads.first) {
 									easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
-									easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
+									easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
 									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
 								}
 								else {
 									easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
-									easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
+									easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
 									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
 								}
 								c.body.get_anime(0).time += 30.f / fps;
@@ -867,18 +877,18 @@ public:
 									if (this->ads.first) {
 										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.175f), 0.75f, fps);
 										easing_set(&this->fov_fps, (this->fov*0.6f) / ((c.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 2.f), 0.9f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.9f, fps);
 									}
 									else {
 										if (running) {
 											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f, fps);
 											easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 2.5f), 0.95f, fps);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
 										}
 										else {
 											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.19f), 0.75f, fps);
 											easing_set(&this->fov_fps, this->fov, 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.0f), 0.95f, fps);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.0f), 0.95f, fps);
 										}
 									}
 									c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//リコイル
@@ -975,23 +985,27 @@ public:
 								c.down_mag = true;
 								//引き金(左クリック)
 								easing_set(&c.obj.get_anime(2).per, float((GetMouseInput() & MOUSE_INPUT_LEFT) != 0), 0.5f, fps);
-								//銃変更
-								this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
-								//銃の使用
-								this->usegun.get_in((CheckHitKey(KEY_INPUT_P) != 0) && (this->sel_gun != -1));//<---
-								if (this->sel_gun == -1) {
-									this->usegun.first = false;
+								if (!this->ads.first) {
+									//銃取得
+									this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
+									//銃の使用
+									this->usegun.get_in((CheckHitKey(KEY_INPUT_P) != 0) && (this->sel_gun != -1));//<---
+									if (this->sel_gun == -1) {
+										this->usegun.first = false;
+									}
 								}
 								//ADS
-								this->ads.first = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) && (this->usegun.first && c.ptr_now->cate == 1);
+								this->ads.first = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) && (this->usegun.first && c.ptr_now->cate == 1) && (!c.reloadf);
 								//セレクター(中ボタン)
 								c.selkey.get_in(((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) && (this->usegun.first));
 								//銃破棄
 								this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
 								//マグキャッチ(Rキー)
 								easing_set(&c.obj.get_anime(5).per, float((CheckHitKey(KEY_INPUT_R) != 0) && this->usegun.first), 0.5f, fps);
-								//武装変更
-								this->change_gun.get_in((GetMouseWheelRotVol() != 0) && this->usegun.first);
+								if (!this->ads.first) {
+									//武装変更
+									this->change_gun.get_in((GetMouseWheelRotVol() != 0) && this->usegun.first);
+								}
 							}
 							//射撃関連
 							{
