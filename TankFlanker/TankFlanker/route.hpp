@@ -37,8 +37,8 @@ public:
 		this->BufScreen = GraphHandle::Make(settings->dispx, settings->dispy);			//
 		this->ScopeScreen = GraphHandle::Make(1080, 1080);								//
 		settings->ready_draw_setting();													//セッティング
-		MV1::Load("data/model/hand/model_b.mv1", &this->body_obj, true);				//身体
-		//MV1::Load("data/model/body/model.mv1", &this->body_obj, true);					//身体
+		//MV1::Load("data/model/hand/model_b.mv1", &this->body_obj, true);				//身体
+		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);					//身体
 		auto mapparts = std::make_unique<Mapclass>(settings->dispx, settings->dispy);	//map
 		auto tgtparts = std::make_unique<tgttmp>();										//ターゲット
 		//GUNデータ
@@ -119,6 +119,7 @@ public:
 					tp.isMOVE = false;
 				}
 				bool cansh_gun = true;
+				bool start_c = true;
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
@@ -777,6 +778,7 @@ public:
 									if (c.pos.y() <= -5.f) {
 										c.pos = VGet(0.f, 5.f, 0.f);
 										c.add_ypos = 0.f;
+										c.body.PhysicsResetState();
 									}
 								}
 							}
@@ -800,9 +802,14 @@ public:
 									float y_2 = -std::hypotf(v_.x(), v_.z());
 									c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
 								}
-								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(50))*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								{
-									c.body.SetFrameLocalMatrix(c.body_f.first, m_inv*MATRIX_ref::Mtrans(c.body_f.second));
+									//
+									c.body.SetFrameLocalMatrix(c.bodyg_f.first, mg_inv*MATRIX_ref::Mtrans(c.bodyg_f.second));
+									c.body.SetFrameLocalMatrix(c.bodyb_f.first, mb_inv*mg_inv.Inverse()*MATRIX_ref::Mtrans(c.bodyb_f.second));
+									c.body.SetFrameLocalMatrix(c.body_f.first, m_inv*mb_inv.Inverse()*MATRIX_ref::Mtrans(c.body_f.second));
 									//
 									for (size_t i = 0; i < c.gun_slot.size(); i++) {
 										if (c.gun_slot[i].ptr != nullptr) {
@@ -818,7 +825,36 @@ public:
 									c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 								}
 								//右手
-								c.body.get_anime(0).per = 1.f;
+								auto ratio_t = this->add_pos.size() / ((running ? 8.f : (this->ads.first ? 2.f : 4.f)) / fps);
+
+								if (running) {
+									easing_set(&c.body.get_anime(2).per, 1.f*ratio_t, 0.95f, fps);
+									easing_set(&c.body.get_anime(1).per, 0.f, 0.95f, fps);
+									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
+								}
+								else if (this->ads.first) {
+									easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
+									easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
+									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
+								}
+								else {
+									easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
+									easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
+									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
+								}
+								c.body.get_anime(0).time += 30.f / fps;
+								if (c.body.get_anime(0).time >= c.body.get_anime(0).alltime) {
+									c.body.get_anime(0).time = 0.f;
+								}
+								c.body.get_anime(1).time += 30.f / fps;
+								if (c.body.get_anime(1).time >= c.body.get_anime(1).alltime) {
+									c.body.get_anime(1).time = 0.f;
+								}
+								c.body.get_anime(2).time += 30.f / fps;
+								if (c.body.get_anime(2).time >= c.body.get_anime(2).alltime) {
+									c.body.get_anime(2).time = 0.f;
+								}
+
 								c.body.work_anime();
 								{
 									VECTOR_ref pv = VGet(0, 0, 0);
@@ -847,10 +883,13 @@ public:
 									}
 									c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//リコイル
 									c.pos_RIGHTHAND = c.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, c.mat_RIGHTHAND);
+									//銃器
+									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+									VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
 									//
-									VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//基準
+									VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//基準
 									VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0とする
-									float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - (c.pos + c.pos_RIGHTHAND)).size());
+									float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - tgt_pt).size());
 									VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 									//上腕
 									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
@@ -858,27 +897,16 @@ public:
 									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
 									//下腕
 									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
-									MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+									MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
 									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
 									//手
-									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
-									MATRIX_ref hand_inv =
-										/*
-										MATRIX_ref::RotVec2(
-											MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first), m_inv.Inverse()),
-											MATRIX_ref::Vtrans(c.mat_RIGHTHAND.yvec()*-1.f, m_inv.Inverse())
-										)*
-										*/
-										MATRIX_ref::RotVec2(
-											MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first), m_inv.Inverse()),
-											MATRIX_ref::Vtrans(c.mat_RIGHTHAND.zvec()*-1.f, m_inv.Inverse())
-										);
-									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first,
+										MATRIX_ref::RotZ(deg2rad(60))*
+										MATRIX_ref::RotX(deg2rad(80))*
+										c.mat_RIGHTHAND*
+										m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
 
-									//c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, MATRIX_ref::Mtrans(c.RIGHThand_f.second));
 								}
-								//銃器
-								c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 								//左手
 								{
 									c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
@@ -915,13 +943,11 @@ public:
 										);
 										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
 										//手
-										c.body.SetFrameLocalMatrix(c.LEFThand_f.first, a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
-										MATRIX_ref hand_inv = MATRIX_ref::RotVec2(
-											MATRIX_ref::Vtrans(c.body.frame(c.LEFThand2_f.first) - c.body.frame(c.LEFThand_f.first), m_inv.Inverse()),
-											MATRIX_ref::Vtrans(c.obj.frame(c.ptr_now->frame[6].first) - c.obj.frame(c.ptr_now->frame[6].first + 1), m_inv.Inverse())
-										);
-										c.body.SetFrameLocalMatrix(c.LEFThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
-
+										c.body.SetFrameLocalMatrix(c.LEFThand_f.first,
+											MATRIX_ref::RotZ(deg2rad(-60))*
+											MATRIX_ref::RotX(deg2rad(80))*
+											c.mat_LEFTHAND*
+											m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
 									}
 								}
 							}
@@ -930,6 +956,13 @@ public:
 								c.audio.slide.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 							}
 							c.obj.get_anime(3).per = std::max(c.obj.get_anime(3).per - 12.f / fps, 0.f);
+							if (start_c) {
+								c.body.PhysicsResetState();
+								start_c = false;
+							}
+							else {
+								c.body.PhysicsCalculation(1000.f / fps);
+							}
 							//操作
 							{
 								//タイマーオン(Bキー)

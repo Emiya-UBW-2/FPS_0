@@ -76,6 +76,8 @@ public:
 		SetAlwaysRunFlag(TRUE);				       /*background*/
 		SetUseZBuffer3D(TRUE);				       /*zbufuse*/
 		SetWriteZBuffer3D(TRUE);			       /*zbufwrite*/
+
+		MV1SetLoadModelPhysicsWorldGravity(-9.8f);	   /*重力*/
 		//エフェクト
 		{
 			size_t j = 0;

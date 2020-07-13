@@ -256,7 +256,7 @@ public:
 			this->mod.obj.SetMatrix(MGetIdent());
 			{
 				//フレーム
-				this->frame.resize(8);
+				this->frame.resize(9);
 				this->frame[0].first = INT_MAX;
 				this->frame[1].first = INT_MAX;
 				this->frame[2].first = INT_MAX;
@@ -265,6 +265,7 @@ public:
 				this->frame[5].first = INT_MAX;
 				this->frame[6].first = INT_MAX;
 				this->frame[7].first = INT_MAX;
+				this->frame[8].first = INT_MAX;
 				for (int i = 0; i < this->mod.obj.frame_num(); i++) {
 					std::string s = this->mod.obj.frame_name(i);
 					if (s.find("mag_fall") != std::string::npos) {
@@ -292,6 +293,9 @@ public:
 					else if (s.find("site") != std::string::npos) {
 						this->frame[7].first = i;//アイアンサイト
 						this->frame[7].second = this->mod.obj.frame(i);
+					}
+					else if (s.find("RIGHT") != std::string::npos) {
+						this->frame[8].first = i;//左手
 					}
 				}
 				//テキスト
@@ -533,6 +537,8 @@ public:
 		frames LEFTeye_f;
 		frames RIGHTeye_f;
 		//
+		frames bodyg_f;
+		frames bodyc_f;
 		frames bodyb_f;
 		frames body_f;
 		//右手座標系
@@ -572,8 +578,11 @@ public:
 			hand_.DuplicateonAnime(&this->body);
 			for (int i = 0; i < int(this->body.frame_num());i++) {
 				std::string p = this->body.frame_name(i);
-				if (p.find("下半身") != std::string::npos) {
-
+				if (p == std::string("グルーブ")) {
+					bodyg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+				}
+				else if (p == std::string("下半身")) {
+					bodyc_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
 				}
 				else if (p.find("左足") != std::string::npos) {
 
