@@ -815,6 +815,12 @@ public:
 								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								if (c.reloadf) {
+									m_inv = MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+									mb_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+									mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								}
+
 								{
 									//
 									c.body.SetFrameLocalMatrix(c.bodyg_f.first, mg_inv*MATRIX_ref::Mtrans(c.bodyg_f.second));
@@ -834,9 +840,8 @@ public:
 									c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
 									c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 								}
-								//âEéË
 								auto ratio_t = this->add_pos.size() / ((running ? 8.f : (this->ads.first ? 2.f : 4.f)) / fps);
-
+								//ë´
 								if (running) {
 									easing_set(&c.body.get_anime(2).per, 1.f*ratio_t, 0.95f, fps);
 									easing_set(&c.body.get_anime(1).per, 0.f, 0.95f, fps);
@@ -864,102 +869,134 @@ public:
 								if (c.body.get_anime(2).time >= c.body.get_anime(2).alltime) {
 									c.body.get_anime(2).time = 0.f;
 								}
+								if (c.reloadf) {
+									c.body.get_anime(3).per = 1.f;
+									c.body.get_anime(3).time += 30.f / fps;
+									if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
+										c.body.get_anime(3).time = 0.f;
+									}
 
-								c.body.work_anime();
-								{
-									VECTOR_ref pv = VGet(0, 0, 0);
-									if (c.ptr_now->frame[4].first != INT_MAX) {
-										pv = c.ptr_now->frame[4].second;
-									}
-									else if (c.ptr_now->frame[7].first != INT_MAX) {
-										pv = c.ptr_now->frame[7].second;
-									}
-									if (this->ads.first) {
-										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.175f), 0.75f, fps);
-										easing_set(&this->fov_fps, (this->fov*0.6f) / ((c.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.9f, fps);
-									}
-									else {
-										if (running) {
-											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f, fps);
-											easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
+									c.body.frame_reset(c.RIGHTarm1_f.first);
+									c.body.frame_reset(c.RIGHTarm2_f.first);
+									c.body.frame_reset(c.RIGHThand_f.first);
+									c.body.frame_reset(c.LEFTarm1_f.first);
+									c.body.frame_reset(c.LEFTarm2_f.first);
+									c.body.frame_reset(c.LEFThand_f.first);
+
+									//èeäÌ
+									//auto p_v = c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first);
+									//MATRIX_ref::Axis1(p_v, p_v, p_v);
+
+									c.mat_RIGHTHAND = c.mat_HMD;//ÉäÉRÉCÉã
+									c.pos_RIGHTHAND = c.body.frame(c.RIGHThand_f.first)-c.pos;
+									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+									c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[8].first) - (c.pos_RIGHTHAND + c.pos);
+									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+									//
+									c.mat_LEFTHAND = c.mat_HMD;
+									c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[0].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
+								}
+								else {
+									c.body.get_anime(3).per = 0.f;
+									c.body.get_anime(3).time = 0.f;
+									//âEéË
+									{
+										VECTOR_ref pv = VGet(0, 0, 0);
+										if (c.ptr_now->frame[4].first != INT_MAX) {
+											pv = c.ptr_now->frame[4].second;
+										}
+										else if (c.ptr_now->frame[7].first != INT_MAX) {
+											pv = c.ptr_now->frame[7].second;
+										}
+										if (this->ads.first) {
+											easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.175f), 0.75f, fps);
+											easing_set(&this->fov_fps, (this->fov*0.6f) / ((c.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.9f, fps);
 										}
 										else {
-											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.19f), 0.75f, fps);
-											easing_set(&this->fov_fps, this->fov, 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.0f), 0.95f, fps);
+											if (running) {
+												easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f, fps);
+												easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f, fps);
+												easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
+											}
+											else {
+												easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.19f), 0.75f, fps);
+												easing_set(&this->fov_fps, this->fov, 0.9f, fps);
+												easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
+											}
 										}
-									}
-									c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//ÉäÉRÉCÉã
-									c.pos_RIGHTHAND = c.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, c.mat_RIGHTHAND);
-									//èeäÌ
-									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
-									VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
-									//
-									VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
-									VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0Ç∆Ç∑ÇÈ
-									float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - tgt_pt).size());
-									VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-									//è„òr
-									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-									MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
-									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-									//â∫òr
-									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
-									MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
-									//éË
-									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first,
-										MATRIX_ref::RotZ(deg2rad(60))*
-										MATRIX_ref::RotX(deg2rad(80))*
-										c.mat_RIGHTHAND*
-										m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
-
-								}
-								//ç∂éË
-								{
-									c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
-									if (c.down_mag) {
-										c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[0].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
-									}
-									c.mat_LEFTHAND = c.mat_HMD;
-
-									float dist_ = ((c.pos_LEFTHAND + c.pos) - c.obj.frame(c.ptr_now->frame[6].first)).size();
-									if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
-										c.LEFT_hand = true;
-										c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
-									}
-									else {
-										c.LEFT_hand = false;
-									}
-									{
-										VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
+										c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//ÉäÉRÉCÉã
+										c.pos_RIGHTHAND = c.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, c.mat_RIGHTHAND);
+										//èeäÌ
+										c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+										VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
+										//
+										VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
 										VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0Ç∆Ç∑ÇÈ
-										float cos_t = getcos_tri((c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first)).size(), (c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first)).size(), (c.body.frame(c.LEFTarm1_f.first) - (c.pos + c.pos_LEFTHAND)).size());
+										float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - tgt_pt).size());
 										VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 										//è„òr
-										c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
-										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(
-											MATRIX_ref::Vtrans(c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first), m_inv.Inverse()),
-											vec_t
-										);
-										c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
+										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
+										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
+										c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
 										//â∫òr
-										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
-										MATRIX_ref a2_inv = MATRIX_ref::RotVec2(
-											MATRIX_ref::Vtrans(c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()),
-											MATRIX_ref::Vtrans((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse())
-										);
-										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
+										c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
+										MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+										c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
 										//éË
-										c.body.SetFrameLocalMatrix(c.LEFThand_f.first,
-											MATRIX_ref::RotZ(deg2rad(-60))*
+										c.body.SetFrameLocalMatrix(c.RIGHThand_f.first,
+											MATRIX_ref::RotZ(deg2rad(60))*
 											MATRIX_ref::RotX(deg2rad(80))*
-											c.mat_LEFTHAND*
-											m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
+											c.mat_RIGHTHAND*
+											m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+
+									}
+									//ç∂éË
+									{
+										c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
+										if (c.down_mag) {
+											c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[0].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
+										}
+										c.mat_LEFTHAND = c.mat_HMD;
+
+										float dist_ = ((c.pos_LEFTHAND + c.pos) - c.obj.frame(c.ptr_now->frame[6].first)).size();
+										if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
+											c.LEFT_hand = true;
+											c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
+										}
+										else {
+											c.LEFT_hand = false;
+										}
+										{
+											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
+											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0Ç∆Ç∑ÇÈ
+											float cos_t = getcos_tri((c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first)).size(), (c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first)).size(), (c.body.frame(c.LEFTarm1_f.first) - (c.pos + c.pos_LEFTHAND)).size());
+											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+											//è„òr
+											c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
+											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(
+												MATRIX_ref::Vtrans(c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first), m_inv.Inverse()),
+												vec_t
+											);
+											c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
+											//â∫òr
+											c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
+											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(
+												MATRIX_ref::Vtrans(c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()),
+												MATRIX_ref::Vtrans((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse())
+											);
+											c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
+											//éË
+											c.body.SetFrameLocalMatrix(c.LEFThand_f.first,
+												MATRIX_ref::RotZ(deg2rad(-60))*
+												MATRIX_ref::RotX(deg2rad(80))*
+												c.mat_LEFTHAND*
+												m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
+										}
 									}
 								}
+								//
+								c.body.work_anime();
 							}
 							//èeã§í 
 							if (c.obj.get_anime(3).per == 1.f) {
