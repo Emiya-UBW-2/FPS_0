@@ -40,7 +40,7 @@ public:
 	};
 	class tgts {
 	public:
-		int id;
+		int id = 0;
 		MV1 obj;
 		GraphHandle pic;
 		frames frame_x, frame_y;
@@ -491,7 +491,7 @@ public:
 				this->obj.Dispose();
 			}
 		};
-		GraphHandle* ScopeScreen;
+		GraphHandle* ScopeScreen=nullptr;
 	public:
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;

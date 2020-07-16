@@ -32,8 +32,8 @@ public:
 	bool useVR_e = true;
 	bool getlog_e = true;
 
-	int dispx, dispy;						//描画サイズ
-	int out_dispx, out_dispy;				//ウィンドウサイズ
+	int dispx = 0, dispy = 0;						//描画サイズ
+	int out_dispx = 0, out_dispy = 0;				//ウィンドウサイズ
 
 	Setting() {
 		SetOutApplicationLogValidFlag(FALSE);  /*log*/
