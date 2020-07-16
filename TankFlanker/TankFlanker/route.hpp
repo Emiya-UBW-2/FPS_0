@@ -1159,7 +1159,7 @@ public:
 												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 											*/
 											if (!settings->useVR_e && this->ads.first) {
-												this->fov_fps *= 0.9f;
+												this->fov_fps *= 0.95f;
 											}
 											//’e”ŠÇ—
 											c.ammo_cnt--;
