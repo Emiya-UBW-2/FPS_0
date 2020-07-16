@@ -51,7 +51,7 @@ public:
 	bool SetFrameLocalMatrix(const int& id, MATRIX_ref mat) const noexcept { return MV1SetFrameUserLocalMatrix(this->handle_, id, mat.get()) == TRUE; }
 
 	MATRIX_ref GetFrameLocalMatrix(const int& id) const noexcept { return MV1GetFrameLocalMatrix(this->handle_, id); }
-
+	MATRIX_ref GetFrameLocalWorldMatrix(const int& id) const noexcept { return MV1GetFrameLocalWorldMatrix(this->handle_, id); }
 
 	bool DrawFrame(const int& p1) const noexcept { return MV1DrawFrame(this->handle_, p1) == TRUE; }
 	std::string frame_name(const size_t& p1) noexcept { return MV1GetFrameName(this->handle_, int(p1)); }

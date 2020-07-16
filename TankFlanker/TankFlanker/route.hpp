@@ -715,16 +715,8 @@ public:
 								int x_m, y_m;
 								GetMousePoint(&x_m, &y_m);
 								c.mat_HMD = MATRIX_ref::RotX(-this->xrad_p)*c.mat_HMD;
-								this->xrad_p = std::clamp(this->xrad_p - deg2rad(
-									
-									std::clamp(y_m - desky / 2, -120, 120)
-								
-								)*0.1f*this->fov_fps / this->fov, deg2rad(-45), deg2rad(45));
-								c.mat_HMD *= MATRIX_ref::RotY(deg2rad(
-									
-									std::clamp(x_m - deskx / 2, -120, 120)
-								
-								)*0.1f*this->fov_fps / this->fov);
+								this->xrad_p = std::clamp(this->xrad_p - deg2rad(std::clamp(y_m - desky / 2, -120, 120))*0.1f*this->fov_fps / this->fov, deg2rad(-45), deg2rad(45));
+								c.mat_HMD *= MATRIX_ref::RotY(deg2rad(std::clamp(x_m - deskx / 2, -120, 120))*0.1f*this->fov_fps / this->fov);
 								c.mat_HMD = MATRIX_ref::RotX(this->xrad_p)*c.mat_HMD;
 								SetMousePoint(deskx / 2, desky / 2);
 								SetMouseDispFlag(FALSE);
@@ -835,6 +827,9 @@ public:
 								}
 								//“ª•”
 								c.body.SetFrameLocalMatrix(c.head_f.first, c.mat_HMD*m_inv.Inverse()*MATRIX_ref::Mtrans(c.head_f.second));
+								if (c.reloadf) {
+									c.body.frame_reset(c.head_f.first);
+								}
 								//Ž‹“_Žæ“¾
 								{
 									c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
@@ -871,7 +866,7 @@ public:
 								}
 								if (c.reloadf) {
 									c.body.get_anime(3).per = 1.f;
-									c.body.get_anime(3).time += 30.f / fps;
+									c.body.get_anime(3).time += 30.f / fps * ((c.body.get_anime(3).alltime/30.f) / c.ptr_now->reload_time);
 									if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
 										c.body.get_anime(3).time = 0.f;
 									}
@@ -879,22 +874,20 @@ public:
 									c.body.frame_reset(c.RIGHTarm1_f.first);
 									c.body.frame_reset(c.RIGHTarm2_f.first);
 									c.body.frame_reset(c.RIGHThand_f.first);
+
 									c.body.frame_reset(c.LEFTarm1_f.first);
 									c.body.frame_reset(c.LEFTarm2_f.first);
 									c.body.frame_reset(c.LEFThand_f.first);
 
-									//eŠí
-									//auto p_v = c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first);
-									//MATRIX_ref::Axis1(p_v, p_v, p_v);
 
-									c.mat_RIGHTHAND = c.mat_HMD;//ƒŠƒRƒCƒ‹
+									//eŠí
+									c.mat_RIGHTHAND = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.RIGHThand2_f.first);
 									c.pos_RIGHTHAND = c.body.frame(c.RIGHThand_f.first)-c.pos;
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 									c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[8].first) - (c.pos_RIGHTHAND + c.pos);
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 									//
-									c.mat_LEFTHAND = c.mat_HMD;
-									c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[0].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
+									c.pos_LEFTHAND = c.body.frame(c.LEFThand_f.first) - c.pos;//c.obj.frame(c.ptr_now->frame[1].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
 								}
 								else {
 									c.body.get_anime(3).per = 0.f;
@@ -1120,7 +1113,7 @@ public:
 									//
 									if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 										c.reload_cnt += 1.f / fps;
-										if (c.reload_cnt < c.ptr_now->reload_time) {
+										if (c.reload_cnt < c.ptr_now->reload_time/3) {
 											c.down_mag = false;
 										}
 									}
@@ -1203,7 +1196,9 @@ public:
 												auto p = MATRIX_ref::RotVec2(c.mat_LEFTHAND.yvec(), (c.obj.frame(c.ptr_now->frame[0].first) - (c.pos_LEFTHAND + c.pos)));
 												c.mat_mag = c.mag.GetFrameLocalMatrix(3)* (c.mat_LEFTHAND*p);
 												c.pos_mag = c.pos_LEFTHAND + c.pos;
-												if ((c.mag.frame(3) - c.obj.frame(c.ptr_now->frame[0].first)).size() <= 0.1f) {
+												if (//(c.mag.frame(3) - c.obj.frame(c.ptr_now->frame[0].first)).size() <= 0.1f
+													c.reload_cnt > c.ptr_now->reload_time
+													) {
 													c.obj.get_anime(1).time = 0.f;
 													c.obj.get_anime(0).per = 1.f;
 													c.obj.get_anime(1).per = 0.f;
@@ -1427,8 +1422,14 @@ public:
 									this->camup = m_t.yvec();
 								}
 								else {
-									this->camvec = c.mat_RIGHTHAND.zvec()*-1.f;
-									this->camup = c.mat_RIGHTHAND.yvec();
+									if (c.reloadf) {
+										this->camvec = c.mat_HMD.zvec()*-1.f;
+										this->camup = c.mat_HMD.yvec();
+									}
+									else {
+										this->camvec = c.mat_RIGHTHAND.zvec()*-1.f;
+										this->camup = c.mat_RIGHTHAND.yvec();
+									}
 								}
 							}
 						}
