@@ -215,7 +215,7 @@ public:
 				}
 			}
 			DXDraw::Screen_Flip();
-			vrparts->Eye_Flip(waits);
+			vrparts->Eye_Flip(waits,90.f);
 			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 				sel_g = -1;
 				break;

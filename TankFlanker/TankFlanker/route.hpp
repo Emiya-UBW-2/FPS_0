@@ -865,6 +865,8 @@ public:
 									c.body.get_anime(2).time = 0.f;
 								}
 								if (c.reloadf) {
+									easing_set(&this->fov_fps, this->fov, 0.9f, fps);
+
 									c.body.get_anime(3).per = 1.f;
 									c.body.get_anime(3).time += 30.f / fps * ((c.body.get_anime(3).alltime/30.f) / c.ptr_now->reload_time);
 									if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
@@ -887,7 +889,8 @@ public:
 									c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[8].first) - (c.pos_RIGHTHAND + c.pos);
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 									//
-									c.pos_LEFTHAND = c.body.frame(c.LEFThand_f.first) - c.pos;//c.obj.frame(c.ptr_now->frame[1].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
+									c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90+45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.LEFThand2_f.first)).Inverse());
+									c.pos_LEFTHAND = c.body.frame(c.LEFThand_f.first) - c.pos+ c.mat_LEFTHAND.yvec()*0.1f;
 								}
 								else {
 									c.body.get_anime(3).per = 0.f;
@@ -1114,7 +1117,7 @@ public:
 									if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 										c.reload_cnt += 1.f / fps;
 										if (c.reload_cnt < c.ptr_now->reload_time/3) {
-											c.down_mag = false;
+											//c.down_mag = false;
 										}
 									}
 									//セフティ
@@ -1156,7 +1159,7 @@ public:
 												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
 											*/
 											if (!settings->useVR_e && this->ads.first) {
-												this->fov_fps *= 0.95f;
+												this->fov_fps *= 0.9f;
 											}
 											//弾数管理
 											c.ammo_cnt--;
@@ -1193,12 +1196,9 @@ public:
 										//マガジン取得
 										if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 											if (c.down_mag) {
-												auto p = MATRIX_ref::RotVec2(c.mat_LEFTHAND.yvec(), (c.obj.frame(c.ptr_now->frame[0].first) - (c.pos_LEFTHAND + c.pos)));
-												c.mat_mag = c.mag.GetFrameLocalMatrix(3)* (c.mat_LEFTHAND*p);
+												c.mat_mag = c.mat_LEFTHAND;
 												c.pos_mag = c.pos_LEFTHAND + c.pos;
-												if (//(c.mag.frame(3) - c.obj.frame(c.ptr_now->frame[0].first)).size() <= 0.1f
-													c.reload_cnt > c.ptr_now->reload_time
-													) {
+												if (c.reload_cnt > c.ptr_now->reload_time) {
 													c.obj.get_anime(1).time = 0.f;
 													c.obj.get_anime(0).per = 1.f;
 													c.obj.get_anime(1).per = 0.f;
@@ -1528,7 +1528,7 @@ public:
 						}
 					}
 					DXDraw::Screen_Flip();
-					vrparts->Eye_Flip(waits);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
+					vrparts->Eye_Flip(waits,FRAME_RATE);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						this->ending = false;
 						break;

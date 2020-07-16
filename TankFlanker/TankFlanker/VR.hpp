@@ -190,13 +190,13 @@ public:
 			vr::VRCompositor()->Submit((vr::EVREye)i, &tex, NULL, vr::Submit_Default);
 		}
 	}
-	inline void Eye_Flip(const LONGLONG& waits) {
+	inline void Eye_Flip(const LONGLONG& waits, const float& f_rate) {
 		if (use_vr&&m_pHMD) {
 			vr::TrackedDevicePose_t tmp;
 			vr::VRCompositor()->WaitGetPoses(&tmp, 1, NULL, 1);
 		}
 		else {
-			while (GetNowHiPerformanceCount() - waits < 1000000.0f / 90.0f) {}
+			while (GetNowHiPerformanceCount() - waits < 1000000.0f / f_rate) {}
 		}
 	}
 
