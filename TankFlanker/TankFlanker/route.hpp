@@ -836,25 +836,23 @@ public:
 									c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 								}
 								auto ratio_t = this->add_pos.size() / ((running ? 8.f : (this->ads.first ? 2.f : 4.f)) / fps);
+								//
+								c.body.get_anime(0).per = 1.f;
+
+								c.body.get_anime(5).per = c.obj.get_anime(2).per;
 								//‘«
 								if (running) {
 									easing_set(&c.body.get_anime(2).per, 1.f*ratio_t, 0.95f, fps);
 									easing_set(&c.body.get_anime(1).per, 0.f, 0.95f, fps);
-									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
 								}
 								else if (this->ads.first) {
 									easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
 									easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
-									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
 								}
 								else {
 									easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
 									easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
 									easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
-								}
-								c.body.get_anime(0).time += 30.f / fps;
-								if (c.body.get_anime(0).time >= c.body.get_anime(0).alltime) {
-									c.body.get_anime(0).time = 0.f;
 								}
 								c.body.get_anime(1).time += 30.f / fps;
 								if (c.body.get_anime(1).time >= c.body.get_anime(1).alltime) {
@@ -864,7 +862,7 @@ public:
 								if (c.body.get_anime(2).time >= c.body.get_anime(2).alltime) {
 									c.body.get_anime(2).time = 0.f;
 								}
-								if (c.reloadf) {
+								if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 									easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 
 									c.body.get_anime(3).per = 1.f;
@@ -941,8 +939,9 @@ public:
 										c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
 										//Žè
 										c.body.SetFrameLocalMatrix(c.RIGHThand_f.first,
-											MATRIX_ref::RotZ(deg2rad(60))*
-											MATRIX_ref::RotX(deg2rad(80))*
+											MATRIX_ref::RotY(deg2rad(-10))*
+											MATRIX_ref::RotZ(deg2rad(50))*
+											MATRIX_ref::RotX(deg2rad(90))*
 											c.mat_RIGHTHAND*
 											m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
 
