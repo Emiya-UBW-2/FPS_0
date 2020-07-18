@@ -56,28 +56,27 @@ public:
 		this->disp_y = settings->dispy;
 
 		frate = fps;
-		SetOutApplicationLogValidFlag(settings->getlog_e ? TRUE : FALSE);  /*log*/
-		SetMainWindowText(title);			       /*タイトル*/
-		ChangeWindowMode(TRUE);				       /*窓表示*/
-		SetUseDirect3DVersion(DX_DIRECT3D_11);		       /*directX ver*/
-		SetGraphMode(this->disp_x, this->disp_y, 32);		       /*解像度*/
-		SetUseDirectInputFlag(TRUE);			       /**/
-		SetDirectInputMouseMode(TRUE);			       /**/
-		SetWindowSizeChangeEnableFlag(FALSE, FALSE);	       /*ウインドウサイズを手動不可、ウインドウサイズに合わせて拡大もしないようにする*/
-		SetUsePixelLighting(use_pixellighting ? TRUE : FALSE); /*ピクセルシェーダの使用*/
-		SetFullSceneAntiAliasingMode(4, 2);		       /*アンチエイリアス*/
+		SetOutApplicationLogValidFlag(settings->getlog_e ? TRUE : FALSE);	/*log*/
+		SetMainWindowText(title);											/*タイトル*/
+		ChangeWindowMode(TRUE);												/*窓表示*/
+		SetUseDirect3DVersion(DX_DIRECT3D_11);								/*directX ver*/
+		SetGraphMode(this->disp_x, this->disp_y, 32);						/*解像度*/
+		SetUseDirectInputFlag(TRUE);										/**/
+		SetDirectInputMouseMode(TRUE);										/**/
+		SetWindowSizeChangeEnableFlag(FALSE, FALSE);						/*ウインドウサイズを手動不可、ウインドウサイズに合わせて拡大もしないようにする*/
+		SetUsePixelLighting(use_pixellighting ? TRUE : FALSE);				/*ピクセルシェーダの使用*/
+		SetFullSceneAntiAliasingMode(4, 2);									/*アンチエイリアス*/
 		SetEnableXAudioFlag(TRUE);
 		Set3DSoundOneMetre(1.0f);
-		SetWaitVSyncFlag(use_vsync ? TRUE : FALSE);	       /*垂直同期*/
-		DxLib_Init();					       /**/
-		Effekseer_Init(8000);				       /*Effekseer*/
-		SetChangeScreenModeGraphicsSystemResetFlag(FALSE);     /*Effekseer*/
-		Effekseer_SetGraphicsDeviceLostCallbackFunctions();    /*Effekseer*/
-		SetAlwaysRunFlag(TRUE);				       /*background*/
-		SetUseZBuffer3D(TRUE);				       /*zbufuse*/
-		SetWriteZBuffer3D(TRUE);			       /*zbufwrite*/
-
-		MV1SetLoadModelPhysicsWorldGravity(-9.8f);	   /*重力*/
+		SetWaitVSyncFlag(use_vsync ? TRUE : FALSE);							/*垂直同期*/
+		DxLib_Init();														/**/
+		Effekseer_Init(8000);												/*Effekseer*/
+		SetChangeScreenModeGraphicsSystemResetFlag(FALSE);					/*Effekseer*/
+		Effekseer_SetGraphicsDeviceLostCallbackFunctions();					/*Effekseer*/
+		SetAlwaysRunFlag(TRUE);												/*background*/
+		SetUseZBuffer3D(TRUE);												/*zbufuse*/
+		SetWriteZBuffer3D(TRUE);											/*zbufwrite*/
+		MV1SetLoadModelPhysicsWorldGravity(-9.8f);							/*重力*/
 		//エフェクト
 		{
 			size_t j = 0;

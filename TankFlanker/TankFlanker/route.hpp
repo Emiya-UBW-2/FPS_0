@@ -62,13 +62,13 @@ public:
 				if (sel_g < 0) { break; }
 				chara.resize(1);
 				chara[id_mine].Ready_chara(&this->gun_data[sel_g], &this->gun_data[0], this->gun_data.size(), this->body_obj, &this->ScopeScreen);
-				chara[id_mine].Set_chara_Position(VGet(0, 0, -0.5f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
+				chara[id_mine].Set_chara_Position(VGet(0, 9.0f, 0.f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
 				chara[id_mine].Set_chara(0);
 			}
 			this->sel_gun = 0;
 			this->usegun.ready(true);
 			//マップ読み込み
-			mapparts->Ready_map("data/map");
+			mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ターゲット
@@ -81,7 +81,10 @@ public:
 			fill_id(tgt_pic);
 			for (auto& p : tgt_pic) { p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition); }
 			//ライティング
-			Drawparts->Set_Light_Shadow(VGet(50.f, 20.f, 50.f), VGet(0.05f, -0.5f, 0.75f), [&] {mapparts->map_get().DrawModel(); });
+			Drawparts->Set_Light_Shadow(
+				mapparts->map_col_get().mesh_maxpos(0),
+				mapparts->map_col_get().mesh_minpos(0),
+				[&] {mapparts->map_get().DrawModel(); });
 			//影に描画するものを指定する(仮)
 			auto draw_in_shadow = [&] {
 				for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
@@ -765,23 +768,49 @@ public:
 								else {
 									easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f, fps);
 								}
-								c.pos += this->add_pos;
-								//落下判定
-								auto pp = mapparts->map_col_line(c.pos + VGet(0, 1.8f, 0), c.pos + VGet(0, -0.1f, 0), 0);
-								if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
-									c.pos = pp.HitPosition;
-									c.add_ypos = 0.f;
-								}
-								else {
-									c.pos.yadd(c.add_ypos);
-									c.add_ypos -= 9.8f / std::powf(fps, 2.f);
-									//復帰
-									if (c.pos.y() <= -5.f) {
-										c.pos = VGet(0.f, 5.f, 0.f);
-										c.add_ypos = 0.f;
-										c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
-										c.body.PhysicsResetState();
+								{
+									VECTOR_ref pos_t = c.pos;
+									pos_t += this->add_pos;
+									//壁判定
+									{
+
 									}
+									//落下判定
+									{
+										auto pp = mapparts->map_col_line(pos_t + VGet(0, 0.1f, 0), pos_t + VGet(0, 0.f, 0), 0);
+										if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
+											if (VECTOR_ref(VGet(0, 1.f, 0.f)).dot(pp.Normal) >= cos(deg2rad(30))) {
+												pos_t = pp.HitPosition;
+											}
+											else {
+												//ブロックするベクトル
+												auto v_t = VECTOR_ref(pp.Normal);
+												v_t.y(0);
+												v_t = v_t.Norm();
+												//
+												pos_t -= this->add_pos;
+												this->add_pos += v_t * this->add_pos.cross(v_t.cross(this->add_pos).Norm()).size();
+												if (c.add_ypos == 0.f) {
+													this->add_pos_buf = this->add_pos;
+												}
+												pos_t += this->add_pos;
+											}
+											c.add_ypos = 0.f;
+										}
+										else {
+											pos_t.yadd(c.add_ypos);
+											c.add_ypos -= 9.8f / std::powf(fps, 2.f);
+											//復帰
+											if (pos_t.y() <= -5.f) {
+												pos_t = VGet(0.f, 9.f, 0.f);
+												c.add_ypos = 0.f;
+												c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(pos_t));
+												c.body.PhysicsResetState();
+											}
+										}
+									}
+									//落下判定
+									c.pos = pos_t;
 								}
 							}
 							//pos
@@ -836,10 +865,11 @@ public:
 									c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 								}
 								auto ratio_t = this->add_pos.size() / ((running ? 8.f : (this->ads.first ? 2.f : 4.f)) / fps);
-								//
-								c.body.get_anime(0).per = 1.f;
-
-								c.body.get_anime(5).per = c.obj.get_anime(2).per;
+								//右人差し指
+								{
+									c.body.get_anime(0).per = 1.f;
+									c.body.get_anime(5).per = c.obj.get_anime(2).per;
+								}
 								//足
 								if (running) {
 									easing_set(&c.body.get_anime(2).per, 1.f*ratio_t, 0.95f, fps);
@@ -866,7 +896,7 @@ public:
 									easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 
 									c.body.get_anime(3).per = 1.f;
-									c.body.get_anime(3).time += 30.f / fps * ((c.body.get_anime(3).alltime/30.f) / c.ptr_now->reload_time);
+									c.body.get_anime(3).time += 30.f / fps * ((c.body.get_anime(3).alltime / 30.f) / c.ptr_now->reload_time);
 									if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
 										c.body.get_anime(3).time = 0.f;
 									}
@@ -882,13 +912,13 @@ public:
 
 									//銃器
 									c.mat_RIGHTHAND = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.RIGHThand2_f.first);
-									c.pos_RIGHTHAND = c.body.frame(c.RIGHThand_f.first)-c.pos;
+									c.pos_RIGHTHAND = c.body.frame(c.RIGHThand_f.first) - c.pos;
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 									c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[8].first) - (c.pos_RIGHTHAND + c.pos);
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 									//
-									c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90+45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.LEFThand2_f.first)).Inverse());
-									c.pos_LEFTHAND = c.body.frame(c.LEFThand_f.first) - c.pos+ c.mat_LEFTHAND.yvec()*0.1f;
+									c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90 + 45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.LEFThand2_f.first)).Inverse());
+									c.pos_LEFTHAND = c.body.frame(c.LEFThand_f.first) - c.pos + c.mat_LEFTHAND.yvec()*0.1f;
 								}
 								else {
 									c.body.get_anime(3).per = 0.f;
@@ -992,6 +1022,12 @@ public:
 								}
 								//
 								c.body.work_anime();
+								c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
+								if (!(c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1)) {
+									c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//リコイル
+									c.pos_RIGHTHAND = c.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, c.mat_RIGHTHAND);
+									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+								}
 							}
 							//銃共通
 							if (c.obj.get_anime(3).per == 1.f) {

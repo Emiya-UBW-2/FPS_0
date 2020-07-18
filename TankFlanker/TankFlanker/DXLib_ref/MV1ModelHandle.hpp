@@ -98,6 +98,10 @@ public:
 	const auto CollCheck_Line(const VECTOR_ref& start, const VECTOR_ref& end, const int& frame = -1, const int& mesh = -1) const noexcept {
 		return MV1CollCheck_Line(this->handle_, frame, start.get(), end.get(), mesh);
 	}
+	const auto CollCheck_Sphere(const VECTOR_ref& start, const float& range, const int& frame = -1, const int& mesh = -1) const noexcept {
+		return MV1CollCheck_Sphere(this->handle_, frame, start.get(), range,mesh);
+	}
+
 	/*読み込み*/
 	MV1 Duplicate(void) const noexcept { return DxLib::MV1DuplicateModel(this->handle_); }
 	static void Load(std::basic_string_view<TCHAR> FileName, MV1* t, const bool& Async) noexcept {
