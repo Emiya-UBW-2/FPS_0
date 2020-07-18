@@ -261,18 +261,19 @@ void Player_Move(VECTOR_ref MoveVector) {
 		}
 		if (HitFlag) {		// 壁に当たっていたら壁から押し出す処理を行う
 			for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
-				bool i = 0;
+				bool i = false;
 				for (auto& k_ : kabe_) {
 					if (HitCheck_Capsule_Triangle(NowPos.get(), (NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f)).get(), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2]) == TRUE) {// プレイヤーと当たっているかを判定
-						NowPos += VScale(k_->Normal, PLAYER_HIT_SLIDE_LENGTH);					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
-						int j = 0;
+						VECTOR_ref SlideVec = k_->Normal;
+						NowPos += SlideVec*PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
+						int j = false;
 						for (auto& b_ : kabe_) {
 							if (HitCheck_Capsule_Triangle(NowPos.get(), (NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f)).get(), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2]) == TRUE) {						// 当たっていたらループを抜ける
+								j = true;
 								break;
 							}
-							j++;
 						}
-						if (j == kabe_.size()) {					// 全てのポリゴンと当たっていなかったらここでループ終了
+						if (!j) {// 全てのポリゴンと当たっていなかったらここでループ終了
 							break;
 						}
 					}
