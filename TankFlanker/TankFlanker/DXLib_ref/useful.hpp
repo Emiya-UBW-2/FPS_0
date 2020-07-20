@@ -138,3 +138,7 @@ void start_me(void) {
 	createProcess(Path, SW_HIDE, false);
 }
 //
+bool Hit_Capsule_Tri(VECTOR_ref startpos, VECTOR_ref endpos, float size, VECTOR_ref tri_p1, VECTOR_ref tri_p2, VECTOR_ref tri_p3) {
+	return HitCheck_Capsule_Triangle(startpos.get(), endpos.get(), size, tri_p1.get(), tri_p2.get(), tri_p3.get()) == TRUE;
+}
+//
