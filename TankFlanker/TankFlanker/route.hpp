@@ -901,17 +901,22 @@ public:
 
 								if (running) {
 									c.body.get_anime(6).per = 1.f;
-									c.body.get_anime(3).time = 0.f;
-
+									c.body.get_anime(6).time += 30.f / fps;
+									if (c.body.get_anime(6).time >= c.body.get_anime(6).alltime) {
+										c.body.get_anime(6).time = 0.f;
+									}
 									c.body.frame_reset(c.RIGHTarm1_f.first);
 									c.body.frame_reset(c.RIGHTarm2_f.first);
 									c.body.frame_reset(c.RIGHThand_f.first);
 									c.body.frame_reset(c.LEFTarm1_f.first);
 									c.body.frame_reset(c.LEFTarm2_f.first);
 									c.body.frame_reset(c.LEFThand_f.first);
+
+									easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 								}
 								else {
 									c.body.get_anime(6).per = 0.f;
+									c.body.get_anime(6).time = 0.f;
 									if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 										easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 
