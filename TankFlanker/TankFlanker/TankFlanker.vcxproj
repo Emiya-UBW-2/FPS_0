@@ -105,7 +105,6 @@
     <ClInclude Include="debug.hpp" />
     <ClInclude Include="DXLib_ref\DXLib_mat.hpp" />
     <ClInclude Include="DXLib_ref\DXLib_ref.h" />
-    <ClInclude Include="DXLib_ref\DXLib_vec.hpp" />
     <ClInclude Include="DXLib_ref\EffekseerEffectHandle.hpp" />
     <ClInclude Include="DXLib_ref\FontHandle.hpp" />
     <ClInclude Include="DXLib_ref\GraphHandle.hpp" />

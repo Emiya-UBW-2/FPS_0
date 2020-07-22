@@ -25,7 +25,6 @@ public:
 
 		SkyScreen = GraphHandle::Make(disp_x, disp_y);    //空描画
 	}
-
 	~Mapclass() {
 
 	}
@@ -122,15 +121,11 @@ public:
 		sky.Dispose();	 //空
 		envi.Dispose();
 	}
-
 	auto& map_get() { return map; }
-
 	auto& map_col_get() { return map_col; }
-
 	auto map_col_line(const VECTOR_ref& startpos, const VECTOR_ref& endpos, const int&  i) {
 		return map_col.CollCheck_Line(startpos, endpos, 0, i);
 	}
-	//
 	void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) {
 		auto MoveVector = *NowPos - OldPos;
 		// プレイヤーの周囲にあるステージポリゴンを取得する( 検出する範囲は移動距離も考慮する )
@@ -175,7 +170,9 @@ public:
 					}
 				}
 			}
-			if (HitFlag) {		// 壁に当たっていたら壁から押し出す処理を行う
+			if (
+				false//HitFlag
+				) {		// 壁に当たっていたら壁から押し出す処理を行う
 				for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
 					bool i = false;
 					for (auto& k_ : kabe_) {
