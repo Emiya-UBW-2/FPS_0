@@ -97,7 +97,7 @@ public:
 		DxLib_End();
 	}
 	template <typename T>
-	bool Set_Light_Shadow(const VECTOR_ref& farsize, const VECTOR_ref& Light_dir, T doing) {
+	bool Set_Light_Shadow(const VECTOR_ref& farsize, const VECTOR_ref& nearsize, const VECTOR_ref& Light_dir, T doing) {
 		SetGlobalAmbientLight(GetColorF(0.12f, 0.11f, 0.10f, 0.0f));
 		SetLightDirection(Light_dir.get());
 		if (this->use_shadow) {
@@ -106,7 +106,7 @@ public:
 			SetShadowMapAdjustDepth(shadow_near, 0.0005f);
 			SetShadowMapLightDirection(shadow_near, Light_dir.get());
 			SetShadowMapLightDirection(shadow_far, Light_dir.get());
-			SetShadowMapDrawArea(shadow_far, (farsize*-1.f).get(), farsize.get());
+			SetShadowMapDrawArea(shadow_far, nearsize.get(), farsize.get());
 			ShadowMap_DrawSetup(shadow_far);
 			doing();
 			ShadowMap_DrawEnd();

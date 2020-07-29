@@ -68,7 +68,7 @@ public:
 			this->sel_gun = 0;
 			this->usegun.ready(true);
 			//マップ読み込み
-			mapparts->Ready_map("data/new");
+			mapparts->Ready_map("data/map");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ターゲット
@@ -84,6 +84,7 @@ public:
 			Drawparts->Set_Light_Shadow(
 				mapparts->map_col_get().mesh_maxpos(0),
 				mapparts->map_col_get().mesh_minpos(0),
+				VGet(0.5f,-0.5f,0.5f),
 				[&] {mapparts->map_get().DrawModel(); });
 			//影に描画するものを指定する(仮)
 			auto draw_in_shadow = [&] {
