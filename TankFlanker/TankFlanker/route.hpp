@@ -68,7 +68,7 @@ public:
 			this->sel_gun = 0;
 			this->usegun.ready(true);
 			//マップ読み込み
-			mapparts->Ready_map("data/map");
+			mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ターゲット
