@@ -533,6 +533,7 @@ public:
 		float add_ypos = 0.f;//‚’¼‰Á‘¬“x
 		float body_xrad = 0.f;//“·‘ÌŠp“x
 		float body_yrad = 0.f;//“·‘ÌŠp“x
+		float body_zrad = 0.f;//“·‘ÌŠp“x
 		frames head_f;
 		frames LEFTeye_f;
 		frames RIGHTeye_f;

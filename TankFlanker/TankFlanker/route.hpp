@@ -57,21 +57,21 @@ public:
 		vrparts->Set_Device();								//VRセット
 		do {
 			//キャラ設定
-			{
-				int sel_g = UIparts->select_window(this->gun_data, vrparts, settings);
-				if (sel_g < 0) { break; }
-				chara.resize(1);
-				chara[id_mine].Ready_chara(&this->gun_data[sel_g], &this->gun_data[0], this->gun_data.size(), this->body_obj, &this->ScopeScreen);
-				chara[id_mine].Set_chara_Position(VGet(58.73f, 8.0f, 60.59f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
-				chara[id_mine].Set_chara(0);
-			}
+			auto sel_g = UIparts->select_window(this->gun_data, vrparts, settings);
+			if (sel_g < 0) { break; }
+			chara.resize(1);
+			chara[id_mine].Ready_chara(&this->gun_data[sel_g], &this->gun_data[0], this->gun_data.size(), this->body_obj, &this->ScopeScreen);
+			chara[id_mine].Set_chara_Position(VGet(0.0f, 9.0f, 0.f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));			//chara[id_mine].Set_chara_Position(VGet(58.73f, 8.0f, 60.59f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
+			chara[id_mine].Set_chara(0);
 			this->sel_gun = 0;
 			this->usegun.ready(true);
 			//マップ読み込み
-			mapparts->Ready_map("data/new");
+			mapparts->Ready_map("data/map");			//mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ターゲット
+			tgt_pic.clear();
+			/*
 			tgt_pic.resize(5);
 			tgt_pic[0].Set_tgt(tgtparts, VGet(4, 0, 12.f));
 			tgt_pic[1].Set_tgt(tgtparts, VGet(-4, 0, 18.f));
@@ -80,6 +80,7 @@ public:
 			tgt_pic[4].Set_tgt(tgtparts, VGet(0, 0, 45.f));
 			fill_id(tgt_pic);
 			for (auto& p : tgt_pic) { p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition); }
+			*/
 			//ライティング
 			Drawparts->Set_Light_Shadow(
 				mapparts->map_col_get().mesh_maxpos(0),
@@ -716,6 +717,22 @@ public:
 							auto& c = chara[id_mine];
 							//HMD_mat
 							{
+								auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
+								auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
+								{
+									c.mat_HMD *= MATRIX_ref::RotAxis(c.mat_HMD.zvec(), c.body_zrad).Inverse();
+									if (qkey) {
+										easing_set(&c.body_zrad, deg2rad(-30), 0.9f, fps);
+									}
+									else if (ekey) {
+										easing_set(&c.body_zrad, deg2rad(30), 0.9f, fps);
+									}
+									else {
+										easing_set(&c.body_zrad, 0.f, 0.9f, fps);
+									}
+									c.mat_HMD *= MATRIX_ref::RotAxis(c.mat_HMD.zvec(), c.body_zrad);
+								}
+
 								int x_m, y_m;
 								GetMousePoint(&x_m, &y_m);
 								c.mat_HMD = MATRIX_ref::RotX(-this->xrad_p)*c.mat_HMD;
@@ -840,11 +857,11 @@ public:
 									float y_2 = -std::hypotf(v_.x(), v_.z());
 									c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
 								}
-								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotZ(c.body_zrad)*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								if (c.reloadf) {
-									m_inv = MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+									m_inv = MATRIX_ref::RotZ(c.body_zrad)*MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 									mb_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 									mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								}
@@ -947,7 +964,7 @@ public:
 												pv = c.ptr_now->frame[7].second;
 											}
 											if (this->ads.first) {
-												easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.175f), 0.75f, fps);
+												easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.225f), 0.75f, fps);
 												easing_set(&this->fov_fps, (this->fov*0.6f) / ((c.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
 												easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.9f, fps);
 											}
@@ -958,7 +975,7 @@ public:
 													easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
 												}
 												else {
-													easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.19f), 0.75f, fps);
+													easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.3f), 0.75f, fps);
 													easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 													easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
 												}
@@ -966,7 +983,9 @@ public:
 											c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//リコイル
 											c.pos_RIGHTHAND = c.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, c.mat_RIGHTHAND);
 											//銃器
-											c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+											c.obj.SetMatrix(c.mat_RIGHTHAND*
+												//MATRIX_ref::RotAxis(c.mat_HMD.zvec(),c.body_yrad)*
+												MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 											VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
 											//
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//基準
