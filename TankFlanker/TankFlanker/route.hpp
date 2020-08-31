@@ -175,6 +175,8 @@ public:
 						if (settings->useVR_e) {
 							auto& c = chara[id_mine];
 							//HMD
+							//éãì_éÊìæ
+							//HMD_mat
 							vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &c.pos_HMD, &c.mat_HMD);
 							//à⁄ìÆ
 							if (vrparts->get_hand2_num() != -1) {
@@ -220,21 +222,16 @@ public:
 									}
 								}
 							}
-							//RIGHTHAND
-							{
-								vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &c.pos_RIGHTHAND, &c.mat_RIGHTHAND);
-								c.mat_RIGHTHAND = c.mat_RIGHTHAND*MATRIX_ref::RotAxis(c.mat_RIGHTHAND.xvec(), deg2rad(-60));
-								easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
-								c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_RIGHTHAND;//ÉäÉRÉCÉã
-							}
-							//LEFTHAND
-							{
-								vrparts->GetDevicePositionVR(vrparts->get_hand2_num(), &c.pos_LEFTHAND, &c.mat_LEFTHAND);
-								c.mat_LEFTHAND = c.mat_LEFTHAND*MATRIX_ref::RotAxis(c.mat_LEFTHAND.xvec(), deg2rad(-60));
-							}
 							//pos
 							{
 								//êgëÃ
+								c.body.SetMatrix(c.mat);
+								c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(
+									c.pos -
+									(c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f)
+
+									+
+									VGet(c.pos_HMD.x(), c.pos_HMD.y(), c.pos_HMD.z())));
 								{
 									VECTOR_ref v_ = c.mat_HMD.zvec();
 									float x_1 = -sinf(c.body_yrad);
@@ -251,7 +248,7 @@ public:
 									float y_2 = -std::hypotf(v_.x(), v_.z());
 									c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 2.f;
 								}
-								MATRIX_ref m_inv = MATRIX_ref::RotX(c.body_xrad)*MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 								{
 									c.body.SetFrameLocalMatrix(c.body_f.first, m_inv*MATRIX_ref::Mtrans(c.body_f.second));
 									//
@@ -262,65 +259,94 @@ public:
 									}
 								}
 								//ì™ïî
+								
 								c.body.SetFrameLocalMatrix(c.head_f.first, c.mat_HMD*m_inv.Inverse()*MATRIX_ref::Mtrans(c.head_f.second));
-								//éãì_éÊìæ
-								c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(c.pos));
+							//
+								c.body.get_anime(3).per = 0.f;
+								c.body.get_anime(3).time = 0.f;
 								//âEéË
 								{
-									VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
+									vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &c.pos_RIGHTHAND, &c.mat_RIGHTHAND);
+									c.mat_RIGHTHAND = c.mat_RIGHTHAND*MATRIX_ref::RotAxis(c.mat_RIGHTHAND.xvec(), deg2rad(-60));
+									easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
+									c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_RIGHTHAND;//ÉäÉRÉCÉã
+									//èeäÌ
+									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
+									VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
+									//
+									VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
 									VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0Ç∆Ç∑ÇÈ
-									VECTOR_ref vec_a1L2 = VECTOR_ref(VGet(-1.f, 0.f, vec_a1.x() / vec_a1.z())).Norm();//y=0Ç∆Ç∑ÇÈ
-									float rad_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - (c.pos + c.pos_RIGHTHAND)).size());
-									VECTOR_ref vec_t = vec_a1 * rad_t + vec_a1L1 * std::sqrtf(1.f - rad_t * rad_t);
-									//
-									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, m_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-									MATRIX_ref a1_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), vec_t);
+									float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - tgt_pt).size());
+									VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+									//è„òr
+									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
+									MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
 									c.body.SetFrameLocalMatrix(c.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTarm1_f.second));
-									//
-									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, m_inv.Inverse()*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
-									MATRIX_ref a2_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), MATRIX_ref::Vtrans(((c.pos + c.pos_RIGHTHAND) - c.body.frame(c.RIGHTarm2_f.first)).Norm(), m_inv.Inverse()));
-									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
-									//
-									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, m_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
-									MATRIX_ref hand_inv = MATRIX_ref::RotVec2(c.body.frame(c.RIGHThand2_f.first) - c.body.frame(c.RIGHThand_f.first), MATRIX_ref::Vtrans(c.mat_RIGHTHAND.zvec()*-1.f, m_inv.Inverse()));
-									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+									//â∫òr
+									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
+									MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+									c.body.SetFrameLocalMatrix(c.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.RIGHTarm2_f.second));
+									//éË
+									c.body.SetFrameLocalMatrix(c.RIGHThand_f.first,
+										MATRIX_ref::RotY(deg2rad(-10))*
+										MATRIX_ref::RotZ(deg2rad(50))*
+										MATRIX_ref::RotX(deg2rad(90))*
+										c.mat_RIGHTHAND*
+										m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHThand_f.second));
+
 								}
-								//èeäÌ
-								c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
 								//ç∂éË
 								{
+									vrparts->GetDevicePositionVR(vrparts->get_hand2_num(), &c.pos_LEFTHAND, &c.mat_LEFTHAND);
+									c.mat_LEFTHAND = c.mat_LEFTHAND*MATRIX_ref::RotAxis(c.mat_LEFTHAND.xvec(), deg2rad(-60));
+
+									/*
+									c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
+									if (c.down_mag) {
+										c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[0].first) + c.mat_RIGHTHAND.yvec()*-0.05f - c.pos;
+									}
+									c.mat_LEFTHAND = c.mat_HMD;
+									*/
 									float dist_ = ((c.pos_LEFTHAND + c.pos) - c.obj.frame(c.ptr_now->frame[6].first)).size();
 									if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
 										c.LEFT_hand = true;
-										//MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90));
-										//	c.body.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.obj.frame(c.ptr_now->frame[6].first) - (c.pos_HMD + c.pos), c.mat_HMD.Inverse())));
 										c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
 									}
 									else {
 										c.LEFT_hand = false;
-										//MATRIX_ref m4 = MATRIX_ref::RotZ(deg2rad(-90))*c.mat_LEFTHAND*c.mat_HMD.Inverse();
-										//	c.body.SetFrameLocalMatrix(17, m4*MATRIX_ref::Mtrans(MATRIX_ref::Vtrans(c.pos_LEFTHAND - c.pos_HMD, c.mat_HMD.Inverse())));
 									}
 									{
 										VECTOR_ref vec_a1 = MATRIX_ref::Vtrans(((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
 										VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0Ç∆Ç∑ÇÈ
-										VECTOR_ref vec_a1L2 = VECTOR_ref(VGet(-1.f, 0.f, vec_a1.x() / vec_a1.z())).Norm();//y=0Ç∆Ç∑ÇÈ
-										float rad_t = getcos_tri((c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first)).size(), (c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first)).size(), (c.body.frame(c.LEFTarm1_f.first) - (c.pos + c.pos_LEFTHAND)).size());
-										VECTOR_ref vec_t = vec_a1 * rad_t + vec_a1L1 * std::sqrtf(1.f - rad_t * rad_t);
-										//
-										c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, m_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
-										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first), vec_t);
+										float cos_t = getcos_tri((c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first)).size(), (c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first)).size(), (c.body.frame(c.LEFTarm1_f.first) - (c.pos + c.pos_LEFTHAND)).size());
+										VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+										//è„òr
+										c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
+										MATRIX_ref a1_inv = MATRIX_ref::RotVec2(
+											MATRIX_ref::Vtrans(c.body.frame(c.LEFTarm2_f.first) - c.body.frame(c.LEFTarm1_f.first), m_inv.Inverse()),
+											vec_t
+										);
 										c.body.SetFrameLocalMatrix(c.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.LEFTarm1_f.second));
-										//
-										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, m_inv.Inverse()*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
-										MATRIX_ref a2_inv = MATRIX_ref::RotVec2(c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first), MATRIX_ref::Vtrans(((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm2_f.first)).Norm(), m_inv.Inverse()));
-										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, a2_inv*a1_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
-										//
-										c.body.SetFrameLocalMatrix(c.LEFThand_f.first, m_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
-										MATRIX_ref hand_inv = MATRIX_ref::RotVec2(c.body.frame(c.LEFThand2_f.first) - c.body.frame(c.LEFThand_f.first), MATRIX_ref::Vtrans((c.obj.frame(c.ptr_now->frame[6].first) - c.obj.frame(c.ptr_now->frame[6].first + 1)).Norm(), m_inv.Inverse()));
-										c.body.SetFrameLocalMatrix(c.LEFThand_f.first, hand_inv*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
+										//â∫òr
+										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
+										MATRIX_ref a2_inv = MATRIX_ref::RotVec2(
+											MATRIX_ref::Vtrans(c.body.frame(c.LEFThand_f.first) - c.body.frame(c.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()),
+											MATRIX_ref::Vtrans((c.pos + c.pos_LEFTHAND) - c.body.frame(c.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse())
+										);
+										c.body.SetFrameLocalMatrix(c.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.LEFTarm2_f.second));
+										//éË
+										c.body.SetFrameLocalMatrix(c.LEFThand_f.first,
+											MATRIX_ref::RotZ(deg2rad(-60))*
+											MATRIX_ref::RotX(deg2rad(80))*
+											c.mat_LEFTHAND*
+											m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFThand_f.second));
 									}
 								}
+							}
+							//âEêlç∑Çµéw
+							{
+								c.body.get_anime(0).per = 1.f;
+								c.body.get_anime(5).per = c.obj.get_anime(2).per;
 							}
 							//èeã§í 
 							if (c.obj.get_anime(3).per == 1.f) {

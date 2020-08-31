@@ -535,6 +535,7 @@ public:
 		float body_yrad = 0.f;//“·‘ÌŠp“x
 		float body_zrad = 0.f;//“·‘ÌŠp“x
 		frames head_f;
+		float head_hight = 0.f;
 		frames LEFTeye_f;
 		frames RIGHTeye_f;
 		//
@@ -623,6 +624,7 @@ public:
 				}
 				else if (p.find("“ª") != std::string::npos && p.find("æ") == std::string::npos) {
 					head_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+					head_hight = this->body.frame(head_f.first).y();
 				}
 				else if (p.find("‰E–Úæ") != std::string::npos) {
 					RIGHTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
