@@ -19,14 +19,13 @@ int CharaModel;		// キャラクターモデル
 int StageModel;		// ステージモデル
 
 struct Mirror_mod{
-	VECTOR_ref WorldPos[4];	// 鏡のワールド座標
-	COLOR_F AmbientColor;	// 鏡の Ambient Color
-	int DiffuseColor[4];	// 鏡の Diffuse Color
-	int BlendParam[2];		// 鏡のブレンドモードとパラメータ
+	VECTOR_ref WorldPos[4];		// 鏡のワールド座標
+	COLOR_F AmbientColor;		// 鏡の Ambient Color
+	int DiffuseColor[4];		// 鏡の Diffuse Color
+	int BlendParam[2];			// 鏡のブレンドモードとパラメータ
+	GraphHandle Handle;	// 鏡に映る映像の取得に使用するスクリーン
+	FLOAT4 ScreenPosW[4];	// 鏡に映る映像の取得に使用するクリーンの中の鏡の四隅の座標( 同次座標 )
 };
-
-Mirror_mod Mirror_obj[MIRROR_NUM];
-
 
 // ３Ｄ空間の描画
 void World_RenderProcess(){
@@ -39,17 +38,19 @@ void World_RenderProcess(){
 
 class Mirrar_draw {
 private:
-	GraphHandle MirrorHandle[MIRROR_NUM];		// 鏡に映る映像の取得に使用するスクリーン
-	FLOAT4 MirrorScreenPosW[MIRROR_NUM][4];	// 鏡に映る映像の取得に使用するクリーンの中の鏡の四隅の座標( 同次座標 )
+	Mirror_mod Mirror_obj[MIRROR_NUM];
 public:
+	auto& get_Mirror_obj(int i) {
+		return Mirror_obj[i];
+	}
 	auto& get_MirrorHandle(int i) {
-		return MirrorHandle[i];
+		return Mirror_obj[i].Handle;
 	}
 
 	// 鏡の初期化
 	void Mirror_Initialize(void) {
 		for (int i = 0; i < MIRROR_NUM; i++) {
-			MirrorHandle[i] = GraphHandle::Make(MIRROR_SCREEN_W, MIRROR_SCREEN_H, FALSE);	// 鏡に映る映像の取得に使用するスクリーンの作成
+			Mirror_obj[i].Handle = GraphHandle::Make(MIRROR_SCREEN_W, MIRROR_SCREEN_H, FALSE);	// 鏡に映る映像の取得に使用するスクリーンの作成
 		}
 	}
 	//
@@ -77,7 +78,7 @@ public:
 		SetCameraPositionAndTarget_UpVecY(MirrorCameraEyePos.get(), MirrorCameraTargetPos.get());
 		// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
 		for (int i = 0; i < 4; i++) {
-			MirrorScreenPosW[MirrorNo][i] = ConvWorldPosToScreenPosPlusW(MirrorWorldPosP[i].get());
+			Mirror_obj[MirrorNo].ScreenPosW[i] = ConvWorldPosToScreenPosPlusW(MirrorWorldPosP[i].get());
 		}
 	}
 
@@ -110,18 +111,18 @@ public:
 		// 鏡の面の法線を算出
 		MirrorNormal = ((MirrorWorldPosP[1] - MirrorWorldPosP[0]).cross(MirrorWorldPosP[2]- MirrorWorldPosP[0])).Norm();
 		// 鏡に映る映像を書き込んだ画像のテクスチャのサイズを取得
-		GetGraphTextureSize(MirrorHandle[MirrorNo].get(), &TextureW, &TextureH);
+		GetGraphTextureSize(Mirror_obj[MirrorNo].Handle.get(), &TextureW, &TextureH);
 		// 鏡の描画に使用する頂点のセットアップ
 		VUnitPos[0] = (MirrorWorldPosP[2]- MirrorWorldPosP[0])*( 1.0f / (MIRROR_POINTNUM - 1));
 		VUnitPos[1] = (MirrorWorldPosP[3]- MirrorWorldPosP[1])*( 1.0f / (MIRROR_POINTNUM - 1));
-		VUnitUV[0] = F4Scale(F4Sub(MirrorScreenPosW[MirrorNo][2], MirrorScreenPosW[MirrorNo][0]), 1.0f / (MIRROR_POINTNUM - 1));
-		VUnitUV[1] = F4Scale(F4Sub(MirrorScreenPosW[MirrorNo][3], MirrorScreenPosW[MirrorNo][1]), 1.0f / (MIRROR_POINTNUM - 1));
+		VUnitUV[0] = F4Scale(F4Sub(Mirror_obj[MirrorNo].ScreenPosW[2], Mirror_obj[MirrorNo].ScreenPosW[0]), 1.0f / (MIRROR_POINTNUM - 1));
+		VUnitUV[1] = F4Scale(F4Sub(Mirror_obj[MirrorNo].ScreenPosW[3], Mirror_obj[MirrorNo].ScreenPosW[1]), 1.0f / (MIRROR_POINTNUM - 1));
 		DiffuseColor = GetColorU8(Mirror_obj[MirrorNo].DiffuseColor[0], Mirror_obj[MirrorNo].DiffuseColor[1], Mirror_obj[MirrorNo].DiffuseColor[2], Mirror_obj[MirrorNo].DiffuseColor[3]);
 		SpecularColor = GetColorU8(0, 0, 0, 0);
 		VPos[0] = MirrorWorldPosP[0];
 		VPos[1] = MirrorWorldPosP[1];
-		VUV[0] = MirrorScreenPosW[MirrorNo][0];
-		VUV[1] = MirrorScreenPosW[MirrorNo][1];
+		VUV[0] = Mirror_obj[MirrorNo].ScreenPosW[0];
+		VUV[1] = Mirror_obj[MirrorNo].ScreenPosW[1];
 		k = 0;
 		for (int i = 0; i < MIRROR_POINTNUM; i++) {
 			HUnitPos = (VPos[1]-VPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
@@ -163,7 +164,7 @@ public:
 		// 鏡を描画
 		SetDrawMode(DX_DRAWMODE_BILINEAR);
 		SetDrawBlendMode(Mirror_obj[MirrorNo].BlendParam[0], Mirror_obj[MirrorNo].BlendParam[1]);
-		DrawPolygonIndexed3D(Vert, MIRROR_POINTNUM * MIRROR_POINTNUM, Index, (MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 2, MirrorHandle[MirrorNo].get(), FALSE);
+		DrawPolygonIndexed3D(Vert, MIRROR_POINTNUM * MIRROR_POINTNUM, Index, (MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 2, Mirror_obj[MirrorNo].Handle.get(), FALSE);
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		SetDrawMode(DX_DRAWMODE_NEAREST);
 	}
@@ -180,35 +181,37 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	int i;
 	ChangeWindowMode(TRUE);
 	SetGraphMode(SCREEN_W, SCREEN_H, 32);
-
-	// ＤＸライブラリの初期化
 	DxLib_Init();
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
 	//
-	Mirror_obj[0].WorldPos[0] = VGet(2000.0f, 2000.0f, -4498.0f);
-	Mirror_obj[0].WorldPos[1] = VGet(-2000.0f, 2000.0f, -4498.0f);
-	Mirror_obj[0].WorldPos[2] = VGet(2000.0f, 0.0f, -4498.0f);
-	Mirror_obj[0].WorldPos[3] = VGet(-2000.0f, 0.0f, -4498.0f);
-	Mirror_obj[0].AmbientColor = GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
-	Mirror_obj[0].DiffuseColor[0] = 255;
-	Mirror_obj[0].DiffuseColor[1] = 255;
-	Mirror_obj[0].DiffuseColor[2] = 255;
-	Mirror_obj[0].DiffuseColor[3] = 255;
-	Mirror_obj[0].BlendParam[0] = DX_BLENDMODE_NOBLEND;
-	Mirror_obj[0].BlendParam[1] = 255;
-
-	Mirror_obj[1].WorldPos[0] = VGet(-4000.0f, 10.0f, 4500.0f);
-	Mirror_obj[1].WorldPos[1] = VGet(4000.0f, 10.0f, 4500.0f);
-	Mirror_obj[1].WorldPos[2] = VGet(-4000.0f, 10.0f, -4500.0f);
-	Mirror_obj[1].WorldPos[3] = VGet(4000.0f, 10.0f, -4500.0f);
-	Mirror_obj[1].AmbientColor = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
-	Mirror_obj[1].DiffuseColor[0] = 0;
-	Mirror_obj[1].DiffuseColor[1] = 255;
-	Mirror_obj[1].DiffuseColor[2] = 255;
-	Mirror_obj[1].DiffuseColor[3] = 255;
-	Mirror_obj[1].BlendParam[0] = DX_BLENDMODE_ALPHA;
-	Mirror_obj[1].BlendParam[1] = 128;
-
 	auto Mirrarparts = std::make_unique<Mirrar_draw>();// 鏡処理の初期化
+
+	
+	Mirrarparts->get_Mirror_obj(0).WorldPos[0] = VGet(2000.0f, 2000.0f, -4498.0f);
+	Mirrarparts->get_Mirror_obj(0).WorldPos[1] = VGet(-2000.0f, 2000.0f, -4498.0f);
+	Mirrarparts->get_Mirror_obj(0).WorldPos[2] = VGet(2000.0f, 0.0f, -4498.0f);
+	Mirrarparts->get_Mirror_obj(0).WorldPos[3] = VGet(-2000.0f, 0.0f, -4498.0f);
+	Mirrarparts->get_Mirror_obj(0).AmbientColor = GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
+	Mirrarparts->get_Mirror_obj(0).DiffuseColor[0] = 255;
+	Mirrarparts->get_Mirror_obj(0).DiffuseColor[1] = 255;
+	Mirrarparts->get_Mirror_obj(0).DiffuseColor[2] = 255;
+	Mirrarparts->get_Mirror_obj(0).DiffuseColor[3] = 255;
+	Mirrarparts->get_Mirror_obj(0).BlendParam[0] = DX_BLENDMODE_NOBLEND;
+	Mirrarparts->get_Mirror_obj(0).BlendParam[1] = 255;
+
+	Mirrarparts->get_Mirror_obj(1).WorldPos[0] = VGet(-4000.0f, 10.0f, 4500.0f);
+	Mirrarparts->get_Mirror_obj(1).WorldPos[1] = VGet(4000.0f, 10.0f, 4500.0f);
+	Mirrarparts->get_Mirror_obj(1).WorldPos[2] = VGet(-4000.0f, 10.0f, -4500.0f);
+	Mirrarparts->get_Mirror_obj(1).WorldPos[3] = VGet(4000.0f, 10.0f, -4500.0f);
+	Mirrarparts->get_Mirror_obj(1).AmbientColor = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
+	Mirrarparts->get_Mirror_obj(1).DiffuseColor[0] = 0;
+	Mirrarparts->get_Mirror_obj(1).DiffuseColor[1] = 255;
+	Mirrarparts->get_Mirror_obj(1).DiffuseColor[2] = 255;
+	Mirrarparts->get_Mirror_obj(1).DiffuseColor[3] = 255;
+	Mirrarparts->get_Mirror_obj(1).BlendParam[0] = DX_BLENDMODE_ALPHA;
+	Mirrarparts->get_Mirror_obj(1).BlendParam[1] = 128;
+
 
 	CharaModel = MV1LoadModel("DxChara.x");
 	StageModel = MV1LoadModel("ColTestStage.mqo");
