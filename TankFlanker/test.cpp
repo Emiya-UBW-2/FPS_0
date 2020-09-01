@@ -17,44 +17,16 @@
 
 int CharaModel;		// キャラクターモデル
 int StageModel;		// ステージモデル
-// 鏡のワールド座標
-VECTOR MirrorWorldPos[MIRROR_NUM][4] =
-{
-	{
-		{  2000.0f, 2000.0f, -4498.0f },
-		{ -2000.0f, 2000.0f, -4498.0f },
-		{  2000.0f,    0.0f, -4498.0f },
-		{ -2000.0f,    0.0f, -4498.0f },
-	},
 
-	{
-		{ -4000.0f, 10.0f,  4500.0f },
-		{  4000.0f, 10.0f,  4500.0f },
-		{ -4000.0f, 10.0f, -4500.0f },
-		{  4000.0f, 10.0f, -4500.0f },
-	}
+struct Mirror_mod{
+	VECTOR_ref WorldPos[4];	// 鏡のワールド座標
+	COLOR_F AmbientColor;	// 鏡の Ambient Color
+	int DiffuseColor[4];	// 鏡の Diffuse Color
+	int BlendParam[2];		// 鏡のブレンドモードとパラメータ
 };
 
-// 鏡の Ambient Color
-COLOR_F MirrorAmbientColor[MIRROR_NUM] =
-{
-	{ 1.0f, 1.0f, 1.0f, 1.0f },
-	{ 0.0f, 0.0f, 0.0f, 0.0f },
-};
+Mirror_mod Mirror_obj[MIRROR_NUM];
 
-// 鏡の Diffuse Color
-int MirrorDiffuseColor[MIRROR_NUM][4] =
-{
-	{ 255, 255, 255, 255 },
-	{   0, 255, 255, 255 },
-};
-
-// 鏡のブレンドモードとパラメータ
-int MirrorBlendParam[MIRROR_NUM][2] =
-{
-	{ DX_BLENDMODE_NOBLEND, 255 },
-	{ DX_BLENDMODE_ALPHA,   128 },
-};
 
 // ３Ｄ空間の描画
 void World_RenderProcess(){
@@ -88,25 +60,24 @@ public:
 	}
 
 	// 鏡に映る映像を描画するためのカメラの設定を行う
-	void Mirror_SetupCamera(int MirrorNo, VECTOR CameraEyePos, VECTOR CameraTargetPos) {
+	void Mirror_SetupCamera(int MirrorNo, VECTOR_ref CameraEyePos, VECTOR_ref CameraTargetPos) {
 		float EyeLength, TargetLength;
-		VECTOR MirrorNormal;
-		VECTOR *MirrorWorldPosP;
-		VECTOR MirrorCameraEyePos, MirrorCameraTargetPos;
-		MirrorWorldPosP = MirrorWorldPos[MirrorNo];
+		VECTOR_ref MirrorNormal;
+		VECTOR_ref *MirrorWorldPosP= Mirror_obj[MirrorNo].WorldPos;
+		VECTOR_ref MirrorCameraEyePos, MirrorCameraTargetPos;
 		// 鏡の面の法線を算出
-		MirrorNormal = VNorm(VCross(VSub(MirrorWorldPosP[1], MirrorWorldPosP[0]), VSub(MirrorWorldPosP[2], MirrorWorldPosP[0])));
+		MirrorNormal = ((MirrorWorldPosP[1]-MirrorWorldPosP[0]).cross(MirrorWorldPosP[2]-MirrorWorldPosP[0])).Norm();
 		// 鏡の面からカメラの座標までの最短距離、鏡の面からカメラの注視点までの最短距離を算出
-		EyeLength = Plane_Point_MinLength(MirrorWorldPosP[0], MirrorNormal, CameraEyePos);
-		TargetLength = Plane_Point_MinLength(MirrorWorldPosP[0], MirrorNormal, CameraTargetPos);
+		EyeLength = Plane_Point_MinLength(MirrorWorldPosP[0].get(), MirrorNormal.get(), CameraEyePos.get());
+		TargetLength = Plane_Point_MinLength(MirrorWorldPosP[0].get(), MirrorNormal.get(), CameraTargetPos.get());
 		// 鏡に映る映像を描画する際に使用するカメラの座標とカメラの注視点を算出
-		MirrorCameraEyePos = VAdd(CameraEyePos, VScale(MirrorNormal, -EyeLength * 2.0f));
-		MirrorCameraTargetPos = VAdd(CameraTargetPos, VScale(MirrorNormal, -TargetLength * 2.0f));
+		MirrorCameraEyePos = CameraEyePos + MirrorNormal*(-EyeLength * 2.0f);
+		MirrorCameraTargetPos = CameraTargetPos + MirrorNormal*(-TargetLength * 2.0f);
 		// 計算で得られたカメラの座標とカメラの注視点の座標をカメラの設定する
-		SetCameraPositionAndTarget_UpVecY(MirrorCameraEyePos, MirrorCameraTargetPos);
+		SetCameraPositionAndTarget_UpVecY(MirrorCameraEyePos.get(), MirrorCameraTargetPos.get());
 		// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
 		for (int i = 0; i < 4; i++) {
-			MirrorScreenPosW[MirrorNo][i] = ConvWorldPosToScreenPosPlusW(MirrorWorldPosP[i]);
+			MirrorScreenPosW[MirrorNo][i] = ConvWorldPosToScreenPosPlusW(MirrorWorldPosP[i].get());
 		}
 	}
 
@@ -116,38 +87,36 @@ public:
 		VERTEX3D Vert[MIRROR_POINTNUM * MIRROR_POINTNUM];
 		unsigned short Index[(MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 6];
 		MATERIALPARAM Material;
-		VECTOR HUnitPos;
-		VECTOR VUnitPos[2];
-		VECTOR HPos;
-		VECTOR VPos[2];
+		VECTOR_ref HUnitPos;
+		VECTOR_ref VUnitPos[2];
+		VECTOR_ref HPos;
+		VECTOR_ref VPos[2];
 		FLOAT4 HUnitUV;
 		FLOAT4 VUnitUV[2];
 		FLOAT4 HUV;
 		FLOAT4 VUV[2];
-		VECTOR MirrorNormal;
+		VECTOR_ref MirrorNormal;
 		COLOR_U8 DiffuseColor;
 		COLOR_U8 SpecularColor;
 		int TextureW, TextureH;
-		VECTOR *MirrorWorldPosP;
-
-		MirrorWorldPosP = MirrorWorldPos[MirrorNo];
+		VECTOR_ref *MirrorWorldPosP = Mirror_obj[MirrorNo].WorldPos;
 		// 鏡の描画に使用するマテリアルのセットアップ
-		Material.Ambient = MirrorAmbientColor[MirrorNo];
+		Material.Ambient = Mirror_obj[MirrorNo].AmbientColor;
 		Material.Diffuse = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
 		Material.Emissive = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
 		Material.Specular = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
 		Material.Power = 1.0f;
 		SetMaterialParam(Material);
 		// 鏡の面の法線を算出
-		MirrorNormal = VNorm(VCross(VSub(MirrorWorldPosP[1], MirrorWorldPosP[0]), VSub(MirrorWorldPosP[2], MirrorWorldPosP[0])));
+		MirrorNormal = ((MirrorWorldPosP[1] - MirrorWorldPosP[0]).cross(MirrorWorldPosP[2]- MirrorWorldPosP[0])).Norm();
 		// 鏡に映る映像を書き込んだ画像のテクスチャのサイズを取得
 		GetGraphTextureSize(MirrorHandle[MirrorNo].get(), &TextureW, &TextureH);
 		// 鏡の描画に使用する頂点のセットアップ
-		VUnitPos[0] = VScale(VSub(MirrorWorldPosP[2], MirrorWorldPosP[0]), 1.0f / (MIRROR_POINTNUM - 1));
-		VUnitPos[1] = VScale(VSub(MirrorWorldPosP[3], MirrorWorldPosP[1]), 1.0f / (MIRROR_POINTNUM - 1));
+		VUnitPos[0] = (MirrorWorldPosP[2]- MirrorWorldPosP[0])*( 1.0f / (MIRROR_POINTNUM - 1));
+		VUnitPos[1] = (MirrorWorldPosP[3]- MirrorWorldPosP[1])*( 1.0f / (MIRROR_POINTNUM - 1));
 		VUnitUV[0] = F4Scale(F4Sub(MirrorScreenPosW[MirrorNo][2], MirrorScreenPosW[MirrorNo][0]), 1.0f / (MIRROR_POINTNUM - 1));
 		VUnitUV[1] = F4Scale(F4Sub(MirrorScreenPosW[MirrorNo][3], MirrorScreenPosW[MirrorNo][1]), 1.0f / (MIRROR_POINTNUM - 1));
-		DiffuseColor = GetColorU8(MirrorDiffuseColor[MirrorNo][0], MirrorDiffuseColor[MirrorNo][1], MirrorDiffuseColor[MirrorNo][2], MirrorDiffuseColor[MirrorNo][3]);
+		DiffuseColor = GetColorU8(Mirror_obj[MirrorNo].DiffuseColor[0], Mirror_obj[MirrorNo].DiffuseColor[1], Mirror_obj[MirrorNo].DiffuseColor[2], Mirror_obj[MirrorNo].DiffuseColor[3]);
 		SpecularColor = GetColorU8(0, 0, 0, 0);
 		VPos[0] = MirrorWorldPosP[0];
 		VPos[1] = MirrorWorldPosP[1];
@@ -155,13 +124,13 @@ public:
 		VUV[1] = MirrorScreenPosW[MirrorNo][1];
 		k = 0;
 		for (int i = 0; i < MIRROR_POINTNUM; i++) {
-			HUnitPos = VScale(VSub(VPos[1], VPos[0]), 1.0f / (MIRROR_POINTNUM - 1));
+			HUnitPos = (VPos[1]-VPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
 			HPos = VPos[0];
 			HUnitUV = F4Scale(F4Sub(VUV[1], VUV[0]), 1.0f / (MIRROR_POINTNUM - 1));
 			HUV = VUV[0];
 			for (int j = 0; j < MIRROR_POINTNUM; j++) {
-				Vert[k].pos = HPos;
-				Vert[k].norm = MirrorNormal;
+				Vert[k].pos = HPos.get();
+				Vert[k].norm = MirrorNormal.get();
 				Vert[k].dif = DiffuseColor;
 				Vert[k].spc = SpecularColor;
 				Vert[k].u = HUV.x / (HUV.w * TextureW);
@@ -169,13 +138,13 @@ public:
 				Vert[k].su = 0.0f;
 				Vert[k].sv = 0.0f;
 				HUV = F4Add(HUV, HUnitUV);
-				HPos = VAdd(HPos, HUnitPos);
+				HPos += HUnitPos;
 				k++;
 			}
 			VUV[0] = F4Add(VUV[0], VUnitUV[0]);
 			VUV[1] = F4Add(VUV[1], VUnitUV[1]);
-			VPos[0] = VAdd(VPos[0], VUnitPos[0]);
-			VPos[1] = VAdd(VPos[1], VUnitPos[1]);
+			VPos[0] += VUnitPos[0];
+			VPos[1] += VUnitPos[1];
 		}
 
 		// 鏡の描画に使用する頂点インデックスをセットアップ
@@ -193,7 +162,7 @@ public:
 		}
 		// 鏡を描画
 		SetDrawMode(DX_DRAWMODE_BILINEAR);
-		SetDrawBlendMode(MirrorBlendParam[MirrorNo][0], MirrorBlendParam[MirrorNo][1]);
+		SetDrawBlendMode(Mirror_obj[MirrorNo].BlendParam[0], Mirror_obj[MirrorNo].BlendParam[1]);
 		DrawPolygonIndexed3D(Vert, MIRROR_POINTNUM * MIRROR_POINTNUM, Index, (MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 2, MirrorHandle[MirrorNo].get(), FALSE);
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		SetDrawMode(DX_DRAWMODE_NEAREST);
@@ -205,15 +174,39 @@ public:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	int CameraAngle;		// カメラの水平角度
-	VECTOR CameraEyePosition;	// カメラの座標
-	VECTOR CameraDirection;	// カメラの向いている方向
-	VECTOR CameraTargetPosition;	// カメラの注視点
+	VECTOR_ref CameraEyePosition;	// カメラの座標
+	VECTOR_ref CameraDirection;	// カメラの向いている方向
+	VECTOR_ref CameraTargetPosition;	// カメラの注視点
 	int i;
 	ChangeWindowMode(TRUE);
 	SetGraphMode(SCREEN_W, SCREEN_H, 32);
 
 	// ＤＸライブラリの初期化
 	DxLib_Init();
+	//
+	Mirror_obj[0].WorldPos[0] = VGet(2000.0f, 2000.0f, -4498.0f);
+	Mirror_obj[0].WorldPos[1] = VGet(-2000.0f, 2000.0f, -4498.0f);
+	Mirror_obj[0].WorldPos[2] = VGet(2000.0f, 0.0f, -4498.0f);
+	Mirror_obj[0].WorldPos[3] = VGet(-2000.0f, 0.0f, -4498.0f);
+	Mirror_obj[0].AmbientColor = GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
+	Mirror_obj[0].DiffuseColor[0] = 255;
+	Mirror_obj[0].DiffuseColor[1] = 255;
+	Mirror_obj[0].DiffuseColor[2] = 255;
+	Mirror_obj[0].DiffuseColor[3] = 255;
+	Mirror_obj[0].BlendParam[0] = DX_BLENDMODE_NOBLEND;
+	Mirror_obj[0].BlendParam[1] = 255;
+
+	Mirror_obj[1].WorldPos[0] = VGet(-4000.0f, 10.0f, 4500.0f);
+	Mirror_obj[1].WorldPos[1] = VGet(4000.0f, 10.0f, 4500.0f);
+	Mirror_obj[1].WorldPos[2] = VGet(-4000.0f, 10.0f, -4500.0f);
+	Mirror_obj[1].WorldPos[3] = VGet(4000.0f, 10.0f, -4500.0f);
+	Mirror_obj[1].AmbientColor = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
+	Mirror_obj[1].DiffuseColor[0] = 0;
+	Mirror_obj[1].DiffuseColor[1] = 255;
+	Mirror_obj[1].DiffuseColor[2] = 255;
+	Mirror_obj[1].DiffuseColor[3] = 255;
+	Mirror_obj[1].BlendParam[0] = DX_BLENDMODE_ALPHA;
+	Mirror_obj[1].BlendParam[1] = 128;
 
 	auto Mirrarparts = std::make_unique<Mirrar_draw>();// 鏡処理の初期化
 
@@ -245,14 +238,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// カメラの向いている方向を算出
 		CameraDirection = VGet(cos(CameraAngle * 3.14159f / 180.0f),0.0f,sin(CameraAngle * 3.14159f / 180.0f));
 		// 上下キーが押されたらカメラを前進・後進させる
-		if (CheckHitKey(KEY_INPUT_UP)){
-			CameraEyePosition = VAdd(CameraEyePosition, VScale(CameraDirection, CAMERA_SPEED));
+		if (CheckHitKey(KEY_INPUT_UP)) {
+			CameraEyePosition += CameraDirection * CAMERA_SPEED;
 		}
-		if (CheckHitKey(KEY_INPUT_DOWN)){
-			CameraEyePosition = VSub(CameraEyePosition, VScale(CameraDirection, CAMERA_SPEED));
+		if (CheckHitKey(KEY_INPUT_DOWN)) {
+			CameraEyePosition -= CameraDirection * CAMERA_SPEED;
 		}
 		// カメラの注視点座標を算出
-		CameraTargetPosition = VAdd(CameraEyePosition, CameraDirection);
+		CameraTargetPosition = CameraEyePosition+CameraDirection;
 		// 鏡に映る映像を描画
 		for (i = 0; i < MIRROR_NUM; i++){
 			Mirrarparts->get_MirrorHandle(i).SetDraw_Screen();
@@ -265,7 +258,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		SetDrawScreen(DX_SCREEN_BACK);
 		ClearDrawScreen();
 		{
-			SetCameraPositionAndTarget_UpVecY(CameraEyePosition, CameraTargetPosition);
+			SetCameraPositionAndTarget_UpVecY(CameraEyePosition.get(), CameraTargetPosition.get());
 
 			World_RenderProcess();		// ３Ｄ空間の描画
 			for (i = 0; i < MIRROR_NUM; i++) {
