@@ -51,7 +51,7 @@ public:
 	void dof(
 		GraphHandle* buf, GraphHandle& skyhandle, T2 doing,
 		const VECTOR_ref& campos, const VECTOR_ref& camvec, const VECTOR_ref& camup, const float& fov,
-		const float& far_distance = 1000.f, const float& near_distance = 100.f) {
+		const float& far_distance = 1000.f, const float& near_distance = 100.f, const float& nearest_distance = 0.01f) {
 		if (dof_flag) {
 			//
 			FarScreen.SetDraw_Screen(far_distance, (far_distance < 5000.f) ? 6000.0f : (far_distance + 1000.f), fov, campos, camvec, camup);
@@ -67,7 +67,7 @@ public:
 			Effekseer_Sync3DSetting();
 			DrawEffekseer3D();
 			//
-			NearScreen.SetDraw_Screen(0.01f, near_distance + 1.f, fov, campos, camvec, camup);
+			NearScreen.SetDraw_Screen(nearest_distance, near_distance + 1.f, fov, campos, camvec, camup);
 			MainScreen.DrawGraph(0, 0, false);
 			doing();
 		}

@@ -229,7 +229,6 @@ public:
 								c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(
 									c.pos -
 									(c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f)
-
 									+
 									VGet(c.pos_HMD.x(), c.pos_HMD.y(), c.pos_HMD.z())));
 								{
@@ -1576,12 +1575,17 @@ public:
 							}
 						}
 						//描画
-						UIparts->set_draw(chara[id_mine], scoreparts, settings->useVR_e, this->usegun.first, this->sel_gun);
+						if (settings->useVR_e) {
+							UIparts->set_draw_vr(chara[id_mine], scoreparts, this->usegun.first, this->sel_gun);
+						}
+						else {
+							UIparts->set_draw_nomal(chara[id_mine], scoreparts, this->usegun.first, this->sel_gun);
+						}
 						if (settings->useVR_e) {
 							for (char i = 0; i < 2; i++) {
 								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
 								//被写体深度描画
-								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);
+								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 1.0f, 0.1f);
 								//描画
 								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 								{
@@ -1601,7 +1605,7 @@ public:
 						else {
 							this->campos = this->campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), chara[id_mine].mat_HMD);
 							//被写体深度描画
-							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);
+							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 1.0f, 0.1f);
 							//描画
 							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 							{
@@ -1652,8 +1656,10 @@ public:
 							Debugparts->debug(10, 10, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 						}
 					}
+					//画面の反映
 					DXDraw::Screen_Flip();
-					vrparts->Eye_Flip(waits,FRAME_RATE);//フレーム開始の数ミリ秒前にstartするまでブロックし、レンダリングを開始する直前に呼び出す必要があります。
+					vrparts->Eye_Flip(waits,FRAME_RATE);
+					//終了判定
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						this->ending = false;
 						break;

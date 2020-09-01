@@ -126,7 +126,7 @@ public:
 							}
 						}
 					}
-					else {
+					{
 						changecnt.get_in(CheckHitKey(KEY_INPUT_P) != 0);
 						if (CheckHitKey(KEY_INPUT_SPACE) != 0) { startp = true; }
 					}
@@ -246,7 +246,7 @@ public:
 			ClearDrawScreen();
 			{
 				font18_o.DrawStringFormat(0, out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), " loading... : %04d/%04d  ", all - GetASyncLoadNum(), all);
-				font12_o.DrawStringFormat(out_disp_x - font12.GetDrawWidthFormat("%s 読み込み中 ", mes), out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), "%s 読み込み中 ", mes);
+				font12_o.DrawStringFormat_RIGHT(out_disp_x, out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), "%s 読み込み中 ", mes);
 				DrawBox(0, out_disp_y - y_r(50, out_disp_y), int(float(out_disp_x) * bar / float(all)), out_disp_y - y_r(40, out_disp_y), GetColor(0, 255, 0), TRUE);
 				easing_set(&bar, float(all - GetASyncLoadNum()), 0.95f, fps);
 			}
@@ -263,40 +263,30 @@ public:
 		ScreenFlip();
 	}
 	template<class Y, class D>
-	void set_draw(Mainclass::Chara& chara, std::unique_ptr<Y, D>& scoreparts, const bool& vr, const bool& usegun, const int& sel_gun) {
+	void set_draw_nomal(Mainclass::Chara& chara, std::unique_ptr<Y, D>& scoreparts, const bool& usegun, const int& sel_gun) {
 		//
 		const float fps = GetFPS();
 		bufScreen.SetDraw_Screen();
 		{
-			FontHandle* font_big = (!vr) ? &font36 : &font24;
-			FontHandle* font = (!vr) ? &font18 : &font12;
+			FontHandle* font_big = &font36;
+			FontHandle* font = &font18;
+
+			const int half = y_r(18, disp_y);
+
 			int xs = 0, ys = 0, xp = 0, yp = 0;
 			//ダメージ
 			{
 				if (!scoreparts->start_f) {
 					point_r = float(scoreparts->point);
 				}
-			}
-			{
-				if (vr) {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 12;
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 12;
-				}
-
+				xp = disp_x / 2;
+				yp = disp_y / 2 + disp_y / 12;
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_df), 0, 255));
 				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(50, 150, 255), " +%d", scoreparts->pointdown);
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_uf), 0, 255));
 				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 255, 0), " +%d", scoreparts->pointup);
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*std::max(point_uf, point_df)), 0, 255));
-				font_big->DrawStringFormat(xp - font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 0, 0), "[%d]", int(point_r));
+				font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "[%d]", int(point_r));
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
 				if (scoreparts->point - 50.f / fps > point_r) {
@@ -317,27 +307,15 @@ public:
 			}
 			//開始
 			{
-				if (vr) {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 - int(ready_yp);
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 - int(ready_yp);
-				}
+				xp = disp_x / 2;
+				yp = disp_y / 2 - int(ready_yp);
 
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ready_f), 0, 255));
 				if (!scoreparts->end_f) {
 					if (!scoreparts->start_f) {
-						font->DrawString(xp - font->GetDrawWidth("READY") / 2, yp, "READY", GetColor(255, 0, 0));
+						font->DrawString_MID(xp, yp, "READY", GetColor(255, 0, 0));
 						if (scoreparts->ready_f) {
-							font_big->DrawStringFormat(
-								xp - font_big->GetDrawWidthFormat("%d:%05.2f", 0, scoreparts->readytimer) / 2,
-								yp + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y)), GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->readytimer);
+							font_big->DrawStringFormat_MID(xp, yp + half, GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->readytimer);
 							if (int(c_readytimer_old) != int(scoreparts->readytimer)) {
 								timer.play(DX_PLAYTYPE_BACK, TRUE);
 							}
@@ -357,17 +335,17 @@ public:
 							ready_f = 0.75f;
 							easing_set(&ready_yp, float(disp_y / 6), 0.95f, fps);
 
-							font->DrawStringFormat(xp - font->GetDrawWidthFormat("%d:%05.2f", int(scoreparts->timer / 60.f), scoreparts->timer) / 2, yp, GetColor(255, 0, 0), "%d:%05.2f", int(scoreparts->timer / 60.f), scoreparts->timer);
+							font->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%d:%05.2f", int(scoreparts->timer / 60.f), scoreparts->timer);
 						}
 						else {
-							font->DrawString(xp - font->GetDrawWidth("START!") / 2, yp, "START!", GetColor(255, 0, 0));
+							font->DrawString_MID(xp, yp, "START!", GetColor(255, 0, 0));
 						}
 					}
 				}
 				else {
 					easing_set(&ready_f, 1.f, 0.9f, fps);
-					font->DrawString(xp - font->GetDrawWidth("TIME OUT!") / 2, yp, "TIME OUT!", GetColor(255, 0, 0));
-					easing_set(&ready_yp, float(disp_y / 8 + ((!vr) ? y_r(18, disp_y) : y_r(12, disp_y))), 0.95f, fps);
+					font->DrawString_MID(xp, yp, "TIME OUT!", GetColor(255, 0, 0));
+					easing_set(&ready_yp, float(disp_y / 8 + half), 0.95f, fps);
 					if (!c_end_f) {
 						whistle.play(DX_PLAYTYPE_BACK, TRUE);
 						c_end_f = true;
@@ -377,13 +355,7 @@ public:
 			}
 			//スコアボード
 			if (scoreparts->end_f) {
-				if (vr) {
-					xs = disp_y / 4;
-					ys = disp_y / 4;
-					xp = disp_x / 2 - xs / 2;
-					yp = disp_y / 2 - ys / 2;
-				}
-				else {
+				{
 					xs = disp_y * 18 / 20;
 					ys = disp_y * 18 / 20;
 					xp = disp_x / 2 - xs / 2;
@@ -409,28 +381,18 @@ public:
 							font->DrawStringFormat(xp, yp, GetColor(255, 255, 0), "%04d : %04d", i, s);
 						}
 						i++;
-						yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+						yp += half;
 					}
 				}
 			}
 			//モードその他
 			{
-				if (vr) {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 8;
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 8;
-				}
+				xp = disp_x / 2;
+				yp = disp_y / 2 + disp_y / 8;
 				//元
 				if (time_tmp >= 0.25f) {
 					if (chara.ammo_cnt == 0) {
-						font->DrawString(xp - font->GetDrawWidth("EMPTY") / 2, yp, "EMPTY", GetColor(255, 0, 0)); yp += (!vr) ? y_r(18, disp_y) : y_r(12, disp_y);
+						font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += half;
 					}
 				}
 				time_tmp += 1.f / fps;
@@ -440,78 +402,36 @@ public:
 			}
 			//セレクター
 			{
-				if (vr) {
-					xs = 0;
-					ys = 0;
 					xp = disp_x / 2 - disp_y / 10;
 					yp = disp_y / 2 + disp_y / 8;
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2 - disp_y / 10;
-					yp = disp_y / 2 + disp_y / 8;
-				}
 				if (sel_gun >= 0&& chara.ptr_now->select.size()>=1) {
 					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_slot[sel_gun].ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
 					case 1:
-						font->DrawString(xp - font->GetDrawWidth("SEMI AUTO") / 2, yp, "SEMI AUTO", GetColor(0, 255, 0));
+						font->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;
 					case 2:
-						font->DrawString(xp - font->GetDrawWidth("FULL AUTO") / 2, yp, "FULL AUTO", GetColor(0, 255, 0));
+						font->DrawString_MID(xp, yp, "FULL AUTO", GetColor(0, 255, 0));
 						break;
 					case 3:
-						font->DrawString(xp - font->GetDrawWidth("3B") / 2, yp, "3B", GetColor(0, 255, 0));
+						font->DrawString_MID(xp, yp, "3B", GetColor(0, 255, 0));
 						break;
 					case 4:
-						font->DrawString(xp - font->GetDrawWidth("2B") / 2, yp, "2B", GetColor(0, 255, 0));
+						font->DrawString_MID(xp, yp, "2B", GetColor(0, 255, 0));
 						break;
 					}
 				}
 			}
 			//アイテム拾い
 			{
-				if (vr) {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 12;
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 12;
-				}
+				xp = disp_x / 2;
+				yp = disp_y / 2 + disp_y / 12;
 				if (chara.canget_gunitem) {
-					if (!vr) {
-						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "を拾う : F") / 2, yp, chara.canget_gun + "を拾う : F", GetColor(255, 128, 0));
-					}
-					else {
-						font->DrawString(xp - font->GetDrawWidth(chara.canget_gun + "を拾う : 〇") / 2, yp, chara.canget_gun + "を拾う : 〇", GetColor(255, 128, 0));
-					}
+					font->DrawString_MID(xp, yp, chara.canget_gun + "を拾う : F", GetColor(255, 128, 0));
 				}
-			}
-			{
-				if (vr) {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = disp_x / 2;
-					yp = disp_y / 2 + disp_y / 12 + y_r(18, disp_y);
-				}
+				xp = disp_x / 2;
+				yp = disp_y / 2 + disp_y / 12 + half;
 				if (chara.canget_magitem) {
-					if (!vr) {
-						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "を拾う : F") / 2, yp, chara.canget_mag + "を拾う : F", GetColor(255, 128, 0));
-					}
-					else {
-						font->DrawString(xp - font->GetDrawWidth(chara.canget_mag + "を拾う : 〇") / 2, yp, chara.canget_mag + "を拾う : 〇", GetColor(255, 128, 0));
-					}
+					font->DrawString_MID(xp, yp, chara.canget_mag + "を拾う : F", GetColor(255, 128, 0));
 				}
 			}
 			//弾薬
@@ -520,30 +440,18 @@ public:
 				int yp2;
 				int xs2;
 				int ys2;
-				if (!vr) {
+				{
 					xs = x_r(200, disp_y);
 					xp = x_r(20, disp_y);
 					ys = y_r(18, disp_y);
 					yp = disp_y - y_r(50, disp_y);
 				}
-				else {
-					xs = x_r(200, disp_y);
-					xp = disp_x / 2 - x_r(20, disp_y) - xs;
-					ys = y_r(12, disp_y);
-					yp = disp_y / 2 + disp_y / 6 + y_r(20, disp_y);
-				}
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
 				{
 					int x, y;
 					GetGraphSize(chara.ptr_now->mod.UIScreen.get(), &x, &y);
-					if (!vr) {
+					{
 						xs2 = y_r(180, disp_y);
-						ys2 = xs2 * y / x;
-						xp2 = xp;
-						yp2 = yp - ys2;
-					}
-					else {
-						xs2 = y_r(120, disp_y);
 						ys2 = xs2 * y / x;
 						xp2 = xp;
 						yp2 = yp - ys2;
@@ -551,13 +459,7 @@ public:
 					chara.ptr_now->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2+ys2, true);
 				}
 				{
-					if (!vr) {
-						xp2 = xp + y_r(200, disp_y);
-						yp2 = yp - y_r(180, disp_y) * 4 / 10;
-						xs2 = y_r(50, disp_y);
-						ys2 = xs2 * 4 / 10;
-					}
-					else {
+					{
 						xp2 = xp + y_r(200, disp_y);
 						yp2 = yp - y_r(180, disp_y) * 4 / 10;
 						xs2 = y_r(50, disp_y);
@@ -583,13 +485,264 @@ public:
 				}
 				{
 					font->DrawString(xp, yp, chara.ptr_now->name, GetColor(255, 255, 255));
-					font->DrawStringFormat(
-						xp + xs - font->GetDrawWidthFormat("%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt),
-						yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt);
+					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt);
+				}
+			}
+			//ヒットサウンド(ほかの床に置け)
+			for (auto& a : chara.bullet) {
+				if (a.hit) {
+					hit.play(DX_PLAYTYPE_BACK, TRUE);
+					a.hit = false;
+				}
+			}
+			//マガジン関連(仮)
+			{
+				xp = 300;
+				yp = 500;
+				size_t pp = 0;
+				for (auto& a : chara.gun_stat[3].mag_in) {
+					pp += a;
+					font24.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d total:%d",
+						a,
+						chara.ptr_now->ammo_max,
+						pp
+					);
+					yp += half;
+				}
+			}
+		}
+	}
+	template<class M, class S>
+	void set_draw_vr(Mainclass::Chara& chara, std::unique_ptr<M,S>& scoreparts, const bool& usegun, const int& sel_gun) {
+		//
+		const float fps = GetFPS();
+		bufScreen.SetDraw_Screen();
+		{
+			FontHandle* font_big = &font24;
+			FontHandle* font = &font12;
+			const int half = y_r(12, disp_y);
+
+			int xs = 0, ys = 0, xp = 0, yp = 0;
+			//ダメージ
+			{
+				if (!scoreparts->start_f) {
+					point_r = float(scoreparts->point);
+				}
+				xp = disp_x / 2;
+				yp = disp_y / 2 + disp_y / 12;
+
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_df), 0, 255));
+				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(50, 150, 255), " +%d", scoreparts->pointdown);
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*point_uf), 0, 255));
+				font_big->DrawStringFormat(xp + font_big->GetDrawWidthFormat("[%d]", int(point_r)) / 2, yp, GetColor(255, 255, 0), " +%d", scoreparts->pointup);
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*std::max(point_uf, point_df)), 0, 255));
+				font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "[%d]", int(point_r));
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+
+				if (scoreparts->point - 50.f / fps > point_r) {
+					point_r += 50.f / fps;
+					easing_set(&point_uf, 1.f, 0.9f, fps);
+				}
+				else {
+					if (scoreparts->point + 10.f / fps < point_r) {
+						point_r -= 10.f / fps;
+						easing_set(&point_df, 1.f, 0.9f, fps);
+					}
+					else {
+						point_r = float(scoreparts->point);
+						easing_set(&point_df, 0.f, 0.975f, fps);
+					}
+					easing_set(&point_uf, 0.f, 0.975f, fps);
+				}
+			}
+			//開始
+			{
+				xp = disp_x / 2;
+				yp = disp_y / 2 - int(ready_yp);
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ready_f), 0, 255));
+				if (!scoreparts->end_f) {
+					if (!scoreparts->start_f) {
+						font->DrawString_MID(xp, yp, "READY", GetColor(255, 0, 0));
+						if (scoreparts->ready_f) {
+							font_big->DrawStringFormat_MID(xp, yp + half, GetColor(255, 0, 0), "%d:%05.2f", 0, scoreparts->readytimer);
+							if (int(c_readytimer_old) != int(scoreparts->readytimer)) {
+								timer.play(DX_PLAYTYPE_BACK, TRUE);
+							}
+						}
+						c_readytimer_old = scoreparts->readytimer;
+
+						ready_f = 1.f;
+						ready_yp = float(disp_y / 12);
+						c_end_f = false;
+					}
+					else {
+						if (ready_f == 1.f) {
+							start.play(DX_PLAYTYPE_BACK, TRUE);
+						}
+						ready_f -= 1.f / fps;
+						if (ready_f <= 0.75f) {
+							ready_f = 0.75f;
+							easing_set(&ready_yp, float(disp_y / 6), 0.95f, fps);
+
+							font->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%d:%05.2f", int(scoreparts->timer / 60.f), scoreparts->timer);
+						}
+						else {
+							font->DrawString_MID(xp, yp, "START!", GetColor(255, 0, 0));
+						}
+					}
+				}
+				else {
+					easing_set(&ready_f, 1.f, 0.9f, fps);
+					font->DrawString_MID(xp, yp, "TIME OUT!", GetColor(255, 0, 0));
+					easing_set(&ready_yp, float(disp_y / 8 + half), 0.95f, fps);
+					if (!c_end_f) {
+						whistle.play(DX_PLAYTYPE_BACK, TRUE);
+						c_end_f = true;
+					}
+				}
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			}
+			//スコアボード
+			if (scoreparts->end_f) {
+				{
+					xs = disp_y / 4;
+					ys = disp_y / 4;
+					xp = disp_x / 2 - xs / 2;
+					yp = disp_y / 2 - ys / 2;
+				}
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+				DrawBox(xp, yp, xp + xs, yp + ys, GetColor(0, 0, 0), TRUE);
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				{
+					//スコアズ
+					font->DrawStringFormat(xp, yp, GetColor(255, 128, 0), "TOTAL POINT : %d", scoreparts->point); yp += y_r(48, disp_y);
+					int i = 1;
+					bool ss = false;
+					for (auto& s : scoreparts->stack) {
+						if (yp > disp_y / 2 + ys / 2) {
+							break;
+						}
+						if (scoreparts->point == s && !ss) {
+							font->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%04d : %04d", i, s);
+							ss = true;
+						}
+						else {
+							font->DrawStringFormat(xp, yp, GetColor(255, 255, 0), "%04d : %04d", i, s);
+						}
+						i++;
+						yp += half;
+					}
+				}
+			}
+			//モードその他
+			{
+				xp = disp_x / 2;
+				yp = disp_y / 2 + disp_y / 8;
+				//空警告
+				{
+					if (time_tmp >= 0.25f) {
+						if (chara.ammo_cnt == 0) {
+							font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += half;
+						}
+					}
+					time_tmp += 1.f / fps;
+					if (time_tmp >= 0.5f) {
+						time_tmp = 0.f;
+					}
+				}
+			}
+			//セレクター
+			{
+				xp = disp_x / 2 - disp_y / 10;
+				yp = disp_y / 2 + disp_y / 8;
+				if (sel_gun >= 0 && chara.ptr_now->select.size() >= 1) {
+					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_slot[sel_gun].ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
+					case 1:
+						font->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
+						break;
+					case 2:
+						font->DrawString_MID(xp, yp, "FULL AUTO", GetColor(0, 255, 0));
+						break;
+					case 3:
+						font->DrawString_MID(xp, yp, "3B", GetColor(0, 255, 0));
+						break;
+					case 4:
+						font->DrawString_MID(xp, yp, "2B", GetColor(0, 255, 0));
+						break;
+					}
+				}
+			}
+			//アイテム拾い
+			{
+				{
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12;
+					if (chara.canget_gunitem) {
+						font->DrawString_MID(xp, yp, chara.canget_gun + "を拾う : 〇", GetColor(255, 128, 0));
+					}
+				}
+				{
+					xp = disp_x / 2;
+					yp = disp_y / 2 + disp_y / 12 + half;
+					if (chara.canget_magitem) {
+						font->DrawString_MID(xp, yp, chara.canget_mag + "を拾う : 〇", GetColor(255, 128, 0));
+					}
+				}
+			}
+			//弾薬
+			if (usegun) {
+				int xp2;
+				int yp2;
+				int xs2;
+				int ys2;
+				{
+					xs = x_r(200, disp_y);
+					xp = disp_x / 2 - x_r(20, disp_y) - xs;
+					ys = y_r(12, disp_y);
+					yp = disp_y / 2 + disp_y / 6 + y_r(20, disp_y);
+				}
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
+				{
+					int x, y;
+					GetGraphSize(chara.ptr_now->mod.UIScreen.get(), &x, &y);
+					xs2 = y_r(120, disp_y);
+					ys2 = xs2 * y / x;
+					xp2 = xp;
+					yp2 = yp - ys2;
+					chara.ptr_now->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+				}
+				{
+					{
+						xp2 = xp + y_r(200, disp_y);
+						yp2 = yp - y_r(180, disp_y) * 4 / 10;
+						xs2 = y_r(50, disp_y);
+						ys2 = xs2 * 4 / 10;
+					}
+					for (auto& gp : chara.gun_slot) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+						DrawBox(xp2, yp2, xp2 + xs2, yp2 + ys2, GetColor(0, 0, 0), TRUE);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+
+						if (gp.ptr != nullptr) {
+							int x, y;
+							GetGraphSize(gp.ptr->mod.UIScreen.get(), &x, &y);
+							int xs_t2 = xs2;
+							int ys_t2 = xs2 * y / x;
+							gp.ptr->mod.UIScreen.DrawExtendGraph(xp2, yp2 + (ys2 - ys_t2) / 2, xp2 + xs_t2, yp2 + ys_t2 + (ys2 - ys_t2) / 2, true);
+						}
+						if (gp.id == sel_gun) {
+							DrawBox(xp2, yp2, xp2 + xs2, yp2 + ys2, GetColor(255, 0, 0), FALSE);
+						}
+						yp2 += y_r(60, disp_y) * 4 / 10;
+					}
+				}
+				{
+					font->DrawString(xp, yp, chara.ptr_now->name, GetColor(255, 255, 255));
+					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt);
 				}
 			}
 			//VR用のチュートリアル
-			if (vr) {
+			{
 				//右手
 				{
 					xs = 500 / 4;
@@ -686,30 +839,6 @@ public:
 				}
 			}
 			//マガジン関連(仮)
-			if (!vr){
-				if (vr) {
-					xs = 0;
-					ys = 0;
-					xp = 300;
-					yp = 500;
-				}
-				else {
-					xs = 0;
-					ys = 0;
-					xp = 300;
-					yp = 500;
-				}
-				size_t pp = 0;
-				for (auto& a : chara.gun_stat[3].mag_in) {
-					pp += a;
-					font24.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d total:%d",
-						a,
-						chara.ptr_now->ammo_max,
-						pp
-					);
-					yp += y_r(18, disp_y);
-				}
-			}
 		}
 	}
 	void draw(void) {
