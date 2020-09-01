@@ -225,19 +225,13 @@ public:
 							//pos
 							{
 								//êgëÃ
-								c.body.SetMatrix(c.mat);
-								c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(
-									c.pos -
-									(c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f)
-									+
-									VGet(c.pos_HMD.x(), c.pos_HMD.y(), c.pos_HMD.z())));
 								{
 									VECTOR_ref v_ = c.mat_HMD.zvec();
 									float x_1 = -sinf(c.body_yrad);
 									float y_1 = cosf(c.body_yrad);
 									float x_2 = v_.x();
 									float y_2 = -v_.z();
-									c.body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 2.f;
+									c.body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 10.f;
 								}
 								{
 									VECTOR_ref v_ = c.mat_HMD.zvec();
@@ -245,11 +239,15 @@ public:
 									float y_1 = -cosf(c.body_xrad);
 									float x_2 = -v_.y();
 									float y_2 = -std::hypotf(v_.x(), v_.z());
-									c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 2.f;
+									c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps / 60.f;
 								}
 								MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+								c.body.SetMatrix(c.mat*m_inv);
+								c.body.SetMatrix(c.mat*m_inv*MATRIX_ref::Mtrans(c.pos - (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) + c.pos_HMD));
 								{
-									c.body.SetFrameLocalMatrix(c.body_f.first, m_inv*MATRIX_ref::Mtrans(c.body_f.second));
+									//c.body.SetFrameLocalMatrix(c.bodyc_f.first, m_inv*MATRIX_ref::Mtrans(c.bodyc_f.second));
+
+									//c.body.SetFrameLocalMatrix(c.body_f.first, m_inv*MATRIX_ref::Mtrans(c.body_f.second));
 									//
 									for (size_t i = 0; i < c.gun_slot.size(); i++) {
 										if (c.gun_slot[i].ptr != nullptr) {
@@ -1585,7 +1583,7 @@ public:
 							for (char i = 0; i < 2; i++) {
 								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
 								//îÌé ëÃê[ìxï`âÊ
-								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 1.0f, 0.1f);
+								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.2f, 0.1f);
 								//ï`âÊ
 								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 								{
