@@ -78,7 +78,7 @@ class main_c : Mainclass {
 			MirrorCameraEyePos = CameraEyePos + MirrorNormal * (-EyeLength * 2.0f);
 			MirrorCameraTargetPos = CameraTargetPos + MirrorNormal * (-TargetLength * 2.0f);
 			// 計算で得られたカメラの座標とカメラの注視点の座標をカメラの設定する
-			//SetCameraPositionAndTarget_UpVecY(MirrorCameraEyePos.get(), MirrorCameraTargetPos.get());
+			SetCameraPositionAndTarget_UpVecY(MirrorCameraEyePos.get(), MirrorCameraTargetPos.get());
 			// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
 			for (int i = 0; i < 4; i++) {
 				Mirror_obj[MirrorNo].ScreenPosW[i] = ConvWorldPosToScreenPosPlusW(MirrorWorldPosP[i].get());
