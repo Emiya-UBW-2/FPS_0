@@ -20,6 +20,164 @@ class main_c : Mainclass {
 	float fov = 0.f, fov_fps = 0.f;								//カメラ
 	size_t id_mine = 0;											//自機ID
 	MV1 body_obj;												//身体モデル
+
+	class Mirrar_draw {
+	private:
+		struct Mirror_mod {
+			VECTOR_ref WorldPos[4];		// 鏡のワールド座標
+			COLOR_F AmbientColor;		// 鏡の Ambient Color
+			int DiffuseColor[4];		// 鏡の Diffuse Color
+			int BlendParam[2];			// 鏡のブレンドモードとパラメータ
+			GraphHandle Handle;	// 鏡に映る映像の取得に使用するスクリーン
+			FLOAT4 ScreenPosW[4];	// 鏡に映る映像の取得に使用するクリーンの中の鏡の四隅の座標( 同次座標 )
+		};
+
+		int MIRROR_POINTNUM = 64;		// 鏡の描画に使用する面の頂点分割数
+		int MIRROR_NUM = 2;		// 鏡の数
+		std::vector<Mirror_mod> Mirror_obj;
+	public:
+		VECTOR_ref MirrorCameraEyePos, MirrorCameraTargetPos;
+
+		auto& get_Mirror_obj() {
+			return Mirror_obj;
+		}
+		auto& get_Mirror_obj(int i) {
+			return Mirror_obj[i];
+		}
+		auto& get_MirrorHandle(int i) {
+			return Mirror_obj[i].Handle;
+		}
+
+		// 鏡の初期化
+		void Mirror_Initialize(int xsize, int ysize) {
+			Mirror_obj.clear();
+			for (int i = 0; i < MIRROR_NUM; i++) {
+				Mirror_obj.resize(Mirror_obj.size() + 1);
+				Mirror_obj.back().Handle = GraphHandle::Make(xsize, ysize, FALSE);	// 鏡に映る映像の取得に使用するスクリーンの作成
+			}
+		}
+		//
+		Mirrar_draw(int xsize,int ysize,int p) {
+			MIRROR_NUM = p;
+			Mirror_Initialize(xsize, ysize);
+		}
+		~Mirrar_draw() {
+		}
+
+		// 鏡に映る映像を描画するためのカメラの設定を行う
+		void Mirror_SetupCamera(int MirrorNo, VECTOR_ref CameraEyePos, VECTOR_ref CameraTargetPos) {
+			float EyeLength, TargetLength;
+			VECTOR_ref MirrorNormal;
+			VECTOR_ref *MirrorWorldPosP = Mirror_obj[MirrorNo].WorldPos;
+			// 鏡の面の法線を算出
+			MirrorNormal = ((MirrorWorldPosP[1] - MirrorWorldPosP[0]).cross(MirrorWorldPosP[2] - MirrorWorldPosP[0])).Norm();
+			// 鏡の面からカメラの座標までの最短距離、鏡の面からカメラの注視点までの最短距離を算出
+			EyeLength = Plane_Point_MinLength(MirrorWorldPosP[0].get(), MirrorNormal.get(), CameraEyePos.get());
+			TargetLength = Plane_Point_MinLength(MirrorWorldPosP[0].get(), MirrorNormal.get(), CameraTargetPos.get());
+			// 鏡に映る映像を描画する際に使用するカメラの座標とカメラの注視点を算出
+			MirrorCameraEyePos = CameraEyePos + MirrorNormal * (-EyeLength * 2.0f);
+			MirrorCameraTargetPos = CameraTargetPos + MirrorNormal * (-TargetLength * 2.0f);
+			// 計算で得られたカメラの座標とカメラの注視点の座標をカメラの設定する
+			//SetCameraPositionAndTarget_UpVecY(MirrorCameraEyePos.get(), MirrorCameraTargetPos.get());
+			// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
+			for (int i = 0; i < 4; i++) {
+				Mirror_obj[MirrorNo].ScreenPosW[i] = ConvWorldPosToScreenPosPlusW(MirrorWorldPosP[i].get());
+			}
+		}
+
+		// 鏡の描画
+		void Mirror_Render(void) {
+			std::vector < VERTEX3D> Vert;
+			std::vector < unsigned short> Index;
+			MATERIALPARAM Material;
+			VECTOR_ref HUnitPos;
+			VECTOR_ref VUnitPos[2];
+			VECTOR_ref HPos;
+			VECTOR_ref VPos[2];
+			FLOAT4 HUnitUV;
+			FLOAT4 VUnitUV[2];
+			FLOAT4 HUV;
+			FLOAT4 VUV[2];
+			VECTOR_ref MirrorNormal;
+			COLOR_U8 DiffuseColor;
+			COLOR_U8 SpecularColor;
+			int TextureW, TextureH;
+
+			int k;
+			for (auto& obj : Mirror_obj) {
+				Vert.resize(MIRROR_POINTNUM * MIRROR_POINTNUM);
+				Index.resize((MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 6);
+				// 鏡の描画に使用するマテリアルのセットアップ
+				Material.Ambient = obj.AmbientColor;
+				Material.Diffuse = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
+				Material.Emissive = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
+				Material.Specular = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
+				Material.Power = 1.0f;
+				SetMaterialParam(Material);
+				// 鏡の面の法線を算出
+				MirrorNormal = ((obj.WorldPos[1] - obj.WorldPos[0]).cross(obj.WorldPos[2] - obj.WorldPos[0])).Norm();
+				// 鏡に映る映像を書き込んだ画像のテクスチャのサイズを取得
+				GetGraphTextureSize(obj.Handle.get(), &TextureW, &TextureH);
+				// 鏡の描画に使用する頂点のセットアップ
+				VUnitPos[0] = (obj.WorldPos[2] - obj.WorldPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
+				VUnitPos[1] = (obj.WorldPos[3] - obj.WorldPos[1])*(1.0f / (MIRROR_POINTNUM - 1));
+				VUnitUV[0] = F4Scale(F4Sub(obj.ScreenPosW[2], obj.ScreenPosW[0]), 1.0f / (MIRROR_POINTNUM - 1));
+				VUnitUV[1] = F4Scale(F4Sub(obj.ScreenPosW[3], obj.ScreenPosW[1]), 1.0f / (MIRROR_POINTNUM - 1));
+				DiffuseColor = GetColorU8(obj.DiffuseColor[0], obj.DiffuseColor[1], obj.DiffuseColor[2], obj.DiffuseColor[3]);
+				SpecularColor = GetColorU8(0, 0, 0, 0);
+				VPos[0] = obj.WorldPos[0];
+				VPos[1] = obj.WorldPos[1];
+				VUV[0] = obj.ScreenPosW[0];
+				VUV[1] = obj.ScreenPosW[1];
+				k = 0;
+				for (int i = 0; i < MIRROR_POINTNUM; i++) {
+					HUnitPos = (VPos[1] - VPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
+					HPos = VPos[0];
+					HUnitUV = F4Scale(F4Sub(VUV[1], VUV[0]), 1.0f / (MIRROR_POINTNUM - 1));
+					HUV = VUV[0];
+					for (int j = 0; j < MIRROR_POINTNUM; j++) {
+						Vert[k].pos = HPos.get();
+						Vert[k].norm = MirrorNormal.get();
+						Vert[k].dif = DiffuseColor;
+						Vert[k].spc = SpecularColor;
+						Vert[k].u = HUV.x / (HUV.w * TextureW);
+						Vert[k].v = HUV.y / (HUV.w * TextureH);
+						Vert[k].su = 0.0f;
+						Vert[k].sv = 0.0f;
+						HUV = F4Add(HUV, HUnitUV);
+						HPos += HUnitPos;
+						k++;
+					}
+					VUV[0] = F4Add(VUV[0], VUnitUV[0]);
+					VUV[1] = F4Add(VUV[1], VUnitUV[1]);
+					VPos[0] += VUnitPos[0];
+					VPos[1] += VUnitPos[1];
+				}
+
+				// 鏡の描画に使用する頂点インデックスをセットアップ
+				k = 0;
+				for (int i = 0; i < MIRROR_POINTNUM - 1; i++) {
+					for (int j = 0; j < MIRROR_POINTNUM - 1; j++) {
+						Index[k + 0] = (i + 0) * MIRROR_POINTNUM + j + 0;
+						Index[k + 1] = (i + 0) * MIRROR_POINTNUM + j + 1;
+						Index[k + 2] = (i + 1) * MIRROR_POINTNUM + j + 0;
+						Index[k + 3] = (i + 1) * MIRROR_POINTNUM + j + 1;
+						Index[k + 4] = Index[k + 2];
+						Index[k + 5] = Index[k + 1];
+						k += 6;
+					}
+				}
+				// 鏡を描画
+				SetDrawMode(DX_DRAWMODE_BILINEAR);
+				SetDrawBlendMode(obj.BlendParam[0], obj.BlendParam[1]);
+				DrawPolygonIndexed3D(&Vert[0], MIRROR_POINTNUM * MIRROR_POINTNUM, &Index[0], (MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 2, obj.Handle.get(), FALSE);
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				SetDrawMode(DX_DRAWMODE_NEAREST);
+			}
+			Vert.clear();
+			Index.clear();
+		}
+	};
 public:
 	main_c() {
 		//
@@ -41,6 +199,24 @@ public:
 		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);					//身体
 		auto mapparts = std::make_unique<Mapclass>(settings->dispx, settings->dispy);	//map
 		auto tgtparts = std::make_unique<tgttmp>();										//ターゲット
+
+		auto Mirrarparts = std::make_unique<Mirrar_draw>(settings->dispx, settings->dispy,1);// 鏡処理の初期化
+
+		{
+			Mirrarparts->get_Mirror_obj(0).WorldPos[0] = VGet(-1.0f, 2.0f, 5.f);
+			Mirrarparts->get_Mirror_obj(0).WorldPos[1] = VGet(1.0f, 2.0f, 5.f);
+			Mirrarparts->get_Mirror_obj(0).WorldPos[2] = VGet(-1.0f, 0.5f, 5.f);
+			Mirrarparts->get_Mirror_obj(0).WorldPos[3] = VGet(1.0f, 0.5f, 5.f);
+			Mirrarparts->get_Mirror_obj(0).AmbientColor = GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
+			Mirrarparts->get_Mirror_obj(0).DiffuseColor[0] = 255;
+			Mirrarparts->get_Mirror_obj(0).DiffuseColor[1] = 255;
+			Mirrarparts->get_Mirror_obj(0).DiffuseColor[2] = 255;
+			Mirrarparts->get_Mirror_obj(0).DiffuseColor[3] = 255;
+			Mirrarparts->get_Mirror_obj(0).BlendParam[0] = DX_BLENDMODE_NOBLEND;
+			Mirrarparts->get_Mirror_obj(0).BlendParam[1] = 255;
+		}
+
+
 		//GUNデータ
 		this->gun_data.resize(5);
 		this->gun_data[0].mod.set("Knife");
@@ -1602,8 +1778,40 @@ public:
 						}
 						else {
 							this->campos = this->campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), chara[id_mine].mat_HMD);
+							// 鏡に映る映像を描画
+							int cz = 0;
+							for (auto& i : Mirrarparts->get_Mirror_obj()) {
+								Mirrarparts->Mirror_SetupCamera(cz, this->campos, this->campos + this->camvec);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+								cz++;
+								Hostpassparts->dof(
+									&i.Handle,
+									mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps),
+									draw_by_shadow,
+									Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps,
+									100.f, 1.0f, 0.1f);
+							}
+
+							auto draw_by_shadow_2 = [&] {
+								Drawparts->Draw_by_Shadow(
+									[&] {
+										mapparts->map_get().DrawModel();
+										for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
+										for (auto& c : this->chara) { c.Draw_chara(this->usegun.first, this->sel_gun); }
+										for (auto& g : this->item_data) { g.Draw_item(this->chara[id_mine]); }
+										//銃弾
+										SetFogEnable(FALSE);
+										SetUseLighting(FALSE);
+										for (auto& c : this->chara) { c.Draw_ammo(); }
+										SetUseLighting(TRUE);
+										SetFogEnable(TRUE);
+
+										Mirrarparts->Mirror_Render();		// 鏡の描画
+									}
+								);
+							};
+
 							//被写体深度描画
-							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 1.0f, 0.1f);
+							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 1.0f, 0.1f);
 							//描画
 							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 							{
@@ -1631,7 +1839,41 @@ public:
 									, MATRIX_ref::RotY(deg2rad(-89)))
 								;
 							if (this->TPS.first) {//TPS視点
-								Hostpassparts->draw(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), this->fov), draw_by_shadow, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
+															// 鏡に映る映像を描画
+								int cz = 0;
+								for (auto& i : Mirrarparts->get_Mirror_obj()) {
+									Mirrarparts->Mirror_SetupCamera(cz, cam, vec);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+									cz++;
+									Hostpassparts->draw(
+										&i.Handle,
+										mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov),
+										draw_by_shadow,
+										Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov,
+										100.f, 0.1f);
+
+								}
+
+								auto draw_by_shadow_2 = [&] {
+									Drawparts->Draw_by_Shadow(
+										[&] {
+										mapparts->map_get().DrawModel();
+										for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
+										for (auto& c : this->chara) { c.Draw_chara(this->usegun.first, this->sel_gun); }
+										for (auto& g : this->item_data) { g.Draw_item(this->chara[id_mine]); }
+										//銃弾
+										SetFogEnable(FALSE);
+										SetUseLighting(FALSE);
+										for (auto& c : this->chara) { c.Draw_ammo(); }
+										SetUseLighting(TRUE);
+										SetFogEnable(TRUE);
+
+										Mirrarparts->Mirror_Render();		// 鏡の描画
+									}
+									);
+								};
+
+								//被写体深度描画
+								Hostpassparts->draw(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), this->fov), draw_by_shadow_2, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, this->fov, cam, vec, VGet(0, 1.f, 0));
 								{
 									this->outScreen[2].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, false);
