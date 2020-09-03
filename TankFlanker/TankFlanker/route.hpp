@@ -92,6 +92,9 @@ class main_c : Mainclass {
 					}
 				}
 			}
+
+			id.canlook = false;
+
 		}
 
 		// ‹¾‚Ì•`‰æ
@@ -308,8 +311,16 @@ public:
 					for (auto& c : this->chara) { c.Draw_ammo(); }
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
+
 				}
 				);
+				for (auto& c : this->chara) {
+					VECTOR_ref startpos = c.pos + c.pos_LEFTHAND;
+					VECTOR_ref endpos = c.pos + c.pos_LEFTHAND - c.mat_LEFTHAND.zvec()*2.6f;
+
+					DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 255, 255));
+				}
+
 
 				Mirrarparts->Mirror_Render();		// ‹¾‚Ì•`‰æ
 			};
@@ -388,13 +399,13 @@ public:
 							if (vrparts->get_hand2_num() != -1) {
 								auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
 								if (ptr_.turn && ptr_.now) {
-									if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
+									if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
 										//running
-										running = (ptr_.on[1] & BUTTON_TOUCHPAD) != 0;
+										running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 										if (this->ads.first) {
 											running = false;
 										}
-										auto speed = (running ? 8.f : (this->ads.first ? 2.f : 4.f));
+										auto speed = (running ? 4.f : 2.f);
 
 										easing_set(&this->add_pos_buf, (c.mat_HMD.zvec()*ptr_.touch.y() + c.mat_HMD.xvec()*ptr_.touch.x())*-speed / fps, 0.95f, fps);
 									}
@@ -412,20 +423,55 @@ public:
 									}
 								}
 								c.pos += this->add_pos;
-								//—Ž‰º”»’è
-								auto pp = mapparts->map_col_line(c.pos + VGet(0, 1.8f, 0), c.pos + VGet(0, -0.1f, 0), 0);
-								if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
-									c.pos = pp.HitPosition;
-									c.add_ypos = 0.f;
-								}
-								else {
-									c.pos.yadd(c.add_ypos);
-									c.add_ypos -= 9.8f / std::powf(fps, 2.f);
-									//•œ‹A
-									if (c.pos.y() <= -5.f) {
-										c.pos = VGet(0.f, 5.f, 0.f);
-										c.add_ypos = 0.f;
+								{
+									VECTOR_ref pos_t = c.pos;
+									pos_t += this->add_pos;
+									//•Ç”»’è
+									{
+										mapparts->map_col_wall(c.pos, &pos_t);
+										if ((this->add_pos - (pos_t - c.pos)).size() != 0.f) {
+											this->add_pos = pos_t - c.pos;
+											if (c.add_ypos == 0.f) {
+												this->add_pos_buf = this->add_pos;
+											}
+										}
 									}
+									//—Ž‰º”»’è
+									{
+										auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.6f, 0), pos_t, 0);
+										if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
+											if (VECTOR_ref(VGet(0, 1.f, 0.f)).dot(pp.Normal) >= cos(deg2rad(30))) {
+												pos_t = pp.HitPosition;
+											}
+											else {
+												//ƒuƒƒbƒN‚·‚éƒxƒNƒgƒ‹
+												auto v_t = VECTOR_ref(pp.Normal);
+												v_t.y(0);
+												v_t = v_t.Norm();
+												//
+												pos_t -= this->add_pos;
+												this->add_pos += v_t * this->add_pos.cross(v_t.cross(this->add_pos).Norm()).size();
+												if (c.add_ypos == 0.f) {
+													this->add_pos_buf = this->add_pos;
+												}
+												pos_t += this->add_pos;
+											}
+											c.add_ypos = 0.f;
+										}
+										else {
+											pos_t.yadd(c.add_ypos);
+											c.add_ypos -= 9.8f / std::powf(fps, 2.f);
+											//•œ‹A
+											if (pos_t.y() <= -5.f) {
+												pos_t = VGet(0.f, 9.f, 0.f);
+												c.add_ypos = 0.f;
+												c.body.SetMatrix(c.mat*MATRIX_ref::Mtrans(pos_t));
+												c.body.PhysicsResetState();
+											}
+										}
+									}
+									//—Ž‰º”»’è
+									c.pos = pos_t;
 								}
 							}
 							//pos
@@ -511,7 +557,7 @@ public:
 									c.mat_LEFTHAND = c.mat_HMD;
 									*/
 									float dist_ = ((c.pos_LEFTHAND + c.pos) - c.obj.frame(c.ptr_now->frame[6].first)).size();
-									if (dist_ <= 0.2f && (!c.reloadf || !c.down_mag)) {
+									if (dist_ <= 0.1f && (!c.reloadf || !c.down_mag)) {
 										c.LEFT_hand = true;
 										c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - c.pos;
 									}
@@ -753,7 +799,7 @@ public:
 												auto p = MATRIX_ref::RotVec2(c.mat_LEFTHAND.yvec(), (c.obj.frame(c.ptr_now->frame[0].first) - (c.pos_LEFTHAND + c.pos)));
 												c.mat_mag = c.mag.GetFrameLocalMatrix(3)* (c.mat_LEFTHAND*p);
 												c.pos_mag = c.pos_LEFTHAND + c.pos;
-												if ((c.mag.frame(3) - c.obj.frame(c.ptr_now->frame[0].first)).size() <= 0.1f) {
+												if ((c.mag.frame(3) - c.obj.frame(c.ptr_now->frame[0].first)).size() <= 0.05f) {
 													c.obj.get_anime(1).time = 0.f;
 													c.obj.get_anime(0).per = 1.f;
 													c.obj.get_anime(1).per = 0.f;
@@ -1799,10 +1845,20 @@ public:
 						if (settings->useVR_e) {
 							for (char i = 0; i < 2; i++) {
 								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
+
+								// ‹¾‚É‰f‚é‰f‘œ‚ð•`‰æ
+								int cz = 0;
+								for (auto& i : Mirrarparts->get_Mirror_obj()) {
+									Mirrarparts->Mirror_SetupCamera(cz, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// ‹¾‚É‰f‚é‰f‘œ‚ð•`‰æ‚·‚éÛ‚ÉŽg—p‚·‚éƒJƒƒ‰‚ÌÝ’è‚ðs‚¤
+									if (i.canlook) {
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov, 100.f, 1.0f, 0.1f);
+									}
+									cz++;
+								}
 								//”íŽÊ‘Ì[“x•`‰æ
-								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.2f, 0.1f);
+								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.2f, 0.1f);
 								//•`‰æ
-								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
+								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, this->fov, this->campos, this->campos + this->camvec, this->camup);
 								{
 									Hostpassparts->bloom(this->BufScreen, 64);//ƒuƒ‹[ƒ€•t‚«•`‰æ
 									UIparts->draw();//UI
@@ -1829,7 +1885,7 @@ public:
 								cz++;
 							}
 							//”íŽÊ‘Ì[“x•`‰æ
-							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 1.0f, 0.1f);
+							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.2f, 0.1f);
 							//•`‰æ
 							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 							{

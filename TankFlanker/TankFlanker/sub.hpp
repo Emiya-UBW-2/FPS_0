@@ -858,16 +858,18 @@ public:
 					easing_set(&this->add, VGet(0, 0, 0), 0.8f, fps);
 				}
 				//
-				VECTOR_ref startpos = chara.obj.frame(chara.ptr_now->frame[3].first);
-				VECTOR_ref endpos = chara.obj.frame(chara.ptr_now->frame[3].first) + chara.mat_LEFTHAND.zvec()*-3.f;
+				VECTOR_ref startpos = chara.pos + chara.pos_LEFTHAND;
+				VECTOR_ref endpos = chara.pos + chara.pos_LEFTHAND - chara.mat_LEFTHAND.zvec()*2.6f;
 				auto p = mapparts->map_col_line(startpos, endpos, 0);
 				if (p.HitFlag == 1) {
 					endpos = p.HitPosition;
 				}
+				bool zz=false;
 				switch (this->cate){
 				case 0:
-					chara.canget_gunitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
-					if (chara.canget_gunitem) {
+					zz = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.1f);
+					chara.canget_gunitem |= zz;
+					if (zz) {
 						chara.canget_gun = this->ptr->name;
 						if (chgun.second == 1) {
 							int sel_t = sel_gun;
@@ -904,8 +906,9 @@ public:
 					}
 					break;
 				case 1:
-					chara.canget_magitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
-					if (chara.canget_magitem) {
+					zz = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.2f);
+					chara.canget_magitem |= zz;
+					if (zz) {
 						chara.canget_mag = this->ptr->mag.name;
 						if (chgun.second == 1) {
 							chara.gun_stat[this->ptr->id].in += this->cap;
