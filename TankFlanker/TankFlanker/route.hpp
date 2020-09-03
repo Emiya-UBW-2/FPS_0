@@ -58,7 +58,7 @@ class main_c : Mainclass {
 			}
 		}
 		//
-		Mirrar_draw(int xsize,int ysize,int p) {
+		Mirrar_draw(int xsize, int ysize, int p) {
 			MIRROR_NUM = p;
 			Mirror_Initialize(xsize, ysize);
 		}
@@ -77,7 +77,7 @@ class main_c : Mainclass {
 			MirrorCameraEyePos = CameraEyePos + MirrorNormal * (-EyeLength * 2.0f);
 			MirrorCameraTargetPos = CameraTargetPos + MirrorNormal * (-TargetLength * 2.0f);
 			// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
-			id.Handle.SetDraw_Screen(far_distance, near_distance, fov, MirrorCameraEyePos, MirrorCameraTargetPos, VGet(0,1.f,0.f));
+			id.Handle.SetDraw_Screen(far_distance, near_distance, fov, MirrorCameraEyePos, MirrorCameraTargetPos, VGet(0, 1.f, 0.f));
 			for (int i = 0; i < 4; i++) {
 				id.ScreenPosW[i] = ConvWorldPosToScreenPosPlusW(id.WorldPos[i].get());
 			}
@@ -201,7 +201,7 @@ public:
 		auto vrparts = std::make_unique<VRDraw>(settings);		//DXLib描画
 		//画面指定
 		settings->set_dispsize();
-		auto Drawparts = std::make_unique<DXDraw>("FPS_0",settings, FRAME_RATE);		/*汎用クラス*/
+		auto Drawparts = std::make_unique<DXDraw>("FPS_0", settings, FRAME_RATE);		/*汎用クラス*/
 		auto UIparts = std::make_unique<UI>(settings);									/*UI*/
 		auto Debugparts = std::make_unique<DeBuG>(FRAME_RATE);							/*デバッグ*/
 		auto Hostpassparts = std::make_unique<HostPassEffect>(settings);				/*ホストパスエフェクト*/
@@ -216,7 +216,7 @@ public:
 		auto mapparts = std::make_unique<Mapclass>(settings->dispx, settings->dispy);	//map
 		auto tgtparts = std::make_unique<tgttmp>();										//ターゲット
 
-		auto Mirrarparts = std::make_unique<Mirrar_draw>(settings->dispx, settings->dispy,1);// 鏡処理の初期化
+		auto Mirrarparts = std::make_unique<Mirrar_draw>(settings->dispx, settings->dispy, 1);// 鏡処理の初期化
 
 		{
 			Mirrarparts->get_Mirror_obj(0).WorldPos[0] = VGet(-1.0f, 2.0f, 5.f);
@@ -277,7 +277,7 @@ public:
 			Drawparts->Set_Light_Shadow(
 				mapparts->map_col_get().mesh_maxpos(0),
 				mapparts->map_col_get().mesh_minpos(0),
-				VGet(0.5f,-0.5f,0.5f),
+				VGet(0.5f, -0.5f, 0.5f),
 				[&] {mapparts->map_get().DrawModel(); });
 			//影に描画するものを指定する(仮)
 			auto draw_in_shadow = [&] {
@@ -508,9 +508,9 @@ public:
 									}
 								}
 								//頭部
-								
+
 								c.body.SetFrameLocalMatrix(c.head_f.first, c.mat_HMD*m_inv.Inverse()*MATRIX_ref::Mtrans(c.head_f.second));
-							//
+								//
 								c.body.get_anime(3).per = 0.f;
 								c.body.get_anime(3).time = 0.f;
 								//右手
@@ -1484,7 +1484,7 @@ public:
 									//
 									if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
 										c.reload_cnt += 1.f / fps;
-										if (c.reload_cnt < c.ptr_now->reload_time/3) {
+										if (c.reload_cnt < c.ptr_now->reload_time / 3) {
 											//c.down_mag = false;
 										}
 									}
@@ -1878,7 +1878,7 @@ public:
 							// 鏡に映る映像を描画
 							int cz = 0;
 							for (auto& i : Mirrarparts->get_Mirror_obj()) {
-								Mirrarparts->Mirror_SetupCamera(cz, this->campos, this->campos + this->camvec, this->camup, this->fov_fps,100.f,0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+								Mirrarparts->Mirror_SetupCamera(cz, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 								if (i.canlook) {
 									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
 								}
@@ -1948,7 +1948,7 @@ public:
 					}
 					//画面の反映
 					DXDraw::Screen_Flip();
-					vrparts->Eye_Flip(waits,FRAME_RATE);
+					vrparts->Eye_Flip(waits, FRAME_RATE);
 					//終了判定
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						this->ending = false;
