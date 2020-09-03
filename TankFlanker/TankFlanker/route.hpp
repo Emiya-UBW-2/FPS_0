@@ -602,6 +602,13 @@ public:
 								c.audio.slide.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 							}
 							c.obj.get_anime(3).per = std::max(c.obj.get_anime(3).per - 12.f / fps, 0.f);
+							if (start_c) {
+								c.body.PhysicsResetState();
+								start_c = false;
+							}
+							else {
+								c.body.PhysicsCalculation(1000.f / fps);
+							}
 							//‘€ì
 							{
 								if (vrparts->get_hand1_num() != -1) {
