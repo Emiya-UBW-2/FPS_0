@@ -24,29 +24,43 @@ class main_c : Mainclass {
 	class Mirrar_draw {
 	private:
 		struct Mirror_mod {
-			VECTOR_ref WorldPos[4];		// 鏡のワールド座標
-			COLOR_F AmbientColor;		// 鏡の Ambient Color
-			int DiffuseColor[4];		// 鏡の Diffuse Color
-			int BlendParam[2];			// 鏡のブレンドモードとパラメータ
-			GraphHandle Handle;	// 鏡に映る映像の取得に使用するスクリーン
+			VECTOR_ref WorldPos[4];	// 鏡のワールド座標
+			COLOR_F AmbientColor;	// 鏡の Ambient Color
+			int DiffuseColor[4];	// 鏡の Diffuse Color
+			int BlendParam[2];		// 鏡のブレンドモードとパラメータ
+			GraphHandle Handle;		// 鏡に映る映像の取得に使用するスクリーン
 			FLOAT4 ScreenPosW[4];	// 鏡に映る映像の取得に使用するクリーンの中の鏡の四隅の座標( 同次座標 )
 			bool canlook = false;	//鏡が見えているか否か
 		};
-
-		int MIRROR_POINTNUM = 64;		// 鏡の描画に使用する面の頂点分割数
-		int MIRROR_NUM = 2;		// 鏡の数
 		std::vector<Mirror_mod> Mirror_obj;
+		int MIRROR_POINTNUM = 64;	// 鏡の描画に使用する面の頂点分割数
+		int MIRROR_NUM = 2;			// 鏡の数
+
+		std::vector <VERTEX3D> Vert;
+		std::vector <unsigned short> Index;
+		MATERIALPARAM Material;
+		VECTOR_ref HUnitPos;
+		VECTOR_ref VUnitPos[2];
+		VECTOR_ref HPos;
+		VECTOR_ref VPos[2];
+		FLOAT4 HUnitUV;
+		FLOAT4 VUnitUV[2];
+		FLOAT4 HUV;
+		FLOAT4 VUV[2];
+		VECTOR_ref MirrorNormal;
+		COLOR_U8 DiffuseColor;
+		COLOR_U8 SpecularColor;
+		int TextureW, TextureH;
+
+
 	public:
-		VECTOR_ref MirrorCameraEyePos, MirrorCameraTargetPos;
+		VECTOR_ref Mirrorcampos, Mirrorcamtgt;
 
 		auto& get_Mirror_obj() {
 			return Mirror_obj;
 		}
 		auto& get_Mirror_obj(int i) {
 			return Mirror_obj[i];
-		}
-		auto& get_MirrorHandle(int i) {
-			return Mirror_obj[i].Handle;
 		}
 
 		// 鏡の初期化
@@ -56,6 +70,8 @@ class main_c : Mainclass {
 				Mirror_obj.resize(Mirror_obj.size() + 1);
 				Mirror_obj.back().Handle = GraphHandle::Make(xsize, ysize, FALSE);	// 鏡に映る映像の取得に使用するスクリーンの作成
 			}
+			Vert.resize(MIRROR_POINTNUM * MIRROR_POINTNUM);
+			Index.resize((MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 6);
 		}
 		//
 		Mirrar_draw(int xsize, int ysize, int p) {
@@ -63,26 +79,29 @@ class main_c : Mainclass {
 			Mirror_Initialize(xsize, ysize);
 		}
 		~Mirrar_draw() {
+			Vert.clear();
+			Index.clear();
 		}
 
-		// 鏡に映る映像を描画するためのカメラの設定を行う
-		void Mirror_SetupCamera(int MirrorNo, VECTOR_ref CameraEyePos, VECTOR_ref CameraTargetPos, const VECTOR_ref& camup, const float& fov, const float& far_distance = 1000.f, const float& near_distance = 100.f) {
-			auto& id = Mirror_obj[MirrorNo];
+		// 鏡に映る映像を描画するためのカメラの設定を行う.Mirrorcampos,Mirrorcamtgtに反映
+
+		void Mirror_SetupCamera(Mirror_mod& MirrorNo, const VECTOR_ref& campos, const VECTOR_ref& camtgt, const VECTOR_ref& camup, const float& fov, const float& far_distance = 1000.f, const float& near_distance = 100.f) {
+			auto& id = MirrorNo;
 			// 鏡の面の法線を算出
 			VECTOR_ref MirrorNormal = ((id.WorldPos[1] - id.WorldPos[0]).cross(id.WorldPos[2] - id.WorldPos[0])).Norm();
 			// 鏡の面からカメラの座標までの最短距離、鏡の面からカメラの注視点までの最短距離を算出
-			float EyeLength = Plane_Point_MinLength(id.WorldPos[0].get(), MirrorNormal.get(), CameraEyePos.get());
-			float TargetLength = Plane_Point_MinLength(id.WorldPos[0].get(), MirrorNormal.get(), CameraTargetPos.get());
+			float EyeLength = Plane_Point_MinLength(id.WorldPos[0].get(), MirrorNormal.get(), campos.get());
+			float TargetLength = Plane_Point_MinLength(id.WorldPos[0].get(), MirrorNormal.get(), camtgt.get());
 			// 鏡に映る映像を描画する際に使用するカメラの座標とカメラの注視点を算出
-			MirrorCameraEyePos = CameraEyePos + MirrorNormal * (-EyeLength * 2.0f);
-			MirrorCameraTargetPos = CameraTargetPos + MirrorNormal * (-TargetLength * 2.0f);
+			Mirrorcampos = VECTOR_ref(campos) + MirrorNormal * (-EyeLength * 2.0f);
+			Mirrorcamtgt = VECTOR_ref(camtgt) + MirrorNormal * (-TargetLength * 2.0f);
 			// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
-			id.Handle.SetDraw_Screen(far_distance, near_distance, fov, MirrorCameraEyePos, MirrorCameraTargetPos, VGet(0, 1.f, 0.f));
+			id.Handle.SetDraw_Screen(far_distance, near_distance, fov, Mirrorcampos, Mirrorcamtgt, VGet(0, 1.f, 0.f));
 			for (int i = 0; i < 4; i++) {
 				id.ScreenPosW[i] = ConvWorldPosToScreenPosPlusW(id.WorldPos[i].get());
 			}
 			// 鏡に映る映像の中での鏡の四隅の座標を算出( 同次座標 )
-			id.Handle.SetDraw_Screen(far_distance, near_distance, fov, CameraEyePos, CameraTargetPos, camup);
+			id.Handle.SetDraw_Screen(far_distance, near_distance, fov, campos, camtgt, camup);
 			id.canlook = true;
 			for (int z = 0; z < 4; z++) {
 				if (id.canlook) {
@@ -93,31 +112,11 @@ class main_c : Mainclass {
 				}
 			}
 
-			id.canlook = false;
+			//id.canlook = false;
 
 		}
-
 		// 鏡の描画
 		void Mirror_Render(void) {
-			std::vector <VERTEX3D> Vert;
-			std::vector <unsigned short> Index;
-			MATERIALPARAM Material;
-			VECTOR_ref HUnitPos;
-			VECTOR_ref VUnitPos[2];
-			VECTOR_ref HPos;
-			VECTOR_ref VPos[2];
-			FLOAT4 HUnitUV;
-			FLOAT4 VUnitUV[2];
-			FLOAT4 HUV;
-			FLOAT4 VUV[2];
-			VECTOR_ref MirrorNormal;
-			COLOR_U8 DiffuseColor;
-			COLOR_U8 SpecularColor;
-			int TextureW, TextureH;
-
-			Vert.resize(MIRROR_POINTNUM * MIRROR_POINTNUM);
-			Index.resize((MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 6);
-
 			for (auto& obj : Mirror_obj) {
 				if (obj.canlook) {
 					// 鏡の描画に使用するマテリアルのセットアップ
@@ -132,40 +131,44 @@ class main_c : Mainclass {
 					// 鏡に映る映像を書き込んだ画像のテクスチャのサイズを取得
 					GetGraphTextureSize(obj.Handle.get(), &TextureW, &TextureH);
 					// 鏡の描画に使用する頂点のセットアップ
-					VUnitPos[0] = (obj.WorldPos[2] - obj.WorldPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
-					VUnitPos[1] = (obj.WorldPos[3] - obj.WorldPos[1])*(1.0f / (MIRROR_POINTNUM - 1));
-					VUnitUV[0] = F4Scale(F4Sub(obj.ScreenPosW[2], obj.ScreenPosW[0]), 1.0f / (MIRROR_POINTNUM - 1));
-					VUnitUV[1] = F4Scale(F4Sub(obj.ScreenPosW[3], obj.ScreenPosW[1]), 1.0f / (MIRROR_POINTNUM - 1));
-					DiffuseColor = GetColorU8(obj.DiffuseColor[0], obj.DiffuseColor[1], obj.DiffuseColor[2], obj.DiffuseColor[3]);
-					SpecularColor = GetColorU8(0, 0, 0, 0);
-					VPos[0] = obj.WorldPos[0];
-					VPos[1] = obj.WorldPos[1];
-					VUV[0] = obj.ScreenPosW[0];
-					VUV[1] = obj.ScreenPosW[1];
 					{
+						VUnitPos[0] = (obj.WorldPos[2] - obj.WorldPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
+						VUnitPos[1] = (obj.WorldPos[3] - obj.WorldPos[1])*(1.0f / (MIRROR_POINTNUM - 1));
+						VUnitUV[0] = F4Scale(F4Sub(obj.ScreenPosW[2], obj.ScreenPosW[0]), 1.0f / (MIRROR_POINTNUM - 1));
+						VUnitUV[1] = F4Scale(F4Sub(obj.ScreenPosW[3], obj.ScreenPosW[1]), 1.0f / (MIRROR_POINTNUM - 1));
+						DiffuseColor = GetColorU8(obj.DiffuseColor[0], obj.DiffuseColor[1], obj.DiffuseColor[2], obj.DiffuseColor[3]);
+						SpecularColor = GetColorU8(0, 0, 0, 0);
+						VPos[0] = obj.WorldPos[0];
+						VPos[1] = obj.WorldPos[1];
+						VUV[0] = obj.ScreenPosW[0];
+						VUV[1] = obj.ScreenPosW[1];
 						int k = 0;
-						for (int i = 0; i < MIRROR_POINTNUM; i++) {
-							HUnitPos = (VPos[1] - VPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
-							HPos = VPos[0];
-							HUnitUV = F4Scale(F4Sub(VUV[1], VUV[0]), 1.0f / (MIRROR_POINTNUM - 1));
-							HUV = VUV[0];
-							for (int j = 0; j < MIRROR_POINTNUM; j++) {
-								Vert[k].pos = HPos.get();
-								Vert[k].norm = MirrorNormal.get();
-								Vert[k].dif = DiffuseColor;
-								Vert[k].spc = SpecularColor;
-								Vert[k].u = HUV.x / (HUV.w * TextureW);
-								Vert[k].v = HUV.y / (HUV.w * TextureH);
-								Vert[k].su = 0.0f;
-								Vert[k].sv = 0.0f;
+						for (auto& v : Vert) {
+							if (k%MIRROR_POINTNUM == 0) {
+								HUnitPos = (VPos[1] - VPos[0])*(1.0f / (MIRROR_POINTNUM - 1));
+								HPos = VPos[0];
+								HUnitUV = F4Scale(F4Sub(VUV[1], VUV[0]), 1.0f / (MIRROR_POINTNUM - 1));
+								HUV = VUV[0];
+							}
+							{
+								v.pos = HPos.get();
+								v.norm = MirrorNormal.get();
+								v.dif = DiffuseColor;
+								v.spc = SpecularColor;
+								v.u = HUV.x / (HUV.w * TextureW);
+								v.v = HUV.y / (HUV.w * TextureH);
+								v.su = 0.0f;
+								v.sv = 0.0f;
 								HUV = F4Add(HUV, HUnitUV);
 								HPos += HUnitPos;
-								k++;
 							}
-							VUV[0] = F4Add(VUV[0], VUnitUV[0]);
-							VUV[1] = F4Add(VUV[1], VUnitUV[1]);
-							VPos[0] += VUnitPos[0];
-							VPos[1] += VUnitPos[1];
+							if (k%MIRROR_POINTNUM == 0) {
+								VUV[0] = F4Add(VUV[0], VUnitUV[0]);
+								VUV[1] = F4Add(VUV[1], VUnitUV[1]);
+								VPos[0] += VUnitPos[0];
+								VPos[1] += VUnitPos[1];
+							}
+							k++;
 						}
 					}
 					// 鏡の描画に使用する頂点インデックスをセットアップ
@@ -190,8 +193,6 @@ class main_c : Mainclass {
 					SetDrawMode(DX_DRAWMODE_NEAREST);
 				}
 			}
-			Vert.clear();
-			Index.clear();
 		}
 	};
 public:
@@ -1829,13 +1830,11 @@ public:
 								VECTOR_ref yvec = c.mat_RIGHTHAND.yvec();
 
 								// 鏡に映る映像を描画
-								int cz = 0;
 								for (auto& i : Mirrarparts->get_Mirror_obj()) {
-									Mirrarparts->Mirror_SetupCamera(cz, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+									Mirrarparts->Mirror_SetupCamera(i, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), (this->fov / 7.5f) / 4.f), draw_by_shadow, Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), (this->fov / 7.5f) / 4.f), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
 									}
-									cz++;
 								}
 
 								Hostpassparts->draw(&this->ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (this->fov / 7.5f) / 4.f), draw_by_shadow_2, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);
@@ -1854,13 +1853,11 @@ public:
 								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
 
 								// 鏡に映る映像を描画
-								int cz = 0;
 								for (auto& i : Mirrarparts->get_Mirror_obj()) {
-									Mirrarparts->Mirror_SetupCamera(cz, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+									Mirrarparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov, 100.f, 1.0f, 0.1f);
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 1.0f, 0.1f);
 									}
-									cz++;
 								}
 								//被写体深度描画
 								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.2f, 0.1f);
@@ -1883,13 +1880,11 @@ public:
 						else {
 							this->campos = this->campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), chara[id_mine].mat_HMD);
 							// 鏡に映る映像を描画
-							int cz = 0;
 							for (auto& i : Mirrarparts->get_Mirror_obj()) {
-								Mirrarparts->Mirror_SetupCamera(cz, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+								Mirrarparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 								if (i.canlook) {
-									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
+									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
 								}
-								cz++;
 							}
 							//被写体深度描画
 							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.2f, 0.1f);
@@ -1921,12 +1916,10 @@ public:
 								;
 							if (this->TPS.first) {//TPS視点
 								// 鏡に映る映像を描画
-								int cz = 0;
 								for (auto& i : Mirrarparts->get_Mirror_obj()) {
-									Mirrarparts->Mirror_SetupCamera(cz, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
-									cz++;
+									Mirrarparts->Mirror_SetupCamera(i, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->draw(&i.Handle, mapparts->sky_draw(Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->MirrorCameraEyePos, Mirrarparts->MirrorCameraTargetPos, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
+										Hostpassparts->draw(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
 									}
 								}
 								//被写体深度描画

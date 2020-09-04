@@ -2,5 +2,5 @@ hostpass=true
 bloom=true
 shadow=true
 shadow_level=13
-usevr=true
+usevr=false
 getlog=false
