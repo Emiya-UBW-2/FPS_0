@@ -70,8 +70,8 @@ public:
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ターゲット
-			tgt_pic.clear();
 			/*
+			tgt_pic.clear();
 			tgt_pic.resize(5);
 			tgt_pic[0].Set_tgt(tgtparts, VGet(4, 0, 12.f));
 			tgt_pic[1].Set_tgt(tgtparts, VGet(-4, 0, 18.f));
