@@ -119,27 +119,7 @@ public:
 				});
 			};
 			auto draw_by_shadow_2 = [&] {
-				Drawparts->Draw_by_Shadow([&] {
-					mapparts->map_get().DrawModel();
-					for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
-					for (auto& c : this->chara) { c.Draw_chara(this->usegun.first, this->sel_gun); }
-					for (auto& g : this->item_data) { g.Draw_item(this->chara[id_mine]); }
-					//銃弾
-					SetFogEnable(FALSE);
-					SetUseLighting(FALSE);
-					for (auto& c : this->chara) { c.Draw_ammo(); }
-					SetUseLighting(TRUE);
-					SetFogEnable(TRUE);
-
-				}
-				);
-				/*
-				for (auto& c : this->chara) {
-					VECTOR_ref startpos = c.pos + c.pos_LEFTHAND;
-					VECTOR_ref endpos = c.pos + c.pos_LEFTHAND - c.mat_LEFTHAND.zvec()*2.6f;
-					DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 255, 255));
-				}
-				*/
+				draw_by_shadow();
 				Mirrarparts->Mirror_Render();		// 鏡の描画
 			};
 			//開始
@@ -1309,9 +1289,7 @@ public:
 							}
 							else {//FPS視点
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
-								{
-									this->outScreen[1].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, false);
-								}
+								this->outScreen[1].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, false);
 							}
 							//デバッグ
 							Debugparts->end_way();
