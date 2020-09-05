@@ -30,7 +30,6 @@ public:
 		bool turn = false, now = false;
 	};
 private:
-	bool use_vr = true;
 
 	vr::IVRSystem* m_pHMD=nullptr;
 	vr::EVRInitError eError = vr::VRInitError_None;
@@ -41,6 +40,7 @@ private:
 	char hand1_num = -1;
 	char hand2_num = -1;
 public:
+	bool use_vr = true;
 	const auto& get_hmd_num(void) { return hmd_num; }
 	const auto& get_hand1_num(void) { return hand1_num; }
 	const auto& get_hand2_num(void) { return hand2_num; }
@@ -54,7 +54,6 @@ public:
 			if (eError != vr::VRInitError_None) {
 				m_pHMD = nullptr;
 				use_vr = false;
-				settings->useVR_e = false;
 			}
 		}
 	}

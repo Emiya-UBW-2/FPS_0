@@ -83,6 +83,14 @@ public:
 
 	~Setting() {
 	}
+	void set(void) {
+		dof_o = dof_e;
+		bloom_o = bloom_e;
+		shadow_o = shadow_e;
+		shadow_level_o = shadow_level_e;
+		useVR_o = useVR_e;
+		getlog_o = getlog_e;
+	}
 	void reset(void) {
 		dof_e = dof_o;
 		bloom_e = bloom_o;
