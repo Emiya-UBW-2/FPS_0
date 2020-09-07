@@ -38,113 +38,6 @@ public:
 			this->frame = { 2,this->obj.frame(2) };
 		}
 	};
-	class tgts {
-	public:
-		int id = 0;
-		MV1 obj;
-		GraphHandle pic;
-		frames frame_x, frame_y;
-		float rad = 0.f;
-		float time = 0.f;
-		float power = 0.f;
-		bool LR = true, isMOVE = true;
-		template<class Y, class D>
-		void Set_tgt(std::unique_ptr<Y, D>& tgtparts, const VECTOR_ref& pos) {
-			obj = tgtparts->obj.Duplicate();
-			pic = GraphHandle::Make(tgtparts->x_size, tgtparts->y_size);
-			pic.SetDraw_Screen(false);
-			tgtparts->tex.DrawGraph(0, 0, true);
-
-			obj.SetupCollInfo(8, 8, 8, 0, 1);
-			obj.SetTextureGraphHandle(2, pic, false);
-			frame_x.first = 4;
-			frame_y.first = 3;
-			LR = true;
-			isMOVE = true;
-			obj.SetPosition(pos);
-		}
-		void Delete_tgt() {
-			this->obj.Dispose();
-			this->pic.Dispose();
-		}
-	};
-	//score
-	class scores {
-	public:
-		std::vector<int> stack;
-
-		int point = 0;
-		int pointup = 0;
-		int pointdown = 0;
-		bool ready_f = false;
-		bool start_f = false;
-		bool end_f = false;
-		float readytimer = 4.f;
-		float timer = 30.f;
-
-		scores() {
-			SetOutApplicationLogValidFlag(FALSE);  /*log*/
-			int mdata = FileRead_open("data/score.txt", FALSE);
-			while (FileRead_eof(mdata) == 0) {
-				this->stack.emplace_back(getparams::_int(mdata));
-			}
-			FileRead_close(mdata);
-		}
-		~scores() {
-			std::ofstream outputfile("data/score.txt");
-			for (auto& s : this->stack) {
-				outputfile << s << "\n";
-			}
-			outputfile.close();
-		}
-		void insert() {
-			int i = 0;
-			for (auto& c : this->stack) {
-				if (c < this->point) {
-					break;
-				}
-				i++;
-			}
-			this->stack.insert(this->stack.begin() + i, this->point);
-		}
-		void reset() {
-			this->point = 0;
-			this->pointup = 0;
-			this->pointdown = 0;
-			this->ready_f = false;
-			this->readytimer = 4.f;
-			this->start_f = false;
-			this->end_f = false;
-			this->timer = 30.f;
-		}
-		void sub(const int& pt) {
-			this->pointdown = pt;
-			if (this->point + this->pointdown >= 0) {
-				this->point += this->pointdown;
-			}
-		}
-		void add(const int& pt) {
-			this->pointup = pt;
-			this->point += this->pointup;
-		}
-		void move_timer(void) {
-			float fps = GetFPS();
-			if (this->ready_f && !this->start_f) {
-				this->readytimer -= 1.f / fps;
-				if (this->readytimer <= 0.f) {
-					this->start_f = true;
-				}
-			}
-			if (this->start_f && !this->end_f) {
-				this->timer -= 1.f / fps;
-				if (this->timer <= 0.f) {
-					this->timer = 0.f;
-					this->end_f = true;
-					this->insert();
-				}
-			}
-		}
-	};
 	//銃用オーディオ
 	class Audios {
 	public:
@@ -400,6 +293,23 @@ public:
 	};
 	//player
 	class Chara {
+		struct sendstat {
+			MV1::ani anime[7];
+			MATRIX_ref gun_f;
+			MATRIX_ref bodys_f;
+
+			MATRIX_ref head_f;
+			MATRIX_ref RIGHTarm1_f;
+			MATRIX_ref RIGHTarm2_f;
+			MATRIX_ref RIGHThand_f;
+			MATRIX_ref LEFTarm1_f;
+			MATRIX_ref LEFTarm2_f;
+			MATRIX_ref LEFThand_f;
+			MATRIX_ref bodyg_f;
+			MATRIX_ref bodyb_f;
+			MATRIX_ref body_f;
+		};
+
 		struct ef_guns {
 			EffectS effect;
 			ammos* ptr = nullptr;
@@ -493,6 +403,7 @@ public:
 		};
 		GraphHandle* ScopeScreen=nullptr;
 	public:
+		sendstat senddata;
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
 		std::array<ef_guns, 60> effcs_gun;
@@ -533,7 +444,9 @@ public:
 		float add_ypos = 0.f;//垂直加速度
 		float body_xrad = 0.f;//胴体角度
 		float body_yrad = 0.f;//胴体角度
+		float body_zrad = 0.f;//胴体角度
 		frames head_f;
+		float head_hight = 0.f;
 		frames LEFTeye_f;
 		frames RIGHTeye_f;
 		//
@@ -622,6 +535,7 @@ public:
 				}
 				else if (p.find("頭") != std::string::npos && p.find("先") == std::string::npos) {
 					head_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
+					head_hight = this->body.frame(head_f.first).y();
 				}
 				else if (p.find("右目先") != std::string::npos) {
 					RIGHTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
@@ -779,8 +693,6 @@ public:
 			}
 		}
 	};
-
-
 	//アイテム
 	class Items {
 	public:
@@ -855,16 +767,18 @@ public:
 					easing_set(&this->add, VGet(0, 0, 0), 0.8f, fps);
 				}
 				//
-				VECTOR_ref startpos = chara.obj.frame(chara.ptr_now->frame[3].first);
-				VECTOR_ref endpos = chara.obj.frame(chara.ptr_now->frame[3].first) + chara.mat_LEFTHAND.zvec()*-3.f;
+				VECTOR_ref startpos = chara.pos + chara.pos_LEFTHAND;
+				VECTOR_ref endpos = chara.pos + chara.pos_LEFTHAND - chara.mat_LEFTHAND.zvec()*2.6f;
 				auto p = mapparts->map_col_line(startpos, endpos, 0);
 				if (p.HitFlag == 1) {
 					endpos = p.HitPosition;
 				}
+				bool zz=false;
 				switch (this->cate){
 				case 0:
-					chara.canget_gunitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
-					if (chara.canget_gunitem) {
+					zz = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.1f);
+					chara.canget_gunitem |= zz;
+					if (zz) {
 						chara.canget_gun = this->ptr->name;
 						if (chgun.second == 1) {
 							int sel_t = sel_gun;
@@ -901,8 +815,9 @@ public:
 					}
 					break;
 				case 1:
-					chara.canget_magitem = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.3f);
-					if (chara.canget_magitem) {
+					zz = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.2f);
+					chara.canget_magitem |= zz;
+					if (zz) {
 						chara.canget_mag = this->ptr->mag.name;
 						if (chgun.second == 1) {
 							chara.gun_stat[this->ptr->id].in += this->cap;

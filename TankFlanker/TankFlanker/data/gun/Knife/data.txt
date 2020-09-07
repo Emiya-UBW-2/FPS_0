@@ -1,7 +1,7 @@
 cat=knife
 mode=full
 mode=end
-shot_sound=1
+shot_sound=3
 slide_sound=1
 trigger_sound=1
 mag_down_sound=1

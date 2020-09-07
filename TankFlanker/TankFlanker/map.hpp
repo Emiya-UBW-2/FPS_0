@@ -19,9 +19,10 @@ private:
 
 	SoundHandle envi;
 public:
-	Mapclass(const int& xd, const int& yd) {
-		disp_x = xd;
-		disp_y = yd;
+	template<class Y, class D>
+	Mapclass(std::unique_ptr<Y, D>& settings) {
+		disp_x = settings->out_dispx;
+		disp_y = settings->out_dispy;
 
 		SkyScreen = GraphHandle::Make(disp_x, disp_y);    //‹ó•`‰æ
 	}

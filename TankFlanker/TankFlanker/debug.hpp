@@ -3,7 +3,7 @@
 class DeBuG {
 private:
 	int frate;
-	std::vector<std::array<float, 6 + 1>> deb;
+	std::vector<std::array<float, 6 + 2>> deb;
 	LONGLONG waypoint = 0;
 	std::array<float, 6> waydeb{ 0.f };
 	size_t seldeb;
@@ -27,31 +27,34 @@ public:
 	void debug(int xpos, int ypos, float time) {
 		int wide = 180;
 		deb[0][0] = time;
+		deb[0][1] = 1000.f / GetFPS();
 		for (size_t j = deb.size() - 1; j >= 1; --j) {
 			deb[j][0] = deb[j - 1][0];
+			deb[j][1] = deb[j - 1][1];
 		}
 		for (size_t i = 0; i < waydeb.size(); ++i) {
 			if (seldeb - 1 <= i) {
 				waydeb[i] = waydeb[seldeb - 1];
 			}
-			size_t it = i + 1;
-			deb[0][it] = waydeb[i];
-			for (size_t j = std::size(deb) - 1; j >= 1; --j) {
-				deb[j][it] = deb[j - 1][it];
+			deb[0][i + 2] = waydeb[i];
+			for (size_t j = deb.size() - 1; j >= 1; --j) {
+				deb[j][i + 2] = deb[j - 1][i + 2];
 			}
 		}
 
 		float xs = float(wide) / float(frate);
 		float ys = float(int(waydeb.size() + 1) * fontsize) / float(frate);
 
+		DrawBox(xpos, ypos, xpos + wide, ypos + int(100.f*ys), GetColor(0, 0, 0), TRUE);
 		DrawBox(xpos, ypos, xpos + wide, ypos + int(100.f*ys), GetColor(255, 0, 0), FALSE);
+
 		for (size_t j = 0; j < deb.size() - 1; ++j) {
 			size_t jt = j + 1;
 			for (size_t i = 0; i < waydeb.size(); ++i) {
-				size_t it = i + 1;
-				DXDraw::Line2D(xpos + int(float(j) * xs), ypos + int(100.f*ys) - int(deb[j][it] * 5.f), xpos + int(float(jt) * xs), ypos + int(100.f*ys) - int(deb[jt][it] * 5.f), GetColor(50, 128 + 127 * int(i) / 6, 50));
+				DXDraw::Line2D(xpos + int(float(j) * xs), ypos + int(100.f*ys) - int(deb[j][i + 2] * 5.f), xpos + int(float(jt) * xs), ypos + int(100.f*ys) - int(deb[jt][i + 2] * 5.f), GetColor(50, 128 + 127 * int(i) / 6, 50));
 			}
 			DXDraw::Line2D(xpos + int(float(j) * xs), ypos + int(100.f*ys) - int(deb[j][0] * 5.f), xpos + int(float(jt) * xs), ypos + int(100.f*ys) - int(deb[jt][0] * 5.f), GetColor(255, 255, 0));
+			DXDraw::Line2D(xpos + int(float(j) * xs), ypos + int(100.f*ys) - int(deb[j][1] * 5.f), xpos + int(float(jt) * xs), ypos + int(100.f*ys) - int(deb[jt][1] * 5.f), GetColor(128, 255, 128));
 		}
 		const auto c_ffffff = GetColor(255, 255, 255);
 		DXDraw::Line2D(xpos, ypos + int(50.f*ys), xpos + wide, ypos + int(50.f*ys), GetColor(0, 255, 0));
