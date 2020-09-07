@@ -1,12 +1,13 @@
 #pragma once
 #define FRAME_RATE 90.f
 class main_c : Mainclass {
+	const size_t id_mine = 0;			//自機ID
+
 	std::array<GraphHandle, 3> outScreen;	//スクリーンバッファ
 	GraphHandle BufScreen;					//スクリーンバッファ
 	GraphHandle ScopeScreen;				//スコープ用スクリーン
 	std::vector<Gun> gun_data;				//GUNデータ
 	std::vector<Chara> chara;				//キャラ
-	std::vector<tgts> tgt_pic;				//ターゲット
 	std::vector<Items> item_data;			//拾えるアイテム
 	bool ending = true;						//
 	int sel_gun = 0;						//
@@ -18,7 +19,7 @@ class main_c : Mainclass {
 	VECTOR_ref add_pos, add_pos_buf;							//移動
 	VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
 	float fov = 0.f, fov_fps = 0.f;								//カメラ
-	size_t id_mine = 0;											//自機ID
+	//
 	MV1 body_obj;												//身体モデル
 public:
 	main_c() {
@@ -39,75 +40,200 @@ public:
 		settings->ready_draw_setting();												/*セッティング*/
 		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);				/*身体*/
 		auto mapparts = std::make_unique<Mapclass>(settings);						/*map*/
-		auto tgtparts = std::make_unique<tgttmp>();									/*ターゲット*/
-		auto Mirrarparts = std::make_unique<Mirrar_draw>();							/*鏡処理*/
 		//GUNデータ
-		this->gun_data.resize(5);
-		this->gun_data[0].mod.set("Knife");
-		this->gun_data[1].mod.set("1911");
-		this->gun_data[2].mod.set("M82A2");
-		this->gun_data[3].mod.set("CAR15_M4");
-		this->gun_data[4].mod.set("AK74");
-		UIparts->load_window("銃モデル");					//ロード画面1
-		fill_id(this->gun_data);							//GUNデータ取得1
-		for (auto& g : this->gun_data) { g.set_data(); }	//GUNデータ取得2
-		UIparts->load_window("銃モデル");					//ロード画面2
-		auto scoreparts = std::make_unique<scores>();		//スコア
-		tgtparts->Set_tgtdata();							//ターゲット
-		vrparts->Set_Device();								//VRセット
+		{
+			this->gun_data.resize(5);
+			this->gun_data[0].mod.set("Knife");
+			this->gun_data[1].mod.set("1911");
+			this->gun_data[2].mod.set("M82A2");
+			this->gun_data[3].mod.set("CAR15_M4");
+			this->gun_data[4].mod.set("AK74");
+		}
+		UIparts->load_window("銃モデル");						//ロード画面1
+		{
+			fill_id(this->gun_data);							//GUNデータ取得1
+			for (auto& g : this->gun_data) { g.set_data(); }	//GUNデータ取得2
+		}
+		UIparts->load_window("銃データ");						//ロード画面2
+		vrparts->Set_Device();									//VRセット
 		do {
+			this->fov = deg2rad(settings->useVR_e ? 90 : 45);	//
 			//キャラ設定
-			auto sel_g = UIparts->select_window(this->gun_data, vrparts, settings);
+			int sel_g = 0;
+			{
+				float gun_yrad = 90.f, ber_r = 0.f, start_fl = 0.f, sets = 0.f;
+				VECTOR_ref pos_HMD;
+				MATRIX_ref mat_HMD;
+				switchs changecnt, setf;
+				bool endp = false,startp = false;
+				unsigned char restart = 0;
+				//
+				while (ProcessMessage() == 0) {
+					const auto fps = GetFPS();
+					const auto waits = GetNowHiPerformanceCount();
+					if (!startp) {
+						//VR用
+						if (!setf.first) {
+							if (settings->useVR_e) {
+								vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
+								if (vrparts->get_hand1_num() != -1) {
+									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
+									if (ptr_.turn && ptr_.now) {
+										changecnt.get_in((ptr_.on[1] & BUTTON_SIDE) != 0);
+										if ((ptr_.on[0] & BUTTON_TRIGGER) != 0) { startp = true; }
+									}
+								}
+							}
+							{
+								changecnt.get_in(CheckHitKey(KEY_INPUT_P) != 0);
+								if (CheckHitKey(KEY_INPUT_SPACE) != 0) { startp = true; }
+							}
+						}
+						//
+						if (changecnt.second == 1) {
+							++sel_g %= this->gun_data.size();
+							ber_r = 0.f;
+							UIparts->cursor.play(DX_PLAYTYPE_BACK, TRUE);
+						}
+						if (startp) {
+							UIparts->decision.play(DX_PLAYTYPE_BACK, TRUE);
+						}
+					}
+					else {
+						changecnt.second = 0;
+					}
+
+					easing_set(&ber_r, float(settings->dispy / 4), 0.95f, fps);
+
+					if (!startp) {
+						campos = mat_HMD.zvec() * 0.6f;
+						gun_yrad += 10.f / fps;
+						if (gun_yrad >= 180.f) {
+							gun_yrad = -180.f;
+						}
+					}
+					else {
+						easing_set(&campos, VGet(0.f, 0.f, 1.f), 0.95f, fps);
+						easing_set(&gun_yrad, 90.f, 0.95f, fps);
+						start_fl += 1.f / fps;
+						if (start_fl > 3.f) {
+							endp = true;
+						}
+					}
+					//VR空間に適用
+					vrparts->Move_Player();
+					{
+						setf.get_in(CheckHitKey(KEY_INPUT_O) != 0);
+						if (setf.first) {
+							restart = settings->set_draw_setting();
+							if (restart >= 2) {
+								setf.first = false;
+							}
+							easing_set(&sets, 1.f, 0.9f, fps);
+						}
+						else {
+							settings->reset();
+							easing_set(&sets, 0.f, 0.9f, fps);
+						}
+						BufScreen.SetDraw_Screen();
+						auto& v = this->gun_data[sel_g];
+						{
+							int xp = settings->dispx / 2 - settings->dispy / 6;
+							int yp = settings->dispy / 2 - settings->dispy / 6;
+							UIparts->font18.DrawStringFormat(xp, yp, GetColor(0, 255, 0), "Name  :%s", v.name.c_str());
+						}
+						outScreen[0].SetDraw_Screen(0.1f, 10.f, fov, campos, VGet(0, 0, 0), VGet(0.f, 1.f, 0.f));
+						{
+							v.mod.obj.SetMatrix(MATRIX_ref::RotY(deg2rad(gun_yrad)));
+							v.mod.obj.DrawModel();
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 3.f), 0, 255));
+							BufScreen.DrawExtendGraph(0, 0, settings->dispx, settings->dispy, true);
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * start_fl / 3.f), 0, 255));
+							DrawBox(0, 0, settings->dispx, settings->dispy, GetColor(255, 255, 255), TRUE);
+							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						}
+						if (settings->useVR_e) {
+							for (char i = 0; i < 2; i++) {
+								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+								outScreen[0].DrawGraph(0, 0, false);
+								vrparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
+							}
+						}
+						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+						{
+							DrawBox(0, 0, settings->out_dispx, settings->out_dispy, GetColor(64, 64, 64), TRUE);
+							outScreen[0].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, true);
+
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(215.f*sets), 0, 255));
+							settings->settinggraphs().DrawExtendGraph(
+								settings->out_dispx / 2 - int(float(settings->out_dispx / 6)*sets), settings->out_dispy / 2 - int(float(settings->out_dispx / 6 * 480 / 640)*sets),
+								settings->out_dispx / 2 + int(float(settings->out_dispx / 6)*sets), settings->out_dispy / 2 + int(float(settings->out_dispx / 6 * 480 / 640)*sets),
+								true);
+							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+						}
+					}
+					DXDraw::Screen_Flip();
+					vrparts->Eye_Flip(waits, 90.f);
+					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+						sel_g = -1;
+						break;
+					}
+					//設定適応後再起動するやつ
+					if (restart == 3) {
+						//
+						settings->save();
+						start_me();
+						sel_g = -1;
+						break;
+					}
+					//
+					if (endp) {
+						break;
+					}
+				}
+			}
 			if (sel_g < 0) { break; }
-			chara.resize(1);
+			chara.resize(2);
+
 			chara[id_mine].Ready_chara(&this->gun_data[sel_g], &this->gun_data[0], this->gun_data.size(), this->body_obj, &this->ScopeScreen);
-			chara[id_mine].Set_chara_Position(VGet(0.0f, 9.0f, 0.f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));			//chara[id_mine].Set_chara_Position(VGet(58.73f, 8.0f, 60.59f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
+			chara[id_mine].Set_chara_Position(VGet(0.0f, 9.0f, 0.f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
 			chara[id_mine].Set_chara(0);
+
+			chara[1].Ready_chara(&this->gun_data[sel_g], &this->gun_data[0], this->gun_data.size(), this->body_obj, &this->ScopeScreen);
+			chara[1].Set_chara_Position(VGet(0.0f, 11.0f, 0.f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
+			chara[1].Set_chara(0);
+
 			this->sel_gun = 0;
 			this->usegun.ready(true);
 			//マップ読み込み
 			mapparts->Ready_map("data/map");			//mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
-			//ターゲット
-			/*
-			tgt_pic.clear();
-			tgt_pic.resize(5);
-			tgt_pic[0].Set_tgt(tgtparts, VGet(4, 0, 12.f));
-			tgt_pic[1].Set_tgt(tgtparts, VGet(-4, 0, 18.f));
-			tgt_pic[2].Set_tgt(tgtparts, VGet(2, 0, 27.f));
-			tgt_pic[3].Set_tgt(tgtparts, VGet(-2, 0, 36.f));
-			tgt_pic[4].Set_tgt(tgtparts, VGet(0, 0, 45.f));
-			fill_id(tgt_pic);
-			for (auto& p : tgt_pic) { p.obj.SetPosition(mapparts->map_col_line(p.obj.GetPosition() - VGet(0, -10.f, 0), p.obj.GetPosition() - VGet(0, 10.f, 0), 0).HitPosition); }
-			*/
 			//ライティング
 			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] {mapparts->map_get().DrawModel(); });
 			//鏡
 			{
-				Mirrarparts->Mirror_init(settings->out_dispx, settings->out_dispy, 1);
-				Mirrarparts->get_Mirror_obj(0).WorldPos[0] = VGet(-1.0f, 2.0f, 5.f);
-				Mirrarparts->get_Mirror_obj(0).WorldPos[1] = VGet(1.0f, 2.0f, 5.f);
-				Mirrarparts->get_Mirror_obj(0).WorldPos[2] = VGet(-1.0f, 0.5f, 5.f);
-				Mirrarparts->get_Mirror_obj(0).WorldPos[3] = VGet(1.0f, 0.5f, 5.f);
-				Mirrarparts->get_Mirror_obj(0).AmbientColor = GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
-				Mirrarparts->get_Mirror_obj(0).DiffuseColor[0] = 255;
-				Mirrarparts->get_Mirror_obj(0).DiffuseColor[1] = 255;
-				Mirrarparts->get_Mirror_obj(0).DiffuseColor[2] = 255;
-				Mirrarparts->get_Mirror_obj(0).DiffuseColor[3] = 255;
-				Mirrarparts->get_Mirror_obj(0).BlendParam[0] = DX_BLENDMODE_NOBLEND;
-				Mirrarparts->get_Mirror_obj(0).BlendParam[1] = 255;
+				Drawparts->Mirror_init(settings->out_dispx, settings->out_dispy, 1);
+				Drawparts->get_Mirror_obj(0).WorldPos[0] = VGet(-1.0f, 2.0f, 5.f);
+				Drawparts->get_Mirror_obj(0).WorldPos[1] = VGet(1.0f, 2.0f, 5.f);
+				Drawparts->get_Mirror_obj(0).WorldPos[2] = VGet(-1.0f, 0.5f, 5.f);
+				Drawparts->get_Mirror_obj(0).WorldPos[3] = VGet(1.0f, 0.5f, 5.f);
+				Drawparts->get_Mirror_obj(0).AmbientColor = GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
+				Drawparts->get_Mirror_obj(0).DiffuseColor[0] = 255;
+				Drawparts->get_Mirror_obj(0).DiffuseColor[1] = 255;
+				Drawparts->get_Mirror_obj(0).DiffuseColor[2] = 255;
+				Drawparts->get_Mirror_obj(0).DiffuseColor[3] = 255;
+				Drawparts->get_Mirror_obj(0).BlendParam[0] = DX_BLENDMODE_NOBLEND;
+				Drawparts->get_Mirror_obj(0).BlendParam[1] = 255;
 			}
 			//影に描画するものを指定する(仮)
 			auto draw_in_shadow = [&] {
-				for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
 				for (auto& c : this->chara) { c.Draw_chara(this->usegun.first, this->sel_gun); }
 				for (auto& g : this->item_data) { g.Draw_item(); }
 			};
 			auto draw_by_shadow = [&] {
 				Drawparts->Draw_by_Shadow([&] {
 					mapparts->map_get().DrawModel();
-					for (auto& p : this->tgt_pic) { p.obj.DrawModel(); }
 					for (auto& c : this->chara) { c.Draw_chara(this->usegun.first, this->sel_gun); }
 					for (auto& g : this->item_data) { g.Draw_item(this->chara[id_mine]); }
 					//銃弾
@@ -120,14 +246,12 @@ public:
 			};
 			auto draw_by_shadow_2 = [&] {
 				draw_by_shadow();
-				Mirrarparts->Mirror_Render();		// 鏡の描画
+				Drawparts->Mirror_Render();		// 鏡の描画
 			};
 			//開始
 			{
-				scoreparts->reset();
 				//プレイヤー操作変数群
 				this->xrad_p = 0.f;									//マウスエイム
-				this->fov = deg2rad(settings->useVR_e ? 90 : 45);	//
 				this->fov_fps = this->fov;							//
 				this->TPS.ready(true);
 				this->ads.ready(false);
@@ -135,9 +259,6 @@ public:
 				//環境
 				mapparts->Start_map();
 				//
-				for (auto& tp : tgt_pic) {
-					tp.isMOVE = false;
-				}
 				bool cansh_gun = true;
 				bool start_c = true;
 				while (ProcessMessage() == 0) {
@@ -697,13 +818,14 @@ public:
 									c.audio.slide.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 								}
 								c.obj.get_anime(3).per = std::max(c.obj.get_anime(3).per - 12.f / fps, 0.f);
-								if (start_c) {
-									c.body.PhysicsResetState();
-									start_c = false;
-								}
-								else {
-									c.body.PhysicsCalculation(1000.f / fps);
-								}
+							}
+							//
+							if (start_c) {
+								c.body.PhysicsResetState();
+								start_c = false;
+							}
+							else {
+								c.body.PhysicsCalculation(1000.f / fps);
 							}
 							//操作
 							if (settings->useVR_e) {
@@ -734,21 +856,11 @@ public:
 										this->chgun.get_in((ptr_.on[0] & BUTTON_TOPBUTTON) != 0);
 										//銃破棄
 										this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
-										//タイマーオン
-										scoreparts->ready_f |= ((ptr_.on[0] & BUTTON_SIDE) != 0);
-										//計測リセット
-										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0 && scoreparts->end_f) { scoreparts->reset(); }
 									}
 								}
 							}
 							else {
 								{
-									//タイマーオン(Bキー)
-									scoreparts->ready_f |= (CheckHitKey(KEY_INPUT_B) != 0);
-									//計測リセット(Vキー)
-									if (CheckHitKey(KEY_INPUT_V) != 0 && scoreparts->end_f) {
-										scoreparts->reset();
-									}
 									//マガジン取得
 									c.down_mag = true;
 									//引き金(左クリック)
@@ -883,10 +995,6 @@ public:
 											//サウンド
 											c.audio.shot.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 											c.audio.slide.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
-											//スコア
-											if (scoreparts->start_f && !scoreparts->end_f) {
-												scoreparts->sub(-4);
-											}
 										}
 										break;
 									}
@@ -928,10 +1036,6 @@ public:
 											c.audio.slide.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 											//次のIDへ
 											++c.use_bullet %= c.bullet.size();
-											//スコア
-											if (scoreparts->start_f && !scoreparts->end_f) {
-												scoreparts->sub(-4);
-											}
 										}
 										//マガジン取得
 										if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
@@ -978,6 +1082,7 @@ public:
 											if (p.HitFlag == TRUE) {
 												a.pos = p.HitPosition;
 											}
+											/*
 											for (auto& tp : tgt_pic) {
 												auto q = tp.obj.CollCheck_Line(a.repos, a.pos, 0, 1);
 												if (q.HitFlag == TRUE) {
@@ -997,36 +1102,6 @@ public:
 														UI_ypos = int(float(tgtparts->y_size)*(yvecp.Norm().dot(pvecp)) / yvecp.size());//Y方向
 														DrawCircle(UI_xpos, UI_ypos, 10, GetColor(255, 0, 0));//弾痕
 													}
-													//ポイント判定
-													if (scoreparts->start_f && !scoreparts->end_f) {
-														int r_, g_, b_, a_;
-														GetPixelSoftImage(tgtparts->col_tex, UI_xpos, UI_ypos, &r_, &g_, &b_, &a_);
-														int pt = 0;
-														switch (r_) {
-														case 0:
-															pt = 15;
-															break;
-														case 44:
-															pt = 10;
-															break;
-														case 86:
-															pt = 9;
-															break;
-														case 128:
-															pt = 8;
-															break;
-														case 170:
-															pt = 7;
-															break;
-														case 212:
-															pt = 6;
-															break;
-														default:
-															pt = 5;
-															break;
-														}
-														scoreparts->add(int(float(pt) * ((a.pos - (c.pos + c.pos_RIGHTHAND)).size() / 9.144f)*(a.spec->damage / 10.f)));
-													}
 													//
 													set_effect(&c.effcs[ef_reco], a.pos, q.Normal, 0.011f / 0.1f);
 													//
@@ -1040,6 +1115,7 @@ public:
 												set_effect(&c.effcs_gndhit[c.use_effcsgndhit], a.pos, p.Normal, 0.025f / 0.1f);
 												++c.use_effcsgndhit %= c.effcs_gndhit.size();
 											}
+											*/
 										}
 										//消す(3秒たった、スピードが0以下、貫通が0以下)
 										if (a.cnt >= 3.f || a.spec->speed < 0.f || a.spec->pene <= 0.f) {
@@ -1132,27 +1208,43 @@ public:
 								}
 							}
 						}
-						//タイマー処理
-						scoreparts->move_timer();
-						//ターゲットの演算
-						for (auto& tp : tgt_pic) {
-							if (tp.isMOVE) {
-								if (std::abs(tp.obj.GetPosition().x()) > 7.5f) {
-									tp.LR ^= 1;
-								}
-								VECTOR_ref pos = VGet(tp.obj.GetPosition().x() + float(tp.LR ? 1 : -1) / fps, 0, tp.obj.GetPosition().z());
-								auto pp = mapparts->map_col_line(pos - VGet(0, -10.f, 0), pos - VGet(0, 10.f, 0), 0);
-								if (pp.HitFlag == 1) {
-									tp.obj.SetPosition(pp.HitPosition);
+						//通信
+						{
+							auto& t = chara[1];
+							auto& c = chara[id_mine];
+							t.body.get_anime(0).per = c.body.get_anime(0).per;
+							t.body.get_anime(0).time = c.body.get_anime(0).time;
+							t.body.get_anime(1).per = c.body.get_anime(1).per;
+							t.body.get_anime(1).time = c.body.get_anime(1).time;
+							t.body.get_anime(2).per = c.body.get_anime(2).per;
+							t.body.get_anime(2).time = c.body.get_anime(2).time;
+							t.body.get_anime(3).per = c.body.get_anime(3).per;
+							t.body.get_anime(3).time = c.body.get_anime(3).time;
+							t.body.get_anime(4).per = c.body.get_anime(4).per;
+							t.body.get_anime(4).time = c.body.get_anime(4).time;
+							t.body.get_anime(5).per = c.body.get_anime(5).per;
+							t.body.get_anime(5).time = c.body.get_anime(5).time;
+							t.body.get_anime(6).per = c.body.get_anime(6).per;
+							t.body.get_anime(6).time = c.body.get_anime(6).time;
+							t.obj.SetMatrix(c.obj.GetMatrix());
+							t.body.SetMatrix(c.body.GetMatrix());
+							t.body.SetFrameLocalMatrix(t.head_f.first		, c.body.GetFrameLocalMatrix(c.head_f.first));
+							t.body.SetFrameLocalMatrix(t.RIGHTarm1_f.first	, c.body.GetFrameLocalMatrix(c.RIGHTarm1_f.first));
+							t.body.SetFrameLocalMatrix(t.RIGHTarm2_f.first	, c.body.GetFrameLocalMatrix(c.RIGHTarm2_f.first));
+							t.body.SetFrameLocalMatrix(t.RIGHThand_f.first	, c.body.GetFrameLocalMatrix(c.RIGHThand_f.first));
+							t.body.SetFrameLocalMatrix(t.LEFTarm1_f.first	, c.body.GetFrameLocalMatrix(c.LEFTarm1_f.first));
+							t.body.SetFrameLocalMatrix(t.LEFTarm2_f.first	, c.body.GetFrameLocalMatrix(c.LEFTarm2_f.first));
+							t.body.SetFrameLocalMatrix(t.LEFThand_f.first	, c.body.GetFrameLocalMatrix(c.LEFThand_f.first));
+							t.body.SetFrameLocalMatrix(t.bodyg_f.first		, c.body.GetFrameLocalMatrix(c.bodyg_f.first));
+							t.body.SetFrameLocalMatrix(t.bodyb_f.first		, c.body.GetFrameLocalMatrix(c.bodyb_f.first));
+							t.body.SetFrameLocalMatrix(t.body_f.first		, c.body.GetFrameLocalMatrix(c.body_f.first));
+							//
+							for (size_t i = 0; i < t.gun_slot.size(); i++) {
+								if (t.gun_slot[i].ptr != nullptr) {
+									t.gun_slot[i].obj.SetMatrix(c.gun_slot[i].obj.GetMatrix());
 								}
 							}
-							tp.rad = std::clamp(tp.rad + (-cos(tp.time)*deg2rad(tp.power)), deg2rad(-90), deg2rad(90));
-							tp.obj.SetFrameLocalMatrix(tgtparts->frame.first, MATRIX_ref::RotX(tp.rad)* MATRIX_ref::Mtrans(tgtparts->frame.second));
-							tp.obj.RefreshCollInfo(0, 1);
-
-							easing_set(&tp.rad, 0.f, 0.995f, fps);
-							easing_set(&tp.power, 0.f, 0.995f, fps);
-							tp.time += deg2rad(180.f / fps);
+							t.body.work_anime();
 						}
 						//campos,camvec,camupの指定
 						{
@@ -1193,10 +1285,10 @@ public:
 								VECTOR_ref yvec = c.mat_RIGHTHAND.yvec();
 
 								// 鏡に映る映像を描画
-								for (auto& i : Mirrarparts->get_Mirror_obj()) {
-									Mirrarparts->Mirror_SetupCamera(i, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+								for (auto& i : Drawparts->get_Mirror_obj()) {
+									Drawparts->Mirror_SetupCamera(i, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), (this->fov / 7.5f) / 4.f), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), (this->fov / 7.5f) / 4.f), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
 									}
 								}
 
@@ -1206,26 +1298,26 @@ public:
 						}
 						//描画
 						if (settings->useVR_e) {
-							UIparts->set_draw_vr(chara[id_mine], scoreparts, this->usegun.first, this->sel_gun);
+							UIparts->set_draw_vr(chara[id_mine], this->usegun.first, this->sel_gun);
 						}
 						else {
-							UIparts->set_draw_nomal(chara[id_mine], scoreparts, this->usegun.first, this->sel_gun);
+							UIparts->set_draw_nomal(chara[id_mine], this->usegun.first, this->sel_gun);
 						}
 						if (settings->useVR_e) {
-							for (char i = 0; i < 2; i++) {
-								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(i);
+							for (char eye = 0; eye < 2; eye++) {
+								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(eye);
 
 								// 鏡に映る映像を描画
-								for (auto& i : Mirrarparts->get_Mirror_obj()) {
-									Mirrarparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+								for (auto& i : Drawparts->get_Mirror_obj()) {
+									Drawparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 1.0f, 0.1f);
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 1.0f, 0.1f);
 									}
 								}
 								//被写体深度描画
 								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.2f, 0.1f);
 								//描画
-								this->outScreen[i].SetDraw_Screen(0.1f, 100.f, this->fov, this->campos, this->campos + this->camvec, this->camup);
+								this->outScreen[eye].SetDraw_Screen(0.1f, 100.f, this->fov, this->campos, this->campos + this->camvec, this->camup);
 								{
 									Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 									UIparts->draw();//UI
@@ -1234,19 +1326,19 @@ public:
 								//VRに移す
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 								{
-									this->outScreen[i].DrawGraph(0, 0, false);
+									this->outScreen[eye].DrawGraph(0, 0, false);
 									ID3D11Texture2D* ptr_DX11 = (ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D();
-									vrparts->PutEye(ptr_DX11, i);
+									vrparts->PutEye(ptr_DX11, eye);
 								}
 							}
 						}
 						else {
 							this->campos = this->campos_buf + MATRIX_ref::Vtrans(VGet(-0.035f, 0.f, 0.f), chara[id_mine].mat_HMD);
 							// 鏡に映る映像を描画
-							for (auto& i : Mirrarparts->get_Mirror_obj()) {
-								Mirrarparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+							for (auto& i : Drawparts->get_Mirror_obj()) {
+								Drawparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 								if (i.canlook) {
-									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
+									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
 								}
 							}
 							//被写体深度描画
@@ -1268,10 +1360,10 @@ public:
 							VECTOR_ref vec = c.pos + c.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 0.f), c.mat_HMD);
 							if (this->TPS.first) {//TPS視点
 								// 鏡に映る映像を描画
-								for (auto& i : Mirrarparts->get_Mirror_obj()) {
-									Mirrarparts->Mirror_SetupCamera(i, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+								for (auto& i : Drawparts->get_Mirror_obj()) {
+									Drawparts->Mirror_SetupCamera(i, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->draw(&i.Handle, mapparts->sky_draw(Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Mirrarparts->Mirrorcampos, Mirrarparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
+										Hostpassparts->draw(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
 									}
 								}
 								//被写体深度描画
@@ -1279,8 +1371,6 @@ public:
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, this->fov, cam, vec, VGet(0, 1.f, 0));
 								{
 									this->outScreen[2].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, false);
-									//ターゲットを映す
-									UIparts->TGT_drw(tgt_pic, c.obj.frame(c.ptr_now->frame[3].first), MATRIX_ref::Vtrans(VGet(0, 0, -1.f), c.mat_RIGHTHAND), tgtparts->x_size, tgtparts->y_size);
 									//スコープのエイム
 									if (c.ptr_now->frame[4].first != INT_MAX) {
 										this->ScopeScreen.DrawExtendGraph(settings->out_dispx - 200, 0, settings->out_dispx, 200, true);
@@ -1315,10 +1405,6 @@ public:
 					c.Delete_chara();
 				}
 				chara.clear();
-				for (auto& p : tgt_pic) {
-					p.Delete_tgt();
-				}
-				tgt_pic.clear();
 				mapparts->Delete_map();
 				Drawparts->Delete_Shadow();
 			}
