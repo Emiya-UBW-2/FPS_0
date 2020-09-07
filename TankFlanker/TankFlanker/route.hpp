@@ -62,7 +62,10 @@ public:
 				if (sel_g < 0) { break; }
 				chara.resize(1);
 				chara[id_mine].Ready_chara(&this->gun_data[sel_g], &this->gun_data[0], this->gun_data.size(), this->body_obj, &this->ScopeScreen);
-				chara[id_mine].Set_chara_Position(VGet(58.73f, 8.0f, 60.59f), MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
+				chara[id_mine].Set_chara_Position(
+					//VGet(58.73f, 8.0f, 60.59f),
+					VGet(0.f, 9.0f, 0.f),
+					MGetIdent(), MATRIX_ref::RotY(DX_PI_F));
 				chara[id_mine].Set_chara(0);
 			}
 			this->sel_gun = 0;
