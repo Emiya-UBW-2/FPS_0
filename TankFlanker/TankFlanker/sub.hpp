@@ -293,6 +293,23 @@ public:
 	};
 	//player
 	class Chara {
+		struct sendstat {
+			MV1::ani anime[7];
+			MATRIX_ref gun_f;
+			MATRIX_ref bodys_f;
+
+			MATRIX_ref head_f;
+			MATRIX_ref RIGHTarm1_f;
+			MATRIX_ref RIGHTarm2_f;
+			MATRIX_ref RIGHThand_f;
+			MATRIX_ref LEFTarm1_f;
+			MATRIX_ref LEFTarm2_f;
+			MATRIX_ref LEFThand_f;
+			MATRIX_ref bodyg_f;
+			MATRIX_ref bodyb_f;
+			MATRIX_ref body_f;
+		};
+
 		struct ef_guns {
 			EffectS effect;
 			ammos* ptr = nullptr;
@@ -386,6 +403,7 @@ public:
 		};
 		GraphHandle* ScopeScreen=nullptr;
 	public:
+		sendstat senddata;
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
 		std::array<ef_guns, 60> effcs_gun;

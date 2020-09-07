@@ -4,15 +4,14 @@
 #include <vector>
 
 class MV1 {
-public:
+private:
+	int handle_;
 	struct ani {
 		int handle = 0;
 		float per = 0.f;
 		float time = 0.f;
 		float alltime = 0.f;
 	};
-private:
-	int handle_;
 	std::vector<ani> anime;
 	MV1(int h) noexcept : handle_(h) {}
 	static constexpr int invalid_handle = -1;
@@ -53,7 +52,6 @@ public:
 
 	MATRIX_ref GetFrameLocalMatrix(const int& id) const noexcept { return MV1GetFrameLocalMatrix(this->handle_, id); }
 	MATRIX_ref GetFrameLocalWorldMatrix(const int& id) const noexcept { return MV1GetFrameLocalWorldMatrix(this->handle_, id); }
-	MATRIX_ref GetMatrix(void) const noexcept { return MV1GetMatrix(this->handle_); }
 
 	bool DrawFrame(const int& p1) const noexcept { return MV1DrawFrame(this->handle_, p1) == TRUE; }
 	std::string frame_name(const size_t& p1) noexcept { return MV1GetFrameName(this->handle_, int(p1)); }

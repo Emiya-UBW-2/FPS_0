@@ -1210,40 +1210,44 @@ public:
 						}
 						//í êM
 						{
-							auto& t = chara[1];
 							auto& c = chara[id_mine];
-							t.body.get_anime(0).per = c.body.get_anime(0).per;
-							t.body.get_anime(0).time = c.body.get_anime(0).time;
-							t.body.get_anime(1).per = c.body.get_anime(1).per;
-							t.body.get_anime(1).time = c.body.get_anime(1).time;
-							t.body.get_anime(2).per = c.body.get_anime(2).per;
-							t.body.get_anime(2).time = c.body.get_anime(2).time;
-							t.body.get_anime(3).per = c.body.get_anime(3).per;
-							t.body.get_anime(3).time = c.body.get_anime(3).time;
-							t.body.get_anime(4).per = c.body.get_anime(4).per;
-							t.body.get_anime(4).time = c.body.get_anime(4).time;
-							t.body.get_anime(5).per = c.body.get_anime(5).per;
-							t.body.get_anime(5).time = c.body.get_anime(5).time;
-							t.body.get_anime(6).per = c.body.get_anime(6).per;
-							t.body.get_anime(6).time = c.body.get_anime(6).time;
-							t.obj.SetMatrix(c.obj.GetMatrix());
-							t.body.SetMatrix(c.body.GetMatrix());
-							t.body.SetFrameLocalMatrix(t.head_f.first		, c.body.GetFrameLocalMatrix(c.head_f.first));
-							t.body.SetFrameLocalMatrix(t.RIGHTarm1_f.first	, c.body.GetFrameLocalMatrix(c.RIGHTarm1_f.first));
-							t.body.SetFrameLocalMatrix(t.RIGHTarm2_f.first	, c.body.GetFrameLocalMatrix(c.RIGHTarm2_f.first));
-							t.body.SetFrameLocalMatrix(t.RIGHThand_f.first	, c.body.GetFrameLocalMatrix(c.RIGHThand_f.first));
-							t.body.SetFrameLocalMatrix(t.LEFTarm1_f.first	, c.body.GetFrameLocalMatrix(c.LEFTarm1_f.first));
-							t.body.SetFrameLocalMatrix(t.LEFTarm2_f.first	, c.body.GetFrameLocalMatrix(c.LEFTarm2_f.first));
-							t.body.SetFrameLocalMatrix(t.LEFThand_f.first	, c.body.GetFrameLocalMatrix(c.LEFThand_f.first));
-							t.body.SetFrameLocalMatrix(t.bodyg_f.first		, c.body.GetFrameLocalMatrix(c.bodyg_f.first));
-							t.body.SetFrameLocalMatrix(t.bodyb_f.first		, c.body.GetFrameLocalMatrix(c.bodyb_f.first));
-							t.body.SetFrameLocalMatrix(t.body_f.first		, c.body.GetFrameLocalMatrix(c.body_f.first));
-							//
-							for (size_t i = 0; i < t.gun_slot.size(); i++) {
-								if (t.gun_slot[i].ptr != nullptr) {
-									t.gun_slot[i].obj.SetMatrix(c.gun_slot[i].obj.GetMatrix());
-								}
+							auto& cd = c.senddata;
+							for (int i = 0; i < 7; i++) {
+								cd.anime[i].per = c.body.get_anime(i).per;
+								cd.anime[i].time = c.body.get_anime(i).time;
 							}
+
+							cd.gun_f = c.obj.GetMatrix();
+							cd.bodys_f = c.body.GetMatrix();
+							cd.head_f= c.body.GetFrameLocalMatrix(c.head_f.first);
+							cd.RIGHTarm1_f= c.body.GetFrameLocalMatrix(c.RIGHTarm1_f.first);
+							cd.RIGHTarm2_f= c.body.GetFrameLocalMatrix(c.RIGHTarm2_f.first);
+							cd.RIGHThand_f= c.body.GetFrameLocalMatrix(c.RIGHThand_f.first);
+							cd.LEFTarm1_f= c.body.GetFrameLocalMatrix(c.LEFTarm1_f.first);
+							cd.LEFTarm2_f= c.body.GetFrameLocalMatrix(c.LEFTarm2_f.first);
+							cd.LEFThand_f= c.body.GetFrameLocalMatrix(c.LEFThand_f.first);
+							cd.bodyg_f= c.body.GetFrameLocalMatrix(c.bodyg_f.first);
+							cd.bodyb_f= c.body.GetFrameLocalMatrix(c.bodyb_f.first);
+							cd.body_f= c.body.GetFrameLocalMatrix(c.body_f.first);
+
+							auto& td = c.senddata;
+							auto& t = chara[1];
+							for (int i = 0; i < 7; i++) {
+								t.body.get_anime(i).per = td.anime[i].per;
+								t.body.get_anime(i).time = td.anime[i].time;
+							}
+							t.obj.SetMatrix(td.gun_f);
+							t.body.SetMatrix(td.bodys_f);
+							t.body.SetFrameLocalMatrix(t.head_f.first, td.head_f);
+							t.body.SetFrameLocalMatrix(t.RIGHTarm1_f.first, td.RIGHTarm1_f);
+							t.body.SetFrameLocalMatrix(t.RIGHTarm2_f.first, td.RIGHTarm2_f);
+							t.body.SetFrameLocalMatrix(t.RIGHThand_f.first, td.RIGHThand_f);
+							t.body.SetFrameLocalMatrix(t.LEFTarm1_f.first, td.LEFTarm1_f);
+							t.body.SetFrameLocalMatrix(t.LEFTarm2_f.first, td.LEFTarm2_f);
+							t.body.SetFrameLocalMatrix(t.LEFThand_f.first, td.LEFThand_f);
+							t.body.SetFrameLocalMatrix(t.bodyg_f.first, td.bodyg_f);
+							t.body.SetFrameLocalMatrix(t.bodyb_f.first, td.bodyb_f);
+							t.body.SetFrameLocalMatrix(t.body_f.first, td.body_f);
 							t.body.work_anime();
 						}
 						//campos,camvec,camupÇÃéwíË
