@@ -1210,6 +1210,7 @@ public:
 						}
 						//’ÊM
 						{
+							//•Û‘¶
 							auto& c = chara[id_mine];
 							auto& cd = c.senddata;
 							for (int i = 0; i < 7; i++) {
@@ -1229,8 +1230,11 @@ public:
 							cd.bodyg_f= c.body.GetFrameLocalMatrix(c.bodyg_f.first);
 							cd.bodyb_f= c.body.GetFrameLocalMatrix(c.bodyb_f.first);
 							cd.body_f= c.body.GetFrameLocalMatrix(c.body_f.first);
-
+							//‘—M
+							/*send cd*/
+							//óM
 							auto& td = c.senddata;
+							//”½‰f
 							auto& t = chara[1];
 							for (int i = 0; i < 7; i++) {
 								t.body.get_anime(i).per = td.anime[i].per;
