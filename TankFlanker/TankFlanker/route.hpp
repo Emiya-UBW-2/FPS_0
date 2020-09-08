@@ -1240,8 +1240,8 @@ public:
 								t.body.get_anime(i).per = td.anime[i].per;
 								t.body.get_anime(i).time = td.anime[i].time;
 							}
-							t.obj.SetMatrix(td.gun_f);
-							t.body.SetMatrix(td.bodys_f);
+							t.obj.SetMatrix(td.gun_f*MATRIX_ref::Mtrans(VGet(0, 0, 1.f)));
+							t.body.SetMatrix(td.bodys_f*MATRIX_ref::Mtrans(VGet(0, 0, 1.f)));
 							t.body.SetFrameLocalMatrix(t.head_f.first, td.head_f);
 							t.body.SetFrameLocalMatrix(t.RIGHTarm1_f.first, td.RIGHTarm1_f);
 							t.body.SetFrameLocalMatrix(t.RIGHTarm2_f.first, td.RIGHTarm2_f);
