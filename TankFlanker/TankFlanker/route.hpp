@@ -16,6 +16,7 @@ class main_c : Mainclass {
 	VECTOR_ref gunpos_TPS;										//マウスエイム用銃座標
 	float xrad_p = 0.f;											//マウスエイム用変数確保
 	bool running = false;										//走るか否か
+	switchs squat;
 	VECTOR_ref add_pos, add_pos_buf;							//移動
 	VECTOR_ref campos, campos_buf, camvec, camup, campos_TPS;	//カメラ
 	float fov = 0.f, fov_fps = 0.f;								//カメラ
@@ -371,13 +372,17 @@ public:
 								auto dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 								auto jampkey = (CheckHitKey(KEY_INPUT_SPACE) != 0);
 								running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+								squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
+								if (running) {
+									squat.first = false;
+								}
 								if (this->ads.first) {
 									running = false;
 								}
 								if (!wkey && !skey && !akey && !dkey) {
 									running = false;
 								}
-								auto speed = (running ? 8.f : (this->ads.first ? 2.f : 4.f));
+								auto speed = (running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(squat.first ? 0.4f : 1.f)));
 								VECTOR_ref zv_t = c.mat_HMD.zvec();
 								zv_t.y(0.f);
 								zv_t = zv_t.Norm();
@@ -509,7 +514,7 @@ public:
 									{
 										vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &c.pos_RIGHTHAND, &c.mat_RIGHTHAND);
 										c.mat_RIGHTHAND = c.mat_RIGHTHAND*MATRIX_ref::RotAxis(c.mat_RIGHTHAND.xvec(), deg2rad(-60));
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
+										//easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
 										c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_RIGHTHAND;//リコイル
 										//銃器
 										c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND + c.pos));
@@ -618,18 +623,39 @@ public:
 								c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 								//足
 								{
-									auto ratio_t = this->add_pos.size() / ((running ? 8.f : (this->ads.first ? 2.f : 4.f)) / fps);
+									auto speed = (running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(squat.first ? 0.4f : 1.f)));
+									auto ratio_t = this->add_pos.size() / (speed / fps);
 									if (running) {
+										easing_set(&c.body.get_anime(8).per, 0.f, 0.95f, fps);
+										easing_set(&c.body.get_anime(7).per, 0.f, 0.95f, fps);
 										easing_set(&c.body.get_anime(2).per, 1.f*ratio_t, 0.95f, fps);
 										easing_set(&c.body.get_anime(1).per, 0.f, 0.95f, fps);
 									}
 									else if (this->ads.first) {
 										easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
-										easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
+										if (!squat.first) {
+											easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
+											easing_set(&c.body.get_anime(8).per, 0.f, 0.9f, fps);
+											easing_set(&c.body.get_anime(7).per, 0.f, 0.9f, fps);
+										}
+										else {
+											easing_set(&c.body.get_anime(1).per, 0.f, 0.95f, fps);
+											easing_set(&c.body.get_anime(8).per, 0.5f*ratio_t, 0.9f, fps);
+											easing_set(&c.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f, fps);
+										}
 									}
 									else {
 										easing_set(&c.body.get_anime(2).per, 0.f, 0.95f, fps);
-										easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
+										if (!squat.first) {
+											easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
+											easing_set(&c.body.get_anime(8).per, 0.f, 0.9f, fps);
+											easing_set(&c.body.get_anime(7).per, 0.f, 0.9f, fps);
+										}
+										else {
+											easing_set(&c.body.get_anime(1).per, 0.f, 0.95f, fps);
+											easing_set(&c.body.get_anime(8).per, 1.f*ratio_t, 0.9f, fps);
+											easing_set(&c.body.get_anime(7).per, 1.f-1.f*ratio_t, 0.9f, fps);
+										}
 										easing_set(&c.body.get_anime(0).per, 0.f, 0.95f, fps);
 									}
 									c.body.get_anime(1).time += 30.f / fps;
@@ -639,6 +665,10 @@ public:
 									c.body.get_anime(2).time += 30.f / fps;
 									if (c.body.get_anime(2).time >= c.body.get_anime(2).alltime) {
 										c.body.get_anime(2).time = 0.f;
+									}
+									c.body.get_anime(8).time += 30.f / fps * ((c.body.get_anime(8).alltime / 30.f) / c.ptr_now->reload_time);
+									if (c.body.get_anime(8).time >= c.body.get_anime(8).alltime) {
+										c.body.get_anime(8).time = 0.f;
 									}
 								}
 								//視点
@@ -653,18 +683,18 @@ public:
 									if (this->ads.first) {
 										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.225f), 0.75f, fps);
 										easing_set(&this->fov_fps, (this->fov*0.6f) / ((c.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.9f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.f), 0.9f, fps);
 									}
 									else {
 										if (running) {
 											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f, fps);
 											easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 3.f), 0.95f, fps);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 3.f), 0.95f, fps);
 										}
 										else {
 											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.3f), 0.75f, fps);
 											easing_set(&this->fov_fps, this->fov, 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.75f), 0.95f, fps);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.75f), 0.95f, fps);
 										}
 									}
 								}
@@ -1365,7 +1395,7 @@ public:
 
 							this->TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
 							VECTOR_ref cam = c.pos + c.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, c.mat_HMD);
-							VECTOR_ref vec = c.pos + c.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.15f, 0.f), c.mat_HMD);
+							VECTOR_ref vec = c.pos + c.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), c.mat_HMD);
 							if (this->TPS.first) {//TPS視点
 								// 鏡に映る映像を描画
 								for (auto& i : Drawparts->get_Mirror_obj()) {
