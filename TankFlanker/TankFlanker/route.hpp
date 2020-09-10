@@ -619,8 +619,6 @@ public:
 								if (c.reloadf) {
 									c.body.frame_reset(c.head_f.first);
 								}
-								//視点を一時取得
-								c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 								//足
 								{
 									auto speed = (running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(squat.first ? 0.4f : 1.f)));
@@ -732,6 +730,8 @@ public:
 											c.body.get_anime(3).time = 0.f;
 											//右手
 											{
+												//視点を一時取得
+												c.pos_HMD = (c.body.frame(c.RIGHTeye_f.first) + (c.body.frame(c.LEFTeye_f.first) - c.body.frame(c.RIGHTeye_f.first))*0.5f) - c.pos;
 												//銃器
 												c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_HMD;//リコイル
 												c.pos_RIGHTHAND = c.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, c.mat_RIGHTHAND);
