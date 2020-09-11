@@ -293,8 +293,10 @@ public:
 	};
 	//player
 	class Chara {
-		struct sendstat {
-			MV1::ani anime[7];
+		class sendstat {
+			
+		public:
+			MV1::ani anime[9];
 			MATRIX_ref gun_f;
 			MATRIX_ref bodys_f;
 
@@ -308,6 +310,46 @@ public:
 			MATRIX_ref bodyg_f;
 			MATRIX_ref bodyb_f;
 			MATRIX_ref body_f;
+			bool start_c = true;
+
+			void get_data(Chara& data) {
+				for (int i = 0; i < 9; i++) {
+					this->anime[i].per = data.body.get_anime(i).per;
+					this->anime[i].time = data.body.get_anime(i).time;
+				}
+				this->gun_f = data.obj.GetMatrix();
+				this->bodys_f = data.body.GetMatrix();
+				this->head_f = data.body.GetFrameLocalMatrix(data.head_f.first);
+				this->RIGHTarm1_f = data.body.GetFrameLocalMatrix(data.RIGHTarm1_f.first);
+				this->RIGHTarm2_f = data.body.GetFrameLocalMatrix(data.RIGHTarm2_f.first);
+				this->RIGHThand_f = data.body.GetFrameLocalMatrix(data.RIGHThand_f.first);
+				this->LEFTarm1_f = data.body.GetFrameLocalMatrix(data.LEFTarm1_f.first);
+				this->LEFTarm2_f = data.body.GetFrameLocalMatrix(data.LEFTarm2_f.first);
+				this->LEFThand_f = data.body.GetFrameLocalMatrix(data.LEFThand_f.first);
+				this->bodyg_f = data.body.GetFrameLocalMatrix(data.bodyg_f.first);
+				this->bodyb_f = data.body.GetFrameLocalMatrix(data.bodyb_f.first);
+				this->body_f = data.body.GetFrameLocalMatrix(data.body_f.first);
+				this->start_c = data.start_c;
+			}
+			void put_data(Chara& data) {
+				for (int i = 0; i < 9; i++) {
+					data.body.get_anime(i).per = this->anime[i].per;
+					data.body.get_anime(i).time = this->anime[i].time;
+				}
+				data.obj.SetMatrix(this->gun_f*MATRIX_ref::Mtrans(VGet(0, 0, 1.f)));
+				data.body.SetMatrix(this->bodys_f*MATRIX_ref::Mtrans(VGet(0, 0, 1.f)));
+				data.body.SetFrameLocalMatrix(data.head_f.first, this->head_f);
+				data.body.SetFrameLocalMatrix(data.RIGHTarm1_f.first, this->RIGHTarm1_f);
+				data.body.SetFrameLocalMatrix(data.RIGHTarm2_f.first, this->RIGHTarm2_f);
+				data.body.SetFrameLocalMatrix(data.RIGHThand_f.first, this->RIGHThand_f);
+				data.body.SetFrameLocalMatrix(data.LEFTarm1_f.first, this->LEFTarm1_f);
+				data.body.SetFrameLocalMatrix(data.LEFTarm2_f.first, this->LEFTarm2_f);
+				data.body.SetFrameLocalMatrix(data.LEFThand_f.first, this->LEFThand_f);
+				data.body.SetFrameLocalMatrix(data.bodyg_f.first, this->bodyg_f);
+				data.body.SetFrameLocalMatrix(data.bodyb_f.first, this->bodyb_f);
+				data.body.SetFrameLocalMatrix(data.body_f.first, this->body_f);
+				data.start_c = this->start_c;
+			}
 		};
 
 		struct ef_guns {
@@ -381,8 +423,8 @@ public:
 			}
 		};
 		struct gun_state {
-			size_t in = 0;				//所持弾数
-			std::vector<size_t> mag_in;	//マガジン内
+			int in = 0;				//所持弾数
+			std::vector<int> mag_in;	//マガジン内
 			uint8_t select = 0;			//セレクター
 		};
 		class gun_have {
@@ -475,6 +517,7 @@ public:
 		//
 		bool canget_magitem = false;
 		std::string canget_mag;
+		bool start_c = true;
 		//
 		void Ready_chara(Gun*gundata, Gun*gundata_backup, size_t state_s, MV1& hand_, GraphHandle* scope) {
 			this->gun_slot_backup = gundata_backup;
@@ -704,7 +747,7 @@ public:
 		MV1 obj;
 		Gun* ptr = nullptr;
 		//マガジン専用パラメーター
-		size_t cap = 0;
+		int cap = 0;
 		//
 		void Set_item(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
 			bool choose = true;

@@ -48,7 +48,7 @@ private:
 	struct Mirror_mod {
 		VECTOR_ref WorldPos[4];	// 鏡のワールド座標
 		COLOR_F AmbientColor;	// 鏡の Ambient Color
-		int DiffuseColor[4];	// 鏡の Diffuse Color
+		COLOR_U8 DiffuseColor;	// 鏡の Diffuse Color
 		int BlendParam[2];		// 鏡のブレンドモードとパラメータ
 		GraphHandle Handle;		// 鏡に映る映像の取得に使用するスクリーン
 		FLOAT4 ScreenPosW[4];	// 鏡に映る映像の取得に使用するクリーンの中の鏡の四隅の座標( 同次座標 )
@@ -116,7 +116,7 @@ public:
 		}
 		SetWindowSize(settings->out_dispx, settings->out_dispy);
 		SetWindowPosition(
-			/*
+			//*
 			deskx+
 			//*/
 			(deskx - settings->out_dispx) / 2 - 8, (desky - settings->out_dispy) / 2 - 32);
@@ -206,15 +206,31 @@ public:
 		return Mirror_obj[std::min(i, int(Mirror_obj.size() - 1))];
 	}
 	// 鏡の初期化
-	void Mirror_init(int xsize, int ysize, int p) {
+	void Mirror_init(int p) {
 		MIRROR_NUM = p;
 		Mirror_obj.clear();
 		for (int i = 0; i < MIRROR_NUM; i++) {
 			Mirror_obj.resize(Mirror_obj.size() + 1);
-			Mirror_obj.back().Handle = GraphHandle::Make(xsize, ysize, FALSE);	// 鏡に映る映像の取得に使用するスクリーンの作成
+			Mirror_obj.back().Handle = GraphHandle::Make(this->disp_x, this->disp_y, FALSE);	// 鏡に映る映像の取得に使用するスクリーンの作成
 		}
 		Vert.resize(MIRROR_POINTNUM * MIRROR_POINTNUM);
 		Index.resize((MIRROR_POINTNUM - 1) * (MIRROR_POINTNUM - 1) * 6);
+	}
+	void set_Mirror_obj(int i,
+		VECTOR_ref pos1, VECTOR_ref pos2, VECTOR_ref pos3, VECTOR_ref pos4,
+		COLOR_F ambcol,
+		COLOR_U8 difcol,
+		int param0,int param1
+		) {
+		auto& m = Mirror_obj[std::min(i, int(Mirror_obj.size() - 1))];
+		m.WorldPos[0] = pos1;
+		m.WorldPos[1] = pos2;
+		m.WorldPos[2] = pos3;
+		m.WorldPos[3] = pos4;
+		m.AmbientColor = ambcol;
+		m.DiffuseColor = difcol;
+		m.BlendParam[0] = param0;
+		m.BlendParam[1] = param1;
 	}
 	void Mirror_delete() {
 		for (int i = 0; i < MIRROR_NUM; i++) {
@@ -276,7 +292,7 @@ public:
 					VUnitPos[1] = (obj.WorldPos[3] - obj.WorldPos[1])*(1.0f / (MIRROR_POINTNUM - 1));
 					VUnitUV[0] = F4Scale(F4Sub(obj.ScreenPosW[2], obj.ScreenPosW[0]), 1.0f / (MIRROR_POINTNUM - 1));
 					VUnitUV[1] = F4Scale(F4Sub(obj.ScreenPosW[3], obj.ScreenPosW[1]), 1.0f / (MIRROR_POINTNUM - 1));
-					DiffuseColor = GetColorU8(obj.DiffuseColor[0], obj.DiffuseColor[1], obj.DiffuseColor[2], obj.DiffuseColor[3]);
+					DiffuseColor = obj.DiffuseColor;
 					SpecularColor = GetColorU8(0, 0, 0, 0);
 					VPos[0] = obj.WorldPos[0];
 					VPos[1] = obj.WorldPos[1];

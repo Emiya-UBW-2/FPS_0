@@ -247,7 +247,7 @@ public:
 				xp = 300;
 				yp = 500;
 				size_t pp = 0;
-				for (auto& a : chara.gun_stat[3].mag_in) {
+				for (auto& a : chara.gun_stat[chara.ptr_now->id].mag_in) {
 					pp += a;
 					font24.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d total:%d",
 						a,
