@@ -664,7 +664,7 @@ public:
 										pv = mine.ptr_now->frame[7].second;
 									}
 									if (this->ads.first) {
-										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y(), -0.225f), 0.75f, fps);
+										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y()+ sin(DX_PI_F*2.f*(mine.body.get_anime(1).time / mine.body.get_anime(1).alltime))*0.001f*mine.body.get_anime(1).per, -0.225f), 0.75f, fps);
 										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
 										easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.f), 0.9f, fps);
 									}
@@ -675,7 +675,7 @@ public:
 											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 3.f), 0.95f, fps);
 										}
 										else {
-											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y(), -0.3f), 0.75f, fps);
+											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(mine.body.get_anime(1).time / mine.body.get_anime(1).alltime))*0.002f*mine.body.get_anime(1).per, -0.3f), 0.75f, fps);
 											easing_set(&this->fov_fps, this->fov, 0.9f, fps);
 											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.75f), 0.95f, fps);
 										}
@@ -719,7 +719,11 @@ public:
 												mine.pos_HMD = (mine.body.frame(mine.RIGHTeye_f.first) + (mine.body.frame(mine.LEFTeye_f.first) - mine.body.frame(mine.RIGHTeye_f.first))*0.5f) - mine.pos;
 												//銃器
 												mine.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_RIGHTHAND)*mine.mat_HMD;//リコイル
-												mine.pos_RIGHTHAND = mine.pos_HMD + MATRIX_ref::Vtrans(this->gunpos_TPS, mine.mat_RIGHTHAND);
+
+												mine.pos_RIGHTHAND = mine.pos_HMD + MATRIX_ref::Vtrans(
+													this->gunpos_TPS
+													, mine.mat_RIGHTHAND);
+
 												mine.obj.SetMatrix(mine.mat_RIGHTHAND*MATRIX_ref::Mtrans(mine.pos_RIGHTHAND + mine.pos));
 												VECTOR_ref tgt_pt = mine.obj.frame(mine.ptr_now->frame[8].first);
 												//基準
@@ -1006,10 +1010,7 @@ public:
 									{
 										if (mine.trigger.second == 1 && !mine.gunf && mine.ammo_cnt >= 1) {
 											mine.gunf = true;
-											//バイブレーション　バッテリー消費が激しいためコメントアウト
-											/*
-												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
-											*/
+											//反動表現
 											if (!settings->useVR_e && this->ads.first) {
 												this->fov_fps *= 0.95f;
 											}
@@ -1029,7 +1030,6 @@ public:
 											mine.cart[mine.use_bullet].set(&mine.ptr_now->ammo[0], mine.obj.frame(mine.ptr_now->frame[2].first), (mine.obj.frame(mine.ptr_now->frame[2].first + 1) - mine.obj.frame(mine.ptr_now->frame[2].first)).Norm()*2.5f / fps, mine.mat_RIGHTHAND);
 											//エフェクト
 											set_effect(&mine.effcs[ef_fire], mine.obj.frame(mine.ptr_now->frame[3].first), mine.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
-
 											set_effect(&mine.effcs_gun[mine.use_effcsgun].effect, mine.obj.frame(mine.ptr_now->frame[3].first), mine.mat_RIGHTHAND.zvec()*-1.f, 0.11f / 0.1f);
 											set_pos_effect(&mine.effcs_gun[mine.use_effcsgun].effect, Drawparts->get_effHandle(ef_smoke));
 											mine.effcs_gun[mine.use_effcsgun].ptr = &mine.bullet[mine.use_bullet];
@@ -1060,7 +1060,7 @@ public:
 														mine.obj.get_anime(3).per = 1.f;
 													}
 													mine.audio.mag_set.play_3D(mine.pos + mine.pos_RIGHTHAND, 1.f);
-													if (1) {
+													if (mine.ammo_cnt<=1) {
 														mine.ammo_cnt += mine.gun_stat[mine.gun_slot[this->sel_gun].ptr->id].mag_in.front();
 													}
 													mine.reloadf = false;
