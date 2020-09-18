@@ -499,7 +499,7 @@ public:
 									{
 										vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &mine.pos_RIGHTHAND, &mine.mat_RIGHTHAND);
 										mine.mat_RIGHTHAND = mine.mat_RIGHTHAND*MATRIX_ref::RotAxis(mine.mat_RIGHTHAND.xvec(), deg2rad(-60));
-										//easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
 										mine.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_RIGHTHAND)*mine.mat_RIGHTHAND;//ÉäÉRÉCÉã
 										//èeäÌ
 										mine.obj.SetMatrix(mine.mat_RIGHTHAND*MATRIX_ref::Mtrans(mine.pos_RIGHTHAND + mine.pos));

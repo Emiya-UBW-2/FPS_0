@@ -116,7 +116,7 @@ public:
 		}
 		SetWindowSize(settings->out_dispx, settings->out_dispy);
 		SetWindowPosition(
-			//*
+			/*
 			deskx+
 			//*/
 			(deskx - settings->out_dispx) / 2 - 8, (desky - settings->out_dispy) / 2 - 32);
