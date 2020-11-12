@@ -23,23 +23,17 @@ class main_c : Mainclass {
 	MV1 body_obj;												//身体モデル
 public:
 	main_c() {
-		auto settings = std::make_unique<Setting>();								/*設定読み込み*/
-		auto vrparts = std::make_unique<VRDraw>(settings);							/*VR描画*/
-		settings->useVR_e = vrparts->use_vr;
-		settings->set();
-		settings->set_dispsize();													/*画面指定*/
-		auto Drawparts = std::make_unique<DXDraw>("FPS_0", settings, FRAME_RATE);	/*汎用クラス*/
-		auto UIparts = std::make_unique<UI>(settings);								/*UI*/
-		auto Debugparts = std::make_unique<DeBuG>(FRAME_RATE);						/*デバッグ*/
-		auto Hostpassparts = std::make_unique<HostPassEffect>(settings);			/*ホストパスエフェクト*/
-		this->outScreen[0] = GraphHandle::Make(settings->dispx, settings->dispy);	/*左目*/
-		this->outScreen[1] = GraphHandle::Make(settings->dispx, settings->dispy);	/*右目*/
-		this->outScreen[2] = GraphHandle::Make(settings->dispx, settings->dispy);	/*TPS用*/
-		this->BufScreen = GraphHandle::Make(settings->dispx, settings->dispy);		/*バッファスクリーン*/
-		this->ScopeScreen = GraphHandle::Make(1080, 1080);							/*スコープ*/
-		settings->ready_draw_setting();												/*セッティング*/
-		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);				/*身体*/
-		auto mapparts = std::make_unique<Mapclass>(settings);						/*map*/
+		auto Drawparts = std::make_unique<DXDraw>("FPS_0", FRAME_RATE, false, true);	/*汎用クラス*/
+		auto UIparts = std::make_unique<UI>(Drawparts->out_disp_x, Drawparts->out_disp_y, Drawparts->disp_x, Drawparts->disp_y);									/*UI*/
+		auto Debugparts = std::make_unique<DeBuG>(FRAME_RATE);							/*デバッグ*/
+		auto Hostpassparts = std::make_unique<HostPassEffect>(Drawparts->out_disp_x, Drawparts->out_disp_y, Drawparts->disp_x, Drawparts->disp_y);			/*ホストパスエフェクト*/
+		this->outScreen[0] = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);	/*左目*/
+		this->outScreen[1] = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);	/*右目*/
+		this->outScreen[2] = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);	/*TPS用*/
+		this->BufScreen = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);		/*バッファスクリーン*/
+		this->ScopeScreen = GraphHandle::Make(1080, 1080);								/*スコープ*/
+		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);					/*身体*/
+		auto mapparts = std::make_unique<Mapclass>(Drawparts->disp_x, Drawparts->disp_y);							/*map*/
 		//GUNデータ
 		{
 			this->gun_data.resize(5);
@@ -55,18 +49,16 @@ public:
 			for (auto& g : this->gun_data) { g.set_data(); }	//GUNデータ取得2
 		}
 		UIparts->load_window("銃データ");						//ロード画面2
-		vrparts->Set_Device();									//VRセット
 		do {
-			this->fov = deg2rad(settings->useVR_e ? 90 : 45);	//
+			this->fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
 			//キャラ設定
 			int sel_g = 0;
 			{
-				float gun_yrad = 90.f, ber_r = 0.f, start_fl = 0.f, sets = 0.f;
+				float gun_yrad = 90.f, ber_r = 0.f, start_fl = 0.f;
 				VECTOR_ref pos_HMD;
 				MATRIX_ref mat_HMD;
 				switchs changecnt, setf;
 				bool endp = false, startp = false;
-				unsigned char restart = 0;
 				//
 				while (ProcessMessage() == 0) {
 					const auto fps = GetFPS();
@@ -74,10 +66,10 @@ public:
 					if (!startp) {
 						//VR用
 						if (!setf.first) {
-							if (settings->useVR_e) {
-								vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &pos_HMD, &mat_HMD);
-								if (vrparts->get_hand1_num() != -1) {
-									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
+							if (Drawparts->use_vr) {
+								Drawparts->GetDevicePositionVR(Drawparts->get_hmd_num(), &pos_HMD, &mat_HMD);
+								if (Drawparts->get_hand1_num() != -1) {
+									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand1_num()];
 									if (ptr_.turn && ptr_.now) {
 										changecnt.get_in((ptr_.on[1] & BUTTON_SIDE) != 0);
 										if ((ptr_.on[0] & BUTTON_TRIGGER) != 0) { startp = true; }
@@ -103,7 +95,7 @@ public:
 						changecnt.second = 0;
 					}
 
-					easing_set(&ber_r, float(settings->dispy / 4), 0.95f, fps);
+					easing_set(&ber_r, float(Drawparts->disp_y / 4), 0.95f);
 
 					if (!startp) {
 						campos = mat_HMD.zvec() * 0.6f;
@@ -113,75 +105,53 @@ public:
 						}
 					}
 					else {
-						easing_set(&campos, VGet(0.f, 0.f, 1.f), 0.95f, fps);
-						easing_set(&gun_yrad, 90.f, 0.95f, fps);
+						easing_set(&campos, VGet(0.f, 0.f, 1.f), 0.95f);
+						easing_set(&gun_yrad, 90.f, 0.95f);
 						start_fl += 1.f / fps;
 						if (start_fl > 3.f) {
 							endp = true;
 						}
 					}
 					//VR空間に適用
-					vrparts->Move_Player();
+					Drawparts->Move_Player();
 					{
-						setf.get_in(CheckHitKey(KEY_INPUT_O) != 0);
-						if (setf.first) {
-							restart = settings->set_draw_setting();
-							if (restart >= 2) {
-								setf.first = false;
-							}
-							easing_set(&sets, 1.f, 0.9f, fps);
-						}
-						else {
-							settings->reset();
-							easing_set(&sets, 0.f, 0.9f, fps);
-						}
 						BufScreen.SetDraw_Screen();
 						auto& v = this->gun_data[sel_g];
 						{
-							int xp = settings->dispx / 2 - settings->dispy / 6;
-							int yp = settings->dispy / 2 - settings->dispy / 6;
+							int xp = Drawparts->disp_x / 2 - Drawparts->disp_y / 6;
+							int yp = Drawparts->disp_y / 2 - Drawparts->disp_y / 6;
 							UIparts->font18.DrawStringFormat(xp, yp, GetColor(0, 255, 0), "Name  :%s", v.name.c_str());
 						}
-						outScreen[0].SetDraw_Screen(0.1f, 10.f, fov, campos, VGet(0, 0, 0), VGet(0.f, 1.f, 0.f));
+						outScreen[0].SetDraw_Screen(campos, VGet(0, 0, 0), VGet(0.f, 1.f, 0.f), fov, 0.1f, 10.f);
 						{
 							v.mod.obj.SetMatrix(MATRIX_ref::RotY(deg2rad(gun_yrad)));
 							v.mod.obj.DrawModel();
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - int(255.f * start_fl / 3.f), 0, 255));
-							BufScreen.DrawExtendGraph(0, 0, settings->dispx, settings->dispy, true);
+							BufScreen.DrawExtendGraph(0, 0, Drawparts->disp_x, Drawparts->disp_y, true);
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * start_fl / 3.f), 0, 255));
-							DrawBox(0, 0, settings->dispx, settings->dispy, GetColor(255, 255, 255), TRUE);
+							DrawBox(0, 0, Drawparts->disp_x, Drawparts->disp_y, GetColor(255, 255, 255), TRUE);
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						}
-						if (settings->useVR_e) {
+						if (Drawparts->use_vr) {
 							for (char i = 0; i < 2; i++) {
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 								outScreen[0].DrawGraph(0, 0, false);
-								vrparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
+								Drawparts->PutEye((ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D(), i);
 							}
 						}
 						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 						{
-							DrawBox(0, 0, settings->out_dispx, settings->out_dispy, GetColor(64, 64, 64), TRUE);
-							outScreen[0].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, true);
-
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(215.f*sets), 0, 255));
-							settings->settinggraphs().DrawExtendGraph(
-								settings->out_dispx / 2 - int(float(settings->out_dispx / 6)*sets), settings->out_dispy / 2 - int(float(settings->out_dispx / 6 * 480 / 640)*sets),
-								settings->out_dispx / 2 + int(float(settings->out_dispx / 6)*sets), settings->out_dispy / 2 + int(float(settings->out_dispx / 6 * 480 / 640)*sets),
-								true);
-							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+							DrawBox(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, GetColor(64, 64, 64), TRUE);
+							outScreen[0].DrawExtendGraph(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, true);
 						}
 					}
-					DXDraw::Screen_Flip();
-					vrparts->Eye_Flip(waits, 90.f);
+					Drawparts->Screen_Flip(waits);
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						sel_g = -1;
 						break;
 					}
 					//設定適応後再起動するやつ
-					if (restart == 3) {
-						//
-						settings->save();
+					if (false) {
 						start_me();
 						sel_g = -1;
 						break;
@@ -297,22 +267,22 @@ public:
 						//プレイヤー操作
 						{
 							//HMD_mat
-							if (settings->useVR_e) {
+							if (Drawparts->use_vr) {
 								//+視点取得
-								vrparts->GetDevicePositionVR(vrparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
+								Drawparts->GetDevicePositionVR(Drawparts->get_hmd_num(), &mine.pos_HMD, &mine.mat_HMD);
 							}
 							else {
 								auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
 								auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
 								mine.mat_HMD *= MATRIX_ref::RotAxis(mine.mat_HMD.zvec(), mine.body_zrad).Inverse();
 								if (qkey) {
-									easing_set(&mine.body_zrad, deg2rad(-30), 0.9f, fps);
+									easing_set(&mine.body_zrad, deg2rad(-30), 0.9f);
 								}
 								else if (ekey) {
-									easing_set(&mine.body_zrad, deg2rad(30), 0.9f, fps);
+									easing_set(&mine.body_zrad, deg2rad(30), 0.9f);
 								}
 								else {
-									easing_set(&mine.body_zrad, 0.f, 0.9f, fps);
+									easing_set(&mine.body_zrad, 0.f, 0.9f);
 								}
 								mine.mat_HMD *= MATRIX_ref::RotAxis(mine.mat_HMD.zvec(), mine.body_zrad);
 								int x_m, y_m;
@@ -325,18 +295,18 @@ public:
 								SetMouseDispFlag(FALSE);
 							}
 							//移動
-							if (settings->useVR_e) {
-								if (vrparts->get_hand2_num() != -1) {
-									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
+							if (Drawparts->use_vr) {
+								if (Drawparts->get_hand2_num() != -1) {
+									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand2_num()];
 									if (ptr_.turn && ptr_.now) {
 										if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
 											//running
 											running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 											auto speed = (running ? 4.f : 2.f);
-											easing_set(&this->add_pos_buf, (mine.mat_HMD.zvec()*ptr_.touch.y() + mine.mat_HMD.xvec()*ptr_.touch.x())*-speed / fps, 0.95f, fps);
+											easing_set(&this->add_pos_buf, (mine.mat_HMD.zvec()*ptr_.touch.y() + mine.mat_HMD.xvec()*ptr_.touch.x())*-speed / fps, 0.95f);
 										}
 										else {
-											easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
+											easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f);
 										}
 										if (mine.add_ypos == 0.f) {
 											if ((ptr_.on[0] & BUTTON_SIDE) != 0) {
@@ -345,7 +315,7 @@ public:
 											this->add_pos = this->add_pos_buf;
 										}
 										else {
-											easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f, fps);
+											easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f);
 										}
 									}
 								}
@@ -377,19 +347,19 @@ public:
 								xv_t = xv_t.Norm();
 
 								if (wkey) {
-									easing_set(&this->add_pos_buf, zv_t*-speed / fps, 0.95f, fps);
+									easing_set(&this->add_pos_buf, zv_t*-speed / fps, 0.95f);
 								}
 								if (skey) {
-									easing_set(&this->add_pos_buf, zv_t*speed / fps, 0.95f, fps);
+									easing_set(&this->add_pos_buf, zv_t*speed / fps, 0.95f);
 								}
 								if (akey) {
-									easing_set(&this->add_pos_buf, xv_t*speed / fps, 0.95f, fps);
+									easing_set(&this->add_pos_buf, xv_t*speed / fps, 0.95f);
 								}
 								if (dkey) {
-									easing_set(&this->add_pos_buf, xv_t*-speed / fps, 0.95f, fps);
+									easing_set(&this->add_pos_buf, xv_t*-speed / fps, 0.95f);
 								}
 								if (!wkey && !skey && !akey && !dkey) {
-									easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f, fps);
+									easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f);
 								}
 								if (mine.add_ypos == 0.f) {
 									if (jampkey && !squat.first) {
@@ -398,7 +368,7 @@ public:
 									this->add_pos = this->add_pos_buf;
 								}
 								else {
-									easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f, fps);
+									easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f);
 								}
 							}
 							//壁その他の判定
@@ -471,7 +441,7 @@ public:
 								mine.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
 							}
 							MATRIX_ref t_inv = MATRIX_ref::RotY(DX_PI_F + mine.body_yrad);
-							if (settings->useVR_e) {
+							if (Drawparts->use_vr) {
 								//身体
 								MATRIX_ref m_inv = t_inv;
 								{
@@ -497,9 +467,9 @@ public:
 									mine.body.get_anime(3).time = 0.f;
 									//右手
 									{
-										vrparts->GetDevicePositionVR(vrparts->get_hand1_num(), &mine.pos_RIGHTHAND, &mine.mat_RIGHTHAND);
+										Drawparts->GetDevicePositionVR(Drawparts->get_hand1_num(), &mine.pos_RIGHTHAND, &mine.mat_RIGHTHAND);
 										mine.mat_RIGHTHAND = mine.mat_RIGHTHAND*MATRIX_ref::RotAxis(mine.mat_RIGHTHAND.xvec(), deg2rad(-60));
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f, fps);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f);
 										mine.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), mine.vecadd_RIGHTHAND)*mine.mat_RIGHTHAND;//リコイル
 										//銃器
 										mine.obj.SetMatrix(mine.mat_RIGHTHAND*MATRIX_ref::Mtrans(mine.pos_RIGHTHAND + mine.pos));
@@ -530,7 +500,7 @@ public:
 									}
 									//左手
 									{
-										vrparts->GetDevicePositionVR(vrparts->get_hand2_num(), &mine.pos_LEFTHAND, &mine.mat_LEFTHAND);
+										Drawparts->GetDevicePositionVR(Drawparts->get_hand2_num(), &mine.pos_LEFTHAND, &mine.mat_LEFTHAND);
 										mine.mat_LEFTHAND = mine.mat_LEFTHAND*MATRIX_ref::RotAxis(mine.mat_LEFTHAND.xvec(), deg2rad(-60));
 
 										/*
@@ -609,37 +579,37 @@ public:
 									auto speed = (running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(squat.first ? 0.4f : 1.f)));
 									auto ratio_t = this->add_pos.size() / (speed / fps);
 									if (running) {
-										easing_set(&mine.body.get_anime(8).per, 0.f, 0.95f, fps);
-										easing_set(&mine.body.get_anime(7).per, 0.f, 0.95f, fps);
-										easing_set(&mine.body.get_anime(2).per, 1.f*ratio_t, 0.95f, fps);
-										easing_set(&mine.body.get_anime(1).per, 0.f, 0.95f, fps);
+										easing_set(&mine.body.get_anime(8).per, 0.f, 0.95f);
+										easing_set(&mine.body.get_anime(7).per, 0.f, 0.95f);
+										easing_set(&mine.body.get_anime(2).per, 1.f*ratio_t, 0.95f);
+										easing_set(&mine.body.get_anime(1).per, 0.f, 0.95f);
 									}
 									else if (this->ads.first) {
-										easing_set(&mine.body.get_anime(2).per, 0.f, 0.95f, fps);
+										easing_set(&mine.body.get_anime(2).per, 0.f, 0.95f);
 										if (!squat.first) {
-											easing_set(&mine.body.get_anime(1).per, 0.5f*ratio_t, 0.95f, fps);
-											easing_set(&mine.body.get_anime(8).per, 0.f, 0.9f, fps);
-											easing_set(&mine.body.get_anime(7).per, 0.f, 0.9f, fps);
+											easing_set(&mine.body.get_anime(1).per, 0.5f*ratio_t, 0.95f);
+											easing_set(&mine.body.get_anime(8).per, 0.f, 0.9f);
+											easing_set(&mine.body.get_anime(7).per, 0.f, 0.9f);
 										}
 										else {
-											easing_set(&mine.body.get_anime(1).per, 0.f, 0.95f, fps);
-											easing_set(&mine.body.get_anime(8).per, 0.5f*ratio_t, 0.9f, fps);
-											easing_set(&mine.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f, fps);
+											easing_set(&mine.body.get_anime(1).per, 0.f, 0.95f);
+											easing_set(&mine.body.get_anime(8).per, 0.5f*ratio_t, 0.9f);
+											easing_set(&mine.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f);
 										}
 									}
 									else {
-										easing_set(&mine.body.get_anime(2).per, 0.f, 0.95f, fps);
+										easing_set(&mine.body.get_anime(2).per, 0.f, 0.95f);
 										if (!squat.first) {
-											easing_set(&mine.body.get_anime(1).per, 1.f*ratio_t, 0.95f, fps);
-											easing_set(&mine.body.get_anime(8).per, 0.f, 0.9f, fps);
-											easing_set(&mine.body.get_anime(7).per, 0.f, 0.9f, fps);
+											easing_set(&mine.body.get_anime(1).per, 1.f*ratio_t, 0.95f);
+											easing_set(&mine.body.get_anime(8).per, 0.f, 0.9f);
+											easing_set(&mine.body.get_anime(7).per, 0.f, 0.9f);
 										}
 										else {
-											easing_set(&mine.body.get_anime(1).per, 0.f, 0.95f, fps);
-											easing_set(&mine.body.get_anime(8).per, 1.f*ratio_t, 0.9f, fps);
-											easing_set(&mine.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f, fps);
+											easing_set(&mine.body.get_anime(1).per, 0.f, 0.95f);
+											easing_set(&mine.body.get_anime(8).per, 1.f*ratio_t, 0.9f);
+											easing_set(&mine.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f);
 										}
-										easing_set(&mine.body.get_anime(0).per, 0.f, 0.95f, fps);
+										easing_set(&mine.body.get_anime(0).per, 0.f, 0.95f);
 									}
 									mine.body.get_anime(1).time += 30.f / fps;
 									if (mine.body.get_anime(1).time >= mine.body.get_anime(1).alltime) {
@@ -664,20 +634,20 @@ public:
 										pv = mine.ptr_now->frame[7].second;
 									}
 									if (this->ads.first) {
-										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y()+ sin(DX_PI_F*2.f*(mine.body.get_anime(1).time / mine.body.get_anime(1).alltime))*0.001f*mine.body.get_anime(1).per, -0.225f), 0.75f, fps);
-										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f, fps);
-										easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.f), 0.9f, fps);
+										easing_set(&this->gunpos_TPS, VGet(-0.035f, 0.f - pv.y()+ sin(DX_PI_F*2.f*(mine.body.get_anime(1).time / mine.body.get_anime(1).alltime))*0.001f*mine.body.get_anime(1).per, -0.225f), 0.75f);
+										easing_set(&this->fov_fps, (this->fov*0.6f) / ((mine.ptr_now->frame[4].first != INT_MAX) ? 4.f : 1.f), 0.9f);
+										easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.f), 0.9f);
 									}
 									else {
 										if (running) {
-											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f, fps);
-											easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 3.f), 0.95f, fps);
+											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
+											easing_set(&this->fov_fps, (this->fov*1.2f), 0.9f);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 3.f), 0.95f);
 										}
 										else {
-											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(mine.body.get_anime(1).time / mine.body.get_anime(1).alltime))*0.002f*mine.body.get_anime(1).per, -0.3f), 0.75f, fps);
-											easing_set(&this->fov_fps, this->fov, 0.9f, fps);
-											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.75f), 0.95f, fps);
+											easing_set(&this->gunpos_TPS, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(mine.body.get_anime(1).time / mine.body.get_anime(1).alltime))*0.002f*mine.body.get_anime(1).per, -0.3f), 0.75f);
+											easing_set(&this->fov_fps, this->fov, 0.9f);
+											easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 1.75f), 0.95f);
 										}
 									}
 								}
@@ -697,7 +667,7 @@ public:
 										if (mine.body.get_anime(6).time >= mine.body.get_anime(6).alltime) {
 											mine.body.get_anime(6).time = 0.f;
 										}
-										easing_set(&this->fov_fps, this->fov, 0.9f, fps);
+										easing_set(&this->fov_fps, this->fov, 0.9f);
 									}
 									else {
 										mine.body.get_anime(6).per = 0.f;
@@ -708,7 +678,7 @@ public:
 											if (mine.body.get_anime(3).time >= mine.body.get_anime(3).alltime) {
 												mine.body.get_anime(3).time = 0.f;
 											}
-											easing_set(&this->fov_fps, this->fov, 0.9f, fps);
+											easing_set(&this->fov_fps, this->fov, 0.9f);
 										}
 										else {
 											mine.body.get_anime(3).per = 0.f;
@@ -795,7 +765,7 @@ public:
 								}
 							}
 							mine.body.work_anime();
-							if (!settings->useVR_e) {
+							if (!Drawparts->use_vr) {
 								//視点取得
 								mine.pos_HMD = (mine.body.frame(mine.RIGHTeye_f.first) + (mine.body.frame(mine.LEFTeye_f.first) - mine.body.frame(mine.RIGHTeye_f.first))*0.5f) - mine.pos;
 								//
@@ -837,14 +807,14 @@ public:
 								mine.obj.get_anime(3).per = std::max(mine.obj.get_anime(3).per - 12.f / fps, 0.f);
 							}
 							//操作
-							if (settings->useVR_e) {
-								if (vrparts->get_hand1_num() != -1) {
-									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand1_num()];
+							if (Drawparts->use_vr) {
+								if (Drawparts->get_hand1_num() != -1) {
+									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand1_num()];
 									if (ptr_.turn && ptr_.now) {
 										//引き金
-										easing_set(&mine.obj.get_anime(2).per, float((ptr_.on[0] & BUTTON_TRIGGER) != 0), 0.5f, fps);
+										easing_set(&mine.obj.get_anime(2).per, float((ptr_.on[0] & BUTTON_TRIGGER) != 0), 0.5f);
 										//マグキャッチ
-										easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[0] & BUTTON_SIDE) != 0), 0.5f, fps);
+										easing_set(&mine.obj.get_anime(5).per, float((ptr_.on[0] & BUTTON_SIDE) != 0), 0.5f);
 										//セレクター
 										mine.selkey.get_in(((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f));
 										//銃の使用
@@ -856,8 +826,8 @@ public:
 										this->change_gun.get_in(((ptr_.on[0] & BUTTON_TOPBUTTON) != 0) && this->usegun.first);
 									}
 								}
-								if (vrparts->get_hand2_num() != -1) {
-									auto& ptr_ = (*vrparts->get_device())[vrparts->get_hand2_num()];
+								if (Drawparts->get_hand2_num() != -1) {
+									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand2_num()];
 									if (ptr_.turn && ptr_.now) {
 										//マガジン取得
 										mine.down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (mine.gun_stat[mine.ptr_now->id].mag_in.size() >= 1));
@@ -872,7 +842,7 @@ public:
 								//マガジン取得
 								mine.down_mag = true;
 								//引き金(左クリック)
-								easing_set(&mine.obj.get_anime(2).per, float(((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) && !running), 0.5f, fps);
+								easing_set(&mine.obj.get_anime(2).per, float(((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) && !running), 0.5f);
 								if (!this->ads.first) {
 									//銃取得
 									this->chgun.get_in(CheckHitKey(KEY_INPUT_F) != 0);
@@ -889,7 +859,7 @@ public:
 								//銃破棄
 								this->delgun.get_in((CheckHitKey(KEY_INPUT_G) != 0) && this->usegun.first);
 								//マグキャッチ(Rキー)
-								easing_set(&mine.obj.get_anime(5).per, float((CheckHitKey(KEY_INPUT_R) != 0) && this->usegun.first), 0.5f, fps);
+								easing_set(&mine.obj.get_anime(5).per, float((CheckHitKey(KEY_INPUT_R) != 0) && this->usegun.first), 0.5f);
 								if (!this->ads.first) {
 									//武装変更
 									this->change_gun.get_in((GetMouseWheelRotVol() != 0) && this->usegun.first);
@@ -899,8 +869,8 @@ public:
 							{
 								{
 									//複座
-									easing_set(&mine.vecadd_RIGHTHAND, mine.vecadd_RIGHTHAND_p, 0.9f, fps);
-									easing_set(&mine.vecadd_RIGHTHAND_p, VGet(0, 0, 1.f), 0.975f, fps);
+									easing_set(&mine.vecadd_RIGHTHAND, mine.vecadd_RIGHTHAND_p, 0.9f);
+									easing_set(&mine.vecadd_RIGHTHAND_p, VGet(0, 0, 1.f), 0.975f);
 									//リコイル
 									if (mine.gunf) {
 										if (mine.ammo_cnt >= 1) {
@@ -938,7 +908,7 @@ public:
 											mine.gun_stat[mine.gun_slot[this->sel_gun].ptr->id].in -= dnm;
 											//バイブレーション　バッテリー消費が激しいためコメントアウト
 											/*
-												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
+												Drawparts->Haptic(Drawparts->get_hand1_num(), unsigned short(60000));
 											*/
 											//マガジン排出
 											mine.reload_cnt = 0.f;
@@ -972,14 +942,14 @@ public:
 									//
 									if (mine.reloadf && mine.gun_stat[mine.ptr_now->id].mag_in.size() >= 1) {
 										mine.reload_cnt += 1.f / fps;
-										if (settings->useVR_e) {
+										if (Drawparts->use_vr) {
 											if (mine.reload_cnt < mine.ptr_now->reload_time) {
 												mine.down_mag = false;
 											}
 										}
 									}
 									//セフティ
-									easing_set(&mine.obj.get_anime(4).per, float(0.f), 0.5f, fps);
+									easing_set(&mine.obj.get_anime(4).per, float(0.f), 0.5f);
 									//射撃
 									if (!mine.gunf && mine.ammo_cnt >= 1) {
 										if (mine.ptr_now->select[mine.gun_stat[mine.gun_slot[this->sel_gun].ptr->id].select] == 2) {//フルオート用
@@ -998,7 +968,7 @@ public:
 											mine.gunf = true;
 											//バイブレーション　バッテリー消費が激しいためコメントアウト
 											/*
-												vrparts->Haptic(vrparts->get_hand1_num(), unsigned short(60000));
+												Drawparts->Haptic(Drawparts->get_hand1_num(), unsigned short(60000));
 											*/
 											//サウンド
 											mine.audio.shot.play_3D(mine.pos + mine.pos_RIGHTHAND, 1.f);
@@ -1011,7 +981,7 @@ public:
 										if (mine.trigger.second == 1 && !mine.gunf && mine.ammo_cnt >= 1) {
 											mine.gunf = true;
 											//反動表現
-											if (!settings->useVR_e && this->ads.first) {
+											if (!Drawparts->use_vr && this->ads.first) {
 												this->fov_fps *= 0.95f;
 											}
 											//弾数管理
@@ -1029,9 +999,9 @@ public:
 											//薬莢
 											mine.cart[mine.use_bullet].set(&mine.ptr_now->ammo[0], mine.obj.frame(mine.ptr_now->frame[2].first), (mine.obj.frame(mine.ptr_now->frame[2].first + 1) - mine.obj.frame(mine.ptr_now->frame[2].first)).Norm()*2.5f / fps, mine.mat_RIGHTHAND);
 											//エフェクト
-											set_effect(&mine.effcs[ef_fire], mine.obj.frame(mine.ptr_now->frame[3].first), mine.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
-											set_effect(&mine.effcs_gun[mine.use_effcsgun].effect, mine.obj.frame(mine.ptr_now->frame[3].first), mine.mat_RIGHTHAND.zvec()*-1.f, 0.11f / 0.1f);
-											set_pos_effect(&mine.effcs_gun[mine.use_effcsgun].effect, Drawparts->get_effHandle(ef_smoke));
+											mine.effcs[ef_fire].set(mine.obj.frame(mine.ptr_now->frame[3].first), mine.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
+											mine.effcs_gun[mine.use_effcsgun].effect.set(mine.obj.frame(mine.ptr_now->frame[3].first), mine.mat_RIGHTHAND.zvec()*-1.f, 0.11f / 0.1f);
+											mine.effcs_gun[mine.use_effcsgun].effect.put(Drawparts->get_effHandle(ef_smoke));
 											mine.effcs_gun[mine.use_effcsgun].ptr = &mine.bullet[mine.use_bullet];
 											mine.effcs_gun[mine.use_effcsgun].cnt = 0.f;
 											++mine.use_effcsgun %= mine.effcs_gun.size();
@@ -1044,7 +1014,7 @@ public:
 										//マガジン取得
 										if (mine.reloadf && mine.gun_stat[mine.ptr_now->id].mag_in.size() >= 1) {
 											if (mine.down_mag) {
-												if (settings->useVR_e) {
+												if (Drawparts->use_vr) {
 													auto p = MATRIX_ref::RotVec2(mine.mat_LEFTHAND.yvec(), (mine.obj.frame(mine.ptr_now->frame[0].first) - (mine.pos_LEFTHAND + mine.pos)));
 													mine.mat_mag = mine.mag.GetFrameLocalMatrix(3)* (mine.mat_LEFTHAND*p);
 												}
@@ -1052,7 +1022,7 @@ public:
 													mine.mat_mag = mine.mat_LEFTHAND;
 												}
 												mine.pos_mag = mine.pos_LEFTHAND + mine.pos;
-												if ((settings->useVR_e) ? ((mine.mag.frame(3) - mine.obj.frame(mine.ptr_now->frame[0].first)).size() <= 0.05f) : (mine.reload_cnt > mine.ptr_now->reload_time)) {
+												if ((Drawparts->use_vr) ? ((mine.mag.frame(3) - mine.obj.frame(mine.ptr_now->frame[0].first)).size() <= 0.05f) : (mine.reload_cnt > mine.ptr_now->reload_time)) {
 													mine.obj.get_anime(1).time = 0.f;
 													mine.obj.get_anime(0).per = 1.f;
 													mine.obj.get_anime(1).per = 0.f;
@@ -1146,11 +1116,11 @@ public:
 								}
 								for (auto& t : mine.effcs) {
 									if (t.id != ef_smoke) {
-										set_pos_effect(&t, Drawparts->get_effHandle(int(t.id)));
+										t.put(Drawparts->get_effHandle(int(t.id)));
 									}
 								}
 								for (auto& t : mine.effcs_gndhit) {
-									set_pos_effect(&t, Drawparts->get_gndhitHandle());
+									t.put(Drawparts->get_effHandle(ef_gndsmoke));
 								}
 								for (auto& a : mine.effcs_gun) {
 									if (a.ptr != nullptr) {
@@ -1254,51 +1224,82 @@ public:
 							[&] {
 							for (auto& mine : this->chara) { mine.Draw_chara(this->usegun.first, this->sel_gun); }
 							for (auto& g : this->item_data) { g.Draw_item(); }
-						}, VGet(5.f, 2.5f, 5.f));
+						},
+							VGet(5.f, 2.5f, 5.f), 
+							VGet(5.f, 2.5f, 5.f)
+							);
 						//VR空間に適用
-						vrparts->Move_Player();
+						Drawparts->Move_Player();
 						//スコープ
 						{
 							if (mine.ptr_now->frame[4].first != INT_MAX) {
-								VECTOR_ref cam = mine.obj.frame(mine.ptr_now->frame[4].first);
-								VECTOR_ref vec = cam - mine.mat_RIGHTHAND.zvec();
-								VECTOR_ref yvec = mine.mat_RIGHTHAND.yvec();
+								DXDraw::cam_info cam_tmp;
+								cam_tmp.campos = mine.obj.frame(mine.ptr_now->frame[4].first);
+								cam_tmp.camvec = cam_tmp.campos - mine.mat_RIGHTHAND.zvec();
+								cam_tmp.camup = mine.mat_RIGHTHAND.yvec();
+								cam_tmp.fov = (this->fov / 7.5f) / 4.f;
+								cam_tmp.near_ = 1.0f;
+								cam_tmp.far_ = 100.f;
 
 								// 鏡に映る映像を描画
-								for (auto& i : Drawparts->get_Mirror_obj()) {
-									Drawparts->Mirror_SetupCamera(i, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
-									if (i.canlook) {
-										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), (this->fov / 7.5f) / 4.f), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
+								{
+									DXDraw::cam_info cam_tmp2;
+									cam_tmp2.campos = Drawparts->Mirrorcampos;
+									cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
+									cam_tmp2.camup = VGet(0, 1.f, 0);
+									cam_tmp2.fov = this->fov_fps;
+									cam_tmp2.near_ = 1.0f;
+									cam_tmp2.far_ = 100.f;
+
+									for (auto& i : Drawparts->get_Mirror_obj()) {
+										Drawparts->Mirror_SetupCamera(i, cam_tmp.campos, cam_tmp.camvec, cam_tmp.camup, cam_tmp.fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
+										if (i.canlook) {
+											Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), cam_tmp.fov), draw_by_shadow, cam_tmp2);
+										}
 									}
 								}
 
-								Hostpassparts->draw(&this->ScopeScreen, mapparts->sky_draw(cam, vec, yvec, (this->fov / 7.5f) / 4.f), draw_by_shadow_2, cam, vec, yvec, (this->fov / 7.5f) / 4.f, 100.f, 0.1f);
+								Hostpassparts->dof(&this->ScopeScreen, mapparts->sky_draw(cam_tmp.campos, cam_tmp.camvec, cam_tmp.camup, cam_tmp.fov), draw_by_shadow_2, cam_tmp);
 								mine.ptr_now->mod.lenzScreen.DrawExtendGraph(0, 0, 1080, 1080, true);
 							}
 						}
 						//描画
-						if (settings->useVR_e) {
+						if (Drawparts->use_vr) {
 							UIparts->set_draw_vr(mine, this->usegun.first, this->sel_gun);
 						}
 						else {
 							UIparts->set_draw_nomal(mine, this->usegun.first, this->sel_gun);
 						}
-						if (settings->useVR_e) {
+						if (Drawparts->use_vr) {
 							for (char eye = 0; eye < 2; eye++) {
-								this->campos = this->campos_buf + vrparts->GetEyePosition_minVR(eye);
-
+								this->campos = this->campos_buf + Drawparts->GetEyePosition_minVR(eye);
+								DXDraw::cam_info cam_tmp;
+								cam_tmp.campos = this->campos;
+								cam_tmp.camvec = this->campos + this->camvec;
+								cam_tmp.camup = this->camup;
+								cam_tmp.fov = this->fov;
+								cam_tmp.near_ = 0.2f;
+								cam_tmp.far_ = 100.f;
 								// 鏡に映る映像を描画
 								for (auto& i : Drawparts->get_Mirror_obj()) {
 									Drawparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 1.0f, 0.1f);
+										DXDraw::cam_info cam_tmp2;
+										cam_tmp2.campos = Drawparts->Mirrorcampos;
+										cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
+										cam_tmp2.camup = VGet(0, 1.f, 0);
+										cam_tmp2.fov = this->fov_fps;
+										cam_tmp2.near_ = 1.0f;
+										cam_tmp2.far_ = 100.f;
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, cam_tmp2);
 									}
 								}
 								//被写体深度描画
-								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.2f, 0.1f);
+								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov), draw_by_shadow_2, cam_tmp);
 								//描画
-								this->outScreen[eye].SetDraw_Screen(0.1f, 100.f, this->fov, this->campos, this->campos + this->camvec, this->camup);
+								this->outScreen[eye].SetDraw_Screen( this->campos, this->campos + this->camvec, this->camup, this->fov, 0.1f, 100.f);
 								{
+									this->BufScreen.DrawExtendGraph(0, 0, Drawparts->disp_x, Drawparts->disp_y, true);
 									Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 									UIparts->draw();//UI
 									UIparts->item_draw(this->item_data, this->campos_buf);
@@ -1308,7 +1309,7 @@ public:
 								{
 									this->outScreen[eye].DrawGraph(0, 0, false);
 									ID3D11Texture2D* ptr_DX11 = (ID3D11Texture2D*)GetUseDirect3D11BackBufferTexture2D();
-									vrparts->PutEye(ptr_DX11, eye);
+									Drawparts->PutEye(ptr_DX11, eye);
 								}
 							}
 						}
@@ -1318,14 +1319,31 @@ public:
 							for (auto& i : Drawparts->get_Mirror_obj()) {
 								Drawparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 								if (i.canlook) {
-									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps, 100.f, 1.0f, 0.1f);
+									DXDraw::cam_info cam_tmp2;
+									cam_tmp2.campos = Drawparts->Mirrorcampos;
+									cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
+									cam_tmp2.camup = VGet(0, 1.f, 0);
+									cam_tmp2.fov = this->fov_fps;
+									cam_tmp2.near_ = 1.0f;
+									cam_tmp2.far_ = 100.f;
+									Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov_fps), draw_by_shadow, cam_tmp2);
 								}
 							}
 							//被写体深度描画
-							Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow_2, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.2f, 0.1f);
-							//描画
-							this->outScreen[1].SetDraw_Screen(0.1f, 100.f, this->fov_fps, this->campos, this->campos + this->camvec, this->camup);
 							{
+								DXDraw::cam_info cam_tmp;
+								cam_tmp.campos = this->campos;
+								cam_tmp.camvec = this->campos + this->camvec;
+								cam_tmp.camup = this->camup;
+								cam_tmp.fov = this->fov_fps;
+								cam_tmp.near_ = 0.2f;
+								cam_tmp.far_ = 100.f;
+								Hostpassparts->dof(&this->BufScreen, mapparts->sky_draw(this->campos, this->campos + this->camvec, this->camup, this->fov_fps), draw_by_shadow_2, cam_tmp);
+							}
+							//描画
+							this->outScreen[1].SetDraw_Screen( this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 0.1f, 100.f);
+							{
+								this->BufScreen.DrawExtendGraph(0, 0, Drawparts->disp_x, Drawparts->disp_y, true);
 								Hostpassparts->bloom(this->BufScreen, 64);//ブルーム付き描画
 								UIparts->draw();//UI
 								UIparts->item_draw(this->item_data, this->campos_buf);
@@ -1341,23 +1359,40 @@ public:
 								for (auto& i : Drawparts->get_Mirror_obj()) {
 									Drawparts->Mirror_SetupCamera(i, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										Hostpassparts->draw(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
+										DXDraw::cam_info cam_tmp2;
+										cam_tmp2.campos = Drawparts->Mirrorcampos;
+										cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
+										cam_tmp2.camup = VGet(0, 1.f, 0);
+										cam_tmp2.fov = this->fov_fps;
+										cam_tmp2.near_ = 1.0f;
+										cam_tmp2.far_ = 100.f;
+
+										Hostpassparts->dof(&i.Handle, mapparts->sky_draw(Drawparts->Mirrorcampos, Drawparts->Mirrorcamtgt, VGet(0, 1.f, 0), this->fov), draw_by_shadow, cam_tmp2);
 									}
 								}
 								//被写体深度描画
-								Hostpassparts->draw(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), this->fov), draw_by_shadow_2, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);
-								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, 0.1f, 100.f, this->fov, cam, vec, VGet(0, 1.f, 0));
 								{
-									this->outScreen[2].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, false);
+									DXDraw::cam_info cam_tmp;
+									cam_tmp.campos = cam;
+									cam_tmp.camvec = vec;
+									cam_tmp.camup = VGet(0, 1.f, 0);
+									cam_tmp.fov = this->fov;
+									cam_tmp.near_ = 0.2f;
+									cam_tmp.far_ = 100.f;
+									Hostpassparts->dof(&this->outScreen[2], mapparts->sky_draw(cam, vec, VGet(0, 1.f, 0), this->fov), draw_by_shadow_2, cam_tmp);
+								}
+								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, cam, vec, VGet(0, 1.f, 0), this->fov, 0.1f, 100.f);
+								{
+									this->outScreen[2].DrawExtendGraph(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, false);
 									//スコープのエイム
 									if (mine.ptr_now->frame[4].first != INT_MAX) {
-										this->ScopeScreen.DrawExtendGraph(settings->out_dispx - 200, 0, settings->out_dispx, 200, true);
+										this->ScopeScreen.DrawExtendGraph(Drawparts->out_disp_x - 200, 0, Drawparts->out_disp_x, 200, true);
 									}
 								}
 							}
 							else {//FPS視点
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
-								this->outScreen[1].DrawExtendGraph(0, 0, settings->out_dispx, settings->out_dispy, false);
+								this->outScreen[1].DrawExtendGraph(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, false);
 							}
 							{
 								//mine.gun_stat[mine.ptr_now->id]
@@ -1368,8 +1403,7 @@ public:
 						}
 					}
 					//画面の反映
-					DXDraw::Screen_Flip();
-					vrparts->Eye_Flip(waits, FRAME_RATE);
+					Drawparts->Screen_Flip(waits);
 					//終了判定
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						this->ending = false;

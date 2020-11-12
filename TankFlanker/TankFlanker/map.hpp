@@ -19,10 +19,9 @@ private:
 
 	SoundHandle envi;
 public:
-	template<class Y, class D>
-	Mapclass(std::unique_ptr<Y, D>& settings) {
-		disp_x = settings->out_dispx;
-		disp_y = settings->out_dispy;
+	Mapclass(const int& xd, const int& yd) {
+		disp_x = xd;
+		disp_y = yd;
 
 		SkyScreen = GraphHandle::Make(disp_x, disp_y);    //‹ó•`‰æ
 	}
@@ -64,7 +63,7 @@ public:
 			//item_data
 			while (true) {
 				auto p = getparams::_str(mdata);
-				if (getright(p.c_str()).find("end") == std::string::npos) {
+				if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 					int p1 = 0;
 					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
 					for (auto& g : gun_data) {
@@ -87,7 +86,7 @@ public:
 			//magitem
 			while (true) {
 				auto p = getparams::_str(mdata);
-				if (getright(p.c_str()).find("end") == std::string::npos) {
+				if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 					int p1 = 0;
 					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
 					for (auto& g : gun_data) {
@@ -205,7 +204,7 @@ public:
 
 	//‹ó•`‰æ
 	GraphHandle& sky_draw(const VECTOR_ref& campos, const VECTOR_ref&camvec, const VECTOR_ref& camup, float fov) {
-		SkyScreen.SetDraw_Screen(1000.0f, 5000.0f, fov, VECTOR_ref(campos) - camvec, VGet(0, 0, 0), camup);
+		SkyScreen.SetDraw_Screen(VECTOR_ref(campos) - camvec, VGet(0, 0, 0), camup, fov, 1000.0f, 5000.0f);
 		{
 			SetFogEnable(FALSE);
 			SetUseLighting(FALSE);

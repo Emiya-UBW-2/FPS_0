@@ -102,22 +102,12 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="debug.hpp" />
-    <ClInclude Include="DXLib_ref\DXLib_mat.hpp" />
-    <ClInclude Include="DXLib_ref\DXLib_ref.h" />
-    <ClInclude Include="DXLib_ref\EffekseerEffectHandle.hpp" />
-    <ClInclude Include="DXLib_ref\FontHandle.hpp" />
-    <ClInclude Include="DXLib_ref\GraphHandle.hpp" />
-    <ClInclude Include="DXLib_ref\MV1ModelHandle.hpp" />
-    <ClInclude Include="DXLib_ref\SoundHandle.hpp" />
-    <ClInclude Include="DXLib_ref\useful.hpp" />
     <ClInclude Include="HostPass.hpp" />
     <ClInclude Include="map.hpp" />
     <ClInclude Include="route.hpp" />
     <ClInclude Include="Setting.hpp" />
     <ClInclude Include="sub.hpp" />
     <ClInclude Include="UI.hpp" />
-    <ClInclude Include="VR.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

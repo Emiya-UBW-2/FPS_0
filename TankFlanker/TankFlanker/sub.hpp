@@ -10,6 +10,14 @@
 #include<fstream>
 #include "DXLib_ref/DXLib_ref.h"
 //
+enum Effect {
+	ef_fire, //発砲炎
+	ef_reco, //小口径跳弾
+	ef_smoke, //銃の軌跡
+	ef_gndsmoke,//地面の軌跡
+	effects, //読み込む
+};
+//
 class Mainclass {
 private:
 
@@ -97,7 +105,7 @@ public:
 				//弾データ
 				while (true) {
 					auto p = getparams::_str(mdata);
-					if (getright(p.c_str()).find("end") != std::string::npos) {
+					if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
 						break;
 					}
 					else {
@@ -197,29 +205,29 @@ public:
 					//カテゴリ
 					{
 						auto p = getparams::_str(mdata);
-						if (getright(p.c_str()).find("knife") != std::string::npos) {
+						if (getparams::getright(p.c_str()).find("knife") != std::string::npos) {
 							this->cate = 0;
 						}
-						else if (getright(p.c_str()).find("gun") != std::string::npos) {
+						else if (getparams::getright(p.c_str()).find("gun") != std::string::npos) {
 							this->cate = 1;
 						}
 					}
 					//セレクター設定
 					while (true) {
 						auto p = getparams::_str(mdata);
-						if (getright(p.c_str()).find("end") != std::string::npos) {
+						if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
 							break;
 						}
-						else if (getright(p.c_str()).find("semi") != std::string::npos) {
+						else if (getparams::getright(p.c_str()).find("semi") != std::string::npos) {
 							this->select.emplace_back(uint8_t(1));					//セミオート=1
 						}
-						else if (getright(p.c_str()).find("full") != std::string::npos) {
+						else if (getparams::getright(p.c_str()).find("full") != std::string::npos) {
 							this->select.emplace_back(uint8_t(2));					//フルオート=2
 						}
-						else if (getright(p.c_str()).find("3b") != std::string::npos) {
+						else if (getparams::getright(p.c_str()).find("3b") != std::string::npos) {
 							this->select.emplace_back(uint8_t(3));					//3連バースト=3
 						}
-						else if (getright(p.c_str()).find("2b") != std::string::npos) {
+						else if (getparams::getright(p.c_str()).find("2b") != std::string::npos) {
 							this->select.emplace_back(uint8_t(4));					//2連バースト=4
 						}
 						else {
@@ -233,7 +241,7 @@ public:
 					//弾データ
 					while (true) {
 						auto p = getparams::_str(mdata);
-						if (getright(p.c_str()).find("end") != std::string::npos) {
+						if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
 							break;
 						}
 						else {
@@ -391,7 +399,7 @@ public:
 					if (pp.HitFlag == 1) {
 						this->pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.008f, 0);
 						this->add += VECTOR_ref(pp.Normal)*(VECTOR_ref(pp.Normal).dot(this->add*-1.f)*1.25f);
-						easing_set(&this->add, VGet(0, 0, 0), 0.95f, fps);
+						easing_set(&this->add, VGet(0, 0, 0), 0.95f);
 						if (!this->down) {
 							c.audio.case_down.play_3D(c.pos + c.pos_RIGHTHAND, 1.f);
 						}
@@ -807,7 +815,7 @@ public:
 				if (pp.HitFlag == 1) {
 					this->pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
 					this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal));
-					easing_set(&this->add, VGet(0, 0, 0), 0.8f, fps);
+					easing_set(&this->add, VGet(0, 0, 0), 0.8f);
 				}
 				//
 				VECTOR_ref startpos = chara.pos + chara.pos_LEFTHAND;

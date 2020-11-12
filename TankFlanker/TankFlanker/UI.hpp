@@ -56,12 +56,11 @@ public:
 	//
 	SoundHandle timer, decision, cancel, cursor, whistle, start, hit;
 	//
-	template<class Y, class D>
-	UI(std::unique_ptr<Y, D>& settings) {
-		out_disp_x = settings->out_dispx;
-		out_disp_y = settings->out_dispy;
-		disp_x = settings->dispx;
-		disp_y = settings->dispy;
+	UI(const int& o_xd, const int& o_yd, const int& xd, const int& yd) {
+		out_disp_x = o_xd;
+		out_disp_y = o_yd;
+		disp_x = xd;
+		disp_y = yd;
 		SetUseASyncLoadFlag(TRUE);
 
 		font36 = FontHandle::Create(y_r(36, disp_y), DX_FONTTYPE_EDGE);
@@ -107,7 +106,7 @@ public:
 				font18_o.DrawStringFormat(0, out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), " loading... : %04d/%04d  ", all - GetASyncLoadNum(), all);
 				font12_o.DrawStringFormat_RIGHT(out_disp_x, out_disp_y - y_r(70, out_disp_y), GetColor(0, 255, 0), "%s ì«Ç›çûÇ›íÜ ", mes);
 				DrawBox(0, out_disp_y - y_r(50, out_disp_y), int(float(out_disp_x) * bar / float(all)), out_disp_y - y_r(40, out_disp_y), GetColor(0, 255, 0), TRUE);
-				easing_set(&bar, float(all - GetASyncLoadNum()), 0.95f, fps);
+				easing_set(&bar, float(all - GetASyncLoadNum()), 0.95f);
 			}
 			ScreenFlip();
 			if (GetASyncLoadNum() == 0) {
