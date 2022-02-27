@@ -24,9 +24,9 @@ class main_c : Mainclass {
 public:
 	main_c() {
 		auto Drawparts = std::make_unique<DXDraw>("FPS_0", FRAME_RATE, false, true);	/*汎用クラス*/
-		auto UIparts = std::make_unique<UI>(Drawparts->out_disp_x, Drawparts->out_disp_y, Drawparts->disp_x, Drawparts->disp_y);									/*UI*/
+		auto UIparts = std::make_unique<UI>(Drawparts->disp_x, Drawparts->disp_y, Drawparts->disp_x, Drawparts->disp_y);											/*UI*/
 		auto Debugparts = std::make_unique<DeBuG>(FRAME_RATE);							/*デバッグ*/
-		auto Hostpassparts = std::make_unique<HostPassEffect>(Drawparts->out_disp_x, Drawparts->out_disp_y, Drawparts->disp_x, Drawparts->disp_y);			/*ホストパスエフェクト*/
+		auto Hostpassparts = std::make_unique<HostPassEffect_old>(false,true, Drawparts->disp_x, Drawparts->disp_y);			/*ホストパスエフェクト*/
 		this->outScreen[0] = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);	/*左目*/
 		this->outScreen[1] = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);	/*右目*/
 		this->outScreen[2] = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y);	/*TPS用*/
@@ -45,7 +45,9 @@ public:
 		}
 		UIparts->load_window("銃モデル");						//ロード画面1
 		{
-			fill_id(this->gun_data);							//GUNデータ取得1
+			for (auto& i : this->gun_data) {
+				i.id = &i - &this->gun_data[0];
+			}
 			for (auto& g : this->gun_data) { g.set_data(); }	//GUNデータ取得2
 		}
 		UIparts->load_window("銃データ");						//ロード画面2
@@ -141,11 +143,11 @@ public:
 						}
 						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 						{
-							DrawBox(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, GetColor(64, 64, 64), TRUE);
-							outScreen[0].DrawExtendGraph(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, true);
+							DrawBox(0, 0, Drawparts->disp_x, Drawparts->disp_y, GetColor(64, 64, 64), TRUE);
+							outScreen[0].DrawExtendGraph(0, 0, Drawparts->disp_x, Drawparts->disp_y, true);
 						}
 					}
-					Drawparts->Screen_Flip(waits);
+					Drawparts->Screen_Flip();
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						sel_g = -1;
 						break;
@@ -1233,7 +1235,7 @@ public:
 						//スコープ
 						{
 							if (mine.ptr_now->frame[4].first != INT_MAX) {
-								DXDraw::cam_info cam_tmp;
+								cam_info cam_tmp;
 								cam_tmp.campos = mine.obj.frame(mine.ptr_now->frame[4].first);
 								cam_tmp.camvec = cam_tmp.campos - mine.mat_RIGHTHAND.zvec();
 								cam_tmp.camup = mine.mat_RIGHTHAND.yvec();
@@ -1243,7 +1245,7 @@ public:
 
 								// 鏡に映る映像を描画
 								{
-									DXDraw::cam_info cam_tmp2;
+									cam_info cam_tmp2;
 									cam_tmp2.campos = Drawparts->Mirrorcampos;
 									cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
 									cam_tmp2.camup = VGet(0, 1.f, 0);
@@ -1273,7 +1275,7 @@ public:
 						if (Drawparts->use_vr) {
 							for (char eye = 0; eye < 2; eye++) {
 								this->campos = this->campos_buf + Drawparts->GetEyePosition_minVR(eye);
-								DXDraw::cam_info cam_tmp;
+								cam_info cam_tmp;
 								cam_tmp.campos = this->campos;
 								cam_tmp.camvec = this->campos + this->camvec;
 								cam_tmp.camup = this->camup;
@@ -1284,7 +1286,7 @@ public:
 								for (auto& i : Drawparts->get_Mirror_obj()) {
 									Drawparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										DXDraw::cam_info cam_tmp2;
+										cam_info cam_tmp2;
 										cam_tmp2.campos = Drawparts->Mirrorcampos;
 										cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
 										cam_tmp2.camup = VGet(0, 1.f, 0);
@@ -1319,7 +1321,7 @@ public:
 							for (auto& i : Drawparts->get_Mirror_obj()) {
 								Drawparts->Mirror_SetupCamera(i, this->campos, this->campos + this->camvec, this->camup, this->fov_fps, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 								if (i.canlook) {
-									DXDraw::cam_info cam_tmp2;
+									cam_info cam_tmp2;
 									cam_tmp2.campos = Drawparts->Mirrorcampos;
 									cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
 									cam_tmp2.camup = VGet(0, 1.f, 0);
@@ -1331,7 +1333,7 @@ public:
 							}
 							//被写体深度描画
 							{
-								DXDraw::cam_info cam_tmp;
+								cam_info cam_tmp;
 								cam_tmp.campos = this->campos;
 								cam_tmp.camvec = this->campos + this->camvec;
 								cam_tmp.camup = this->camup;
@@ -1359,7 +1361,7 @@ public:
 								for (auto& i : Drawparts->get_Mirror_obj()) {
 									Drawparts->Mirror_SetupCamera(i, cam, vec, VGet(0, 1.f, 0), this->fov, 100.f, 0.1f);	// 鏡に映る映像を描画する際に使用するカメラの設定を行う
 									if (i.canlook) {
-										DXDraw::cam_info cam_tmp2;
+										cam_info cam_tmp2;
 										cam_tmp2.campos = Drawparts->Mirrorcampos;
 										cam_tmp2.camvec = Drawparts->Mirrorcamtgt;
 										cam_tmp2.camup = VGet(0, 1.f, 0);
@@ -1372,7 +1374,7 @@ public:
 								}
 								//被写体深度描画
 								{
-									DXDraw::cam_info cam_tmp;
+									cam_info cam_tmp;
 									cam_tmp.campos = cam;
 									cam_tmp.camvec = vec;
 									cam_tmp.camup = VGet(0, 1.f, 0);
@@ -1383,16 +1385,16 @@ public:
 								}
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, cam, vec, VGet(0, 1.f, 0), this->fov, 0.1f, 100.f);
 								{
-									this->outScreen[2].DrawExtendGraph(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, false);
+									this->outScreen[2].DrawExtendGraph(0, 0, Drawparts->disp_x, Drawparts->disp_y, false);
 									//スコープのエイム
 									if (mine.ptr_now->frame[4].first != INT_MAX) {
-										this->ScopeScreen.DrawExtendGraph(Drawparts->out_disp_x - 200, 0, Drawparts->out_disp_x, 200, true);
+										this->ScopeScreen.DrawExtendGraph(Drawparts->disp_x - 200, 0, Drawparts->disp_x, 200, true);
 									}
 								}
 							}
 							else {//FPS視点
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
-								this->outScreen[1].DrawExtendGraph(0, 0, Drawparts->out_disp_x, Drawparts->out_disp_y, false);
+								this->outScreen[1].DrawExtendGraph(0, 0, Drawparts->disp_x, Drawparts->disp_y, false);
 							}
 							{
 								//mine.gun_stat[mine.ptr_now->id]
@@ -1403,7 +1405,7 @@ public:
 						}
 					}
 					//画面の反映
-					Drawparts->Screen_Flip(waits);
+					Drawparts->Screen_Flip();
 					//終了判定
 					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 						this->ending = false;

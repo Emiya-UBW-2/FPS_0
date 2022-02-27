@@ -1,7 +1,7 @@
 #pragma once
 #include "DXLib_ref/DXLib_ref.h"
 
-class HostPassEffect {
+class HostPassEffect_old {
 private:
 	GraphHandle FarScreen;
 	GraphHandle MainScreen;
@@ -13,7 +13,7 @@ private:
 	int disp_x = 1920;
 	int disp_y = 1080;
 public:
-	HostPassEffect(const bool& dof_, const bool& bloom_, const int& xd, const int& yd) {
+	HostPassEffect_old(const bool& dof_, const bool& bloom_, const int& xd, const int& yd) {
 		disp_x = xd;
 		disp_y = yd;
 		dof_flag = dof_;
@@ -23,13 +23,13 @@ public:
 		NearScreen = GraphHandle::Make(disp_x, disp_y, true);
 		GaussScreen = GraphHandle::Make(disp_x / EXTEND, disp_y / EXTEND); /*エフェクト*/
 	}
-	~HostPassEffect() {
+	~HostPassEffect_old() {
 	}
 	//被写体深度描画
 	template <typename T2>
 	void dof(
 		GraphHandle* buf, GraphHandle& skyhandle, T2 doing,
-		DXDraw::cam_info& cams) {
+		cam_info& cams) {
 		if (dof_flag) {
 			//
 			FarScreen.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, cams.far_, 1000000.f);

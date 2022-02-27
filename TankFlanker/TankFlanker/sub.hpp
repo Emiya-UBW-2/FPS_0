@@ -532,7 +532,9 @@ public:
 			this->gun_slot[0].set(gundata);
 			this->gun_slot[1].delete_gun();
 			this->gun_slot[2].delete_gun();
-			fill_id(this->gun_slot);
+			for (auto& i : this->gun_slot) {
+				i.id = &i - &this->gun_slot[0];
+			}
 			this->gun_stat.resize(state_s);
 			for (auto& s : this->gun_stat) {
 				s.in = 0;
@@ -679,7 +681,9 @@ public:
 			for (auto& a : this->obj.get_anime()) {
 				a.per = 0.f;
 			}
-			fill_id(this->effcs);			      //エフェクト
+			for (auto& i : this->effcs) {
+				i.id = &i - &this->effcs[0];
+			}
 			for (auto& a : this->bullet) {
 				a.ready();
 			}
