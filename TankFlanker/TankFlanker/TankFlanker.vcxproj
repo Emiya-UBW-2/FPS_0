@@ -10,6 +10,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackGround.hpp" />
+    <ClInclude Include="Character.hpp" />
+    <ClInclude Include="Common.hpp" />
+    <ClInclude Include="Enums.hpp" />
+    <ClInclude Include="Gun.hpp" />
+    <ClInclude Include="Header.hpp" />
+    <ClInclude Include="LoadScene.hpp" />
+    <ClInclude Include="MainScene.hpp" />
+    <ClInclude Include="sequence.hpp" />
+    <ClInclude Include="sub.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{269E4B7B-C186-4DCC-BA89-2791074F857A}</ProjectGuid>
@@ -58,7 +73,7 @@
       </SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\..\DxLib_VC\DX_VC;..\..\..\openvr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\DxLib_VC\DX_VC;..\..\..\openvr;..\..\..\Box2D;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -80,7 +95,7 @@
       </SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\..\DxLib_VC\DX_VC;..\..\..\openvr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\DxLib_VC\DX_VC;..\..\..\openvr;..\..\..\Box2D;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -98,17 +113,6 @@
       <PerUserRedirection>true</PerUserRedirection>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="HostPass.hpp" />
-    <ClInclude Include="map.hpp" />
-    <ClInclude Include="route.hpp" />
-    <ClInclude Include="Setting.hpp" />
-    <ClInclude Include="sub.hpp" />
-    <ClInclude Include="UI.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

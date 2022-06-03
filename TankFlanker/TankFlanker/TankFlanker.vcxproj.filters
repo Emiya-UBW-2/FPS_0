@@ -13,30 +13,54 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ソース ファイル\Scene">
+      <UniqueIdentifier>{e8de57c4-c9ce-4f65-a589-80988096fbdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\MainScene">
+      <UniqueIdentifier>{83422936-319b-4532-8063-ff7f98825515}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\MainScene\Object">
+      <UniqueIdentifier>{7e7d2c6d-acfb-42c0-8d84-c51bfae30724}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\MainScene\BackGround">
+      <UniqueIdentifier>{f8f7caa6-07a4-4b61-981f-3b99bc5d3bb1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Common.hpp">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Enums.hpp">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Header.hpp">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="sequence.hpp">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="sub.hpp">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadScene.hpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="MainScene.hpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Character.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Gun.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="BackGround.hpp">
+      <Filter>ソース ファイル\MainScene\BackGround</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="sub.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="UI.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="HostPass.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="map.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Setting.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="route.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
