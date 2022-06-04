@@ -17,6 +17,8 @@ namespace FPS_n2 {
 			bool m_Flagfps{ true };
 
 			bool m_RunPressFlag{ false };
+
+			size_t DispCounter = 0;
 		private:
 		public:
 			using TEMPSCENE::TEMPSCENE;
@@ -35,7 +37,8 @@ namespace FPS_n2 {
 
 
 				lens_zoom = 3.5f;
-				lens_zoom = 5.f;
+
+				DispCounter = 0;
 			}
 			//
 			bool Update(void) noexcept override {
@@ -47,14 +50,27 @@ namespace FPS_n2 {
 					}
 					int mx, my;
 					GetMousePoint(&mx, &my);
+
+					float xadd = 0.f;
+					if (Chara.IsSprint()) {
+						xadd = 0.15f;//ƒXƒvƒŠƒ“ƒg
+					}
+					else if (Chara.IsRun()) {
+						xadd = 0.10825f;//‘–‚è
+					}
+
+					xadd = 0.f;
+
 					m_RunPressFlag = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
 					Chara.Execute(
-						std::clamp((float)(m_y - my)*50.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -3.f, 3.f) / 100.f,
-						std::clamp((float)(mx - m_x)*50.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
+						std::clamp((float)(m_y - my)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -3.f, 3.f) / 100.f,
+						std::clamp(((float)(mx - m_x)+ xadd)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
 						CheckHitKey(KEY_INPUT_W) != 0,
 						CheckHitKey(KEY_INPUT_S) != 0,
 						CheckHitKey(KEY_INPUT_A) != 0,
 						CheckHitKey(KEY_INPUT_D) != 0,
+						CheckHitKey(KEY_INPUT_C) != 0,
+						CheckHitKey(KEY_INPUT_X) != 0,
 						(GetMouseInput() & MOUSE_INPUT_LEFT) != 0,
 						(GetMouseInput() & MOUSE_INPUT_RIGHT) != 0,// || true,
 						m_RunPressFlag,
@@ -74,20 +90,13 @@ namespace FPS_n2 {
 
 				m_FPS = std::clamp<size_t>(m_FPS + 1, 0, (CheckHitKey(KEY_INPUT_V) != 0) ? 2 : 0);
 				if (m_FPS == 1) { m_Flagfps ^= 1; }
+				VECTOR_ref CamPosBase;
+
 				if (m_Flagfps) {
 					camera_main.campos = Chara.GetEyePosition();
-					camera_main.campos = camera_main.campos + (Gun.GetScopePos() - camera_main.campos) * EyePosPer;
+					camera_main.camvec = camera_main.campos + Chara.GetEyeVector();
 
-					camera_main.camvec = Chara.GetEyeVector();
-					camera_main.camvec = camera_main.campos + camera_main.camvec + ((Gun.GetMatrix().zvec()*-1.f) - camera_main.camvec) * EyePosPer;
-					if (Chara.IsADS()) {
-						camera_main.near_ = 3.f;
-						camera_main.far_ = 1000.f;
-					}
-					else {
-						camera_main.near_ = 1.f;
-						camera_main.far_ = 100.f;
-					}
+					camera_main.camup = Chara.GetCharaMatrix().GetRot().yvec();
 				}
 				else {
 					auto EyeVector = Chara.GetEyeVector();
@@ -96,11 +105,12 @@ namespace FPS_n2 {
 					MATRIX_ref CamMat = Chara.GetUpper2WorldMatrix().GetRot();
 
 					VECTOR_ref CamPos;
-					CamPos += (Chara.GetCharaModelMatrix().pos() + VECTOR_ref::vget(0, 14.f, 0) + CamMat.xvec()*-8.f + CamMat.yvec()*3.f + CamMat.zvec()*1.f)*EyeRunPer;
-					CamPos += (Chara.GetCharaMatrix().pos() + VECTOR_ref::vget(0, 14.f, 0) + CamMat.xvec()*-3.f + CamMat.yvec()*4.f + CamMat.zvec()*3.f)*(1.f - EyeRunPer);
+					CamPos += (Chara.GetCharaMatrix().pos() + VECTOR_ref::vget(0, 14.f, 0) + CamMat.xvec()*-8.f + CamMat.yvec()*3.f)*EyeRunPer;
+					CamPos += (Chara.GetCharaMatrix().pos() + VECTOR_ref::vget(0, 14.f, 0) + CamMat.xvec()*-3.f + CamMat.yvec()*4.f)*(1.f - EyeRunPer);
 
 					camera_main.camvec = CamPos + EyeVector * 100.f;
 					camera_main.campos = CamPos + EyeVector * -20.f;
+					camera_main.camup = VECTOR_ref::up();
 
 					if (!m_RunPressFlag) {
 						easing_set(&EyeRunPer, 1.f, 0.95f);
@@ -110,18 +120,24 @@ namespace FPS_n2 {
 					}
 				}
 				{
+					camera_main.campos = camera_main.campos + (Gun.GetScopePos() - camera_main.campos) * EyePosPer;
+					camera_main.camvec = camera_main.camvec + ((Gun.GetScopePos() + Gun.GetMatrix().zvec()*-1.f) - camera_main.camvec) * EyePosPer;
 					if (Chara.IsADS()) {
-						easing_set(&EyePosPer, 1.f, 0.9f);
-						easing_set(&camera_main.fov, deg2rad(20), 0.8f);
+						easing_set(&EyePosPer, 1.f, 0.8f);
+						easing_set(&camera_main.fov, deg2rad(17), 0.8f);
+						camera_main.near_ = 10.f;
+						camera_main.far_ = 12.5f * 200.f;
 					}
 					else {
-						easing_set(&EyePosPer, 0.f, 0.9f);
+						easing_set(&EyePosPer, 0.f, 0.8f);
 						if (Chara.IsRun()) {
 							easing_set(&camera_main.fov, deg2rad(85), 0.9f);
 						}
 						else {
 							easing_set(&camera_main.fov, deg2rad(65), 0.9f);
 						}
+						camera_main.near_ = 1.f;
+						camera_main.far_ = 100.f;
 					}
 					if (Chara.ShotSwitch()) {
 						camera_main.fov -= deg2rad(10);
@@ -134,6 +150,7 @@ namespace FPS_n2 {
 
 				TEMPSCENE::Update();
 				Effect_UseControl::Update_Effect();
+				DispCounter++;
 				return true;
 			}
 			void Dispose(void) noexcept override {

@@ -23,12 +23,16 @@ namespace FPS_n2 {
 				Upper_Running,
 				Bottom_WalkBack,
 				Upper_RunningStart,
+
+				Mid_Squat,
+				Upper_Sprint,
 			};
 
 			//キャラパラメーター
 			float SpeedLimit{ 2.f };
 			float UpperTimerLimit = 3.f;
 		private:
+			std::pair<int, moves> Center;
 			std::pair<int, moves> Upper;
 			std::pair<int, moves> Upper2;
 			std::pair<int, moves> RightHandJoint;
@@ -47,8 +51,11 @@ namespace FPS_n2 {
 			float Speed_Front{ 0.f }, Speed_Back{ 0.f };
 			float Step_Left{ 0.f }, Step_Right{ 0.f };
 			float m_xrad = 0.f, m_yrad = 0.f;
+			float m_xrad_r = 0.f, m_yrad_r = 0.f;
 			float m_yrad_real = 0.f;
 			float m_yrad_real2 = 0.f;
+			float m_yrad_real2OLD = 0.f;
+			float m_zrad_r = 0.f;
 			bool m_TurnBody = false;
 			float UpperTimer = 100.f;
 			bool shotFlag_First{ false };
@@ -61,12 +68,20 @@ namespace FPS_n2 {
 			float RunPer = 0.f;
 			float RunPer2 = 0.f;
 			bool m_isRun{ false };
+			bool m_isSprint{ false };
+			float m_SprintPer{ 0.f };
 
 			bool m_Ready{ false };
 			float m_ReadyPer{ 0.f };
 			bool m_RunReady{ false };
 			bool m_Running{ false };
 			float m_RunReadyPer{ 0.f };
+
+			float m_SquatPer{ 0.f };
+			bool m_SquatSwitch{ false };
+			size_t m_SquatCount{ 0 };
+
+			float m_ReadyStartTimer{ 0.f };
 		public:
 			CharacterClass() {
 				//this->moves move;
@@ -76,8 +91,12 @@ namespace FPS_n2 {
 				this->Step_Right = 0.f;
 				this->m_xrad = 0.f;
 				this->m_yrad = 0.f;
+				this->m_xrad_r = 0.f;
+				this->m_yrad_r = 0.f;
 				this->m_yrad_real = 0.f;
 				this->m_yrad_real2 = 0.f;
+				this->m_yrad_real2OLD = this->m_yrad_real2;
+				this->m_zrad_r = 0.f;
 				this->m_TurnBody = false;
 				//this->moves;
 				this->UpperTimer = 100.f;
@@ -90,10 +109,15 @@ namespace FPS_n2 {
 				this->Gun_Ptr = nullptr;
 				this->RunPer = 0.f;
 				this->m_isRun = false;
+				this->m_isSprint = false;
 				this->m_Ready = false;
 				this->m_ReadyPer = 0.f;
 				this->m_RunReady = false;
 				this->m_Running = false;
+				this->m_SquatPer = 0.f;
+				this->m_SquatSwitch = false;
+				this->m_SquatCount = 0;
+				this->m_ReadyStartTimer = 0.f;
 			}
 			~CharacterClass() {}
 		public:
@@ -115,6 +139,7 @@ namespace FPS_n2 {
 			}
 			void Set(GunClass* pGunPtr) {
 #if true
+				this->Center.first = 2;
 				this->Upper.first = 5;
 				this->Upper2.first = 6;
 				this->LeftEye.first = 11;
@@ -122,6 +147,7 @@ namespace FPS_n2 {
 				this->RightWrist.first = 119;
 				this->RightHandJoint.first = 120;
 #else
+				this->Center.first = 2;
 				this->Upper.first = 6;
 				this->Upper2.first = 7;
 				this->LeftEye.first = 9;
@@ -259,12 +285,27 @@ namespace FPS_n2 {
 				bool pGoBackPress,
 				bool pGoLeftPress,
 				bool pGoRightPress,
+				bool pSquatPress,
+				bool pPronePress,
 				bool pShotPress,
 				bool pAimPress,
 				bool pRunPress,
 				const MV1& MapCol
 			) {
 				this->m_isRun = pRunPress;
+
+				this->m_isSprint = this->m_isRun && (!pGoFrontPress && !pGoBackPress);
+
+				if (pGoBackPress) {
+					this->m_isRun = false;
+				}
+				else if (!pGoFrontPress && (pGoLeftPress || pGoRightPress)) {
+					if (!this->m_isSprint) {
+						this->m_isRun = false;
+					}
+				}
+
+				this->m_isSprint = this->m_isRun && (!pGoFrontPress && !pGoBackPress);
 
 				CharaAnimeID BottomAnimSel = CharaAnimeID::Bottom_Stand;
 				{
@@ -286,27 +327,21 @@ namespace FPS_n2 {
 						if (pGoBackPress) {
 							BottomAnimSel = CharaAnimeID::Bottom_WalkBack;
 						}
+						if (this->m_isSprint) {
+							BottomAnimSel = CharaAnimeID::Bottom_Run;
+						}
 					}
-					if (pGoFrontPress) {
+					if (this->m_isSprint || pGoFrontPress) {
 						this->Speed_Front += 2.f / 60.f * 60.f / FPS;
 					}
 					else {
 						this->Speed_Front -= 2.f / 60.f * 60.f / FPS;
-						if (pGoLeftPress || pGoRightPress) {
-							this->m_isRun = false;
-						}
 					}
 					if (pGoBackPress) {
 						this->Speed_Back += 2.f / 60.f * 60.f / FPS;
-						this->m_isRun = false;
 					}
 					else {
 						this->Speed_Back -= 2.f / 60.f * 60.f / FPS;
-						if (!pGoFrontPress) {
-							if (pGoLeftPress || pGoRightPress) {
-								this->m_isRun = false;
-							}
-						}
 					}
 					if (pGoLeftPress) {
 						this->Step_Left += 2.f / 60.f * 60.f / FPS;
@@ -334,6 +369,30 @@ namespace FPS_n2 {
 					}
 				}
 				{
+					if (this->m_isSprint) {
+						easing_set(&m_SprintPer, 1.f, 0.95f);
+					}
+					else {
+						easing_set(&m_SprintPer, 0.f, 0.95f);
+					}
+					
+				}
+				{
+					this->m_SquatCount = std::clamp<size_t>(this->m_SquatCount + 1, 0, pSquatPress ? 2 : 0);
+					if (this->m_SquatCount == 1) {
+						this->m_SquatSwitch ^= 1;
+					}
+					if (this->m_isRun) {
+						this->m_SquatSwitch = false;
+					}
+					if (this->m_SquatSwitch) {
+						easing_set(&m_SquatPer, 1.f, 0.9f);
+					}
+					else {
+						easing_set(&m_SquatPer, 0.f, 0.9f);
+					}
+				}
+				{
 					this->m_Ready = !this->m_isRun || this->boltFlag;
 					if (this->m_Ready) {
 						this->m_RunReady = false;
@@ -341,9 +400,14 @@ namespace FPS_n2 {
 						easing_set(&this->m_ReadyPer, 1.f, 0.9f);
 					}
 					else {
+						if (!this->m_RunReady) {
+							this->m_RunReadyPer = 0.f;
+							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = 0.f;
+							this->m_ReadyStartTimer = 0.f;
+						}
 						this->m_RunReady = true;
-						this->m_ReadyPer = 0.f;
-						//easing_set(&this->m_ReadyPer, 0.f, 0.9f);
+						//this->m_ReadyPer = 0.f;
+						easing_set(&this->m_ReadyPer, 0.f, 0.7f);
 					}
 				}
 				{
@@ -351,49 +415,61 @@ namespace FPS_n2 {
 					float limchange = powf(1.f - this->Speed_Front, 0.5f)*PerBuf + 1.f*(1.f - PerBuf);
 					this->m_xrad = std::clamp(this->m_xrad + pAddxRad, -deg2rad(40.f)*limchange, deg2rad(25.f)*limchange);
 					this->m_yrad += pAddyRad;
+					easing_set(&this->m_xrad_r, this->m_xrad, 0.5f);
+					easing_set(&this->m_yrad_r, this->m_yrad, 0.5f);
 				}
-				if (abs(rad2deg(this->m_yrad - this->m_yrad_real)) > 50.f) { this->m_TurnBody = true; }
-				if (abs(rad2deg(this->m_yrad - this->m_yrad_real)) < 0.5f) {
-					if (this->m_TurnBody) { this->m_yrad_real = this->m_yrad; }
+				if (abs(rad2deg(this->m_yrad_r - this->m_yrad_real)) > 50.f) { this->m_TurnBody = true; }
+				if (abs(rad2deg(this->m_yrad_r - this->m_yrad_real)) < 0.5f) {
+					if (this->m_TurnBody) { this->m_yrad_real = this->m_yrad_r; }
 					this->m_TurnBody = false;
 				}
 				if (this->Speed_Front > 0.f || this->Speed_Back > 0.f || this->Step_Right > 0.f || this->Step_Left > 0.f) { this->m_TurnBody = true; }
 				
 				{
-					auto FrontP = (pGoFrontPress && !pGoBackPress) ? (atan2f(this->Step_Left - this->Step_Right, this->Speed_Front - this->Speed_Back)) : 0.f;
-					FrontP += (!pGoFrontPress && pGoBackPress) ? (atan2f(-(this->Step_Left - this->Step_Right), -(this->Speed_Front - this->Speed_Back))) : 0.f;
+					auto FrontP = (this->m_isSprint || (pGoFrontPress && !pGoBackPress)) ? (atan2f(this->Step_Left - this->Step_Right, this->Speed_Front - this->Speed_Back)*this->Speed_Front) : 0.f;
+					FrontP += (!pGoFrontPress && pGoBackPress) ? (atan2f(-(this->Step_Left - this->Step_Right), -(this->Speed_Front - this->Speed_Back))*this->Speed_Back) : 0.f;
 					if (this->m_isRun) {
-						if (this->m_TurnBody) { easing_set(&this->m_yrad_real, this->m_yrad, 0.7f); }
+						if (this->m_TurnBody) { easing_set(&this->m_yrad_real, this->m_yrad_r, 0.7f); }
 						easing_set(&this->m_yrad_real2, this->m_yrad_real - FrontP, 0.7f);
 					}
 					else {
-						if (this->m_TurnBody) { easing_set(&this->m_yrad_real, this->m_yrad, 0.9f); }
+						if (this->m_TurnBody) { easing_set(&this->m_yrad_real, this->m_yrad_r, 0.9f); }
 						easing_set(&this->m_yrad_real2, this->m_yrad_real - FrontP, 0.9f);
 					}
 				}
 
-				this->Upper.second.mat = MATRIX_ref::RotX(this->m_xrad) * MATRIX_ref::RotY(this->m_yrad - this->m_yrad_real2);
+				this->Upper.second.mat = MATRIX_ref::RotX(this->m_xrad_r) * MATRIX_ref::RotY(this->m_yrad_r - this->m_yrad_real2);
 				this->obj.SetFrameLocalMatrix(this->Upper.first, this->Upper.second.MatIn());
 
 				this->obj.frame_Reset(this->Upper.first);
 				auto TmpOne = this->obj.GetFrameLocalMatrix(this->Upper.first).GetRot() * this->Upper.second.mat;
 				this->obj.SetFrameLocalMatrix(this->Upper.first, TmpOne * MATRIX_ref::Mtrans(this->Upper.second.pos));
 				printfDx("UpperTimer : %5.5f\n", this->m_ReadyPer);
-
+				bool canreverse = true;
+				if (!this->m_RunReady && !this->m_Running) {
+					if (!this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
+						this->m_RunReady = true;
+						canreverse = false;
+					}
+				}
 				if (this->m_RunReady) {
 					if (!this->m_Running) {
-						if (this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).per == 0.f) {
-							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).per = 1.f;
-							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = 0.f;
-						}
 						if (!this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
-							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time += 30.f / FPS;
+							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).per = 1.f*(1.f - this->m_ReadyPer);
+							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time += 30.f / FPS*2.f;
+							this->m_ReadyStartTimer = this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time;
 							if (this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
 								this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
 							}
-							if (this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time > 16) {
-								easing_set(&this->m_RunReadyPer, 1.f, 0.9f);
+							if (canreverse) {
+								if (this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time > 16) {
+									easing_set(&this->m_RunReadyPer, 1.f, 0.9f);
+								}
 							}
+							else {
+								easing_set(&this->m_RunReadyPer, 0.f, 0.9f);
+							}
+							m_SprintPer = 0.f;
 						}
 						else {
 							this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).per = 0.f;
@@ -404,16 +480,19 @@ namespace FPS_n2 {
 						}
 					}
 					else {
-
+						this->obj.get_anime((int)CharaAnimeID::Upper_Running).per = 1.f*(1.f - m_SprintPer);
+						this->obj.get_anime((int)CharaAnimeID::Upper_Sprint).per = 1.f*m_SprintPer;
 					}
 				}
 				else {
+					easing_set(&this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).per, 0.f, 0.9f);
 					easing_set(&this->m_RunReadyPer, 0.f, 0.9f);
-					this->obj.get_anime((int)CharaAnimeID::Upper_RunningStart).per = 0.f;
-					this->obj.get_anime((int)CharaAnimeID::Upper_Running).per = 1.f*(1.f - this->m_ReadyPer);
+					this->obj.get_anime((int)CharaAnimeID::Upper_Running).per = 1.f*(1.f - this->m_ReadyPer)*(1.f - m_SprintPer);
+					this->obj.get_anime((int)CharaAnimeID::Upper_Sprint).per = 1.f*(1.f - this->m_ReadyPer)*m_SprintPer;
 					this->m_Running = false;
 				}
-
+				
+				SetAnimLoop((int)CharaAnimeID::Upper_Sprint, 0.5f*(this->Speed_Front * RunPer2));
 				SetAnimLoop((int)CharaAnimeID::Upper_Running, 0.5f*(this->Speed_Front * RunPer2));
 
 				SetBottomAnim((int)BottomAnimSel);
@@ -475,7 +554,11 @@ namespace FPS_n2 {
 				this->obj.get_anime((int)CharaAnimeID::Upper_Down).per = (!this->shotFlag && !this->boltFlag) ? 1.f - this->obj.get_anime((int)CharaAnimeID::Upper_Aim).per : 0.f;
 				//SetMat指示
 				{
-					RunPer2 = SpeedLimit * RunPer + 0.35f * (1.f - RunPer);
+					RunPer2 = (
+						(SpeedLimit*(1.f + 0.5f*m_SprintPer))
+						
+						* RunPer + 0.35f * (1.f - RunPer))*(1.f - m_SquatPer
+							) + 0.15f * m_SquatPer;
 
 					auto OLDpos = this->move.pos;
 					this->move.vec.clear();
@@ -511,7 +594,11 @@ namespace FPS_n2 {
 					}
 					//*/
 					this->move.pos.y(m_yPos);
-					this->move.mat = MATRIX_ref::RotY(this->m_yrad_real2);
+					{
+						easing_set(&this->m_zrad_r, (this->m_yrad_real2 - this->m_yrad_real2OLD)*2.f, 0.8f);
+						this->m_yrad_real2OLD = this->m_yrad_real2;
+					}
+					this->move.mat = MATRIX_ref::RotZ(this->m_zrad_r) * MATRIX_ref::RotY(this->m_yrad_real2);
 
 					{
 						easing_set(&this->model_move.pos, this->move.pos, 0.9f);
@@ -521,11 +608,13 @@ namespace FPS_n2 {
 				}
 				//
 				{
+					
+					this->obj.get_anime((int)CharaAnimeID::Mid_Squat).per = m_SquatPer;
+
 					this->obj.get_anime((int)CharaAnimeID::Upper_Aim).per *= this->m_ReadyPer;
 					this->obj.get_anime((int)CharaAnimeID::Upper_Down).per *= this->m_ReadyPer;
 					this->obj.get_anime((int)CharaAnimeID::Upper_Shot).per *= this->m_ReadyPer;
 					//this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per *= this->m_ReadyPer;
-					//Upper_Running,
 
 					bool change5 = false;
 					if (this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per == 1.f) {
@@ -546,8 +635,8 @@ namespace FPS_n2 {
 					this->obj.get_anime((int)CharaAnimeID::RightHand).per = 1.f * this->m_ReadyPer;
 					this->obj.work_anime();
 					//背負い
-					auto yVec2 = this->obj.GetFrameLocalMatrix(this->Upper2.first).GetRot().xvec();
-					auto zVec2 = this->obj.GetFrameLocalMatrix(this->Upper2.first).GetRot().yvec();
+					auto yVec2 = (MATRIX_ref::RotZ(deg2rad(30))*this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot()*GetCharaDir().Inverse()).xvec();
+					auto zVec2 = (MATRIX_ref::RotZ(deg2rad(30))*this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot()*GetCharaDir().Inverse()).yvec();
 					auto PosBuf2 =
 						this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).pos() + 
 					this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot().yvec()*-1.75f +
@@ -607,6 +696,7 @@ namespace FPS_n2 {
 			const auto GetEyePosition() { return (this->obj.frame(LeftEye.first) + this->obj.frame(RightEye.first)) / 2.f + this->GetEyeVector().Norm()*0.5f; }
 			const auto IsADS() { return this->UpperTimer == 0.f; }
 			const auto IsRun() { return this->m_isRun; }
+			const auto IsSprint() { return this->m_isSprint; }
 			const auto ShotSwitch() { return this->shotFlag_First; }
 			const auto GetUpper2Position() { return this->obj.frame(Upper.first); }
 			const auto GetCharaMatrix() { return this->obj.GetMatrix(); }
