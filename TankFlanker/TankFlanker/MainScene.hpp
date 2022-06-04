@@ -21,6 +21,7 @@ namespace FPS_n2 {
 		public:
 			using TEMPSCENE::TEMPSCENE;
 			void Set(void) noexcept override {
+				TEMPSCENE::Set_EnvLight(VECTOR_ref::vget(1.f, 1.f, 1.f), VECTOR_ref::vget(-1.f, -1.f, -1.f), VECTOR_ref::vget(0.05f, -1.5f, 0.05f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
 				//Load
 				BackGround.Load();
@@ -34,6 +35,7 @@ namespace FPS_n2 {
 
 
 				lens_zoom = 3.5f;
+				lens_zoom = 5.f;
 			}
 			//
 			bool Update(void) noexcept override {
@@ -50,6 +52,7 @@ namespace FPS_n2 {
 						std::clamp((float)(m_y - my)*50.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -3.f, 3.f) / 100.f,
 						std::clamp((float)(mx - m_x)*50.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
 						CheckHitKey(KEY_INPUT_W) != 0,
+						CheckHitKey(KEY_INPUT_S) != 0,
 						CheckHitKey(KEY_INPUT_A) != 0,
 						CheckHitKey(KEY_INPUT_D) != 0,
 						(GetMouseInput() & MOUSE_INPUT_LEFT) != 0,
@@ -109,11 +112,16 @@ namespace FPS_n2 {
 				{
 					if (Chara.IsADS()) {
 						easing_set(&EyePosPer, 1.f, 0.9f);
-						easing_set(&camera_main.fov, deg2rad(25), 0.8f);
+						easing_set(&camera_main.fov, deg2rad(20), 0.8f);
 					}
 					else {
 						easing_set(&EyePosPer, 0.f, 0.9f);
-						easing_set(&camera_main.fov, deg2rad(65), 0.9f);
+						if (Chara.IsRun()) {
+							easing_set(&camera_main.fov, deg2rad(85), 0.9f);
+						}
+						else {
+							easing_set(&camera_main.fov, deg2rad(65), 0.9f);
+						}
 					}
 					if (Chara.ShotSwitch()) {
 						camera_main.fov -= deg2rad(10);
@@ -155,6 +163,10 @@ namespace FPS_n2 {
 				Gun.Draw();
 				Chara.Draw();
 				
+				//SetFogEnable(TRUE);
+				SetFogStartEnd(50.f, 100.f);
+				SetFogColor(0, 0, 0);
+
 				VECTOR_ref LensPos = ConvWorldPosToScreenPos(Gun.GetLensPos().get());
 				if (0.f < LensPos.z() && LensPos.z() < 1.f) {
 					lens_xpos = LensPos.x();

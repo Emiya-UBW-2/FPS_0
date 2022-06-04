@@ -3,7 +3,6 @@
 #include"Header.hpp"
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-	auto scene = std::make_unique<FPS_n2::Sceneclass::SceneControl>();
 
 	OPTION::Create();
 	auto* OptionParts = OPTION::Instance();
@@ -13,6 +12,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	DeBuG::Create(FPS_n2::Frame_Rate);
 #endif // DEBUG
 	OptionParts->Set_useVR(DXDraw::Instance()->use_vr);
+
+	auto scene = std::make_unique<FPS_n2::Sceneclass::SceneControl>();
 	//シェーダー
 	PostPassEffect::Create();
 	//シーン
