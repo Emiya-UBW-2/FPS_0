@@ -6,26 +6,25 @@ namespace FPS_n2 {
 	namespace Sceneclass {
 		class CharacterClass {
 			enum class CharaAnimeID : int {
-				Bottom_Run,
 				RightHand,
 
-				Upper_Aim,
 				Upper_Down,
+				Upper_Aim,
 				Upper_Shot,
 				Upper_Cocking,
+				Upper_RunningStart,
+				Upper_Running,
+				Upper_Sprint,
+
+				Mid_Squat,
 
 				Bottom_Stand,
 				Bottom_Walk,
-				Bottom_Turn,
+				Bottom_WalkBack,
 				Bottom_LeftStep,
 				Bottom_RightStep,
-
-				Upper_Running,
-				Bottom_WalkBack,
-				Upper_RunningStart,
-
-				Mid_Squat,
-				Upper_Sprint,
+				Bottom_Turn,
+				Bottom_Run,
 			};
 
 			//キャラパラメーター
