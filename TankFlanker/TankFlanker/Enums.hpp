@@ -26,4 +26,35 @@ namespace FPS_n2 {
 			MAIN_LOOP
 		};
 	};
+
+	enum class CharaAnimeID : int {
+		RightHand,
+
+		Upper_Down,
+		Upper_Aim,
+		Upper_Shot,
+		Upper_Cocking,
+		Upper_RunningStart,
+		Upper_Running,
+		Upper_Sprint,
+
+		Mid_Squat,
+
+		Bottom_Stand,
+		Bottom_Walk,
+		Bottom_WalkBack,
+		Bottom_LeftStep,
+		Bottom_RightStep,
+		Bottom_Turn,
+		Bottom_Run,
+
+		All_Prone,
+		All_ProneShot,
+		All_ProneCocking,
+
+		All_ProneWalk,
+
+		AnimeIDMax,
+	};
+
 }

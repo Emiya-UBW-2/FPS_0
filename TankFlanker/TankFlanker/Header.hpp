@@ -34,6 +34,7 @@
 //
 #include "BackGround.hpp"
 
+#include "ObjectBase.hpp"
 #include "Gun.hpp"
 #include "Character.hpp"
 //

@@ -11,14 +11,20 @@ namespace FPS_n2 {
 			GunClass Gun;					//銃
 			CharacterClass Chara;			//キャラ動作
 			//操作関連
+			float EyePosPer_Prone = 0.f;
 			float EyePosPer = 0.f;
 			float EyeRunPer = 0.f;
 			size_t m_FPS{ 0 };
 			bool m_Flagfps{ true };
-
 			bool m_RunPressFlag{ false };
-
-			size_t DispCounter = 0;
+			bool m_AimPressFlag{ false };
+			size_t m_Ecnt{ 0 };
+			bool m_FlagE{ false };
+			size_t m_Qcnt{ 0 };
+			bool m_FlagQ{ false };
+			bool Reticle_on = false;
+			float Reticle_xpos = 0;
+			float Reticle_ypos = 0;
 		private:
 		public:
 			using TEMPSCENE::TEMPSCENE;
@@ -27,92 +33,103 @@ namespace FPS_n2 {
 				TEMPSCENE::Set();
 				//Load
 				BackGround.Load();
-				Gun.LoadModel("data/model/gun/model","data/model/gun/reticle.png");
+				Gun.LoadModel("data/model/gun/model");
 				Chara.LoadModel("data/umamusume/ticket/model");
+				Gun.LoadReticle("data/model/gun/reticle.png");
+				//init
+				Chara.Init();
+				Gun.Init();
 				//Set
-				Chara.Set(&Gun);
+				Chara.Set(&Gun, &BackGround.GetGroundCol());
 				//Cam
 				camera_main.set_cam_info(deg2rad(65), 1.f, 100.f);
 				camera_main.set_cam_pos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
-
-
 				lens_zoom = 3.5f;
 
-				DispCounter = 0;
+				m_Flagfps = false;
 			}
 			//
 			bool Update(void) noexcept override {
-				{
-					int m_x = DXDraw::Instance()->disp_x / 2;
-					int m_y = DXDraw::Instance()->disp_y / 2;
-					if (IsFirstLoop) {
-						SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
-					}
-					int mx, my;
-					GetMousePoint(&mx, &my);
-
-					float xadd = 0.f;
-					if (Chara.IsSprint()) {
-						xadd = 0.15f;//スプリント
-					}
-					else if (Chara.IsRun()) {
-						xadd = 0.10825f;//走り
-					}
-
-					xadd = 0.f;
-
-					m_RunPressFlag = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
-					Chara.Execute(
-						std::clamp((float)(m_y - my)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -3.f, 3.f) / 100.f,
-						std::clamp(((float)(mx - m_x)+ xadd)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
-						CheckHitKey(KEY_INPUT_W) != 0,
-						CheckHitKey(KEY_INPUT_S) != 0,
-						CheckHitKey(KEY_INPUT_A) != 0,
-						CheckHitKey(KEY_INPUT_D) != 0,
-						CheckHitKey(KEY_INPUT_C) != 0,
-						CheckHitKey(KEY_INPUT_X) != 0,
-						(GetMouseInput() & MOUSE_INPUT_LEFT) != 0,
-						(GetMouseInput() & MOUSE_INPUT_RIGHT) != 0,// || true,
-						m_RunPressFlag,
-						BackGround.GetGroundCol()
-					);
+				if (IsFirstLoop) {
 					SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
 				}
+				float xadd = 0.f;
+				int mx, my;
+				GetMousePoint(&mx, &my);
+				SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
 				{
-					Gun.Execute();
+					m_Ecnt = std::clamp<size_t>(m_Ecnt + 1, 0, (CheckHitKey(KEY_INPUT_E) != 0) ? 2 : 0);
+					if (m_Ecnt == 1) {
+						m_FlagE ^= 1;
+						if (m_FlagE) { m_FlagQ = false; }
+					}
+					m_Qcnt = std::clamp<size_t>(m_Qcnt + 1, 0, (CheckHitKey(KEY_INPUT_Q) != 0) ? 2 : 0);
+					if (m_Qcnt == 1) {
+						m_FlagQ ^= 1;
+						if (m_FlagQ) { m_FlagE = false; }
+					}
+					if (!Chara.IsRun()) {
+						m_FlagQ = false;
+						m_FlagE = false;
+					}
+
+					if (m_FlagQ || m_FlagE) {
+						if (Chara.IsSprint()) {
+							xadd = 0.093f*(m_FlagQ ? -1.f : 1.f);//スプリント
+						}
+						else if (Chara.IsRun()) {
+							xadd = 0.0615f*(m_FlagQ ? -1.f : 1.f);//走り
+						}
+					}
+					m_RunPressFlag = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+					m_AimPressFlag = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
 				}
+				//
+				Chara.SetInput(
+					std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
+					std::clamp(((float)(mx - DXDraw::Instance()->disp_x / 2) + xadd)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
+					CheckHitKey(KEY_INPUT_W) != 0,
+					CheckHitKey(KEY_INPUT_S) != 0,
+					CheckHitKey(KEY_INPUT_A) != 0,
+					CheckHitKey(KEY_INPUT_D) != 0,
+					CheckHitKey(KEY_INPUT_C) != 0,
+					CheckHitKey(KEY_INPUT_X) != 0,
+					(GetMouseInput() & MOUSE_INPUT_LEFT) != 0,
+					m_AimPressFlag,
+					m_RunPressFlag
+				);
 
-				use_lens = Chara.IsADS();
-				lens_size = 400.f;
-
-				//lens_size = Gun.GetLensSize();
-				//lens_size = Gun.GetLensPos();
+				Chara.Execute();
+				Gun.Execute();
 
 				m_FPS = std::clamp<size_t>(m_FPS + 1, 0, (CheckHitKey(KEY_INPUT_V) != 0) ? 2 : 0);
 				if (m_FPS == 1) { m_Flagfps ^= 1; }
-				VECTOR_ref CamPosBase;
 
-				if (m_Flagfps) {
+				if (m_Flagfps || m_AimPressFlag) {
 					camera_main.campos = Chara.GetEyePosition();
 					camera_main.camvec = camera_main.campos + Chara.GetEyeVector();
 
-					camera_main.camup = Chara.GetCharaMatrix().GetRot().yvec();
+					camera_main.camup = Chara.GetMatrix().GetRot().yvec();
 				}
 				else {
-					auto EyeVector = Chara.GetEyeVector();
-					EyeVector = EyeVector + ((Gun.GetMatrix().zvec()*-1.f) - EyeVector) * EyePosPer;
+					VECTOR_ref EyeVector;
+					EyeVector += Chara.GetEyeVector() * (1.f - EyePosPer);
+					EyeVector += (Gun.GetMatrix().zvec()*-1.f) * EyePosPer;
+
+					//EyeVector*=-1.f;
+					//EyeVector = VECTOR_ref::right();
 
 					MATRIX_ref CamMat = Chara.GetUpper2WorldMatrix().GetRot();
-
 					VECTOR_ref CamPos;
-					CamPos += (Chara.GetCharaMatrix().pos() + VECTOR_ref::vget(0, 14.f, 0) + CamMat.xvec()*-8.f + CamMat.yvec()*3.f)*EyeRunPer;
-					CamPos += (Chara.GetCharaMatrix().pos() + VECTOR_ref::vget(0, 14.f, 0) + CamMat.xvec()*-3.f + CamMat.yvec()*4.f)*(1.f - EyeRunPer);
+					CamPos = Chara.GetMatrix().pos() + VECTOR_ref::vget(0, (14.f*(1.f - EyePosPer_Prone) + 6.f*EyePosPer_Prone), 0);
+					CamPos += (CamMat.xvec()*-8.f + CamMat.yvec()*3.f)*(1.f - EyeRunPer);
+					CamPos += (CamMat.xvec()*-3.f + CamMat.yvec()*4.f)*EyeRunPer;
 
 					camera_main.camvec = CamPos + EyeVector * 100.f;
-					camera_main.campos = CamPos + EyeVector * -20.f;
+					camera_main.campos = CamPos + EyeVector * (-20.f*(1.f- EyePosPer_Prone) + 2.f*EyePosPer_Prone);//*2.f;
 					camera_main.camup = VECTOR_ref::up();
 
-					if (!m_RunPressFlag) {
+					if (m_RunPressFlag) {
 						easing_set(&EyeRunPer, 1.f, 0.95f);
 					}
 					else {
@@ -124,6 +141,7 @@ namespace FPS_n2 {
 					camera_main.camvec = camera_main.camvec + ((Gun.GetScopePos() + Gun.GetMatrix().zvec()*-1.f) - camera_main.camvec) * EyePosPer;
 					if (Chara.IsADS()) {
 						easing_set(&EyePosPer, 1.f, 0.8f);
+						easing_set(&EyePosPer_Prone, 0.f, 0.8f);
 						easing_set(&camera_main.fov, deg2rad(17), 0.8f);
 						camera_main.near_ = 10.f;
 						camera_main.far_ = 12.5f * 200.f;
@@ -136,6 +154,12 @@ namespace FPS_n2 {
 						else {
 							easing_set(&camera_main.fov, deg2rad(65), 0.9f);
 						}
+						if (Chara.IsProne()) {
+							easing_set(&EyePosPer_Prone, 1.f, 0.8f);
+						}
+						else {
+							easing_set(&EyePosPer_Prone, 0.f, 0.8f);
+						}
 						camera_main.near_ = 1.f;
 						camera_main.far_ = 100.f;
 					}
@@ -147,10 +171,8 @@ namespace FPS_n2 {
 					auto mat = Gun.GetMuzzleMatrix();
 					Effect_UseControl::Set_Effect(Effect::ef_fire2, mat.pos(), mat.GetRot().zvec()*-1.f, 1.f);
 				}
-
 				TEMPSCENE::Update();
 				Effect_UseControl::Update_Effect();
-				DispCounter++;
 				return true;
 			}
 			void Dispose(void) noexcept override {
@@ -168,12 +190,10 @@ namespace FPS_n2 {
 				BackGround.Shadow_Draw_NearFar();
 			}
 			void Shadow_Draw(void) noexcept override {
+				BackGround.Shadow_Draw();
 				Gun.Draw();
 				Chara.Draw();
 			}
-			bool Reticle_on = false;
-			float Reticle_xpos = 0;
-			float Reticle_ypos = 0;
 
 			void Main_Draw(void) noexcept override {
 				BackGround.Draw();
@@ -184,27 +204,27 @@ namespace FPS_n2 {
 				SetFogStartEnd(50.f, 100.f);
 				SetFogColor(0, 0, 0);
 
-				VECTOR_ref LensPos = ConvWorldPosToScreenPos(Gun.GetLensPos().get());
-				if (0.f < LensPos.z() && LensPos.z() < 1.f) {
-					lens_xpos = LensPos.x();
-					lens_ypos = LensPos.y();
-
-					VECTOR_ref LensPos = ConvWorldPosToScreenPos(Gun.GetLensPosSize().get());
+				use_lens = Chara.IsADS();
+				if (use_lens) {
+					VECTOR_ref LensPos = ConvWorldPosToScreenPos(Gun.GetLensPos().get());
 					if (0.f < LensPos.z() && LensPos.z() < 1.f) {
-						lens_size = std::hypotf(lens_xpos - LensPos.x(), lens_ypos - LensPos.y());
+						lens_xpos = LensPos.x();
+						lens_ypos = LensPos.y();
+
+						VECTOR_ref LensPos = ConvWorldPosToScreenPos(Gun.GetLensPosSize().get());
+						if (0.f < LensPos.z() && LensPos.z() < 1.f) {
+							lens_size = std::hypotf(lens_xpos - LensPos.x(), lens_ypos - LensPos.y());
+						}
+					}
+					LensPos = ConvWorldPosToScreenPos(Gun.GetReticlePos().get());
+					if (0.f < LensPos.z() && LensPos.z() < 1.f) {
+						Reticle_xpos = LensPos.x();
+						Reticle_ypos = LensPos.y();
+						Reticle_on = (lens_size > std::hypotf(lens_xpos - Reticle_xpos, lens_ypos - Reticle_ypos));
 					}
 				}
-				if (!use_lens) {
+				else {
 					Reticle_on = false;
-				}
-				LensPos = ConvWorldPosToScreenPos(Gun.GetReticlePos().get());
-				if (0.f < LensPos.z() && LensPos.z() < 1.f) {
-					Reticle_on = true;
-					Reticle_xpos = LensPos.x();
-					Reticle_ypos = LensPos.y();
-					if (lens_size <= std::hypotf(lens_xpos - Reticle_xpos, lens_ypos - Reticle_ypos)) {
-						Reticle_on = false;
-					}
 				}
 			}
 			void LAST_Draw(void) noexcept override {
