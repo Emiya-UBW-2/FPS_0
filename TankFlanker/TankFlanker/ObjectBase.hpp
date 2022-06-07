@@ -8,6 +8,7 @@ namespace FPS_n2 {
 		protected:
 			MV1 obj;
 			moves move;
+			const MV1* m_MapCol{ nullptr };
 		public:
 			void LoadModel(const char* filepath) {
 				FILEINFO FileInfo;
@@ -24,13 +25,10 @@ namespace FPS_n2 {
 				}
 				MV1::SetAnime(&this->obj, this->obj);
 			}
-			/*
-			void LoadModel(const char* filepath) {
-				std::string Path = filepath;
-				MV1::Load(Path + ".pmx", &this->obj, DX_LOADMODEL_PHYSICS_REALTIME);
-				MV1::SetAnime(&this->obj, this->obj);
+			void SetCol(const MV1* MapCol) {
+				this->m_MapCol = MapCol;
 			}
-			//*/
+
 			virtual void Init() {
 
 			}

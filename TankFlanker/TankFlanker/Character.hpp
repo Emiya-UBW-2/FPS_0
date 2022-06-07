@@ -35,7 +35,6 @@ namespace FPS_n2 {
 			float viewPer{ 0.f };
 			bool m_SetReset{ true };
 			GunClass* Gun_Ptr{ nullptr };
-			const MV1* m_MapCol{ nullptr };
 			float RunPer{ 0.f };
 			float RunPer2{ 0.f };
 			bool m_isRun{ false };
@@ -125,8 +124,10 @@ namespace FPS_n2 {
 				}
 				if (this->shotFlag) {
 					UpperAnimSel = CharaAnimeID::Upper_Shot;
-					this->obj.get_anime((int)CharaAnimeID::Upper_Shot).time += 30.f / FPS * 1.5f;
-					if (this->obj.get_anime((int)CharaAnimeID::Upper_Shot).TimeEnd()) {
+					if (!this->obj.get_anime((int)CharaAnimeID::Upper_Shot).TimeEnd()) {
+						this->obj.get_anime((int)CharaAnimeID::Upper_Shot).time += 30.f / FPS * 1.5f;
+					}
+					if (this->obj.get_anime((int)CharaAnimeID::Upper_Shot).TimeEnd() && !this->m_Press_Shot) {
 						this->shotFlag = false;
 						this->obj.get_anime((int)CharaAnimeID::Upper_Shot).time = 0.f;
 						this->boltFlag = true;
@@ -305,9 +306,9 @@ namespace FPS_n2 {
 				this->m_yrad_Bottom = this->m_yrad;
 			}
 
-			void Set(GunClass* pGunPtr, const MV1* MapCol) {
+
+			void Set(GunClass* pGunPtr) {
 				this->Gun_Ptr = pGunPtr;
-				this->m_MapCol = MapCol;
 			}
 			void SetInput(
 				float pAddxRad, float pAddyRad,
@@ -334,6 +335,11 @@ namespace FPS_n2 {
 					this->m_Press_GoRight = false;
 				}
 				this->m_Press_Shot = pShotPress;
+				if (0.05f < this->m_PronePer&&this->m_PronePer < 0.95f) {
+					this->m_Press_Shot = false;
+				}
+
+
 				this->m_Press_Aim = pAimPress;
 				if (!this->m_isRun& pRunPress) {
 					m_RunTimer = 1.f;
@@ -421,6 +427,7 @@ namespace FPS_n2 {
 							this->viewPer = 1.f;
 							this->shotFlag = true;
 							this->shotFlag_First = true;
+							this->Gun_Ptr->SetBullet();
 						}
 					}
 					else {
@@ -613,7 +620,7 @@ namespace FPS_n2 {
 					this->obj.PhysicsResetState();
 				}
 				else {
-					this->obj.PhysicsCalculation(1000.0f / FPS*60.f);
+					this->obj.PhysicsCalculation(1000.0f / FPS*120.f);
 				}
 				//デバッグ
 				{

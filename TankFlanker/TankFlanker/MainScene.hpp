@@ -39,8 +39,10 @@ namespace FPS_n2 {
 				//init
 				Chara.Init();
 				Gun.Init();
+				Chara.SetCol(&BackGround.GetGroundCol());
+				Gun.SetCol(&BackGround.GetGroundCol());
 				//Set
-				Chara.Set(&Gun, &BackGround.GetGroundCol());
+				Chara.Set(&Gun);
 				//Cam
 				camera_main.set_cam_info(deg2rad(65), 1.f, 100.f);
 				camera_main.set_cam_pos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
@@ -57,6 +59,7 @@ namespace FPS_n2 {
 				int mx, my;
 				GetMousePoint(&mx, &my);
 				SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
+				SetMouseDispFlag(FALSE);
 				{
 					m_Ecnt = std::clamp<size_t>(m_Ecnt + 1, 0, (CheckHitKey(KEY_INPUT_E) != 0) ? 2 : 0);
 					if (m_Ecnt == 1) {
@@ -75,10 +78,10 @@ namespace FPS_n2 {
 
 					if (m_FlagQ || m_FlagE) {
 						if (Chara.IsSprint()) {
-							xadd = 0.093f*(m_FlagQ ? -1.f : 1.f);//スプリント
+							xadd = 0.093f*3.f*(m_FlagQ ? -1.f : 1.f);//スプリント
 						}
 						else if (Chara.IsRun()) {
-							xadd = 0.0615f*(m_FlagQ ? -1.f : 1.f);//走り
+							xadd = 0.0615f*3.f*(m_FlagQ ? -1.f : 1.f);//走り
 						}
 					}
 					m_RunPressFlag = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
@@ -86,8 +89,8 @@ namespace FPS_n2 {
 				}
 				//
 				Chara.SetInput(
-					std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
-					std::clamp(((float)(mx - DXDraw::Instance()->disp_x / 2) + xadd)*100.f / 100.f *3.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
+					std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*100.f / 100.f *1.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
+					std::clamp(((float)(mx - DXDraw::Instance()->disp_x / 2) + xadd)*100.f / 100.f *1.f* (camera_main.fov / deg2rad(65) / (use_lens ? lens_zoom : 1.f)), -9.f, 9.f) / 100.f,
 					CheckHitKey(KEY_INPUT_W) != 0,
 					CheckHitKey(KEY_INPUT_S) != 0,
 					CheckHitKey(KEY_INPUT_A) != 0,
@@ -150,9 +153,13 @@ namespace FPS_n2 {
 						easing_set(&EyePosPer, 0.f, 0.8f);
 						if (Chara.IsRun()) {
 							easing_set(&camera_main.fov, deg2rad(85), 0.9f);
+							easing_set(&camera_main.near_, 3.f, 0.9f);
+							easing_set(&camera_main.far_, 12.5f * 50.f, 0.9f);
 						}
 						else {
 							easing_set(&camera_main.fov, deg2rad(65), 0.9f);
+							easing_set(&camera_main.near_, 10.f, 0.9f);
+							easing_set(&camera_main.far_, 12.5f * 200.f, 0.9f);
 						}
 						if (Chara.IsProne()) {
 							easing_set(&EyePosPer_Prone, 1.f, 0.8f);
@@ -160,8 +167,6 @@ namespace FPS_n2 {
 						else {
 							easing_set(&EyePosPer_Prone, 0.f, 0.8f);
 						}
-						camera_main.near_ = 1.f;
-						camera_main.far_ = 100.f;
 					}
 					if (Chara.ShotSwitch()) {
 						camera_main.fov -= deg2rad(10);
@@ -169,8 +174,14 @@ namespace FPS_n2 {
 				}
 				if (Chara.ShotSwitch()) {
 					auto mat = Gun.GetMuzzleMatrix();
+					//Effect_UseControl::SetSpeed_Effect(Effect::ef_fire2, 5.f);
 					Effect_UseControl::Set_Effect(Effect::ef_fire2, mat.pos(), mat.GetRot().zvec()*-1.f, 1.f);
 				}
+				if (Gun.GetIsHit()) {
+					Effect_UseControl::SetSpeed_Effect(Effect::ef_fire, 1.f);
+					Effect_UseControl::Set_Effect(Effect::ef_fire, Gun.GetHitPos(), Gun.GetHitVec(), 1.f);
+				}
+
 				TEMPSCENE::Update();
 				Effect_UseControl::Update_Effect();
 				return true;
