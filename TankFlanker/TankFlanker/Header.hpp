@@ -36,6 +36,7 @@
 
 #include "ObjectBase.hpp"
 #include "Gun.hpp"
+#include "Target.hpp"
 #include "Character.hpp"
 //
 #include "MainScene.hpp"

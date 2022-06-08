@@ -10,6 +10,7 @@ namespace FPS_n2 {
 			BackGroundClass BackGround;		//BG
 			GunClass Gun;					//èe
 			CharacterClass Chara;			//ÉLÉÉÉâìÆçÏ
+			TargetClass Target;
 			//ëÄçÏä÷òA
 			float EyePosPer_Prone = 0.f;
 			float EyePosPer = 0.f;
@@ -29,18 +30,25 @@ namespace FPS_n2 {
 		public:
 			using TEMPSCENE::TEMPSCENE;
 			void Set(void) noexcept override {
-				TEMPSCENE::Set_EnvLight(VECTOR_ref::vget(1.f, 1.f, 1.f), VECTOR_ref::vget(-1.f, -1.f, -1.f), VECTOR_ref::vget(0.05f, -1.5f, 0.05f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
+				Set_EnvLight(
+					VECTOR_ref::vget(1.f, 1.f, 1.f),
+					VECTOR_ref::vget(-1.f, -1.f, -1.f),
+					VECTOR_ref::vget(0.75f, -0.5f, 0.0f),
+					GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
 				//Load
 				BackGround.Load();
 				Gun.LoadModel("data/model/gun/model");
 				Chara.LoadModel("data/umamusume/ticket/model");
 				Gun.LoadReticle("data/model/gun/reticle.png");
+				Target.LoadModel("data/model/Target/model");
 				//init
 				Chara.Init();
 				Gun.Init();
+				Target.Init();
 				Chara.SetCol(&BackGround.GetGroundCol());
 				Gun.SetCol(&BackGround.GetGroundCol());
+				Target.SetCol(&BackGround.GetGroundCol());
 				//Set
 				Chara.Set(&Gun);
 				//Cam
@@ -104,6 +112,7 @@ namespace FPS_n2 {
 
 				Chara.Execute();
 				Gun.Execute();
+				Target.Execute();
 
 				m_FPS = std::clamp<size_t>(m_FPS + 1, 0, (CheckHitKey(KEY_INPUT_V) != 0) ? 2 : 0);
 				if (m_FPS == 1) { m_Flagfps ^= 1; }
@@ -190,6 +199,7 @@ namespace FPS_n2 {
 				Effect_UseControl::Dispose_Effect();
 				Gun.Dispose();
 				Chara.Dispose();
+				Target.Dispose();
 			}
 			//
 			void UI_Draw(void) noexcept  override {
@@ -208,6 +218,7 @@ namespace FPS_n2 {
 
 			void Main_Draw(void) noexcept override {
 				BackGround.Draw();
+				Target.Draw();
 				Gun.Draw();
 				Chara.Draw();
 				

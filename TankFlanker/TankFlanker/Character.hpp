@@ -620,7 +620,7 @@ namespace FPS_n2 {
 					this->obj.PhysicsResetState();
 				}
 				else {
-					this->obj.PhysicsCalculation(1000.0f / FPS*120.f);
+					this->obj.PhysicsCalculation(1000.0f / FPS*240.f);
 				}
 				//デバッグ
 				{

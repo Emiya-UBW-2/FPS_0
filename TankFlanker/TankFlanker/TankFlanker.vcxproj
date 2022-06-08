@@ -21,6 +21,7 @@
     <ClInclude Include="MainScene.hpp" />
     <ClInclude Include="sequence.hpp" />
     <ClInclude Include="sub.hpp" />
+    <ClInclude Include="Target.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

@@ -23,6 +23,7 @@ namespace FPS_n2 {
 				if (isActive) {
 					move.repos = move.pos;
 					move.pos += move.vec;
+					move.vec.yadd(M_GR / (FPS*FPS));
 				}
 			}
 			bool SetCol(const MV1* pMapCol) {
