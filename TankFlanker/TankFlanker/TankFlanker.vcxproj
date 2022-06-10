@@ -19,6 +19,7 @@
     <ClInclude Include="Header.hpp" />
     <ClInclude Include="LoadScene.hpp" />
     <ClInclude Include="MainScene.hpp" />
+    <ClInclude Include="ObjectBase.hpp" />
     <ClInclude Include="sequence.hpp" />
     <ClInclude Include="sub.hpp" />
     <ClInclude Include="Target.hpp" />

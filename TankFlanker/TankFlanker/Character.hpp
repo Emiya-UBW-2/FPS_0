@@ -55,6 +55,7 @@ namespace FPS_n2 {
 			float m_PronePer{ 0.f };
 			bool m_ProneSwitch{ false };
 			size_t m_ProneCount{ 0 };
+			VECTOR_ref m_ProneNormal{ VECTOR_ref::up() };
 
 			bool m_Press_GoFront{ false };
 			bool m_Press_GoRear{ false };
@@ -250,7 +251,8 @@ namespace FPS_n2 {
 			}
 		public:
 			CharacterClass() {
-				ValueSet(0.f, 0.f, false, VECTOR_ref::vget(-230.f, 0.f, 450.f));
+				//ValueSet(0.f, 0.f, false, VECTOR_ref::vget(-230.f, 0.f, 450.f));
+				ValueSet(0.f, 0.f, false, VECTOR_ref::vget(2039.f, 90.f, -966.f));
 			}
 			~CharacterClass() {}
 		public:
@@ -445,7 +447,7 @@ namespace FPS_n2 {
 					easing_set(&this->RunPer, this->m_isRun ? 1.f : 0.f, 0.975f);
 					easing_set(&this->m_SprintPer, this->m_isSprint ? 1.f : 0.f, 0.95f);
 					easing_set(&this->m_SquatPer, this->m_SquatSwitch ? 1.f : 0.f, 0.9f);
-					easing_set(&this->m_PronePer, this->m_ProneSwitch ? 1.f : 0.f, 0.925f);
+					easing_set(&this->m_PronePer, this->m_ProneSwitch ? 1.f : 0.f, 0.95f);
 					//m_yrad_UpperAm_yrad_BottomAm_zradŒˆ’è
 					{
 						auto RadAbs = abs(this->m_yrad - this->m_yrad_Upper);
@@ -505,6 +507,17 @@ namespace FPS_n2 {
 							easing_set(&yPos, HitResult.HitPosition.y, 0.8f);
 							this->move.pos.y(yPos);
 							this->move.vec.y(0.f);
+
+							auto HitResult2 = this->m_MapCol->CollCheck_Line(
+								GetEyePosition() + VECTOR_ref::up()*-15.f,
+								GetEyePosition() + VECTOR_ref::up()*15.f);
+							if (HitResult2.HitFlag == TRUE) {
+								easing_set(&m_ProneNormal, (VECTOR_ref(HitResult.Normal) + VECTOR_ref(HitResult2.Normal)) / 2.f, 0.95f);
+							}
+							else {
+								easing_set(&m_ProneNormal, VECTOR_ref(HitResult.Normal), 0.95f);
+							}
+
 						}
 						else {
 							this->move.vec.yadd(M_GR / (FPS*FPS));
@@ -513,7 +526,8 @@ namespace FPS_n2 {
 					this->move.pos += this->move.vec;
 					auto NowPos = this->move.pos - OLDpos;
 					col_wall(OLDpos, &this->move.pos, *this->m_MapCol);
-					this->move.mat = MATRIX_ref::RotZ(this->m_zrad) * MATRIX_ref::RotY(this->m_yrad_Bottom);
+					this->move.mat = MATRIX_ref::RotZ(this->m_zrad) * MATRIX_ref::RotY(this->m_yrad_Bottom)
+						* MATRIX_ref::RotVec2(VECTOR_ref::up(), m_ProneNormal*this->m_PronePer + VECTOR_ref::up()*(1.f- this->m_PronePer));
 
 					{
 						easing_set(&this->model_move.pos, this->move.pos, 0.9f);
@@ -632,7 +646,7 @@ namespace FPS_n2 {
 			}
 		public:
 			const auto GetEyeVector() { return (GetCharaDir().zvec()*-1.f)*(1.f - this->viewPer) + (Gun_Ptr->GetMatrix().zvec()*-1.f) * (this->viewPer); }
-			const auto GetEyePosition() { return (this->obj.frame(LeftEye.first) + this->obj.frame(RightEye.first)) / 2.f + this->GetEyeVector().Norm()*0.5f; }
+			const VECTOR_ref GetEyePosition() { return (this->obj.frame(LeftEye.first) + this->obj.frame(RightEye.first)) / 2.f + this->GetEyeVector().Norm()*0.5f; }
 			const auto IsADS() { return this->UpperTimer == 0.f; }
 			const auto IsRun() { return this->m_isRun; }
 			const auto IsSprint() { return this->m_isSprint; }

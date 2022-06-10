@@ -10,7 +10,7 @@ namespace FPS_n2 {
 			BackGroundClass BackGround;		//BG
 			GunClass Gun;					//èe
 			CharacterClass Chara;			//ÉLÉÉÉâìÆçÏ
-			TargetClass Target;
+			std::array<TargetClass,6> Target;
 			//ëÄçÏä÷òA
 			float EyePosPer_Prone = 0.f;
 			float EyePosPer = 0.f;
@@ -33,24 +33,37 @@ namespace FPS_n2 {
 				Set_EnvLight(
 					VECTOR_ref::vget(1.f, 1.f, 1.f),
 					VECTOR_ref::vget(-1.f, -1.f, -1.f),
-					VECTOR_ref::vget(0.75f, -0.5f, 0.0f),
+					VECTOR_ref::vget(-0.25f, -0.5f, 0.0f),
 					GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
 				//Load
 				BackGround.Load();
-				Gun.LoadModel("data/model/gun/model");
-				Chara.LoadModel("data/umamusume/ticket/model");
+				Gun.LoadModel("data/model/gun/");
+				Chara.LoadModel("data/umamusume/ticket/");
 				Gun.LoadReticle("data/model/gun/reticle.png");
-				Target.LoadModel("data/model/Target/model");
+				for (auto& t : Target) {
+					t.LoadModel("data/model/Target/");
+				}
 				//init
 				Chara.Init();
 				Gun.Init();
-				Target.Init();
+				for (auto& t : Target) {
+					t.Init();
+				}
 				Chara.SetCol(&BackGround.GetGroundCol());
 				Gun.SetCol(&BackGround.GetGroundCol());
-				Target.SetCol(&BackGround.GetGroundCol());
+				for (auto& t : Target) {
+					t.SetCol(&BackGround.GetGroundCol());
+				}
 				//Set
 				Chara.Set(&Gun);
+				Target[0].SetMat(deg2rad(90), VECTOR_ref::vget(732.f, 15.11f, -974.20f + 20.f));
+				Target[1].SetMat(deg2rad(90), VECTOR_ref::vget(732.f, 15.11f, -974.20f));
+				Target[2].SetMat(deg2rad(90), VECTOR_ref::vget(732.f, 15.11f, -974.20f - 20.f));
+
+				Target[3].SetMat(deg2rad(90), VECTOR_ref::vget(732.f - 12.5f*100.f, 15.11f, -974.20f + 20.f));
+				Target[4].SetMat(deg2rad(90), VECTOR_ref::vget(732.f - 12.5f*100.f, 15.11f, -974.20f));
+				Target[5].SetMat(deg2rad(90), VECTOR_ref::vget(732.f - 12.5f*100.f, 15.11f, -974.20f - 20.f));
 				//Cam
 				camera_main.set_cam_info(deg2rad(65), 1.f, 100.f);
 				camera_main.set_cam_pos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
@@ -112,7 +125,21 @@ namespace FPS_n2 {
 
 				Chara.Execute();
 				Gun.Execute();
-				Target.Execute();
+
+				if (Gun.GetIsHit()) {
+					Effect_UseControl::SetSpeed_Effect(Effect::ef_fire, 1.f);
+					Effect_UseControl::Set_Effect(Effect::ef_fire, Gun.GetHitPos(), Gun.GetHitVec(), 1.f);
+				}
+
+				for (auto& t : Target) {
+					Gun.CheckCol(t.GetCol());
+					if (Gun.GetIsHit()) {
+						t.SetHitPos(Gun.GetHitPos());
+						Effect_UseControl::SetSpeed_Effect(Effect::ef_fire, 1.f);
+						Effect_UseControl::Set_Effect(Effect::ef_fire, Gun.GetHitPos(), Gun.GetHitVec(), 1.f);
+					}
+					t.Execute();
+				}
 
 				m_FPS = std::clamp<size_t>(m_FPS + 1, 0, (CheckHitKey(KEY_INPUT_V) != 0) ? 2 : 0);
 				if (m_FPS == 1) { m_Flagfps ^= 1; }
@@ -139,7 +166,8 @@ namespace FPS_n2 {
 
 					camera_main.camvec = CamPos + EyeVector * 100.f;
 					camera_main.campos = CamPos + EyeVector * (-20.f*(1.f- EyePosPer_Prone) + 2.f*EyePosPer_Prone);//*2.f;
-					camera_main.camup = VECTOR_ref::up();
+
+					camera_main.camup = Chara.GetMatrix().GetRot().yvec();
 
 					if (m_RunPressFlag) {
 						easing_set(&EyeRunPer, 1.f, 0.95f);
@@ -186,10 +214,6 @@ namespace FPS_n2 {
 					//Effect_UseControl::SetSpeed_Effect(Effect::ef_fire2, 5.f);
 					Effect_UseControl::Set_Effect(Effect::ef_fire2, mat.pos(), mat.GetRot().zvec()*-1.f, 1.f);
 				}
-				if (Gun.GetIsHit()) {
-					Effect_UseControl::SetSpeed_Effect(Effect::ef_fire, 1.f);
-					Effect_UseControl::Set_Effect(Effect::ef_fire, Gun.GetHitPos(), Gun.GetHitVec(), 1.f);
-				}
 
 				TEMPSCENE::Update();
 				Effect_UseControl::Update_Effect();
@@ -199,7 +223,9 @@ namespace FPS_n2 {
 				Effect_UseControl::Dispose_Effect();
 				Gun.Dispose();
 				Chara.Dispose();
-				Target.Dispose();
+				for (auto& t : Target) {
+					t.Dispose();
+				}
 			}
 			//
 			void UI_Draw(void) noexcept  override {
@@ -218,7 +244,9 @@ namespace FPS_n2 {
 
 			void Main_Draw(void) noexcept override {
 				BackGround.Draw();
-				Target.Draw();
+				for (auto& t : Target) {
+					t.Draw();
+				}
 				Gun.Draw();
 				Chara.Draw();
 				
@@ -252,6 +280,13 @@ namespace FPS_n2 {
 			void LAST_Draw(void) noexcept override {
 				if (Reticle_on) {
 					Gun.GetReticle().DrawRotaGraph(Reticle_xpos, Reticle_ypos, lens_size / (4096.f / 2.f)*1.25f, 0.f, true);
+				}
+
+				int x = 0;
+				int y = 10;
+				for (auto& t : Target) {
+					t.DrawHitCard(x,y);
+					x += 200 + 10;
 				}
 			}
 		};

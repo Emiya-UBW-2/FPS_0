@@ -10,6 +10,7 @@ namespace FPS_n2 {
 		public:
 			bool isActive{ false };
 			moves move;
+			float yAdd{ 0.f };
 		public:
 			moves move_Hit;
 		public:
@@ -17,18 +18,19 @@ namespace FPS_n2 {
 				isActive = true;
 				move.pos = pos;
 				move.vec = vec;
+				yAdd = 0.f;
 				move.repos = move.pos;
 			}
 			void Execute() {
 				if (isActive) {
 					move.repos = move.pos;
-					move.pos += move.vec;
-					move.vec.yadd(M_GR / (FPS*FPS));
+					move.pos += move.vec*60.f / FPS + VECTOR_ref::up()*yAdd;
+					yAdd += (M_GR / (FPS*FPS));
 				}
 			}
-			bool SetCol(const MV1* pMapCol) {
+			bool CheckCol(const MV1* pCol) {
 				if (isActive) {
-					auto HitResult = pMapCol->CollCheck_Line(
+					auto HitResult = pCol->CollCheck_Line(
 						this->move.repos,
 						this->move.pos);
 					if (HitResult.HitFlag == TRUE) {
@@ -81,14 +83,19 @@ namespace FPS_n2 {
 				for (auto& b : m_Bullet) {
 					b.Execute();
 				}
+				CheckCol(this->m_MapCol);
+			}
+
+			void CheckCol(const MV1* pCol) {
 				m_IsHit = false;
 				for (auto& b : m_Bullet) {
-					if (b.SetCol(this->m_MapCol)) {
+					if (b.CheckCol(pCol)) {
 						move_Hit = b.move_Hit;
 						m_IsHit = true;
 					}
 				}
 			}
+
 			void Draw() override {
 				for (auto& b : m_Bullet) {
 					b.Draw();
@@ -113,7 +120,7 @@ namespace FPS_n2 {
 
 
 			void SetBullet() {
-				float Spd = 12.5f*10.f*60.f / FPS;
+				float Spd = 12.5f*800.f / 60.f;
 				m_Bullet[m_NowShotBullet].Set(GetMuzzleMatrix().pos(), GetMuzzleMatrix().GetRot().zvec()*-1.f*Spd);
 				++m_NowShotBullet %= m_Bullet.size();
 			}

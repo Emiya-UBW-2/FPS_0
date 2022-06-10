@@ -60,6 +60,9 @@
     <ClInclude Include="Target.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
+    <ClInclude Include="ObjectBase.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
