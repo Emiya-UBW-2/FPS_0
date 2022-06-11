@@ -253,14 +253,13 @@ namespace FPS_n2 {
 						easing_set(&this->obj.get_anime((int)CharaAnimeID::Bottom_Stand).per, standPer, 0.95f);
 					}
 
-					SetAnimLoop((int)CharaAnimeID::Bottom_Run, 0.5f*(this->m_Vec[0] * this->m_RunPer2));
-					SetAnimLoop((int)CharaAnimeID::Bottom_Walk, 3.25f*(this->m_Vec[0] * 0.35f));
 					SetAnimLoop((int)CharaAnimeID::Bottom_Turn, 0.5f);
-					SetAnimLoop((int)CharaAnimeID::Bottom_LeftStep, 3.25f*(this->m_Vec[1] * 0.35f));
-					SetAnimLoop((int)CharaAnimeID::Bottom_RightStep, 3.25f*(this->m_Vec[3] * 0.35f));
-					SetAnimLoop((int)CharaAnimeID::Bottom_WalkBack, 3.25f*(this->m_Vec[2] * 0.35f));
-					SetAnimLoop((int)CharaAnimeID::All_ProneWalk, 1.25f*this->m_VecTotal);
-
+					SetAnimLoop((int)CharaAnimeID::Bottom_Run, 0.5f*this->m_Vec[0] * this->m_RunPer2);
+					SetAnimLoop((int)CharaAnimeID::Bottom_Walk, 1.15f*this->m_Vec[0]);
+					SetAnimLoop((int)CharaAnimeID::Bottom_LeftStep, 1.15f*this->m_Vec[1]);
+					SetAnimLoop((int)CharaAnimeID::Bottom_WalkBack, 1.15f*this->m_Vec[2]);
+					SetAnimLoop((int)CharaAnimeID::Bottom_RightStep, 1.15f*this->m_Vec[3]);
+					SetAnimLoop((int)CharaAnimeID::All_ProneWalk, 1.15f*this->m_VecTotal);
 					//‘«‰¹
 					if (BottomAnimSel != CharaAnimeID::Bottom_Stand) {
 						auto Time = this->obj.get_anime((int)BottomAnimSel).time;
