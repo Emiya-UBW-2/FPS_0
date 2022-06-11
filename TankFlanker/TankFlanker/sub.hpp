@@ -59,7 +59,7 @@ namespace FPS_n2 {
 			const auto& Get_handle(void)const noexcept { return handle; }
 			void Set(int siz_t) noexcept {
 				this->size = siz_t;
-				this->handle = FontHandle::Create("x14y24pxHeadUpDaisy",siz_t, DX_FONTTYPE_EDGE, -1, 2);
+				this->handle = FontHandle::Create("x14y24pxHeadUpDaisy", siz_t, DX_FONTTYPE_EDGE, -1, 2);
 			}
 		};
 	private:

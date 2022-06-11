@@ -1,7 +1,6 @@
-
 #pragma once
-
 #include"Header.hpp"
+
 namespace FPS_n2 {
 	namespace Sceneclass {
 		class BulletClass {
@@ -59,6 +58,11 @@ namespace FPS_n2 {
 
 			moves move_Hit;
 			bool m_IsHit{ false };
+
+			int BoltSel = 0;
+			std::vector<SoundHandle> BoltSound;
+			SoundHandle Trigger;
+			SoundHandle Shot;
 		public:
 			void LoadReticle(const char* reticle_filepath) {
 				reticle = GraphHandle::Load(reticle_filepath);
@@ -66,11 +70,49 @@ namespace FPS_n2 {
 
 			void Init() override {
 				ObjectBaseClass::Init();
+				SetCreate3DSoundFlag(TRUE);
+				for (int i = 0; i < 4; i++) {
+					BoltSound.emplace_back(SoundHandle::Load("data/Sound/SE/gun/slide/bolt/" + std::to_string(i) + ".wav"));
+				}
+				Trigger = SoundHandle::Load("data/Sound/SE/gun/trigger.wav");
+				Shot = SoundHandle::Load("data/Sound/SE/gun/shot.wav");
+				SetCreate3DSoundFlag(TRUE);
+
+				for (auto& b : BoltSound) {
+					b.vol(128);
+					Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, b.get());
+				}
+				Trigger.vol(128);
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, Trigger.get());
+				Shot.vol(128);
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, Shot.get());
+
 			}
 			void Execute() {
 				if (this->boltFlag) {
 					this->obj.get_anime(0).per = 1.f;
 					this->obj.get_anime(0).time += 1.f*30.f / FPS * 1.5f;
+
+					if ((5.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 6.f)) {
+						if (!BoltSound[0].check()) {
+							BoltSound[0].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+					if ((11.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 12.f)) {
+						if (!BoltSound[1].check()) {
+							BoltSound[1].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+					if ((28.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 29.f)) {
+						if (!BoltSound[2].check()) {
+							BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+					if ((36.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 37.f)) {
+						if (!BoltSound[3].check()) {
+							BoltSound[3].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
 				}
 				else {
 					this->obj.get_anime(0).per = 0.f;
@@ -123,6 +165,10 @@ namespace FPS_n2 {
 				float Spd = 12.5f*800.f / 60.f;
 				m_Bullet[m_NowShotBullet].Set(GetMuzzleMatrix().pos(), GetMuzzleMatrix().GetRot().zvec()*-1.f*Spd);
 				++m_NowShotBullet %= m_Bullet.size();
+
+				Trigger.play_3D(GetMatrix().pos(), 12.5f*5.f);
+
+				Shot.play_3D(GetMatrix().pos(), 12.5f*50.f);
 			}
 
 		};

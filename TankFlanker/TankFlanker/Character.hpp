@@ -1,7 +1,6 @@
-
 #pragma once
-
 #include"Header.hpp"
+
 namespace FPS_n2 {
 	namespace Sceneclass {
 		class CharacterClass : public ObjectBaseClass {
@@ -16,6 +15,8 @@ namespace FPS_n2 {
 			std::pair<int, moves> RightWrist;
 			std::pair<int, moves> LeftEye;
 			std::pair<int, moves> RightEye;
+			std::pair<int, moves> LeftFoot;
+			std::pair<int, moves> RightFoot;
 			moves  model_move;
 			float m_yDown{ 0.f };
 
@@ -23,6 +24,7 @@ namespace FPS_n2 {
 			float m_VecTotal{ 0.f };
 			std::array<float, (int)CharaAnimeID::AnimeIDMax> m_AnimPerSave;
 
+			float m_xrad_Add{ 0.f }, m_yrad_Add{ 0.f };
 			float m_xrad_Buf{ 0.f }, m_yrad_Buf{ 0.f };
 			float m_xrad{ 0.f }, m_yrad{ 0.f }, m_zrad{ 0.f };
 			float m_yrad_Upper{ 0.f }, m_yrad_Bottom{ 0.f };
@@ -37,6 +39,7 @@ namespace FPS_n2 {
 			GunClass* Gun_Ptr{ nullptr };
 			float RunPer{ 0.f };
 			float RunPer2{ 0.f };
+			float PrevRunPer2{ 0.f };
 			bool m_isRun{ false };
 			float m_RunTimer{ false };
 			bool m_isSprint{ false };
@@ -63,6 +66,22 @@ namespace FPS_n2 {
 			bool m_Press_GoRight{ false };
 			bool m_Press_Shot{ false };
 			bool m_Press_Aim{ false };
+
+			bool returnStand = false;
+
+			//サウンド
+			SoundHandle RunFootL;
+			SoundHandle RunFootR;
+			SoundHandle Sliding;
+			SoundHandle SlidingL;
+			SoundHandle SlidingR;
+
+			SoundHandle Standup;
+			//スタミナ
+			float HeartRate{ 60.f };//心拍数
+			float HeartRate_r{ 60.f };//心拍数
+
+			float HeartRateRad{ 0.f };//呼吸Sin渡し
 
 		private:
 			void SetAnimLoop(int ID, float speed) {
@@ -238,7 +257,105 @@ namespace FPS_n2 {
 				SetAnimLoop((int)CharaAnimeID::Bottom_WalkBack, 3.25f*(this->m_Vec[2] * 0.35f));
 				auto tmp = std::clamp(m_VecTotal, 0.f, 1.f);
 				SetAnimLoop((int)CharaAnimeID::All_ProneWalk, 1.25f*tmp);
+				if (BottomAnimSel != CharaAnimeID::Bottom_Stand) {
+					if (BottomAnimSel != CharaAnimeID::Bottom_Run) {
+						if (!m_ProneSwitch) {
+							//L
+							if (
+								(9.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 10.f)
+								) {
+								if (!RunFootL.check()) {
+									RunFootL.play_3D(GetLeftFootPosition(), 12.5f*5.f);
+								}
+							}
+							//R
+							if (
+								(27.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 28.f)
+								) {
+								if (!RunFootR.check()) {
+									RunFootR.play_3D(GetRightFootPosition(), 12.5f*5.f);
+								}
+							}
+						}
+						else {
+							//L
+							if (
+								(9.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 10.f)
+								) {
+								if (!SlidingL.check()) {
+									SlidingL.play_3D(GetLeftFootPosition(), 12.5f*5.f);
+								}
+							}
+							//R
+							if (
+								(27.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 28.f)
+								) {
+								if (!SlidingR.check()) {
+									SlidingR.play_3D(GetRightFootPosition(), 12.5f*5.f);
+								}
+							}
+						}
+					}
+					else {
+						//8,18,28,38
+						//
+						if (
+							(18.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 19.f) ||
+							(38.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 39.f)
+							) {
+							if (!RunFootL.check()) {
+								RunFootL.play_3D(GetLeftFootPosition(), 12.5f*5.f);
+							}
+						}
+						//
+						if (
+							(8.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 9.f) ||
+							(28.f < this->obj.get_anime((int)BottomAnimSel).time && this->obj.get_anime((int)BottomAnimSel).time < 29.f)
+							) {
+							if (!RunFootR.check()) {
+								RunFootR.play_3D(GetRightFootPosition(), 12.5f*5.f);
+							}
+						}
+					}
+					returnStand = true;
+				}
+				else {
+					if (returnStand) {
+						if (!Sliding.check()) {
+							Sliding.vol((int)(192.f*RunPer2 / SpeedLimit));
+							Sliding.play_3D(GetRightFootPosition(), 12.5f*5.f);
+						}
+						returnStand = false;
+					}
+				}
+				if (0.1f < this->m_PronePer&&this->m_PronePer < 0.2f) {
+					if (!Standup.check()) {
+						Standup.play_3D(GetRightFootPosition(), 12.5f*5.f);
+					}
+				}
 			}
+
+			void CalcHeartRate() {
+				auto addRun = (RunPer2 - PrevRunPer2);
+				if (addRun > 0.f) {
+					HeartRate_r += (10.f + GetRandf(10.f)) / FPS;
+				}
+				else if (addRun < 0.f) {
+					HeartRate_r -= (5.f + GetRandf(5.f)) / FPS;
+				}
+				HeartRate_r += (m_VecTotal * RunPer2 / SpeedLimit * 1.f) / FPS;
+				HeartRate_r -= (2.f + GetRandf(4.f)) / FPS;
+				HeartRate_r = std::clamp(HeartRate_r, 60.f, 180.f);
+
+				if (HeartRate < HeartRate_r) {
+					HeartRate += 5.f / FPS;
+				}
+				else if (HeartRate >= HeartRate_r) {
+					HeartRate -= 5.f / FPS;
+				}
+				//HeartRate = HeartRate_r;
+			}
+
 			const auto GetCharaDir() { return this->Upper.second.mat * this->move.mat; }
 			void SetVec(int pDir, bool Press) {
 				if (Press) {
@@ -293,6 +410,12 @@ namespace FPS_n2 {
 				this->m_Vec[2] = 0.f;
 				this->m_Vec[3] = 0.f;
 				this->m_VecTotal = 0.f;
+				this->RunPer2 = 0.f;
+				this->PrevRunPer2 = 0.f;
+				this->HeartRate = 60.f;
+				this->HeartRateRad = 0.f;
+				this->m_xrad_Add = 0.f;
+				this->m_yrad_Add = 0.f;
 				//動作にかかわる操作
 				this->m_SquatSwitch = SquatOn;
 				this->m_ProneSwitch = false;
@@ -311,6 +434,27 @@ namespace FPS_n2 {
 
 			void Set(GunClass* pGunPtr) {
 				this->Gun_Ptr = pGunPtr;
+				SetCreate3DSoundFlag(TRUE);
+				RunFootL = SoundHandle::Load("data/Sound/SE/move/runfoot.wav");
+				RunFootR = SoundHandle::Load("data/Sound/SE/move/runfoot.wav");
+				Sliding = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
+				SlidingL = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
+				SlidingR = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
+				Standup = SoundHandle::Load("data/Sound/SE/move/standup.wav");
+				SetCreate3DSoundFlag(FALSE);
+
+				RunFootL.vol(128);
+				RunFootR.vol(128);
+				Sliding.vol(128);
+				SlidingL.vol(128);
+				SlidingR.vol(128);
+				Standup.vol(128);
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, RunFootL.get());
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, RunFootR.get());
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, Sliding.get());
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, SlidingL.get());
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, SlidingR.get());
+				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, Standup.get());
 			}
 			void SetInput(
 				float pAddxRad, float pAddyRad,
@@ -324,7 +468,7 @@ namespace FPS_n2 {
 				bool pAimPress,
 				bool pRunPress
 			) {
-				
+
 
 				this->m_Press_GoFront = pGoFrontPress;
 				this->m_Press_GoRear = pGoBackPress;
@@ -337,7 +481,7 @@ namespace FPS_n2 {
 					this->m_Press_GoRight = false;
 				}
 				this->m_Press_Shot = pShotPress;
-				if (0.05f < this->m_PronePer&&this->m_PronePer < 0.95f) {
+				if (0.01f < this->m_PronePer&&this->m_PronePer < 0.99f) {
 					this->m_Press_Shot = false;
 				}
 
@@ -382,6 +526,19 @@ namespace FPS_n2 {
 					auto tmp = (0.1f*this->m_PronePer + 1.f*(1.f - this->m_PronePer));
 					this->m_xrad_Buf = std::clamp(this->m_xrad_Buf + pAddxRad * tmp, -deg2rad(40.f)*limchange, deg2rad(25.f)*limchange);
 					this->m_yrad_Buf += pAddyRad * tmp;
+
+					float tmp2 = 0.2f * GetRandf(deg2rad(1.f - this->m_PronePer));
+
+					HeartRateRad += deg2rad(HeartRate) / FPS;
+
+					easing_set(&this->m_xrad_Add, tmp2 + 0.0002f * sin(HeartRateRad) *powf(HeartRate / 60.f, 3.f), 0.95f);
+					easing_set(&this->m_yrad_Add, tmp2 + 0.0002f * sin(HeartRateRad * 3) *powf(HeartRate / 60.f, 3.f), 0.95f);
+
+					float tmp3 = 0.1f * this->m_PronePer + 1.f * (1.f - this->m_PronePer);
+
+					this->m_xrad_Buf += this->m_xrad_Add*tmp3;
+					this->m_yrad_Buf += this->m_yrad_Add*tmp3;
+
 					easing_set(&this->m_xrad, this->m_xrad_Buf, 0.5f);
 					easing_set(&this->m_yrad, this->m_yrad_Buf, 0.5f);
 				}
@@ -394,6 +551,10 @@ namespace FPS_n2 {
 				this->Upper2.first = 6;
 				this->LeftEye.first = 11;
 				this->RightEye.first = 13;
+
+				this->LeftFoot.first = 204;
+				this->RightFoot.first = 209;
+
 				this->RightWrist.first = 119;
 				this->RightHandJoint.first = 120;
 #else
@@ -483,10 +644,14 @@ namespace FPS_n2 {
 				}
 				//SetMat指示
 				{
+					PrevRunPer2 = RunPer2;
 					RunPer2 = ((SpeedLimit*(1.f + 0.5f*this->m_SprintPer)) * this->RunPer + 0.35f * (1.f - this->RunPer));
-					RunPer2 = RunPer2 *(1.f - this->m_SquatPer) + 0.15f * this->m_SquatPer;
+					RunPer2 = RunPer2 * (1.f - this->m_SquatPer) + 0.15f * this->m_SquatPer;
 
 					RunPer2 = RunPer2 * (1.f - this->m_PronePer) + 0.1f * this->m_PronePer;
+					if (PrevRunPer2 == 0.f) {
+						PrevRunPer2 = RunPer2;
+					}
 
 					auto OLDpos = this->move.pos;
 					auto yOLD = this->move.vec.y();
@@ -494,7 +659,7 @@ namespace FPS_n2 {
 					this->move.vec += MATRIX_ref::RotY(this->m_yrad_Upper).zvec()*-(this->m_Vec[0] - this->m_Vec[2]);
 					this->move.vec += MATRIX_ref::RotY(this->m_yrad_Upper).xvec()*(this->m_Vec[1] - this->m_Vec[3]);
 					m_VecTotal = this->move.vec.size();
-					if (this->move.vec.size() > 0.1f) {
+					if (m_VecTotal > 0.1f) {
 						this->move.vec = this->move.vec.Norm()*RunPer2 * 60.f / FPS;
 					}
 					this->move.vec.y(yOLD);
@@ -520,14 +685,14 @@ namespace FPS_n2 {
 
 						}
 						else {
-							this->move.vec.yadd(M_GR / (FPS*FPS));
+							this->move.vec.yadd(2.f * M_GR / (FPS*FPS));
 						}
 					}
 					this->move.pos += this->move.vec;
 					auto NowPos = this->move.pos - OLDpos;
 					col_wall(OLDpos, &this->move.pos, *this->m_MapCol);
 					this->move.mat = MATRIX_ref::RotZ(this->m_zrad) * MATRIX_ref::RotY(this->m_yrad_Bottom)
-						* MATRIX_ref::RotVec2(VECTOR_ref::up(), m_ProneNormal*this->m_PronePer + VECTOR_ref::up()*(1.f- this->m_PronePer));
+						* MATRIX_ref::RotVec2(VECTOR_ref::up(), m_ProneNormal*this->m_PronePer + VECTOR_ref::up()*(1.f - this->m_PronePer));
 
 					{
 						easing_set(&this->model_move.pos, this->move.pos, 0.9f);
@@ -546,7 +711,7 @@ namespace FPS_n2 {
 					for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) {
 						if (i == (int)CharaAnimeID::All_Prone) { continue; }
 						if (
-							i == (int)CharaAnimeID::All_Prone 
+							i == (int)CharaAnimeID::All_Prone
 							|| i == (int)CharaAnimeID::All_ProneShot
 							|| i == (int)CharaAnimeID::All_ProneCocking
 							|| i == (int)CharaAnimeID::All_ProneWalk
@@ -572,55 +737,55 @@ namespace FPS_n2 {
 				}
 				//銃座標指定(アップデート含む)
 				{
-						//持ち手探索
-						VECTOR_ref yVec1, zVec1, Pos1;
-						{
-							bool changeCocking = false;
-							bool changeCockingProne = false;
-							if (this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per == 1.f) {
-								changeCocking = true;
-								this->obj.get_anime((int)CharaAnimeID::Upper_Aim).per = 1.f;
-								this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per = 0.f;
-							}
-							if (this->obj.get_anime((int)CharaAnimeID::All_ProneCocking).per == 1.f) {
-								changeCockingProne = true;
-								this->obj.get_anime((int)CharaAnimeID::All_Prone).per = 1.f;
-								this->obj.get_anime((int)CharaAnimeID::All_ProneCocking).per = 0.f;
-							}
-							this->obj.get_anime((int)CharaAnimeID::RightHand).per = 0.f;
-							this->obj.work_anime();
+					//持ち手探索
+					VECTOR_ref yVec1, zVec1, Pos1;
+					{
+						bool changeCocking = false;
+						bool changeCockingProne = false;
+						if (this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per == 1.f) {
+							changeCocking = true;
+							this->obj.get_anime((int)CharaAnimeID::Upper_Aim).per = 1.f;
+							this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per = 0.f;
+						}
+						if (this->obj.get_anime((int)CharaAnimeID::All_ProneCocking).per == 1.f) {
+							changeCockingProne = true;
+							this->obj.get_anime((int)CharaAnimeID::All_Prone).per = 1.f;
+							this->obj.get_anime((int)CharaAnimeID::All_ProneCocking).per = 0.f;
+						}
+						this->obj.get_anime((int)CharaAnimeID::RightHand).per = 0.f;
+						this->obj.work_anime();
 
-							yVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, -1).Norm(), (this->obj.GetFrameLocalWorldMatrix(RightWrist.first).GetRot() * GetCharaDir().Inverse()));
-							zVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(-1, -1, 0).Norm(), (this->obj.GetFrameLocalWorldMatrix(RightWrist.first).GetRot() * GetCharaDir().Inverse()));
-							Pos1 = this->obj.GetFrameLocalWorldMatrix(RightHandJoint.first).pos();
-							if (changeCocking) {
-								this->obj.get_anime((int)CharaAnimeID::Upper_Aim).per = 0.f;
-								this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per = 1.f;
-							}
-							if (changeCockingProne) {
-								this->obj.get_anime((int)CharaAnimeID::All_Prone).per = 0.f;
-								this->obj.get_anime((int)CharaAnimeID::All_ProneCocking).per = 1.f;
-							}
-							this->obj.get_anime((int)CharaAnimeID::RightHand).per = (1.f - this->m_ReadyPer);
+						yVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, -1).Norm(), (this->obj.GetFrameLocalWorldMatrix(RightWrist.first).GetRot() * GetCharaDir().Inverse()));
+						zVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(-1, -1, 0).Norm(), (this->obj.GetFrameLocalWorldMatrix(RightWrist.first).GetRot() * GetCharaDir().Inverse()));
+						Pos1 = this->obj.GetFrameLocalWorldMatrix(RightHandJoint.first).pos();
+						if (changeCocking) {
+							this->obj.get_anime((int)CharaAnimeID::Upper_Aim).per = 0.f;
+							this->obj.get_anime((int)CharaAnimeID::Upper_Cocking).per = 1.f;
 						}
-						//背負い場所探索
-						VECTOR_ref yVec2, zVec2, Pos2;
-						{
-							yVec2 = (MATRIX_ref::RotZ(deg2rad(30))*this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot()*GetCharaDir().Inverse()).xvec();
-							zVec2 = (MATRIX_ref::RotZ(deg2rad(30))*this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot()*GetCharaDir().Inverse()).yvec();
-							Pos2 =
-								this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).pos() +
-								this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot().yvec()*-1.75f +
-								this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot().zvec()*1.75f;
+						if (changeCockingProne) {
+							this->obj.get_anime((int)CharaAnimeID::All_Prone).per = 0.f;
+							this->obj.get_anime((int)CharaAnimeID::All_ProneCocking).per = 1.f;
 						}
-						auto yVec = yVec2 * this->m_RunReadyPer + yVec1 * (1.f - this->m_RunReadyPer);
-						auto zVec = zVec2 * this->m_RunReadyPer + zVec1 * (1.f - this->m_RunReadyPer);
-						auto PosBuf = Pos2 * this->m_RunReadyPer + Pos1 * (1.f - this->m_RunReadyPer);
-						auto tmp_gunrat = MATRIX_ref::RotVec2(VECTOR_ref::front()*-1.f, zVec);
-						tmp_gunrat *= MATRIX_ref::RotVec2(tmp_gunrat.yvec(), yVec);
-						tmp_gunrat *= GetCharaDir() * MATRIX_ref::Mtrans(PosBuf);
-						Gun_Ptr->SetMatrix(tmp_gunrat, this->boltFlag);
+						this->obj.get_anime((int)CharaAnimeID::RightHand).per = (1.f - this->m_ReadyPer);
 					}
+					//背負い場所探索
+					VECTOR_ref yVec2, zVec2, Pos2;
+					{
+						yVec2 = (MATRIX_ref::RotZ(deg2rad(30))*this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot()*GetCharaDir().Inverse()).xvec();
+						zVec2 = (MATRIX_ref::RotZ(deg2rad(30))*this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot()*GetCharaDir().Inverse()).yvec();
+						Pos2 =
+							this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).pos() +
+							this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot().yvec()*-1.75f +
+							this->obj.GetFrameLocalWorldMatrix(this->Upper2.first).GetRot().zvec()*1.75f;
+					}
+					auto yVec = yVec2 * this->m_RunReadyPer + yVec1 * (1.f - this->m_RunReadyPer);
+					auto zVec = zVec2 * this->m_RunReadyPer + zVec1 * (1.f - this->m_RunReadyPer);
+					auto PosBuf = Pos2 * this->m_RunReadyPer + Pos1 * (1.f - this->m_RunReadyPer);
+					auto tmp_gunrat = MATRIX_ref::RotVec2(VECTOR_ref::front()*-1.f, zVec);
+					tmp_gunrat *= MATRIX_ref::RotVec2(tmp_gunrat.yvec(), yVec);
+					tmp_gunrat *= GetCharaDir() * MATRIX_ref::Mtrans(PosBuf);
+					Gun_Ptr->SetMatrix(tmp_gunrat, this->boltFlag);
+				}
 				//アニメアップデート
 				this->obj.work_anime();
 				{
@@ -634,8 +799,10 @@ namespace FPS_n2 {
 					this->obj.PhysicsResetState();
 				}
 				else {
-					this->obj.PhysicsCalculation(1000.0f / FPS*240.f);
+					this->obj.PhysicsCalculation(1000.0f / FPS * 240.f);
 				}
+				//
+				CalcHeartRate();
 				//デバッグ
 				{
 					//printfDx("UpperTimer : %5.5f\n", this->UpperTimer);
@@ -652,8 +819,14 @@ namespace FPS_n2 {
 			const auto IsSprint() { return this->m_isSprint; }
 			const auto IsProne() { return this->m_ProneSwitch; }
 			const auto ShotSwitch() { return this->shotFlag_First; }
-			const auto GetUpper2Position() { return this->obj.frame(Upper.first); }
+			const VECTOR_ref GetUpper2Position() { return this->obj.frame(Upper.first); }
 			const auto GetUpper2WorldMatrix() { return this->obj.GetFrameLocalWorldMatrix(Upper.first); }
+
+			const VECTOR_ref GetLeftFootPosition() { return this->obj.frame(LeftFoot.first); }
+			const VECTOR_ref GetRightFootPosition() { return this->obj.frame(RightFoot.first); }
+
+			const auto& GetHeartRate() { return HeartRate; }
+			const auto& GetHeartRateRad() { return HeartRateRad; }
 		};
 	};
 };

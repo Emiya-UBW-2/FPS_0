@@ -1,17 +1,14 @@
 // ピクセルシェーダーの入力
 struct PS_INPUT
 {
-	float4 Diffuse         : COLOR0;
-	float4 Specular        : COLOR1;
-	float2 TexCoords0      : TEXCOORD0;
-	float4 VPosition	   : TEXCOORD1;	// 座標( 射影空間 )ピクセルシェーダーで参照する為の物
-	float4 Position        : SV_POSITION;	// 座標( プロジェクション空間 )
+	float4 dif         : COLOR0;		// ディフューズカラー
+	float2 texCoords0  : TEXCOORD0;	// テクスチャ座標
 };
 
 // ピクセルシェーダーの出力
 struct PS_OUTPUT
 {
-	float4 Color0           : SV_TARGET0;	// 色
+	float4 color0           : SV_TARGET0;	// 色
 };
 
 
@@ -36,44 +33,55 @@ cbuffer cbD3D11_CONST_BUFFER_PS_BASE				: register(b1)
 	DX_D3D11_PS_CONST_BUFFER_BASE		g_Base;
 };
 
+// プログラムとのやり取りのために使うレジスタ1
+cbuffer cbMULTIPLYCOLOR_CBUFFER1 : register(b2)
+{
+	float2	dispsize;
+}
+
+// プログラムとのやり取りのために使うレジスタ2
+cbuffer cbMULTIPLYCOLOR_CBUFFER2 : register(b3)
+{
+	float4	lenspos;
+}
+
+SamplerState g_DiffuseMapSampler : register(s0);		// ディフューズマップサンプラ
+Texture2D    g_DiffuseMapTexture            : register(t0);		// ディフューズマップテクスチャ
+
 // main関数
 PS_OUTPUT main(PS_INPUT PSInput)
 {
 	PS_OUTPUT PSOutput;
+	float4 TextureDiffuseColor;
+	float2 pixel_pos;
+	pixel_pos.x = PSInput.texCoords0.x * dispsize.x;
+	pixel_pos.y = PSInput.texCoords0.y * dispsize.y;
 
-	// 出力カラー = ディフューズカラー
-	PSOutput.Color0.r = PSInput.VPosition.z;
+	float2 CalcPos = pixel_pos;
 
-	// 出力アルファ = 1.f
-	PSOutput.Color0.a = 1.f;
+	CalcPos.x = CalcPos.x / dispsize.x;
+	CalcPos.y = CalcPos.y / dispsize.y;
 
+	float2 CalcPos2 = PSInput.texCoords0;
+
+	CalcPos2.x = (CalcPos2.x - 0.5f) *lenspos.x;
+	CalcPos2.y = (CalcPos2.y - 0.5f) *lenspos.x;
+
+
+	float distance = 1.f - sqrt(pow(CalcPos2.x, 2) + pow(CalcPos2.y, 2));//0~0.5
+
+	//distance = 0.5f;
+
+	// テクスチャカラーの読み込み
+	TextureDiffuseColor = g_DiffuseMapTexture.Sample(g_DiffuseMapSampler, CalcPos);
+
+	// 出力カラー = テクスチャカラー * ディフューズカラー
+	PSOutput.color0 = TextureDiffuseColor * PSInput.dif;
+
+	PSOutput.color0.r *= distance;
+	PSOutput.color0.g *= distance;
+	PSOutput.color0.b *= distance;
 	// 出力パラメータを返す
 	return PSOutput;
 }
 
-/*
-// ピクセルシェーダーの入力
-struct PS_INPUT
-{
-	float4 ViewPosition   : TEXCOORD0;
-};
-// ピクセルシェーダーの出力
-struct PS_OUTPUT
-{
-	float4 Color0         : COLOR0;
-};
-
-// main関数
-PS_OUTPUT main(PS_INPUT PSInput)
-{
-	PS_OUTPUT PSOutput;
-
-	// 奥行き値を書き込み
-	PSOutput.Color0.r = PSInput.ViewPosition.z;
-	PSOutput.Color0.g = 0.0f;
-	PSOutput.Color0.b = 0.0f;
-	PSOutput.Color0.a = 1.0;
-
-	return PSOutput;
-}
-//*/

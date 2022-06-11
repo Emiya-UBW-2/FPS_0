@@ -1,5 +1,4 @@
 #pragma once
-
 #include"Header.hpp"
 
 namespace FPS_n2 {
@@ -7,6 +6,14 @@ namespace FPS_n2 {
 		template <class T>
 		static T Leap(const T& A, const T& B, float Per) noexcept { return A + (T)((float)(B - A)*Per); }
 		static VECTOR_ref GetVector(float Xrad, float Yrad) noexcept { return VECTOR_ref::vget(-cos(deg2rad(Xrad))*sin(-deg2rad(Yrad)), sin(deg2rad(Xrad)), -cos(deg2rad(Xrad))*cos(-deg2rad(Yrad))); }
+
+		struct shaderparam {
+			bool use;
+			float param1;
+			float param2;
+			float param3;
+			float param4;
+		};
 		//
 		class TEMPSCENE {
 		private:
@@ -21,11 +28,7 @@ namespace FPS_n2 {
 			cam_info camera_main;
 			float fov_base = DX_PI_F / 2;
 			//
-			bool use_lens{ false };
-			float lens_zoom = 1.f;
-			float lens_size = 1.f;
-			float lens_xpos = 1.f;
-			float lens_ypos = 1.f;
+			std::array<shaderparam, 2> shaderParam;
 			//
 			virtual void Set_EnvLight(VECTOR_ref Shadow_minpos_t, VECTOR_ref Shadow_maxpos_t, VECTOR_ref Light_vec_t, COLOR_F Light_color_t) noexcept {
 				Shadow_minpos = Shadow_minpos_t;
@@ -87,11 +90,23 @@ namespace FPS_n2 {
 			virtual void Shadow_Draw(void) noexcept {}
 			virtual void Main_Draw(void) noexcept {}
 
-			virtual const bool& is_lens(void) const noexcept { return use_lens; }
-			virtual const float& zoom_lens(void) const noexcept { return lens_zoom; }
-			virtual const float& size_lens(void) const noexcept { return lens_size; }
-			virtual const float& xp_lens(void) const noexcept { return lens_xpos; }
-			virtual const float& yp_lens(void) const noexcept { return lens_ypos; }
+			const bool& is_lens(void) const noexcept { return shaderParam[0].use; }
+			const float& xp_lens(void) const noexcept { return shaderParam[0].param1; }
+			const float& yp_lens(void) const noexcept { return shaderParam[0].param2; }
+			const float& size_lens(void) const noexcept { return shaderParam[0].param3; }
+			const float& zoom_lens(void) const noexcept { return shaderParam[0].param4; }
+
+			void Set_is_lens(bool value) noexcept { shaderParam[0].use = value; }
+			void Set_xp_lens(float value) noexcept { shaderParam[0].param1 = value; }
+			void Set_yp_lens(float value) noexcept { shaderParam[0].param2 = value; }
+			void Set_size_lens(float value) noexcept { shaderParam[0].param3 = value; }
+			void Set_zoom_lens(float value) noexcept { shaderParam[0].param4 = value; }
+
+			const bool& is_Blackout(void) const noexcept { return shaderParam[1].use; }
+			const float& Per_Blackout(void) const noexcept { return shaderParam[1].param1; }
+
+			void Set_is_Blackout(bool value) noexcept { shaderParam[1].use = value; }
+			void Set_Per_Blackout(float value) noexcept { shaderParam[1].param1 = value; }
 
 			virtual void Item_Draw(void) noexcept {}
 			virtual void LAST_Draw(void) noexcept {}
@@ -131,12 +146,13 @@ namespace FPS_n2 {
 			LONGLONG Drawwaits, OLDwaits, waits;
 
 			shaders::shader_Vertex Screen_vertex;					// 頂点データ
-			std::array<shaders, 1> shader2D;
+			std::array<shaders, 2> shader2D;
 		public:
 			SceneControl(void) noexcept {
 				//シェーダー
 				Screen_vertex.Set();																					// 頂点データの準備
 				shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
+				shader2D[1].Init("DepthVS.vso", "DepthPS.pso");																//レンズ
 			}
 			~SceneControl(void) noexcept {
 				if (scenes_ptr != nullptr) {
@@ -228,6 +244,16 @@ namespace FPS_n2 {
 							PostPassParts->Get_BUF_Screen().SetDraw_Screen();
 							{
 								shader2D[0].Draw(Screen_vertex);
+							}
+							PostPassParts->Set_MAIN_Draw_nohost();
+						}
+						if (scenes_ptr->is_Blackout()) {
+							//描画
+							shader2D[1].Set_dispsize();
+							shader2D[1].Set_param(scenes_ptr->Per_Blackout(), 0, 0, 0);
+							PostPassParts->Get_BUF_Screen().SetDraw_Screen();
+							{
+								shader2D[1].Draw(Screen_vertex);
 							}
 							PostPassParts->Set_MAIN_Draw_nohost();
 						}
