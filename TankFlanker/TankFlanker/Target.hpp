@@ -4,52 +4,25 @@
 namespace FPS_n2 {
 	namespace Sceneclass {
 		class TargetClass : public ObjectBaseClass {
-			bool hitSwitch = false;
-			VECTOR_ref hitpos;
 			std::vector<VECTOR_ref> HitPosRec;
 		public:
+			TargetClass() {
+				m_objType = ObjType::Target;
+			}
+			~TargetClass() {}
 			void Init() override {
 				ObjectBaseClass::Init();
-
-				MV1SetMaterialOutLineWidth(this->obj.get(), 0, 0.f);
-				MV1SetMaterialOutLineDotWidth(this->obj.get(), 0, 0.f);
-				MV1SetMaterialOutLineWidth(this->obj.get(), 1, 0.f);
-				MV1SetMaterialOutLineDotWidth(this->obj.get(), 1, 0.f);
-				MV1SetMaterialOutLineWidth(this->obj.get(), 2, 0.f);
-				MV1SetMaterialOutLineDotWidth(this->obj.get(), 2, 0.f);
-			}
-
-			void SetMat(float Yrad, const VECTOR_ref& pos) {
-				this->move.mat = MATRIX_ref::RotY(Yrad);
-				this->move.pos = pos;
-				this->obj.SetMatrix(this->move.MatIn());
-
-				this->col.SetMatrix(this->move.MatIn());
-				this->col.RefreshCollInfo();
-			}
-
-			void ResetHit() {
-				HitPosRec.clear();
-			}
-
-			void Execute() {
-				if (hitSwitch) {
-					//hitpos - col.frame(2);
-					HitPosRec.emplace_back(hitpos);
+				for (int i = 0; i < this->obj.material_num(); i++) {
+					MV1SetMaterialOutLineWidth(this->obj.get(), i, 0.f);
+					MV1SetMaterialOutLineDotWidth(this->obj.get(), i, 0.f);
 				}
-				hitSwitch = false;
-			}
-			void Draw() override {
-				ObjectBaseClass::Draw();
-
-				//for (auto& r : HitPosRec) {
-				//	DrawSphere3D(r.get(), 2.f, 8, GetColor(0, 255, 0), GetColor(255, 255, 255), TRUE);
-				//}
 			}
 		public:
 			void SetHitPos(const VECTOR_ref& value) {
-				hitSwitch = true;
-				hitpos = value;
+				HitPosRec.emplace_back(value);
+			}
+			void ResetHit() {
+				HitPosRec.clear();
 			}
 
 			void DrawHitCard(int xp, int yp, int size, float AlphaPer) {
@@ -59,6 +32,7 @@ namespace FPS_n2 {
 				int yp2 = yp + ys;
 				if (AlphaPer > 0.01f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(255.f*AlphaPer));
+					//îwåi
 					DrawCircle(xp + xs / 2, yp + ys / 2, xs / 2, GetColor(255, 0, 0), TRUE);
 					DrawCircle(xp + xs / 2, yp + ys / 2, xs / 2, GetColor(255, 255, 255), FALSE);
 					DrawLine(xp + xs / 2, yp, xp + xs / 2, yp2, GetColor(255, 255, 255));
@@ -66,32 +40,28 @@ namespace FPS_n2 {
 					for (int i = 0; i < 10; i++) {
 						DrawCircle(xp + xs / 2, yp + ys / 2, xs / 2 * i / 10, GetColor(255, 255, 255), FALSE);
 					}
-					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
+					//ñΩíÜâ”èä
 					auto vecx = col.frame(3) - col.frame(2);
 					auto vecy = col.frame(4) - col.frame(2);
 					auto vecsize = (vecx.size() + vecy.size()) / 2;
 					vecx = vecx.Norm();
 					vecy = vecy.Norm();
-					int ypAdd = 0;
 					for (auto& r : HitPosRec) {
 						auto vec2 = r - col.frame(2);
 						float cos_t = vecx.dot(vec2.Norm());
 						float sin_t = -vecy.dot(vec2.Norm());
 
-						float xp_t = (float)xs / 2.f * (vec2.size() / vecsize) * cos_t;
-						float yp_t = (float)ys / 2.f * (vec2.size() / vecsize) * sin_t;
-
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(255.f*AlphaPer));
 						DrawCircle(
-							xp + xs / 2 + (int)xp_t,
-							yp + ys / 2 + (int)yp_t,
-							2,
-							GetColor(0, 255, 0)
-						);
-						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-						DrawFormatString(xp, yp2 + ypAdd, GetColor(255, 255, 255), "[%4.1f]", (vecsize - vec2.size()) / vecsize * 10.f);
+							xp + xs / 2 + (int)((float)(xs / 2) * (vec2.size() / vecsize) * cos_t),
+							yp + ys / 2 + (int)((float)(ys / 2) * (vec2.size() / vecsize) * sin_t),
+							2, GetColor(0, 255, 0));
+					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+					//ì_êî
+					int ypAdd = 0;
+					for (auto& r : HitPosRec) {
+						auto vec2 = r - col.frame(2);
+						DrawFormatString(xp, yp2 + ypAdd, GetColor(255, 255, 255), "[%4.1f]", (1.f - (vec2.size() / vecsize)) * 10.f);
 						ypAdd += 18;
 					}
 				}

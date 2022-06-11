@@ -24,36 +24,62 @@ namespace FPS_n2 {
 			LOAD_SCENE,
 			MAIN_LOOP
 		};
+		enum class CharaAnimeID : int {
+			RightHand,
+
+			Upper_Down,
+			Upper_Aim,
+			Upper_Shot,
+			Upper_Cocking,
+			Upper_RunningStart,
+			Upper_Running,
+			Upper_Sprint,
+
+			Mid_Squat,
+
+			Bottom_Stand,
+			Bottom_Walk,
+			Bottom_WalkBack,
+			Bottom_LeftStep,
+			Bottom_RightStep,
+			Bottom_Turn,
+			Bottom_Run,
+
+			All_Prone,
+			All_ProneShot,
+			All_ProneCocking,
+
+			All_ProneWalk,
+
+			AnimeIDMax,
+		};
+		enum class ObjType {
+			Human,
+			Gun,
+			Target,
+		};
+		enum class CharaFrame {
+			Center,
+			Upper,
+			Upper2,
+			LeftEye,
+			RightEye,
+			LeftFoot,
+			RightFoot,
+			RightWrist,
+			RightHandJoint,
+			Max,
+		};
+		const char* CharaFrameName[(int)CharaFrame::Max] = {
+			"センター",
+			"上半身",
+			"上半身2",
+			"左目先",
+			"右目先",
+			"左足首",
+			"右足首",
+			"右手首",
+			"右ダミー",
+		};
 	};
-
-	enum class CharaAnimeID : int {
-		RightHand,
-
-		Upper_Down,
-		Upper_Aim,
-		Upper_Shot,
-		Upper_Cocking,
-		Upper_RunningStart,
-		Upper_Running,
-		Upper_Sprint,
-
-		Mid_Squat,
-
-		Bottom_Stand,
-		Bottom_Walk,
-		Bottom_WalkBack,
-		Bottom_LeftStep,
-		Bottom_RightStep,
-		Bottom_Turn,
-		Bottom_Run,
-
-		All_Prone,
-		All_ProneShot,
-		All_ProneCocking,
-
-		All_ProneWalk,
-
-		AnimeIDMax,
-	};
-
-}
+};

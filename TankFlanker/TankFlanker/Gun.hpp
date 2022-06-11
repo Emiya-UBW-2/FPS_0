@@ -27,7 +27,7 @@ namespace FPS_n2 {
 					yAdd += (M_GR / (FPS*FPS));
 				}
 			}
-			bool CheckCol(const MV1* pCol) {
+			bool CheckBullet(const MV1* pCol) {
 				if (isActive) {
 					auto HitResult = pCol->CollCheck_Line(
 						this->move.repos,
@@ -64,6 +64,13 @@ namespace FPS_n2 {
 			SoundHandle Trigger;
 			SoundHandle Shot;
 		public:
+			GunClass() {
+				m_objType = ObjType::Gun;
+			}
+			~GunClass() {
+
+			}
+
 			void LoadReticle(const char* reticle_filepath) {
 				reticle = GraphHandle::Load(reticle_filepath);
 			}
@@ -88,7 +95,7 @@ namespace FPS_n2 {
 				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, Shot.get());
 
 			}
-			void Execute() {
+			void Execute() override {
 				if (this->boltFlag) {
 					this->obj.get_anime(0).per = 1.f;
 					this->obj.get_anime(0).time += 1.f*30.f / FPS * 1.5f;
@@ -125,17 +132,17 @@ namespace FPS_n2 {
 				for (auto& b : m_Bullet) {
 					b.Execute();
 				}
-				CheckCol(this->m_MapCol);
 			}
 
-			void CheckCol(const MV1* pCol) {
+			bool CheckBullet(const MV1* pCol) {
 				m_IsHit = false;
 				for (auto& b : m_Bullet) {
-					if (b.CheckCol(pCol)) {
+					if (b.CheckBullet(pCol)) {
 						move_Hit = b.move_Hit;
 						m_IsHit = true;
 					}
 				}
+				return m_IsHit;
 			}
 
 			void Draw() override {

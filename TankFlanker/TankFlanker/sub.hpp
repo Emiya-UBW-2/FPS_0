@@ -12,6 +12,8 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
+	template <class T>
+	static T Leap(const T& A, const T& B, float Per) noexcept { return A + (T)((B - A)*Per); }
 
 	float GameSpeed = 1.0f;
 
