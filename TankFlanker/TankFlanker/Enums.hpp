@@ -81,5 +81,26 @@ namespace FPS_n2 {
 			"右手首",
 			"右ダミー",
 		};
+		enum class CharaShape {
+			None,
+			A,
+			I,
+			U,
+			E,
+			O,
+			MAZIME,
+			EYECLOSE,
+			Max,
+		};
+		const char* CharaShapeName[(int)CharaShape::Max] = {
+			"",
+			"あ",
+			"い",
+			"う",
+			"え",
+			"お",
+			"真面目",
+			"まばたき",
+		};
 	};
 };

@@ -9,20 +9,31 @@ namespace FPS_n2 {
 			FontPool UI;
 
 			int intParam[1];
-			float floatParam[1];
+			float floatParam[2];
 		public:
 			void Set() {
 				HeartGraph = GraphHandle::Load("data/UI/Heart.png");
 			}
 			void Draw() {
 				auto* DrawParts = DXDraw::Instance();
-
-				int siz = y_r(32);
-				int xP = siz, yP = DrawParts->disp_y - siz;
-				int xo, yo;
-				HeartGraph.GetSize(&xo, &yo);
-				HeartGraph.DrawRotaGraph(xP, yP, (float)(siz) / xo * floatParam[0], 0.f, true);
-				UI.Get(y_r(24)).Get_handle().DrawStringFormat(xP + siz / 2, yP + siz / 2 - y_r(24), GetColor(255, 0, 0), "%03d", intParam[0]);
+				//心拍数
+				{
+					int siz = y_r(32);
+					int xP = siz, yP = DrawParts->disp_y - siz - y_r(15);
+					int xo, yo;
+					HeartGraph.GetSize(&xo, &yo);
+					HeartGraph.DrawRotaGraph(xP, yP, (float)(siz) / xo * floatParam[0], 0.f, true);
+					UI.Get(y_r(24)).Get_handle().DrawStringFormat(xP + siz / 2, yP + siz / 2 - y_r(24), GetColor(255, 0, 0), "%03d", intParam[0]);
+				}
+				//スタミナ
+				{
+					float Xsize = (float)(y_r(200));
+					int siz = y_r(12);
+					int xP = siz, yP = DrawParts->disp_y - siz - y_r(12);
+					DrawBox(xP, yP, xP + (int)Xsize, yP + siz, GetColor(0, 0, 0), TRUE);
+					DrawBox(xP, yP, xP + (int)(Xsize * floatParam[1]), yP + siz, (floatParam[1]>0.3f) ? GetColor(0, 255, 0): GetColor(255, 200, 0), TRUE);
+					DrawBox(xP, yP, xP + (int)Xsize, yP + siz, GetColor(128, 128, 128), FALSE);
+				}
 			}
 
 			void SetIntParam(int ID, int value) { intParam[ID] = value; }
@@ -36,9 +47,9 @@ namespace FPS_n2 {
 			BackGroundClass BackGround;		//BG
 			SoundHandle Env;
 			//関連
+			const int tgt_num = 6;
 			int tgtSel = 0;
 			float tgtTimer = 0.f;
-			int tgt_num = 6;
 			//操作関連
 			float EyePosPer_Prone = 0.f;
 			float EyePosPer = 0.f;
@@ -75,7 +86,7 @@ namespace FPS_n2 {
 				Obj.AddObject(ObjType::Gun);
 				Obj.LoadObj("data/gun/gun/");
 				Obj.AddObject(ObjType::Human);
-				Obj.LoadObj("data/umamusume/ticket/");
+				Obj.LoadObj("data/umamusume/WinningTicket/");
 
 				auto& Gun = (std::shared_ptr<GunClass>&)(Obj.GetObj(ObjType::Gun, 0));
 				auto& Chara = (std::shared_ptr<CharacterClass>&)(Obj.GetObj(ObjType::Human, 0));
@@ -144,16 +155,16 @@ namespace FPS_n2 {
 						if (QKey.trigger()) {
 							m_TurnRate++;
 						}
-						if (!Chara->IsRun()) {
+						if (!Chara->GetIsRun()) {
 							m_TurnRate = 0;
 						}
 
 						m_TurnRate = std::clamp(m_TurnRate, -1, 1);
 
-						if (Chara->IsSprint()) {
+						if (Chara->GetIsSprint()) {
 							xadd = 0.093f*3.f*(-m_TurnRate);//スプリント
 						}
-						else if (Chara->IsRun()) {
+						else if (Chara->GetIsRun()) {
 							xadd = 0.0615f*3.f*(-m_TurnRate);//走り
 						}
 					}
@@ -174,13 +185,12 @@ namespace FPS_n2 {
 				//Execute
 				Obj.ExecuteObject();
 				//col
-				if (Gun->CheckBullet(&BackGround.GetGroundCol())) {
-					//エフェクト
-					Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
-				}
 				for (int i = 0; i < tgt_num; i++) {
 					auto& t = (std::shared_ptr<TargetClass>&)(Obj.GetObj(ObjType::Target, i));
 					if (Gun->CheckBullet(t->GetCol())) {
+						//エフェクト
+						Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+						//ヒット演算
 						if (tgtSel != -1 && tgtSel != i) {
 							auto& tOLD = (std::shared_ptr<TargetClass>&)(Obj.GetObj(ObjType::Target, tgtSel));
 							tOLD->ResetHit();
@@ -188,14 +198,16 @@ namespace FPS_n2 {
 						tgtSel = i;
 						tgtTimer = 5.f;
 						t->SetHitPos(Gun->GetHitPos());
-						//エフェクト
-						Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
 					}
 				}
-				tgtTimer = std::max(tgtTimer - 1.f / FPS, 0.f);
-				if (Chara->ShotSwitch()) {
+				if (Gun->CheckBullet(&BackGround.GetGroundCol())) {
 					//エフェクト
-					auto mat = Gun->GetMuzzleMatrix();
+					Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+				}
+				tgtTimer = std::max(tgtTimer - 1.f / FPS, 0.f);
+				if (Chara->GetShotSwitch()) {
+					//エフェクト
+					auto mat = Chara->GetMuzzleMatrix();
 					Effect_UseControl::Set_Effect(Effect::ef_fire2, mat.pos(), mat.GetRot().zvec()*-1.f, 1.f);
 				}
 				//視点
@@ -206,43 +218,32 @@ namespace FPS_n2 {
 						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
 					}
 					else {
-						MATRIX_ref CamMat = Chara->GetFrameWorldMatrix(CharaFrame::Upper).GetRot();
-						VECTOR_ref CamPos = Chara->GetMatrix().pos() + VECTOR_ref::vget(0, Leap(14.f, 6.f, EyePosPer_Prone), 0);
-						CamPos += Leap((CamMat.xvec()*-8.f + CamMat.yvec()*3.f), (CamMat.xvec()*-3.f + CamMat.yvec()*4.f), EyeRunPer);
-
+						MATRIX_ref UpperMat = Chara->GetFrameWorldMatrix(CharaFrame::Upper).GetRot();
+						VECTOR_ref CamPos = Chara->GetMatrix().pos() + Chara->GetMatrix().yvec() * Leap(14.f, 6.f, EyePosPer_Prone);
+						CamPos += Leap((UpperMat.xvec()*-8.f + UpperMat.yvec()*3.f), (UpperMat.xvec()*-3.f + UpperMat.yvec()*4.f), EyeRunPer);
 						camera_main.campos = Leap(CamPos + Chara->GetEyeVector() * Leap(-20.f, 2.f, EyePosPer_Prone), Gun->GetScopePos(), EyePosPer);
-						camera_main.camvec = Leap(CamPos + Chara->GetEyeVector() * 100.f, Gun->GetScopePos() + Chara->GetEyeVector(), EyePosPer);
+						camera_main.camvec = Leap(CamPos, Gun->GetScopePos(), EyePosPer) + Chara->GetEyeVector() * 100.f;
 						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
-
-						easing_set(&EyeRunPer, RunKey.press() ? 1.f : 0.f, 0.95f);
 					}
-					if (Chara->IsADS()) {
-						easing_set(&EyePosPer, 1.f, 0.8f);
-						easing_set(&EyePosPer_Prone, 0.f, 0.8f);
+					easing_set(&EyeRunPer, Chara->GetIsRun() ? 1.f : 0.f, 0.95f);
+					easing_set(&EyePosPer, Chara->GetIsADS() ? 1.f : 0.f, 0.8f);
+					easing_set(&EyePosPer_Prone, Chara->GetIsProne() ? 1.f : 0.f, 0.8f);
+					if (Chara->GetIsADS()) {
 						easing_set(&camera_main.fov, deg2rad(17), 0.8f);
-						camera_main.near_ = 10.f;
-						camera_main.far_ = 12.5f * 200.f;
+						easing_set(&camera_main.near_, 10.f, 0.9f);
+						easing_set(&camera_main.far_, 12.5f * 200.f, 0.9f);
+					}
+					else if (Chara->GetIsRun()) {
+						easing_set(&camera_main.fov, deg2rad(85), 0.9f);
+						easing_set(&camera_main.near_, 3.f, 0.9f);
+						easing_set(&camera_main.far_, 12.5f * 50.f, 0.9f);
 					}
 					else {
-						easing_set(&EyePosPer, 0.f, 0.8f);
-						if (Chara->IsRun()) {
-							easing_set(&camera_main.fov, deg2rad(85), 0.9f);
-							easing_set(&camera_main.near_, 3.f, 0.9f);
-							easing_set(&camera_main.far_, 12.5f * 50.f, 0.9f);
-						}
-						else {
-							easing_set(&camera_main.fov, deg2rad(65), 0.9f);
-							easing_set(&camera_main.near_, 10.f, 0.9f);
-							easing_set(&camera_main.far_, 12.5f * 200.f, 0.9f);
-						}
-						if (Chara->IsProne()) {
-							easing_set(&EyePosPer_Prone, 1.f, 0.8f);
-						}
-						else {
-							easing_set(&EyePosPer_Prone, 0.f, 0.8f);
-						}
+						easing_set(&camera_main.fov, deg2rad(65), 0.9f);
+						easing_set(&camera_main.near_, 10.f, 0.9f);
+						easing_set(&camera_main.far_, 12.5f * 200.f, 0.9f);
 					}
-					if (Chara->ShotSwitch()) {
+					if (Chara->GetShotSwitch()) {
 						camera_main.fov -= deg2rad(10);
 					}
 				}
@@ -255,8 +256,6 @@ namespace FPS_n2 {
 				Obj.DisposeObject();
 			}
 			//
-			void UI_Draw(void) noexcept  override {
-			}
 			void BG_Draw(void) noexcept override {
 				BackGround.BG_Draw();
 			}
@@ -278,7 +277,7 @@ namespace FPS_n2 {
 
 					Set_is_Blackout(true);
 					Set_Per_Blackout((1.f + sin(Chara->GetHeartRateRad()*4.f)*0.25f) * ((Chara->GetHeartRate() - 60.f) / (180.f - 60.f)));
-					Set_is_lens(Chara->IsADS());
+					Set_is_lens(Chara->GetIsADS());
 					if (is_lens()) {
 						VECTOR_ref LensPos = ConvWorldPosToScreenPos(Gun->GetLensPos().get());
 						if (0.f < LensPos.z() && LensPos.z() < 1.f) {
@@ -303,7 +302,6 @@ namespace FPS_n2 {
 				}
 			}
 			void LAST_Draw(void) noexcept override {
-				auto& Chara = (std::shared_ptr<CharacterClass>&)(Obj.GetObj(ObjType::Human, 0));
 				auto& Gun = (std::shared_ptr<GunClass>&)(Obj.GetObj(ObjType::Gun, 0));
 				//レティクル表示
 				if (Reticle_on) {
@@ -317,9 +315,15 @@ namespace FPS_n2 {
 						t->DrawHitCard(DrawParts->disp_x / 2 - y_r(300), DrawParts->disp_y / 2 + y_r(100), y_r(100), tgtTimer / 5.f);
 					}
 				}
-				//UI表示
+			}
+			//UI表示
+			void UI_Draw(void) noexcept  override {
+				auto& Chara = (std::shared_ptr<CharacterClass>&)(Obj.GetObj(ObjType::Human, 0));
 				UI_class.SetIntParam(0, (int)(Chara->GetHeartRate()));
 				UI_class.SetfloatParam(0, 1.f + sin(Chara->GetHeartRateRad()*4.f)*0.1f);
+
+				UI_class.SetfloatParam(1, Chara->GetStamina() / Chara->GetStaminaMax());
+
 				UI_class.Draw();
 			}
 		};

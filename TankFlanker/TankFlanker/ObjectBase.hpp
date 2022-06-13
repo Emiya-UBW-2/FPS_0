@@ -10,6 +10,7 @@ namespace FPS_n2 {
 			moves move;
 			const MV1* m_MapCol{ nullptr };
 			std::vector<std::pair<int, moves>> Frames;
+			std::vector< std::pair<int, float>> Shapes;
 			ObjType m_objType;
 		public:
 			void LoadModel(const char* filepath) {
@@ -81,9 +82,28 @@ namespace FPS_n2 {
 						f = 0;
 					}
 				}
+
+				switch (m_objType) {
+				case ObjType::Human://human
+					Shapes.resize((int)CharaShape::Max);
+					for (int j = 1; j < (int)CharaShape::Max; j++) {
+						auto s = MV1SearchShape(this->obj.get(),CharaShapeName[j]);
+						if (s >= 0) {
+							Shapes[j].first = s;
+							Shapes[j].second = 0.f;
+						}
+					}
+
+					break;
+				default:
+					break;
+				}
+
+
 			}
 			//
-			virtual void Execute() {}
+			virtual void Execute() {
+			}
 			virtual void Draw() {
 				this->obj.DrawModel();
 			}
@@ -104,6 +124,24 @@ namespace FPS_n2 {
 				if (this->col.IsActive()) {
 					this->col.SetMatrix(this->move.MatIn());
 					this->col.RefreshCollInfo();
+				}
+			}
+
+			void SetShape(CharaShape pShape, float Per) {
+				if (m_objType == ObjType::Human) {
+					Shapes[(int)pShape].second = Per;
+				}
+			}
+
+			void ExecuteShape() {
+				switch (m_objType) {
+				case ObjType::Human://human
+					for (int j = 1; j < (int)CharaShape::Max; j++) {
+						MV1SetShapeRate(this->obj.get(), Shapes[j].first, (1.f - Shapes[0].second)*Shapes[j].second);
+					}
+					break;
+				default:
+					break;
 				}
 			}
 		};
