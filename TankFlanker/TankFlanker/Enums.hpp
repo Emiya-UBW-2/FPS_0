@@ -51,6 +51,8 @@ namespace FPS_n2 {
 
 			All_ProneWalk,
 
+			All_PronetoStand,
+
 			AnimeIDMax,
 		};
 		enum class ObjType {

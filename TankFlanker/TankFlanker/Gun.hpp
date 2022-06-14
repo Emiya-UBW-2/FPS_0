@@ -3,13 +3,17 @@
 
 namespace FPS_n2 {
 	namespace Sceneclass {
-		class BulletClass {
+		class BulletClass : public Effect_UseControl {
 		public:
 			float m_cal{ 0.00762f };
 		public:
 			bool isActive{ false };
 			moves move;
 			float yAdd{ 0.f };
+			float Timer{ 0.f };
+			float HitTimer{ 0.f };
+			std::array<VECTOR_ref, 30> Line;
+			int LineSel = 0;
 		public:
 			moves move_Hit;
 		public:
@@ -19,13 +23,25 @@ namespace FPS_n2 {
 				move.vec = vec;
 				yAdd = 0.f;
 				move.repos = move.pos;
+				Timer = 0.f;
+				HitTimer = 3.f;
+				for (auto& l : Line) {
+					l = move.pos;
+				}
 			}
 			void Execute() {
 				if (isActive) {
 					move.repos = move.pos;
+					Line[LineSel] = move.pos + VECTOR_ref::vget(GetRandf(12.5f*0.3f*Timer), GetRandf(12.5f*0.3f*Timer), GetRandf(12.5f*0.3f*Timer));
+					++LineSel %= Line.size();
 					move.pos += move.vec*60.f / FPS + VECTOR_ref::up()*yAdd;
 					yAdd += (M_GR / (FPS*FPS));
 				}
+
+				if (Timer > std::min(3.f, HitTimer)) {
+					this->isActive = false;
+				}
+				Timer += 1.f / FPS;
 			}
 			bool CheckBullet(const MV1* pCol) {
 				if (isActive) {
@@ -36,6 +52,7 @@ namespace FPS_n2 {
 						this->move_Hit.pos = HitResult.HitPosition;
 						this->move_Hit.vec = HitResult.Normal;
 						this->isActive = false;
+						HitTimer = Timer+0.5f;
 						return true;
 					}
 				}
@@ -44,20 +61,29 @@ namespace FPS_n2 {
 			void Draw() {
 				if (isActive) {
 					SetUseLighting(FALSE);
-					DrawCapsule3D(move.repos.get(), move.pos.get(), m_cal*12.5f*4.f, 8, GetColor(255, 255, 172), GetColor(255, 255, 172), TRUE);
+					for (int i = 1; i < Line.size(); i++) {
+						int LS = (i + LineSel);
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(128.f*((float)(i) / Line.size())) );
+						DrawCapsule3D(Line[(LS - 1) % Line.size()].get(), Line[LS % Line.size()].get(), m_cal*12.5f*8.f, 8, GetColor(64, 64, 64), GetColor(64, 64, 64), TRUE);
+					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+					DrawCapsule3D(move.repos.get(), move.pos.get(), m_cal*12.5f*4.f, 8, GetColor(255, 200, 0), GetColor(255, 255, 255), TRUE);
 					SetUseLighting(TRUE);
 				}
 			}
 		};
-		class GunClass : public ObjectBaseClass {
+		class GunClass : public ObjectBaseClass, public Effect_UseControl{
 			GraphHandle reticle;
 			bool boltFlag{ false };
 
-			std::array<BulletClass, 16> m_Bullet;
+			std::array<BulletClass, 8> m_Bullet;
 			int m_NowShotBullet{ 0 };
 
 			moves move_Hit;
 			bool m_IsHit{ false };
+
+			bool m_IsShot{ false };
 
 			int BoltSel = 0;
 			std::vector<SoundHandle> BoltSound;
@@ -71,8 +97,8 @@ namespace FPS_n2 {
 
 			}
 
-			void LoadReticle(const char* reticle_filepath) {
-				reticle = GraphHandle::Load(reticle_filepath);
+			void LoadReticle() {
+				reticle = GraphHandle::Load(this->m_FilePath + "reticle.png");
 			}
 
 			void Init() override {
@@ -96,6 +122,7 @@ namespace FPS_n2 {
 
 			}
 			void Execute() override {
+				this->m_IsShot = false;
 				if (this->boltFlag) {
 					this->obj.get_anime(0).per = 1.f;
 					this->obj.get_anime(0).time += 1.f*30.f / FPS * 1.5f;
@@ -153,20 +180,21 @@ namespace FPS_n2 {
 			}
 		public:
 			void SetMatrix(const MATRIX_ref& value, bool pBoltFlag) {
-				obj.SetMatrix(value);
+				this->obj.SetMatrix(value);
 				boltFlag = pBoltFlag;
 			}
-			const auto GetScopePos() { return obj.frame(6); }
-			const auto GetLensPos() { return obj.frame(8); }
+			const auto GetScopePos() { return this->obj.frame(6); }
+			const auto GetLensPos() { return this->obj.frame(8); }
 			const auto GetReticlePos() { return GetLensPos() + (GetLensPos() - GetScopePos()).Norm()*10.f; }
-			const auto GetLensPosSize() { return obj.frame(9); }
-			const auto GetMuzzleMatrix() { return obj.GetFrameLocalWorldMatrix(5); }
+			const auto GetLensPosSize() { return this->obj.frame(9); }
+			const auto GetMuzzleMatrix() { return this->obj.GetFrameLocalWorldMatrix(5); }
 			const auto& GetReticle() { return reticle; }
 
 			const auto& GetIsHit() { return m_IsHit; }
 			const auto& GetHitPos() { return move_Hit.pos; }
 			const auto& GetHitVec() { return move_Hit.vec; }
 
+			const auto& GetIsShot() { return this->m_IsShot; }
 
 			void SetBullet() {
 				float Spd = 12.5f*800.f / 60.f;
@@ -176,6 +204,17 @@ namespace FPS_n2 {
 				Trigger.play_3D(GetMatrix().pos(), 12.5f*5.f);
 
 				Shot.play_3D(GetMatrix().pos(), 12.5f*50.f);
+
+				this->m_IsShot = true;
+			}
+
+			const auto* GetLatestAmmoMove() {
+				auto Now = m_NowShotBullet-1;
+				if (Now < 0) { Now = m_Bullet.size() - 1; }
+				if (m_Bullet[Now].isActive) {
+					return &m_Bullet[Now].move;
+				}
+				return (const moves*)nullptr;
 			}
 
 		};

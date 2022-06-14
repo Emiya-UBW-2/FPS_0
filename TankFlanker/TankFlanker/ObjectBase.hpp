@@ -12,12 +12,14 @@ namespace FPS_n2 {
 			std::vector<std::pair<int, moves>> Frames;
 			std::vector< std::pair<int, float>> Shapes;
 			ObjType m_objType;
+			std::string m_FilePath;
 		public:
 			void LoadModel(const char* filepath) {
+				this->m_FilePath = filepath;
 				FILEINFO FileInfo;
 				//model
 				{
-					std::string Path = filepath;
+					std::string Path = this->m_FilePath;
 					Path += "model";
 					if (FileRead_findFirst((Path + ".mv1").c_str(), &FileInfo) != (DWORD_PTR)-1) {
 						//MV1::Load(Path + ".pmx", &this->obj, DX_LOADMODEL_PHYSICS_REALTIME);
@@ -33,7 +35,7 @@ namespace FPS_n2 {
 				}
 				//col
 				{
-					std::string Path = filepath;
+					std::string Path = this->m_FilePath;
 					Path += "col";
 					if (FileRead_findFirst((Path + ".mv1").c_str(), &FileInfo) != (DWORD_PTR)-1) {
 						MV1::Load(Path + ".pmx", &this->col, DX_LOADMODEL_PHYSICS_REALTIME);

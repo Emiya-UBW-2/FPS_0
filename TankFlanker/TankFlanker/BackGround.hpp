@@ -35,7 +35,7 @@ namespace FPS_n2 {
 			}
 			void BG_Draw(void) noexcept {
 				SetUseLighting(FALSE);
-				//Sky.DrawModel();
+				Sky.DrawModel();
 				SetUseLighting(TRUE);
 			}
 			void Shadow_Draw_NearFar(void) noexcept {

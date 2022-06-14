@@ -90,7 +90,7 @@ namespace FPS_n2 {
 			GetFileNames("data/effect/");
 			for (auto& d : data_t) {
 				std::string p = d.cFileName;
-				if (p.find(".efk") != std::string::npos) {
+				if (p.find(".efk") != std::string::npos && p.find(".efkproj") == std::string::npos) {
 					effsorce.resize(effsorce.size() + 1);
 					effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
 				}
@@ -163,8 +163,20 @@ namespace FPS_n2 {
 			}
 			return cnt;
 		}
+
+		void Set_LoopEffect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept {
+			this->effcs[(int)ef_].Stop();
+			this->effcs[(int)ef_].pos = pos_t;
+			this->effcs[(int)ef_].set_loop(effectControl.effsorce[(int)ef_]);
+		}
+		void Update_LoopEffect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept {
+			this->effcs[(int)ef_].put_loop(pos_t, nomal_t, scale);
+		}
+
+
 		void Set_Effect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept { this->effcs[(int)ef_].Set(pos_t, nomal_t, scale); }
 		void Stop_Effect(Effect ef_) noexcept { this->effcs[(int)ef_].Stop(); }
+
 		void SetSpeed_Effect(Effect ef_, float value) noexcept { this->effcs[(int)ef_].Set_Speed(value); }
 		void SetScale_Effect(Effect ef_, float value) noexcept { this->effcs[(int)ef_].Set_Scale(value); }
 		//エフェクトの更新

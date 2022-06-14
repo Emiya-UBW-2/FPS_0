@@ -32,6 +32,8 @@ namespace FPS_n2 {
 			float m_SlingPer{ 0.f };
 			float m_SquatPer{ 0.f };
 			float m_PronePer{ 0.f };
+			bool m_PronetoStanding{ false };
+			float m_PronePer2{ 0.f };
 			VECTOR_ref m_ProneNormal{ VECTOR_ref::up() };
 			bool m_TurnBody{ false };
 			bool m_ShotSwitch{ false };
@@ -98,7 +100,42 @@ namespace FPS_n2 {
 			const auto GetProneShotAnimSel() const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneShot : CharaAnimeID::Upper_Shot; }
 			const auto GetProneCockingAnimSel() const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneCocking : CharaAnimeID::Upper_Cocking; }
 			void SetGunPtr(std::shared_ptr<GunClass>& pGunPtr) noexcept { this->m_Gun_Ptr = pGunPtr; }
-			const auto GetMuzzleMatrix() { return this->m_Gun_Ptr->GetMuzzleMatrix(); }
+			const auto GetScopePos() {
+				if (this->m_Gun_Ptr != nullptr) {
+					return this->m_Gun_Ptr->GetScopePos();
+				}
+				else {
+					return GetEyePosition();
+				}
+			}
+			const auto GetLensPos() {
+				if (this->m_Gun_Ptr != nullptr) {
+					return this->m_Gun_Ptr->GetLensPos();
+				}
+				else {
+					return VECTOR_ref::zero();
+				}
+			}
+			const auto GetReticlePos() {
+				if (this->m_Gun_Ptr != nullptr) {
+				return this->m_Gun_Ptr->GetReticlePos();
+				}
+				else {
+					return VECTOR_ref::zero();
+				}
+			}
+			const auto GetLensPosSize() {
+				if (this->m_Gun_Ptr != nullptr) {
+					return this->m_Gun_Ptr->GetLensPosSize();
+				}
+				else {
+					return VECTOR_ref::zero();
+				}
+			}
+			const auto& GetReticle() {
+				return this->m_Gun_Ptr->GetReticle();
+			}
+			void LoadReticle() { this->m_Gun_Ptr->LoadReticle(); }
 		private:
 			void SetAnimLoop(int ID, float speed) {
 				this->obj.get_anime(ID).time += 30.f / FPS * speed;
@@ -107,59 +144,6 @@ namespace FPS_n2 {
 			void SetVec(int pDir, bool Press) {
 				this->m_Vec[pDir] += (Press ? 1.f : -1.f)*2.f / FPS;
 				this->m_Vec[pDir] = std::clamp(this->m_Vec[pDir], 0.f, 1.f);
-			}
-			void ValueSet(float pxRad, float pyRad, bool SquatOn, bool ProneOn, const VECTOR_ref& pPos) {
-				for (int i = 0; i < 4; i++) {
-					this->m_Vec[i] = 0.f;
-				}
-				for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) {
-					this->m_AnimPerBuf[i] = 0.f;
-				}
-				this->m_ReadyPer = 1.f;
-				this->m_ReadyTimer = UpperTimerLimit;
-				this->m_HeartRate = HeartRateMin;
-				this->m_Stamina = StaminaMax;
-
-				this->m_RunPer = 0.f;
-				this->m_MoveVector = 0.f;
-				this->m_RunPer2 = 0.f;
-				this->m_PrevRunPer2 = 0.f;
-				this->m_HeartRateRad = 0.f;
-				this->m_xrad_Add = 0.f;
-				this->m_yrad_Add = 0.f;
-				this->m_TurnBody = false;
-				this->m_ShotSwitch = false;
-				this->m_ShotFlag = false;
-				this->m_BoltFlag = false;
-				this->m_SetReset = true;
-				this->m_IsSprint = false;
-				this->m_Ready = false;
-				this->m_RunReady = false;
-				this->m_Running = false;
-				this->m_Press_GoFront = false;
-				this->m_Press_GoRear = false;
-				this->m_Press_GoLeft = false;
-				this->m_Press_GoRight = false;
-				this->m_Press_Shot = false;
-				this->m_Press_Aim = false;
-				this->m_IsRun = false;
-
-				this->m_HeartSESel = 0.f;
-
-				this->m_Gun_Ptr.reset();
-				//動作にかかわる操作
-				this->m_Squat.Init(SquatOn);
-				this->m_Prone.Init(ProneOn);
-				this->m_rad_Buf.x(pxRad);
-				this->m_rad_Buf.y(pyRad);
-				//上記を反映するもの
-				this->m_rad = this->m_rad_Buf;
-				this->m_yrad_Upper = this->m_rad.y();
-				this->m_yrad_Bottom = this->m_rad.y();
-				this->m_SquatPer = SquatOn ? 1.f : 0.f;
-				this->m_PronePer = ProneOn ? 1.f : 0.f;
-				SetMove(this->m_yrad_Bottom, pPos);
-				this->move_r = move;
 			}
 		private:
 			void ExecuteAnim() {
@@ -263,6 +247,13 @@ namespace FPS_n2 {
 						SetAnimLoop((int)CharaAnimeID::Bottom_RightStep, 1.15f * this->m_Vec[3]);
 						SetAnimLoop((int)CharaAnimeID::All_ProneWalk, 1.15f * this->m_MoveVector);
 					}
+					//
+					{
+						this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).time += 30.f / FPS;
+						if (this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).TimeEnd()) {
+							this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).time = this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).alltime;
+						}
+					}
 				}
 				//アニメセレクト
 				{
@@ -316,15 +307,31 @@ namespace FPS_n2 {
 						if (i == (int)CharaAnimeID::All_Prone ||
 							i == (int)CharaAnimeID::All_ProneShot ||
 							i == (int)CharaAnimeID::All_ProneCocking ||
-							i == (int)CharaAnimeID::All_ProneWalk
+							i == (int)CharaAnimeID::All_ProneWalk ||
+							i == (int)CharaAnimeID::All_PronetoStand
 							)
 						{
 							//伏せ
-							this->obj.get_anime(i).per = this->m_AnimPerBuf[i] * this->m_PronePer;
+							if (this->m_PronetoStanding) {
+								if (i == (int)CharaAnimeID::All_PronetoStand) {
+									this->obj.get_anime(i).per = 1.f * (1.f - this->m_PronePer2);
+								}
+								else {
+									this->obj.get_anime(i).per = 0.f;
+								}
+							}
+							else {
+								this->obj.get_anime(i).per = this->m_AnimPerBuf[i] * this->m_PronePer;
+							}
 						}
 						else {
 							//通常
-							this->obj.get_anime(i).per = this->m_AnimPerBuf[i] * (1.f - this->m_PronePer);
+							if (this->m_PronetoStanding) {
+								this->obj.get_anime(i).per = this->m_AnimPerBuf[i] * (1.f - this->m_PronePer) * this->m_PronePer2;
+							}
+							else {
+								this->obj.get_anime(i).per = this->m_AnimPerBuf[i] * (1.f - this->m_PronePer);
+							}
 						}
 					}
 					//
@@ -472,8 +479,8 @@ namespace FPS_n2 {
 		public:
 			CharacterClass() {
 				m_objType = ObjType::Human;
-				//ValueSet(0.f, 0.f, false, false, VECTOR_ref::vget(-230.f, 0.f, 450.f));
-				ValueSet(deg2rad(0.f), deg2rad(90.f), false, false, VECTOR_ref::vget(2039.f, 90.f, -966.f));
+				ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(0.f, 0.f, 0.f));
+				this->m_Gun_Ptr.reset();
 			}
 			~CharacterClass() {}
 		public:
@@ -550,9 +557,28 @@ namespace FPS_n2 {
 					easing_set(&this->m_RunPer, this->m_IsRun ? 1.f : 0.f, 0.975f);
 					easing_set(&this->m_SprintPer, this->m_IsSprint ? 1.f : 0.f, 0.95f);
 					easing_set(&this->m_SquatPer, this->m_Squat.on() ? 1.f : 0.f, 0.9f);
+
+					if (!this->m_Prone.on() && (this->m_PronePer == 1.f)) {
+						if (!this->m_PronetoStanding) {
+							this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).time = 0.f;
+							this->m_PronePer2 = 0.f;
+						}
+						this->m_PronetoStanding = true;
+					}
+					if (this->m_PronetoStanding && (this->m_PronePer == 0.f)) {
+						this->m_PronetoStanding = false;
+					}
+
+					if (this->m_PronetoStanding) {
+						if ((this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).time / this->obj.get_anime((int)CharaAnimeID::All_PronetoStand).alltime) > 0.9f) {
+							easing_set(&this->m_PronePer2, 1.f, 0.95f);
+						}
+					}
+
 					easing_set(&this->m_PronePer, this->m_Prone.on() ? 1.f : 0.f, 0.95f);
 					if (!this->m_Prone.on() && (0.01f >= this->m_PronePer)) { this->m_PronePer = 0.f; }
 					if (this->m_Prone.on() && (0.99f <= this->m_PronePer)) { this->m_PronePer = 1.f; }
+
 					//this->m_PronePer = std::clamp(this->m_PronePer + (this->m_Prone.on() ? 1.f : -3.f) / FPS, 0.f, 1.f);
 					//m_yrad_Upper、m_yrad_Bottom、m_rad.z()決定
 					{
@@ -735,6 +761,58 @@ namespace FPS_n2 {
 				}
 			}
 		public:
+			void ValueSet(float pxRad, float pyRad, bool SquatOn, bool ProneOn, const VECTOR_ref& pPos) {
+				for (int i = 0; i < 4; i++) {
+					this->m_Vec[i] = 0.f;
+				}
+				for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) {
+					this->m_AnimPerBuf[i] = 0.f;
+				}
+				this->m_ReadyPer = 1.f;
+				this->m_ReadyTimer = UpperTimerLimit;
+				this->m_HeartRate = HeartRateMin;
+				this->m_Stamina = StaminaMax;
+
+				this->m_RunPer = 0.f;
+				this->m_MoveVector = 0.f;
+				this->m_RunPer2 = 0.f;
+				this->m_PrevRunPer2 = 0.f;
+				this->m_HeartRateRad = 0.f;
+				this->m_xrad_Add = 0.f;
+				this->m_yrad_Add = 0.f;
+				this->m_TurnBody = false;
+				this->m_ShotSwitch = false;
+				this->m_ShotFlag = false;
+				this->m_BoltFlag = false;
+				this->m_SetReset = true;
+				this->m_IsSprint = false;
+				this->m_Ready = false;
+				this->m_RunReady = false;
+				this->m_Running = false;
+				this->m_Press_GoFront = false;
+				this->m_Press_GoRear = false;
+				this->m_Press_GoLeft = false;
+				this->m_Press_GoRight = false;
+				this->m_Press_Shot = false;
+				this->m_Press_Aim = false;
+				this->m_IsRun = false;
+
+				this->m_HeartSESel = 0.f;
+
+				//動作にかかわる操作
+				this->m_Squat.Init(SquatOn);
+				this->m_Prone.Init(ProneOn);
+				this->m_rad_Buf.x(pxRad);
+				this->m_rad_Buf.y(pyRad);
+				//上記を反映するもの
+				this->m_rad = this->m_rad_Buf;
+				this->m_yrad_Upper = this->m_rad.y();
+				this->m_yrad_Bottom = this->m_rad.y();
+				this->m_SquatPer = SquatOn ? 1.f : 0.f;
+				this->m_PronePer = ProneOn ? 1.f : 0.f;
+				SetMove(this->m_yrad_Bottom, pPos);
+				this->move_r = move;
+			}
 			void SetInput(
 				float pAddxRad, float pAddyRad,
 				bool pGoFrontPress,
@@ -764,6 +842,12 @@ namespace FPS_n2 {
 
 
 				this->m_Press_Aim = pAimPress;
+
+				if (this->m_PronetoStanding) {
+					this->m_Press_Aim = false;
+					this->m_ReadyTimer = UpperTimerLimit;
+				}
+
 				if (!this->m_IsRun& pRunPress) {
 					this->m_RunTimer = 1.f;
 				}
@@ -779,7 +863,7 @@ namespace FPS_n2 {
 				if (this->m_Press_GoRear || (!this->m_Press_GoFront && (this->m_Press_GoLeft || this->m_Press_GoRight))) {
 					this->m_IsRun = false;
 				}
-				if (this->m_Prone.on()) {
+				if (this->m_Prone.on() || this->m_PronetoStanding) {
 					this->m_IsRun = false;
 				}
 
@@ -795,7 +879,7 @@ namespace FPS_n2 {
 				this->m_Squat.GetInput(pSquatPress);
 				if (this->m_IsRun) { this->m_Squat.first = false; }
 
-				this->m_Prone.GetInput(pPronePress && !(this->m_ShotFlag || this->m_BoltFlag));
+				this->m_Prone.GetInput(pPronePress && !(this->m_ShotFlag || this->m_BoltFlag) && (this->m_PronePer == 0.f || this->m_PronePer == 1.f));
 				if (this->m_Prone.on()) { this->m_Squat.first = false; }
 				{
 					auto TmpReady = !(!this->m_IsRun || this->m_BoltFlag);
