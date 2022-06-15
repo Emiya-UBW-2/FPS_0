@@ -3,7 +3,7 @@
 
 namespace FPS_n2 {
 	namespace Sceneclass {
-		class BulletClass : public Effect_UseControl {
+		class BulletClass {
 		public:
 			float m_cal{ 0.00762f };
 		public:
@@ -12,7 +12,7 @@ namespace FPS_n2 {
 			float yAdd{ 0.f };
 			float Timer{ 0.f };
 			float HitTimer{ 0.f };
-			std::array<VECTOR_ref, 30> Line;
+			std::array<VECTOR_ref, 20> Line;
 			int LineSel = 0;
 		public:
 			moves move_Hit;
@@ -24,7 +24,7 @@ namespace FPS_n2 {
 				yAdd = 0.f;
 				move.repos = move.pos;
 				Timer = 0.f;
-				HitTimer = 3.f;
+				HitTimer = 2.f;
 				for (auto& l : Line) {
 					l = move.pos;
 				}
@@ -38,7 +38,7 @@ namespace FPS_n2 {
 					yAdd += (M_GR / (FPS*FPS));
 				}
 
-				if (Timer > std::min(3.f, HitTimer)) {
+				if (Timer > std::min(2.f, HitTimer)) {
 					this->isActive = false;
 				}
 				Timer += 1.f / FPS;
@@ -64,20 +64,20 @@ namespace FPS_n2 {
 					for (int i = 1; i < Line.size(); i++) {
 						int LS = (i + LineSel);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(128.f*((float)(i) / Line.size())) );
-						DrawCapsule3D(Line[(LS - 1) % Line.size()].get(), Line[LS % Line.size()].get(), m_cal*12.5f*8.f, 8, GetColor(64, 64, 64), GetColor(64, 64, 64), TRUE);
+						DrawCapsule3D(Line[(LS - 1) % Line.size()].get(), Line[LS % Line.size()].get(), m_cal*12.5f*8.f, 4, GetColor(64, 64, 64), GetColor(64, 64, 64), TRUE);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-					DrawCapsule3D(move.repos.get(), move.pos.get(), m_cal*12.5f*4.f, 8, GetColor(255, 200, 0), GetColor(255, 255, 255), TRUE);
+					DrawCapsule3D(move.repos.get(), move.pos.get(), m_cal*12.5f*4.f, 4, GetColor(255, 200, 0), GetColor(255, 255, 255), TRUE);
 					SetUseLighting(TRUE);
 				}
 			}
 		};
-		class GunClass : public ObjectBaseClass, public Effect_UseControl{
+		class GunClass : public ObjectBaseClass{
 			GraphHandle reticle;
 			bool boltFlag{ false };
 
-			std::array<BulletClass, 8> m_Bullet;
+			std::array<BulletClass, 3> m_Bullet;
 			int m_NowShotBullet{ 0 };
 
 			moves move_Hit;
@@ -159,6 +159,8 @@ namespace FPS_n2 {
 				for (auto& b : m_Bullet) {
 					b.Execute();
 				}
+				//‹¤’Ê
+				ObjectBaseClass::Execute();
 			}
 
 			bool CheckBullet(const MV1* pCol) {

@@ -13,6 +13,11 @@ namespace FPS_n2 {
 			std::vector< std::pair<int, float>> Shapes;
 			ObjType m_objType;
 			std::string m_FilePath;
+
+			bool m_SetReset{ true };
+
+			bool m_IsDraw{ true };
+			float m_DistanceToCam{ 0.f };
 		public:
 			void LoadModel(const char* filepath) {
 				this->m_FilePath = filepath;
@@ -84,7 +89,6 @@ namespace FPS_n2 {
 						f = 0;
 					}
 				}
-
 				switch (m_objType) {
 				case ObjType::Human://human
 					Shapes.resize((int)CharaShape::Max);
@@ -95,19 +99,18 @@ namespace FPS_n2 {
 							Shapes[j].second = 0.f;
 						}
 					}
-
 					break;
 				default:
 					break;
 				}
-
-
 			}
 			//
 			virtual void Execute() {
 			}
 			virtual void Draw() {
-				this->obj.DrawModel();
+				if (this->m_IsDraw) {
+					this->obj.DrawModel();
+				}
 			}
 			//
 			virtual void Dispose() {
@@ -117,7 +120,6 @@ namespace FPS_n2 {
 			const auto& GetobjType() { return this->m_objType; }
 			const auto GetMatrix() { return this->obj.GetMatrix(); }
 			const auto* GetCol() { return &this->col; }
-
 			void SetMove(float Yrad, const VECTOR_ref& pos) {
 				this->move.mat = MATRIX_ref::RotY(Yrad);
 				this->move.pos = pos;
@@ -128,13 +130,12 @@ namespace FPS_n2 {
 					this->col.RefreshCollInfo();
 				}
 			}
-
 			void SetShape(CharaShape pShape, float Per) {
 				if (m_objType == ObjType::Human) {
 					Shapes[(int)pShape].second = Per;
 				}
 			}
-
+			//
 			void ExecuteShape() {
 				switch (m_objType) {
 				case ObjType::Human://human
@@ -144,6 +145,33 @@ namespace FPS_n2 {
 					break;
 				default:
 					break;
+				}
+			}
+			void ExecutePhysics() {
+				if (this->m_IsDraw) {
+					if (this->m_SetReset) {
+						this->m_SetReset = false;
+						this->obj.PhysicsResetState();
+					}
+					else {
+						if (this->m_DistanceToCam <= 12.5f*10.f) {
+							this->obj.PhysicsCalculation(1000.0f / FPS * 240.f);
+						}
+					}
+				}
+				else {
+					this->m_SetReset = true;
+				}
+				this->m_IsDraw = false;
+			}
+			//
+			void CheckDraw() {
+				this->m_DistanceToCam = (obj.GetMatrix().pos() - GetCameraPosition()).size();
+				if (CheckCameraViewClip_Box(
+					(obj.GetMatrix().pos() + VECTOR_ref::vget(-20, -20, -20)).get(),
+					(obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)).get()) == FALSE
+					) {
+					this->m_IsDraw |= true;
 				}
 			}
 		};

@@ -53,9 +53,13 @@ namespace FPS_n2 {
 				for (auto& o : m_Object) {
 					o->Execute();
 				}
+				for (auto& o : m_Object) {
+					o->ExecutePhysics();
+				}
 			}
 			void DrawObject() {
 				for (auto& o : m_Object) {
+					o->CheckDraw();
 					o->Draw();
 				}
 			}

@@ -39,7 +39,6 @@ namespace FPS_n2 {
 			bool m_ShotSwitch{ false };
 			bool m_ShotFlag{ false };
 			bool m_BoltFlag{ false };
-			bool m_SetReset{ true };
 			bool m_IsRun{ false };
 			bool m_IsSprint{ false };
 			bool m_Ready{ false };
@@ -744,13 +743,6 @@ namespace FPS_n2 {
 				//物理アップデート
 				m_ResetP.GetInput(CheckHitKey_M(KEY_INPUT_P) != 0);
 				if (m_ResetP.trigger()) { this->m_SetReset = true; }
-				if (this->m_SetReset) {
-					this->m_SetReset = false;
-					this->obj.PhysicsResetState();
-				}
-				else {
-					this->obj.PhysicsCalculation(1000.0f / FPS * 240.f);
-				}
 				//心拍数
 				ExecuteHeartRate();
 				//デバッグ
@@ -759,6 +751,8 @@ namespace FPS_n2 {
 					//printfDx("SprintPer  : %5.5f\n", this->m_SprintPer);
 					//printfDx("RunPer     : %5.5f\n", this->m_RunPer);
 				}
+				//共通
+				ObjectBaseClass::Execute();
 			}
 		public:
 			void ValueSet(float pxRad, float pyRad, bool SquatOn, bool ProneOn, const VECTOR_ref& pPos) {
