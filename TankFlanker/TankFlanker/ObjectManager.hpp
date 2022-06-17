@@ -9,66 +9,66 @@ namespace FPS_n2 {
 			void AddObject(ObjType ModelType) {
 				switch (ModelType) {
 				case ObjType::Human://human
-					m_Object.resize(m_Object.size() + 1);
-					m_Object.back() = std::make_shared<CharacterClass>();
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<CharacterClass>();
 					break;
 				case ObjType::Magazine://mag
-					m_Object.resize(m_Object.size() + 1);
-					m_Object.back() = std::make_shared<MagazineClass>();
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<MagazineClass>();
 					break;
 				case ObjType::Gun://gun
-					m_Object.resize(m_Object.size() + 1);
-					m_Object.back() = std::make_shared<GunClass>();
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<GunClass>();
 					break;
 				case ObjType::Target://human
-					m_Object.resize(m_Object.size() + 1);
-					m_Object.back() = std::make_shared<TargetClass>();
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<TargetClass>();
 					break;
 				default:
 					break;
 				}
 			}
 			void LoadObj(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") {
-				m_Object.back()->LoadModel(filepath, objfilename, colfilename);
+				this->m_Object.back()->LoadModel(filepath, objfilename, colfilename);
 			}
 
 			auto& GetObj(ObjType ModelType, int num) {
 				int cnt = 0;
-				for (int i = 0; i < m_Object.size(); i++) {
-					auto& o = m_Object[i];
+				for (int i = 0; i < this->m_Object.size(); i++) {
+					auto& o = this->m_Object[i];
 					if (o->GetobjType() == ModelType) {
 						if (cnt == num) {
-							return m_Object[i];
+							return this->m_Object[i];
 						}
 						cnt++;
 					}
 				}
-				return m_Object[0];
+				return this->m_Object[0];
 			}
 		public:
 			void InitObject(const MV1* MapCol) {
-				for (auto& o : m_Object) {
+				for (auto& o : this->m_Object) {
 					o->Init();
 					o->SetFrameNum();
 					o->SetCol(MapCol);
 				}
 			}
-			void ExecuteObject() {
-				for (auto& o : m_Object) {
+			void ExecuteObject(void) noexcept {
+				for (auto& o : this->m_Object) {
 					o->Execute();
 				}
-				for (auto& o : m_Object) {
+				for (auto& o : this->m_Object) {
 					o->ExecutePhysics();
 				}
 			}
-			void DrawObject() {
-				for (auto& o : m_Object) {
+			void DrawObject(void) noexcept {
+				for (auto& o : this->m_Object) {
 					o->CheckDraw();
 					o->Draw();
 				}
 			}
-			void DisposeObject() {
-				for (auto& o : m_Object) {
+			void DisposeObject(void) noexcept {
+				for (auto& o : this->m_Object) {
 					o->Dispose();
 				}
 			}

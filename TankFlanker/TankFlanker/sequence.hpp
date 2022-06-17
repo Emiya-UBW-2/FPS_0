@@ -3,13 +3,10 @@
 
 namespace FPS_n2 {
 	namespace Sceneclass {
-
+		//
 		struct shaderparam {
 			bool use;
-			float param1;
-			float param2;
-			float param3;
-			float param4;
+			float param[4];
 		};
 		//
 		class TEMPSCENE {
@@ -88,22 +85,22 @@ namespace FPS_n2 {
 			virtual void Main_Draw(void) noexcept {}
 
 			const bool& is_lens(void) const noexcept { return shaderParam[0].use; }
-			const float& xp_lens(void) const noexcept { return shaderParam[0].param1; }
-			const float& yp_lens(void) const noexcept { return shaderParam[0].param2; }
-			const float& size_lens(void) const noexcept { return shaderParam[0].param3; }
-			const float& zoom_lens(void) const noexcept { return shaderParam[0].param4; }
+			const float& xp_lens(void) const noexcept { return shaderParam[0].param[0]; }
+			const float& yp_lens(void) const noexcept { return shaderParam[0].param[1]; }
+			const float& size_lens(void) const noexcept { return shaderParam[0].param[2]; }
+			const float& zoom_lens(void) const noexcept { return shaderParam[0].param[3]; }
 
 			void Set_is_lens(bool value) noexcept { shaderParam[0].use = value; }
-			void Set_xp_lens(float value) noexcept { shaderParam[0].param1 = value; }
-			void Set_yp_lens(float value) noexcept { shaderParam[0].param2 = value; }
-			void Set_size_lens(float value) noexcept { shaderParam[0].param3 = value; }
-			void Set_zoom_lens(float value) noexcept { shaderParam[0].param4 = value; }
+			void Set_xp_lens(float value) noexcept { shaderParam[0].param[0] = value; }
+			void Set_yp_lens(float value) noexcept { shaderParam[0].param[1] = value; }
+			void Set_size_lens(float value) noexcept { shaderParam[0].param[2] = value; }
+			void Set_zoom_lens(float value) noexcept { shaderParam[0].param[3] = value; }
 
 			const bool& is_Blackout(void) const noexcept { return shaderParam[1].use; }
-			const float& Per_Blackout(void) const noexcept { return shaderParam[1].param1; }
+			const float& Per_Blackout(void) const noexcept { return shaderParam[1].param[0]; }
 
 			void Set_is_Blackout(bool value) noexcept { shaderParam[1].use = value; }
-			void Set_Per_Blackout(float value) noexcept { shaderParam[1].param1 = value; }
+			void Set_Per_Blackout(float value) noexcept { shaderParam[1].param[0] = value; }
 
 			virtual void Item_Draw(void) noexcept {}
 			virtual void LAST_Draw(void) noexcept {}
@@ -112,88 +109,75 @@ namespace FPS_n2 {
 		};
 		//シーンサンプル
 		class SAMPLE : public TEMPSCENE {
-			void Set(void) noexcept override {
-			}
-			bool Update(void) noexcept override {
-				return false;
-			}
-			void Dispose(void) noexcept override {
-			}
+			void Set(void) noexcept override {}
+			bool Update(void) noexcept override { return false; }
+			void Dispose(void) noexcept override {}
 			//
-			void UI_Draw(void) noexcept  override {
-			}
-			void BG_Draw(void) noexcept override {
-			}
-			void Shadow_Draw_NearFar(void) noexcept override {
-			}
-			void Shadow_Draw(void) noexcept override {
-			}
-			void Main_Draw(void) noexcept override {
-			}
-			void LAST_Draw(void) noexcept override {
-			}
+			void UI_Draw(void) noexcept  override {}
+			void BG_Draw(void) noexcept override {}
+			void Shadow_Draw_NearFar(void) noexcept override {}
+			void Shadow_Draw(void) noexcept override {}
+			void Main_Draw(void) noexcept override {}
+			void LAST_Draw(void) noexcept override {}
 		};
 		//
 		class SceneControl {
-			bool ending{ false };							//終了処理フラグ
-			scenes sel_scene{ scenes::NONE_SCENE };			//現在のシーン
-			std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
-			bool selend{ true };
-			bool selpause{ true };
-			LONGLONG Drawwaits, OLDwaits, waits;
-
-			shaders::shader_Vertex Screen_vertex;					// 頂点データ
-			std::array<shaders, 2> shader2D;
+			bool m_EndFlag{ false };						//終了処理フラグ
+			bool m_SelEnd{ true };
+			bool m_SelPause{ true };
+			scenes m_SelScene{ scenes::NONE_SCENE };		//現在のシーン
+			std::shared_ptr<Sceneclass::TEMPSCENE> m_ScenesPtr{ nullptr };
+			LONGLONG m_DrawWait, m_OldWait, m_Wait;
+			shaders::shader_Vertex m_ScreenVertex;			// 頂点データ
+			std::array<shaders, 2> m_Shader2D;
 		public:
 			SceneControl(void) noexcept {
 				//シェーダー
-				Screen_vertex.Set();																					// 頂点データの準備
-				shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
-				shader2D[1].Init("DepthVS.vso", "DepthPS.pso");																//レンズ
+				this->m_ScreenVertex.Set();																					// 頂点データの準備
+				this->m_Shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
+				this->m_Shader2D[1].Init("DepthVS.vso", "DepthPS.pso");																//レンズ
 			}
 			~SceneControl(void) noexcept {
-				if (scenes_ptr != nullptr) {
-					scenes_ptr->Dispose();
+				if (this->m_ScenesPtr != nullptr) {
+					this->m_ScenesPtr->Dispose();
 				}
 			}
 			//
-			const auto& isEnd()const noexcept { return ending; }
-			const auto& isPause()const noexcept { return selpause; }
+			const auto& isEnd(void) const noexcept { return this->m_EndFlag; }
+			const auto& isPause(void) const noexcept { return this->m_SelPause; }
 			//
 			void ChangeScene(scenes select, std::shared_ptr<Sceneclass::TEMPSCENE>& ptr) {
-				sel_scene = select;
-				scenes_ptr = ptr;
+				this->m_SelScene = select;
+				this->m_ScenesPtr = ptr;
 			}
 			//開始
 			void StartScene(void) noexcept {
-				scenes_ptr->Set();
-				selend = false;
-				selpause = false;
-				OLDwaits = GetNowHiPerformanceCount();
+				this->m_ScenesPtr->Set();
+				this->m_SelEnd = false;
+				this->m_SelPause = false;
+				this->m_OldWait = GetNowHiPerformanceCount();
 			}
 			//
 			bool Execute(void) noexcept {
-				OLDwaits = GetNowHiPerformanceCount() - waits;
-				waits = GetNowHiPerformanceCount();
+				this->m_OldWait = GetNowHiPerformanceCount() - this->m_Wait;
+				this->m_Wait = GetNowHiPerformanceCount();
 
 				auto* DrawParts = DXDraw::Instance();
 #ifdef DEBUG
-				auto DebugParts = DeBuG::Instance();					//デバッグ
-#endif // DEBUG
-				//
-				if (ProcessMessage() != 0) {
-					this->ending = true;
-					selend = true;
-				}
+				auto* DebugParts = DeBuG::Instance();					//デバッグ
 				clsDx();
-
+#endif // DEBUG
+				if (ProcessMessage() != 0) {
+					this->m_EndFlag = true;
+					this->m_SelEnd = true;
+				}
 				FPS = GetFPS();
 #ifdef DEBUG
 				DebugParts->put_way();
 #endif // DEBUG
 				//更新
-				selpause = false;
-				selend |= !scenes_ptr->Update();
+				this->m_SelPause = false;
+				this->m_SelEnd |= !this->m_ScenesPtr->Update();
 				//VR空間に適用
 				DrawParts->Move_Player();
 #ifdef DEBUG
@@ -201,10 +185,10 @@ namespace FPS_n2 {
 #endif // DEBUG
 				//終了判定
 				if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
-					this->ending = true;
+					this->m_EndFlag = true;
 					return true;
 				}
-				if (selend) { return true; }
+				if (this->m_SelEnd) { return true; }
 				return false;
 			}
 			//描画
@@ -212,58 +196,56 @@ namespace FPS_n2 {
 				auto* DrawParts = DXDraw::Instance();
 				auto* PostPassParts = PostPassEffect::Instance();				//ホストパスエフェクト(VR、フルスクリーン共用)
 #ifdef DEBUG
-				auto DebugParts = DeBuG::Instance();					//デバッグ
+				auto* DebugParts = DeBuG::Instance();					//デバッグ
 #endif // DEBUG
-					//共通の描画前用意
-				scenes_ptr->ReadyDraw();
+				//共通の描画前用意
+				this->m_ScenesPtr->ReadyDraw();
 				//UI書き込み
-				PostPassParts->Set_UI_Draw([&] { scenes_ptr->UI_Draw(); });
+				PostPassParts->Set_UI_Draw([&] { this->m_ScenesPtr->UI_Draw(); });
 				//VRに移す
 				DrawParts->Draw_VR([&] {
 					auto tmp = GetDrawScreen();
-					cam_info tmp_cam = scenes_ptr->Get_Camera();
+					cam_info tmp_cam = this->m_ScenesPtr->Get_Camera();
 					tmp_cam.campos = GetCameraPosition();
 					tmp_cam.camvec = GetCameraTarget();
 					{
 						//被写体深度描画
-						PostPassParts->BUF_Draw([&] { scenes_ptr->BG_Draw(); }, [&] { DrawParts->Draw_by_Shadow([&] { scenes_ptr->Main_Draw(); }); }, tmp_cam, effectControl.Update_effect_f);
+						PostPassParts->BUF_Draw([&] { this->m_ScenesPtr->BG_Draw(); }, [&] { DrawParts->Draw_by_Shadow([&] { this->m_ScenesPtr->Main_Draw(); }); }, tmp_cam, effectControl.Update_effect_f);
 						//最終描画
 						PostPassParts->Set_MAIN_Draw();
 					}
-					//*
 					GraphHandle::SetDraw_Screen(tmp);
 					{
 						SetUseTextureToShader(0, PostPassParts->Get_MAIN_Screen().get());	//使用するテクスチャをセット
-						if (scenes_ptr->is_lens()) {
+						if (this->m_ScenesPtr->is_lens()) {
 							//レンズ描画
-							shader2D[0].Set_dispsize();
-							shader2D[0].Set_param(scenes_ptr->xp_lens(), scenes_ptr->yp_lens(), scenes_ptr->size_lens(), scenes_ptr->zoom_lens());
+							this->m_Shader2D[0].Set_dispsize();
+							this->m_Shader2D[0].Set_param(this->m_ScenesPtr->xp_lens(), this->m_ScenesPtr->yp_lens(), this->m_ScenesPtr->size_lens(), this->m_ScenesPtr->zoom_lens());
 							PostPassParts->Get_BUF_Screen().SetDraw_Screen();
 							{
-								shader2D[0].Draw(Screen_vertex);
+								this->m_Shader2D[0].Draw(this->m_ScreenVertex);
 							}
 							PostPassParts->Set_MAIN_Draw_nohost();
 						}
-						if (scenes_ptr->is_Blackout()) {
+						if (this->m_ScenesPtr->is_Blackout()) {
 							//描画
-							shader2D[1].Set_dispsize();
-							shader2D[1].Set_param(scenes_ptr->Per_Blackout(), 0, 0, 0);
+							this->m_Shader2D[1].Set_dispsize();
+							this->m_Shader2D[1].Set_param(this->m_ScenesPtr->Per_Blackout(), 0, 0, 0);
 							PostPassParts->Get_BUF_Screen().SetDraw_Screen();
 							{
-								shader2D[1].Draw(Screen_vertex);
+								this->m_Shader2D[1].Draw(this->m_ScreenVertex);
 							}
 							PostPassParts->Set_MAIN_Draw_nohost();
 						}
 						SetUseTextureToShader(0, -1);	//使用するテクスチャをセット
 					}
-					//*/
 					GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 					{
 						PostPassParts->MAIN_Draw();											//デフォ描画
-						PostPassParts->DrawUI(&scenes_ptr->Get_Camera(), DrawParts->use_vr);	//UI1
-						scenes_ptr->Item_Draw();											//UI2
+						PostPassParts->DrawUI(&this->m_ScenesPtr->Get_Camera(), DrawParts->use_vr);	//UI1
+						this->m_ScenesPtr->Item_Draw();											//UI2
 					}
-				}, scenes_ptr->Get_Camera());
+				}, this->m_ScenesPtr->Get_Camera());
 #ifdef DEBUG
 				//DebugParts->end_way();
 #endif // DEBUG
@@ -279,19 +261,17 @@ namespace FPS_n2 {
 						DrawParts->outScreen[0].DrawGraph(0, 0, false);
 					}
 					//上に書く
-					scenes_ptr->LAST_Draw();
-					//MAPPTs->DepthScreen.DrawExtendGraph(0, 0, 960, 540, false);
+					this->m_ScenesPtr->LAST_Draw();
 					//デバッグ
 #ifdef DEBUG
 					DebugParts->end_way();
-					DebugParts->debug(1920 - 300, 50, float(GetNowHiPerformanceCount() - waits) / 1000.f);
+					DebugParts->debug(1920 - 300, 50, float(GetNowHiPerformanceCount() - this->m_Wait) / 1000.f);
 					printfDx("AsyncCount :%d\n", GetASyncLoadNum());
 					printfDx("Drawcall   :%d\n", GetDrawCallCount());
 					printfDx("FPS        :%5.2f fps\n", FPS);
-					printfDx("AllTime    :%5.2f ms\n", float(OLDwaits) / 1000.f);
-					printfDx("DrawTime   :%5.2f ms\n", float(Drawwaits) / 1000.f);
-					printfDx("All-Draw   :%5.2f ms\n", float(OLDwaits - Drawwaits) / 1000.f);
-					printfDx("GameSpeed  :%3.1f\n", GameSpeed);
+					printfDx("AllTime    :%5.2f ms\n", float(this->m_OldWait) / 1000.f);
+					printfDx("DrawTime   :%5.2f ms\n", float(this->m_DrawWait) / 1000.f);
+					printfDx("All-Draw   :%5.2f ms\n", float(this->m_OldWait - this->m_DrawWait) / 1000.f);
 #endif // DEBUG
 				}
 			}
@@ -300,18 +280,16 @@ namespace FPS_n2 {
 				auto* DrawParts = DXDraw::Instance();
 				//画面の反映
 				DrawParts->Screen_Flip();
-				Drawwaits = GetNowHiPerformanceCount() - waits;
-				while ((GetNowHiPerformanceCount() - waits) <= (1000 * 1000 / 60)) {}
+				this->m_DrawWait = GetNowHiPerformanceCount() - this->m_Wait;
+				//while ((GetNowHiPerformanceCount() - this->m_Wait) <= (1000 * 1000 / 60)) {}
 			}
 			//
 			void NextScene(void) noexcept {
 				//解放
-				scenes_ptr->Dispose();
+				this->m_ScenesPtr->Dispose();
 				//遷移
-				{
-					sel_scene = scenes_ptr->Next_scene;
-					scenes_ptr = scenes_ptr->Next_ptr;
-				}
+				this->m_SelScene = this->m_ScenesPtr->Next_scene;
+				this->m_ScenesPtr = this->m_ScenesPtr->Next_ptr;
 			}
 			//
 		};

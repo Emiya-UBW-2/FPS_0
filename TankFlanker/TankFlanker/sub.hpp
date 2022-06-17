@@ -12,25 +12,6 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
-	template <class T>
-	static T Leap(const T& A, const T& B, float Per) noexcept { return A + (T)((B - A)*Per); }
-
-	float GameSpeed = 1.0f;
-
-	static const auto GetMocroSec(void) noexcept {
-		return GetNowHiPerformanceCount() * (int)(GameSpeed*1000.f) / 1000;
-	}
-
-	template <class T>
-	static void easing_set_SetSpeed(T* first, const T& aim, const float& ratio) noexcept {
-		if (ratio == 0.f) {
-			*first = aim;
-		}
-		else {
-			*first = *first + (aim - *first) * (1.f - std::powf(ratio, 60.f / FPS * GameSpeed));
-		}
-	};
-
 	//ファイル走査
 	std::vector<WIN32_FIND_DATA> data_t;
 	void GetFileNames(std::string path_t) noexcept {
@@ -48,8 +29,6 @@ namespace FPS_n2 {
 		} //else{ return false; }
 		FindClose(hFind);
 	}
-	//
-	static float GetRandf(float m_arg) noexcept { return -m_arg + (float)(GetRand((int)(m_arg * 2.f * 10000.f))) / 10000.f; }
 	//フォントプール
 	class FontPool {
 	public:
@@ -97,12 +76,12 @@ namespace FPS_n2 {
 			}
 			effsorce.resize(effsorce.size() + 1);
 			effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
-			Update_effect_was = GetMocroSec();
+			Update_effect_was = GetNowHiPerformanceCount();
 		}
 		void Calc(void) noexcept {
-			Update_effect_f = ((GetMocroSec() - Update_effect_was) >= 1000000 / 60);
+			Update_effect_f = ((GetNowHiPerformanceCount() - Update_effect_was) >= 1000000 / 60);
 			if (Update_effect_f) {
-				Update_effect_was = GetMocroSec();
+				Update_effect_was = GetNowHiPerformanceCount();
 			}
 		}
 		void Dispose(void) noexcept {
@@ -112,39 +91,6 @@ namespace FPS_n2 {
 		}
 	};
 	EffectControl effectControl;
-	//ライト
-	class LightPool {
-		class Lights {
-		public:
-			LightHandle handle;
-			LONGLONG time{ 0 };
-		};
-		std::array<Lights, 2> handles;
-		int now = 0;
-		VECTOR_ref campos;
-	public:
-		void Put(const VECTOR_ref& pos) noexcept {
-			if ((pos - campos).size() >= 10.f) { return; }
-			if (handles[now].handle.get() != -1) {
-				handles[now].handle.Dispose();
-			}
-			handles[now].time = GetMocroSec();
-			handles[now].handle = LightHandle::Create(pos, 2.5f, 0.5f, 1.5f, 0.5f);
-			SetLightDifColorHandle(handles[now].handle.get(), GetColorF(1.f, 1.f, 0.f, 1.f));
-			++now %= handles.size();
-		}
-		void Update(const VECTOR_ref& campos_t) noexcept {
-			campos = campos_t;
-			for (auto& h : handles) {
-				if (h.handle.get() != -1) {
-					if ((GetMocroSec() - h.time) >= 1000000 / 30) {
-						h.handle.Dispose();
-					}
-				}
-			}
-		}
-	};
-	LightPool Light_pool;
 	//エフェクト利用コントロール
 	class Effect_UseControl {
 		std::array<EffectS, int(Effect::effects)> effcs;	/*エフェクト*/
@@ -164,7 +110,7 @@ namespace FPS_n2 {
 			return cnt;
 		}
 
-		void Set_LoopEffect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept {
+		void Set_LoopEffect(Effect ef_, const VECTOR_ref& pos_t) noexcept {
 			this->effcs[(int)ef_].Stop();
 			this->effcs[(int)ef_].pos = pos_t;
 			this->effcs[(int)ef_].set_loop(effectControl.effsorce[(int)ef_]);
@@ -172,7 +118,6 @@ namespace FPS_n2 {
 		void Update_LoopEffect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept {
 			this->effcs[(int)ef_].put_loop(pos_t, nomal_t, scale);
 		}
-
 
 		void Set_Effect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept { this->effcs[(int)ef_].Set(pos_t, nomal_t, scale); }
 		void Stop_Effect(Effect ef_) noexcept { this->effcs[(int)ef_].Stop(); }
@@ -196,6 +141,39 @@ namespace FPS_n2 {
 			for (auto& t : this->effcs) { t.handle.Dispose(); }
 		}
 	};
+	//ライト
+	class LightPool {
+		class Lights {
+		public:
+			LightHandle handle;
+			LONGLONG time{ 0 };
+		};
+		std::array<Lights, 2> handles;
+		int now = 0;
+		VECTOR_ref campos;
+	public:
+		void Put(const VECTOR_ref& pos) noexcept {
+			if ((pos - campos).size() >= 10.f) { return; }
+			if (handles[now].handle.get() != -1) {
+				handles[now].handle.Dispose();
+			}
+			handles[now].time = GetNowHiPerformanceCount();
+			handles[now].handle = LightHandle::Create(pos, 2.5f, 0.5f, 1.5f, 0.5f);
+			SetLightDifColorHandle(handles[now].handle.get(), GetColorF(1.f, 1.f, 0.f, 1.f));
+			++now %= handles.size();
+		}
+		void Update(const VECTOR_ref& campos_t) noexcept {
+			campos = campos_t;
+			for (auto& h : handles) {
+				if (h.handle.get() != -1) {
+					if ((GetNowHiPerformanceCount() - h.time) >= 1000000 / 30) {
+						h.handle.Dispose();
+					}
+				}
+			}
+		}
+	};
+	LightPool Light_pool;
 
 	// プレイヤー関係の定義
 #define PLAYER_ENUM_DEFAULT_SIZE	(1.8f * 12.5f)		// 周囲のポリゴン検出に使用する球の初期サイズ

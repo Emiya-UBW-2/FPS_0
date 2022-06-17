@@ -12,7 +12,7 @@ namespace FPS_n2 {
 			MV1 GroundCol;
 			std::vector< MV1> ShootingMat;
 		public:
-			void Load() {
+			void Load(void) noexcept {
 				MV1::Load("data/model/sky/model.mv1", &Sky);
 				MV1::Load("data/model/ground/model.mv1", &Ground);
 				MV1::Load("data/model/ground/model_add.mv1", &GroundAdd);
@@ -57,7 +57,7 @@ namespace FPS_n2 {
 				}
 			}
 
-			const auto& GetGroundCol() { return GroundCol; }
+			const auto& GetGroundCol(void) noexcept { return GroundCol; }
 		};
 	};
 };

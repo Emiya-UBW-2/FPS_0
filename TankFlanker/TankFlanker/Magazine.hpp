@@ -10,21 +10,21 @@ namespace FPS_n2 {
 				moves move;
 				MV1 obj;
 			public:
-				void Init(const MV1& baseObj) {
+				void Init(const MV1& baseObj) noexcept {
 					isActive = true;
 					this->obj = baseObj.Duplicate();
 				}
 
-				void SetMatrix(const MATRIX_ref& value, const VECTOR_ref& pos) {
+				void SetMatrix(const MATRIX_ref& value, const VECTOR_ref& pos) noexcept {
 					this->move.mat = value;
 					this->move.pos = pos;
 				}
-				void Execute() {
+				void Execute(void) noexcept {
 					if (isActive) {
 						this->obj.SetMatrix(move.MatIn());
 					}
 				}
-				void Draw() {
+				void Draw(void) noexcept {
 					if (isActive) {
 						if (CheckCameraViewClip_Box(
 							(move.pos + VECTOR_ref::vget(-1.f, -1.f, -1.f)).get(),
@@ -47,35 +47,35 @@ namespace FPS_n2 {
 			MATRIX_ref ChamberMatrix;
 			float ShotPer = 0.f;
 		public://ƒQƒbƒ^[
-			void SetMatrix(const MATRIX_ref& value) {
+			void SetMatrix(const MATRIX_ref& value) noexcept {
 				this->obj.SetMatrix(value);
 			}
-			void SetChamberIntime(bool value) {
+			void SetChamberIntime(bool value) noexcept {
 				ChamberIntime = value;
 			}
-			void SetChamberMatrix(const MATRIX_ref& value) {
+			void SetChamberMatrix(const MATRIX_ref& value) noexcept {
 				ChamberMatrix = value;
 			}
 		public:
-			MagazineClass() {
-				m_objType = ObjType::Magazine;
+			MagazineClass(void) noexcept {
+				this->m_objType = ObjType::Magazine;
 			}
-			~MagazineClass() {
+			~MagazineClass(void) noexcept {
 
 			}
 
-			void Init() override {
+			void Init(void) noexcept override {
 				ObjectBaseClass::Init();
 
 				MV1::Load(this->m_FilePath + "ammo.pmd", &Ammoobj);
-				m_Capacity = this->obj.frame_num() - 1;
-				m_CapacityMax = m_Capacity;
-				m_Cart.resize(m_Capacity);
-				for (auto& b : m_Cart) {
+				this->m_Capacity = (int)(this->obj.frame_num()) - 1;
+				this->m_CapacityMax = this->m_Capacity;
+				this->m_Cart.resize(this->m_Capacity);
+				for (auto& b : this->m_Cart) {
 					b.Init(Ammoobj);
 				}
 			}
-			void Execute() override {
+			void Execute(void) noexcept override {
 				if (ChamberIntime) {
 					this->ShotPer = std::clamp(this->ShotPer + 5.f / FPS, 0.f, 1.f);
 				}
@@ -84,8 +84,8 @@ namespace FPS_n2 {
 				}
 
 				int i = 0;
-				for (auto& b : m_Cart) {
-					b.isActive = (i < m_Capacity - 1);
+				for (auto& b : this->m_Cart) {
+					b.isActive = (i < this->m_Capacity - 1);
 					if (i == 0) {
 						b.SetMatrix(
 							this->obj.GetFrameLocalWorldMatrix(1 + i).GetRot()
@@ -103,19 +103,19 @@ namespace FPS_n2 {
 				ObjectBaseClass::Execute();
 			}
 
-			void Draw() override {
+			void Draw(void) noexcept override {
 				ObjectBaseClass::Draw();
-				for (auto& b : m_Cart) {
+				for (auto& b : this->m_Cart) {
 					b.Draw();
 				}
 			}
 		public:
-			void SubAmmo() {
-				m_Capacity--;
-				if (m_Capacity <= 0) { m_Capacity = 0; }
+			void SubAmmo(void) noexcept {
+				this->m_Capacity--;
+				if (this->m_Capacity <= 0) { this->m_Capacity = 0; }
 			}
-			bool IsEmpty() {
-				return m_Capacity == 0;
+			bool IsEmpty(void) noexcept {
+				return this->m_Capacity == 0;
 			}
 		};
 	};

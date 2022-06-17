@@ -21,7 +21,7 @@ namespace FPS_n2 {
 			bool m_IsDraw{ true };
 			float m_DistanceToCam{ 0.f };
 		public:
-			void LoadModel(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") {
+			void LoadModel(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") noexcept {
 				this->m_FilePath = filepath;
 				this->m_ObjFileName = objfilename;
 				this->m_ColFileName = colfilename;
@@ -64,19 +64,19 @@ namespace FPS_n2 {
 					this->col.SetupCollInfo(1, 1, 1);
 				}
 			}
-			void SetCol(const MV1* MapCol) {
+			void SetCol(const MV1* MapCol) noexcept {
 				this->m_MapCol = MapCol;
 			}
 			//
-			virtual void Init() {
+			virtual void Init(void) noexcept {
 
 			}
-			void SetFrameNum() {
+			void SetFrameNum(void) noexcept {
 				int i = 0;
 				for (int f = 0; f < this->obj.frame_num(); f++) {
 					std::string FName = this->obj.frame_name(f);
 					bool compare = false;
-					switch (m_objType) {
+					switch (this->m_objType) {
 					case ObjType::Human://human
 						if (i == (int)CharaFrame::Max) { break; }
 						compare = (FName == CharaFrameName[i]);
@@ -93,7 +93,7 @@ namespace FPS_n2 {
 						f = 0;
 					}
 				}
-				switch (m_objType) {
+				switch (this->m_objType) {
 				case ObjType::Human://human
 					Shapes.resize((int)CharaShape::Max);
 					for (int j = 1; j < (int)CharaShape::Max; j++) {
@@ -109,22 +109,22 @@ namespace FPS_n2 {
 				}
 			}
 			//
-			virtual void Execute() {
+			virtual void Execute(void) noexcept {
 			}
-			virtual void Draw() {
+			virtual void Draw(void) noexcept {
 				if (this->m_IsDraw) {
 					this->obj.DrawModel();
 				}
 			}
 			//
-			virtual void Dispose() {
+			virtual void Dispose(void) noexcept {
 				this->obj.Dispose();
 			}
 		public:
-			const auto& GetobjType() { return this->m_objType; }
-			const auto GetMatrix() { return this->obj.GetMatrix(); }
-			const auto* GetCol() { return &this->col; }
-			void SetMove(float Yrad, const VECTOR_ref& pos) {
+			const auto& GetobjType(void) noexcept { return this->m_objType; }
+			const auto GetMatrix(void) noexcept { return this->obj.GetMatrix(); }
+			const auto* GetCol(void) noexcept { return &this->col; }
+			void SetMove(float Yrad, const VECTOR_ref& pos) noexcept {
 				this->move.mat = MATRIX_ref::RotY(Yrad);
 				this->move.pos = pos;
 				this->move.vec.clear();
@@ -134,14 +134,14 @@ namespace FPS_n2 {
 					this->col.RefreshCollInfo();
 				}
 			}
-			void SetShape(CharaShape pShape, float Per) {
-				if (m_objType == ObjType::Human) {
+			void SetShape(CharaShape pShape, float Per) noexcept {
+				if (this->m_objType == ObjType::Human) {
 					Shapes[(int)pShape].second = Per;
 				}
 			}
 			//
-			void ExecuteShape() {
-				switch (m_objType) {
+			void ExecuteShape(void) noexcept {
+				switch (this->m_objType) {
 				case ObjType::Human://human
 					for (int j = 1; j < (int)CharaShape::Max; j++) {
 						MV1SetShapeRate(this->obj.get(), Shapes[j].first, (1.f - Shapes[0].second)*Shapes[j].second);
@@ -151,7 +151,7 @@ namespace FPS_n2 {
 					break;
 				}
 			}
-			void ExecutePhysics() {
+			void ExecutePhysics(void) noexcept {
 				if (this->m_IsDraw) {
 					if (this->m_SetReset) {
 						this->m_SetReset = false;
@@ -169,7 +169,7 @@ namespace FPS_n2 {
 				this->m_IsDraw = false;
 			}
 			//
-			void CheckDraw() {
+			void CheckDraw(void) noexcept {
 				this->m_DistanceToCam = (obj.GetMatrix().pos() - GetCameraPosition()).size();
 				if (CheckCameraViewClip_Box(
 					(obj.GetMatrix().pos() + VECTOR_ref::vget(-10, -10, -10)).get(),

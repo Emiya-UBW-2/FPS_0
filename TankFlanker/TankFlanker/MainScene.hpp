@@ -11,10 +11,10 @@ namespace FPS_n2 {
 			int intParam[1];
 			float floatParam[3];
 		public:
-			void Set() {
+			void Set(void) noexcept {
 				HeartGraph = GraphHandle::Load("data/UI/Heart.png");
 			}
-			void Draw() {
+			void Draw(void) noexcept {
 				auto* DrawParts = DXDraw::Instance();
 				//心拍数
 				{
@@ -38,7 +38,7 @@ namespace FPS_n2 {
 				{
 					float Xsize = (float)(y_r(200));
 					int siz = y_r(12);
-					int xP = siz + Xsize, yP = DrawParts->disp_y - siz - y_r(64);
+					int xP = siz + (int)Xsize, yP = DrawParts->disp_y - siz - y_r(64);
 
 					DrawLine(xP, yP, xP + (int)(Xsize*sin(floatParam[2])), yP + (int)(Xsize*-cos(floatParam[2])), GetColor(255, 0, 0), 5);
 				}
@@ -145,9 +145,7 @@ namespace FPS_n2 {
 				if (IsFirstLoop) {
 					SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
 					Env.play(DX_PLAYTYPE_LOOP, TRUE);
-					SetUseASyncLoadFlag(TRUE);
 					Chara->LoadReticle();
-					SetUseASyncLoadFlag(FALSE);
 				}
 				//Input
 				{
@@ -171,40 +169,40 @@ namespace FPS_n2 {
 						EKey.GetInput(CheckHitKey_M(KEY_INPUT_E) != 0);
 						QKey.GetInput(CheckHitKey_M(KEY_INPUT_Q) != 0);
 						if (EKey.trigger()) {
-							if (m_TurnRate > -1) {
-								m_TurnRate--;
+							if (this->m_TurnRate > -1) {
+								this->m_TurnRate--;
 							}
 							else {
-								m_TurnRate++;
+								this->m_TurnRate++;
 							}
 						}
 						if (QKey.trigger()) {
-							if (m_TurnRate < 1) {
-								m_TurnRate++;
+							if (this->m_TurnRate < 1) {
+								this->m_TurnRate++;
 							}
 							else {
-								m_TurnRate--;
+								this->m_TurnRate--;
 							}
 						}
 						if (!Chara->GetIsRun()) {
-							m_TurnRate = 0;
+							this->m_TurnRate = 0;
 						}
 
-						m_TurnRate = std::clamp(m_TurnRate, -1, 1);
+						this->m_TurnRate = std::clamp(this->m_TurnRate, -1, 1);
 						float xadd = 0.f;
 						if (Chara->GetIsSprint()) {
-							xadd = 0.279f*(-m_TurnRate);//スプリント
+							xadd = 0.279f*(-this->m_TurnRate);//スプリント
 						}
 						else if (Chara->GetIsRun()) {
-							xadd = 0.1845f*(-m_TurnRate);//走り
+							xadd = 0.1845f*(-this->m_TurnRate);//走り
 						}
-						easing_set(&m_TurnRatePer, xadd, 0.9f);
+						easing_set(&this->m_TurnRatePer, xadd, 0.9f);
 					}
 
 					float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
-						std::clamp(((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f + m_TurnRatePer), -9.f, 9.f) * cam_per,
+						std::clamp(((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f + this->m_TurnRatePer), -9.f, 9.f) * cam_per,
 						CheckHitKey_M(KEY_INPUT_W) != 0,
 						CheckHitKey_M(KEY_INPUT_S) != 0,
 						CheckHitKey_M(KEY_INPUT_A) != 0,
@@ -311,7 +309,7 @@ namespace FPS_n2 {
 					UI_class.SetIntParam(0, (int)(Chara->GetHeartRate()));
 					UI_class.SetfloatParam(0, 1.f + sin(Chara->GetHeartRateRad()*4.f)*0.1f);
 					UI_class.SetfloatParam(1, Chara->GetStamina() / Chara->GetStaminaMax());
-					UI_class.SetfloatParam(2, m_TurnRatePer);
+					UI_class.SetfloatParam(2, this->m_TurnRatePer);
 				}
 				TEMPSCENE::Update();
 				Effect_UseControl::Update_Effect();

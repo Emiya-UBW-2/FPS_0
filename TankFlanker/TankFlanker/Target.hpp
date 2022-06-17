@@ -6,11 +6,11 @@ namespace FPS_n2 {
 		class TargetClass : public ObjectBaseClass {
 			std::vector<VECTOR_ref> HitPosRec;
 		public:
-			TargetClass() {
-				m_objType = ObjType::Target;
+			TargetClass(void) noexcept {
+				this->m_objType = ObjType::Target;
 			}
-			~TargetClass() {}
-			void Init() override {
+			~TargetClass(void) noexcept {}
+			void Init(void) noexcept override {
 				ObjectBaseClass::Init();
 				for (int i = 0; i < this->obj.material_num(); i++) {
 					MV1SetMaterialOutLineWidth(this->obj.get(), i, 0.f);
@@ -18,14 +18,14 @@ namespace FPS_n2 {
 				}
 			}
 		public:
-			void SetHitPos(const VECTOR_ref& value) {
+			void SetHitPos(const VECTOR_ref& value) noexcept {
 				HitPosRec.emplace_back(value);
 			}
-			void ResetHit() {
+			void ResetHit(void) noexcept {
 				HitPosRec.clear();
 			}
 
-			void DrawHitCard(int xp, int yp, int size, float AlphaPer) {
+			void DrawHitCard(int xp, int yp, int size, float AlphaPer) noexcept {
 				int xs = size;
 				int ys = size;
 				int xp2 = xp + ys;
