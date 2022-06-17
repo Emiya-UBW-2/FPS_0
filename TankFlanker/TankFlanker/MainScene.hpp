@@ -100,9 +100,9 @@ namespace FPS_n2 {
 				}
 				for (int i = 0; i < gun_num; i++) {
 					this->Obj.AddObject(ObjType::Gun);
-					this->Obj.LoadObj("data/gun/gun/");
+					this->Obj.LoadObj("data/gun/Mosin/");
 					this->Obj.AddObject(ObjType::Magazine);
-					this->Obj.LoadObj("data/gun/gun/", "model_mag");
+					this->Obj.LoadObj("data/gun/Mosin/", "model_mag");
 				}
 				//init
 				this->Obj.InitObject(&this->BackGround.GetGroundCol());
@@ -227,7 +227,7 @@ namespace FPS_n2 {
 							false,
 							false,
 							false,
-							false,//(GetRand(10)==0),
+							(GetRand(10)==0),
 							true,
 							false
 						);
