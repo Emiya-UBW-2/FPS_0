@@ -13,19 +13,23 @@ namespace FPS_n2 {
 			std::vector< std::pair<int, float>> Shapes;
 			ObjType m_objType;
 			std::string m_FilePath;
+			std::string m_ObjFileName;
+			std::string m_ColFileName;
 
 			bool m_SetReset{ true };
 
 			bool m_IsDraw{ true };
 			float m_DistanceToCam{ 0.f };
 		public:
-			void LoadModel(const char* filepath) {
+			void LoadModel(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") {
 				this->m_FilePath = filepath;
+				this->m_ObjFileName = objfilename;
+				this->m_ColFileName = colfilename;
 				FILEINFO FileInfo;
 				//model
 				{
 					std::string Path = this->m_FilePath;
-					Path += "model";
+					Path += this->m_ObjFileName;
 					if (FileRead_findFirst((Path + ".mv1").c_str(), &FileInfo) != (DWORD_PTR)-1) {
 						//MV1::Load(Path + ".pmx", &this->obj, DX_LOADMODEL_PHYSICS_REALTIME);
 						MV1::Load((Path + ".mv1").c_str(), &this->obj, DX_LOADMODEL_PHYSICS_REALTIME);
@@ -41,7 +45,7 @@ namespace FPS_n2 {
 				//col
 				{
 					std::string Path = this->m_FilePath;
-					Path += "col";
+					Path += this->m_ColFileName;
 					if (FileRead_findFirst((Path + ".mv1").c_str(), &FileInfo) != (DWORD_PTR)-1) {
 						MV1::Load(Path + ".pmx", &this->col, DX_LOADMODEL_PHYSICS_REALTIME);
 						//MV1::Load((Path + ".mv1").c_str(), &this->col, DX_LOADMODEL_PHYSICS_REALTIME);
@@ -93,7 +97,7 @@ namespace FPS_n2 {
 				case ObjType::Human://human
 					Shapes.resize((int)CharaShape::Max);
 					for (int j = 1; j < (int)CharaShape::Max; j++) {
-						auto s = MV1SearchShape(this->obj.get(),CharaShapeName[j]);
+						auto s = MV1SearchShape(this->obj.get(), CharaShapeName[j]);
 						if (s >= 0) {
 							Shapes[j].first = s;
 							Shapes[j].second = 0.f;
@@ -168,8 +172,8 @@ namespace FPS_n2 {
 			void CheckDraw() {
 				this->m_DistanceToCam = (obj.GetMatrix().pos() - GetCameraPosition()).size();
 				if (CheckCameraViewClip_Box(
-					(obj.GetMatrix().pos() + VECTOR_ref::vget(-20, -20, -20)).get(),
-					(obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)).get()) == FALSE
+					(obj.GetMatrix().pos() + VECTOR_ref::vget(-10, -10, -10)).get(),
+					(obj.GetMatrix().pos() + VECTOR_ref::vget(10, 10, 10)).get()) == FALSE
 					) {
 					this->m_IsDraw |= true;
 				}

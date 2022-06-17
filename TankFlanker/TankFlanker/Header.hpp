@@ -27,14 +27,11 @@
 #include "Enums.hpp"
 #include "sub.hpp"
 #include "sequence.hpp"
-
-#include "Common.hpp"
-
-#include "LoadScene.hpp"
 //
 #include "BackGround.hpp"
 
 #include "ObjectBase.hpp"
+#include "Magazine.hpp"
 #include "Gun.hpp"
 #include "Target.hpp"
 #include "Character.hpp"

@@ -31,7 +31,7 @@ namespace FPS_n2 {
 					int siz = y_r(12);
 					int xP = siz, yP = DrawParts->disp_y - siz - y_r(12);
 					DrawBox(xP, yP, xP + (int)Xsize, yP + siz, GetColor(0, 0, 0), TRUE);
-					DrawBox(xP, yP, xP + (int)(Xsize * floatParam[1]), yP + siz, (floatParam[1]>0.3f) ? GetColor(0, 255, 0): GetColor(255, 200, 0), TRUE);
+					DrawBox(xP, yP, xP + (int)(Xsize * floatParam[1]), yP + siz, (floatParam[1] > 0.3f) ? GetColor(0, 255, 0) : GetColor(255, 200, 0), TRUE);
 					DrawBox(xP, yP, xP + (int)Xsize, yP + siz, GetColor(128, 128, 128), FALSE);
 				}
 				//Œü‚«
@@ -94,13 +94,15 @@ namespace FPS_n2 {
 					this->Obj.AddObject(ObjType::Target);
 					this->Obj.LoadObj("data/model/Target/");
 				}
-				for (int i = 0; i < gun_num; i++) {
-					this->Obj.AddObject(ObjType::Gun);
-					this->Obj.LoadObj("data/gun/gun/");
-				}
 				for (int i = 0; i < 3; i++) {
 					this->Obj.AddObject(ObjType::Human);
 					this->Obj.LoadObj("data/umamusume/WinningTicket/");
+				}
+				for (int i = 0; i < gun_num; i++) {
+					this->Obj.AddObject(ObjType::Gun);
+					this->Obj.LoadObj("data/gun/gun/");
+					this->Obj.AddObject(ObjType::Magazine);
+					this->Obj.LoadObj("data/gun/gun/", "model_mag");
 				}
 				//init
 				this->Obj.InitObject(&this->BackGround.GetGroundCol());
@@ -121,6 +123,10 @@ namespace FPS_n2 {
 					c->SetGunPtr((std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i)));
 					//c->ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(-230.f, 0.f, 450.f + (float)i*20.f));
 					c->ValueSet(deg2rad(50.f), deg2rad(90.f), false, true, VECTOR_ref::vget(1970.f, 90.f, -973.72f + (float)(i - 1)*20.f));
+				}
+				for (int i = 0; i < gun_num; i++) {
+					auto& m = (std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i));
+					m->SetMagPtr((std::shared_ptr<MagazineClass>&)(this->Obj.GetObj(ObjType::Magazine, i)));
 				}
 				tgtSel = -1;
 				tgtTimer = 0.f;
@@ -165,7 +171,7 @@ namespace FPS_n2 {
 						EKey.GetInput(CheckHitKey_M(KEY_INPUT_E) != 0);
 						QKey.GetInput(CheckHitKey_M(KEY_INPUT_Q) != 0);
 						if (EKey.trigger()) {
-							if (m_TurnRate>-1) {
+							if (m_TurnRate > -1) {
 								m_TurnRate--;
 							}
 							else {
@@ -194,7 +200,7 @@ namespace FPS_n2 {
 						}
 						easing_set(&m_TurnRatePer, xadd, 0.9f);
 					}
-					
+
 					float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
@@ -221,7 +227,7 @@ namespace FPS_n2 {
 							false,
 							false,
 							false,
-							(GetRand(10)==0),
+							false,//(GetRand(10)==0),
 							true,
 							false
 						);
@@ -287,12 +293,12 @@ namespace FPS_n2 {
 						easing_set(&camera_main.far_, 12.5f * 300.f, 0.9f);
 					}
 					else if (Chara->GetIsRun()) {
-						easing_set(&camera_main.fov, deg2rad(85), 0.9f);
+						easing_set(&camera_main.fov, deg2rad(90), 0.9f);
 						easing_set(&camera_main.near_, 3.f, 0.9f);
 						easing_set(&camera_main.far_, 12.5f * 150.f, 0.9f);
 					}
 					else {
-						easing_set(&camera_main.fov, deg2rad(65), 0.9f);
+						easing_set(&camera_main.fov, deg2rad(75), 0.9f);
 						easing_set(&camera_main.near_, 10.f, 0.9f);
 						easing_set(&camera_main.far_, 12.5f * 300.f, 0.9f);
 					}

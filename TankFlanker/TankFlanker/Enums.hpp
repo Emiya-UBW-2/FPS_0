@@ -59,6 +59,7 @@ namespace FPS_n2 {
 			Human,
 			Gun,
 			Target,
+			Magazine,
 		};
 		enum class CharaFrame {
 			Center,

@@ -12,6 +12,10 @@ namespace FPS_n2 {
 					m_Object.resize(m_Object.size() + 1);
 					m_Object.back() = std::make_shared<CharacterClass>();
 					break;
+				case ObjType::Magazine://mag
+					m_Object.resize(m_Object.size() + 1);
+					m_Object.back() = std::make_shared<MagazineClass>();
+					break;
 				case ObjType::Gun://gun
 					m_Object.resize(m_Object.size() + 1);
 					m_Object.back() = std::make_shared<GunClass>();
@@ -24,11 +28,11 @@ namespace FPS_n2 {
 					break;
 				}
 			}
-			void LoadObj(const char* filepath) {
-				m_Object.back()->LoadModel(filepath);
+			void LoadObj(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") {
+				m_Object.back()->LoadModel(filepath, objfilename, colfilename);
 			}
 
-			auto& GetObj(ObjType ModelType,int num) {
+			auto& GetObj(ObjType ModelType, int num) {
 				int cnt = 0;
 				for (int i = 0; i < m_Object.size(); i++) {
 					auto& o = m_Object[i];

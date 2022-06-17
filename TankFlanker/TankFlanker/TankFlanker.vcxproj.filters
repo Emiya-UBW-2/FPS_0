@@ -27,9 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Common.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Enums.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
@@ -41,9 +38,6 @@
     </ClInclude>
     <ClInclude Include="sub.hpp">
       <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="LoadScene.hpp">
-      <Filter>ソース ファイル\Scene</Filter>
     </ClInclude>
     <ClInclude Include="MainScene.hpp">
       <Filter>ソース ファイル\Scene</Filter>
@@ -65,6 +59,9 @@
     </ClInclude>
     <ClInclude Include="ObjectManager.hpp">
       <Filter>ソース ファイル\MainScene</Filter>
+    </ClInclude>
+    <ClInclude Include="Magazine.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

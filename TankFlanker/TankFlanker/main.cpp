@@ -15,15 +15,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	//シェーダー
 	PostPassEffect::Create();
 	//シーン
-	auto LoadScene = std::make_shared<FPS_n2::Sceneclass::LOADDATA>();
 	auto MAINLOOPscene = std::make_shared<FPS_n2::Sceneclass::MAINLOOP>();
 	//
 	FPS_n2::effectControl.Init();																						//エフェクト
 	//遷移先指定
-	LoadScene->Set_Next(MAINLOOPscene, FPS_n2::Sceneclass::scenes::MAIN_LOOP);
-	MAINLOOPscene->Set_Next(LoadScene, FPS_n2::Sceneclass::scenes::LOAD_SCENE);
+	MAINLOOPscene->Set_Next(MAINLOOPscene, FPS_n2::Sceneclass::scenes::MAIN_LOOP);
 	//開始時遷移先
-	scene->ChangeScene(FPS_n2::Sceneclass::scenes::LOAD_SCENE, (std::shared_ptr<FPS_n2::Sceneclass::TEMPSCENE>&)LoadScene);
+	scene->ChangeScene(FPS_n2::Sceneclass::scenes::MAIN_LOOP, (std::shared_ptr<FPS_n2::Sceneclass::TEMPSCENE>&)MAINLOOPscene);
 	//繰り返し
 	do {
 		scene->StartScene();
