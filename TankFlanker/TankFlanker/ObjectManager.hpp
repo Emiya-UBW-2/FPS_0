@@ -5,6 +5,7 @@ namespace FPS_n2 {
 	namespace Sceneclass {
 		class ObjectManager {
 			std::vector<std::shared_ptr<ObjectBaseClass>> m_Object;
+			switchs m_ResetP;
 		public:
 			void AddObject(ObjType ModelType) {
 				switch (ModelType) {
@@ -57,7 +58,11 @@ namespace FPS_n2 {
 				for (auto& o : this->m_Object) {
 					o->Execute();
 				}
+				//物理アップデート
+				this->m_ResetP.GetInput(CheckHitKey_M(KEY_INPUT_P) != 0);
+
 				for (auto& o : this->m_Object) {
+					if (this->m_ResetP.trigger()) { o->SetResetP(true); }
 					o->ExecutePhysics();
 				}
 			}
@@ -65,6 +70,11 @@ namespace FPS_n2 {
 				for (auto& o : this->m_Object) {
 					o->CheckDraw();
 					o->Draw();
+				}
+			}
+			void DrawObject_Shadow(void) noexcept {
+				for (auto& o : this->m_Object) {
+					o->DrawShadow();
 				}
 			}
 			void DisposeObject(void) noexcept {

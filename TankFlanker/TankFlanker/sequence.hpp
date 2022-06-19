@@ -180,9 +180,6 @@ namespace FPS_n2 {
 				this->m_SelEnd |= !this->m_ScenesPtr->Update();
 				//VR空間に適用
 				DrawParts->Move_Player();
-#ifdef DEBUG
-				DebugParts->end_way();
-#endif // DEBUG
 				//終了判定
 				if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 					this->m_EndFlag = true;
@@ -246,9 +243,6 @@ namespace FPS_n2 {
 						this->m_ScenesPtr->Item_Draw();											//UI2
 					}
 				}, this->m_ScenesPtr->Get_Camera());
-#ifdef DEBUG
-				//DebugParts->end_way();
-#endif // DEBUG
 				//ディスプレイ描画
 				GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), true);
 				{

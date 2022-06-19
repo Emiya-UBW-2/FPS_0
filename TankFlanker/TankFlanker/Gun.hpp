@@ -13,7 +13,7 @@ namespace FPS_n2 {
 				float m_yAdd{ 0.f };
 				float m_Timer{ 0.f };
 				float m_HitTimer{ 0.f };
-				std::array<VECTOR_ref, 20> m_Line;
+				std::array<VECTOR_ref, 10> m_Line;
 				int m_LineSel = 0;
 				moves m_move_Hit;
 			public:
@@ -24,7 +24,7 @@ namespace FPS_n2 {
 					this->m_yAdd = 0.f;
 					this->m_move.repos = this->m_move.pos;
 					this->m_Timer = 0.f;
-					this->m_HitTimer = 2.f;
+					this->m_HitTimer = 1.5f;
 					for (auto& l : this->m_Line) {
 						l = this->m_move.pos;
 					}
@@ -38,16 +38,14 @@ namespace FPS_n2 {
 						this->m_yAdd += (M_GR / (FPS*FPS));
 					}
 
-					if (this->m_Timer > std::min(2.f, this->m_HitTimer)) {
+					if (this->m_Timer > std::min(1.5f, this->m_HitTimer)) {
 						this->m_isActive = false;
 					}
 					this->m_Timer += 1.f / FPS;
 				}
 				bool CheckBullet(const MV1* pCol) noexcept {
 					if (this->m_isActive) {
-						auto HitResult = pCol->CollCheck_Line(
-							this->m_move.repos,
-							this->m_move.pos);
+						auto HitResult = pCol->CollCheck_Line(this->m_move.repos, this->m_move.pos);
 						if (HitResult.HitFlag == TRUE) {
 							this->m_move_Hit.pos = HitResult.HitPosition;
 							this->m_move_Hit.vec = HitResult.Normal;
@@ -68,7 +66,7 @@ namespace FPS_n2 {
 								this->m_Line[(LS - 1) % this->m_Line.size()].get(),
 								this->m_Line[LS % this->m_Line.size()].get()) == FALSE
 								) {
-								DrawCapsule3D(this->m_Line[(LS - 1) % this->m_Line.size()].get(), this->m_Line[LS % this->m_Line.size()].get(), this->m_cal*12.5f*8.f*((float)(i) / this->m_Line.size()), 4, GetColor(64, 64, 64), GetColor(64, 64, 64), TRUE);
+								DrawCapsule3D(this->m_Line[(LS - 1) % this->m_Line.size()].get(), this->m_Line[LS % this->m_Line.size()].get(), this->m_cal*12.5f*8.f*((float)(i) / this->m_Line.size()), 3, GetColor(64, 64, 64), GetColor(64, 64, 64), TRUE);
 							}
 						}
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -78,7 +76,6 @@ namespace FPS_n2 {
 							) {
 							DrawCapsule3D(this->m_move.repos.get(), this->m_move.pos.get(), this->m_cal*12.5f*4.f, 4, GetColor(255, 200, 0), GetColor(255, 255, 255), TRUE);
 						}
-
 						SetUseLighting(TRUE);
 					}
 				}
@@ -91,14 +88,7 @@ namespace FPS_n2 {
 						return (const moves*)nullptr;
 					}
 				}
-				const auto* GetMoveHit(void) noexcept {
-					if (this->m_isActive) {
-						return &this->m_move_Hit;
-					}
-					else {
-						return (const moves*)nullptr;
-					}
-				}
+				const auto& GetMoveHit(void) noexcept { return this->m_move_Hit; }
 			};
 			class CartClass {
 			private:
@@ -150,19 +140,12 @@ namespace FPS_n2 {
 				void CheckBullet(const MV1* pCol) noexcept {
 					if (this->m_isActive) {
 						if ((this->m_move.pos - this->m_move.repos).y() <= 0.f) {
-							auto HitResult = pCol->CollCheck_Line(
-								this->m_move.repos,
-								this->m_move.pos);
-							if (HitResult.HitFlag == FALSE) {
-								HitResult = pCol->CollCheck_Line(
-									this->m_move.pos + VECTOR_ref::up()*1.f,
-									this->m_move.pos);
-							}
+							auto HitResult = pCol->CollCheck_Line(this->m_move.repos + VECTOR_ref::up()*1.f, this->m_move.pos);
 							if (HitResult.HitFlag == TRUE) {
 								this->m_move.pos = HitResult.HitPosition;
 
 								VECTOR_ref Normal = HitResult.Normal;
-								this->m_move.vec = (this->m_move.vec + Normal * ((Normal*-1.f).dot(this->m_move.vec.Norm())*1.1f))*0.2f;
+								this->m_move.vec = (this->m_move.vec + Normal * ((Normal*-1.f).dot(this->m_move.vec.Norm())*2.f))*0.1f;
 								this->m_yAdd = 0.f;
 							}
 						}
@@ -180,7 +163,7 @@ namespace FPS_n2 {
 								this->m_Line[(LS - 1) % this->m_Line.size()].get(),
 								this->m_Line[LS % this->m_Line.size()].get()) == FALSE
 								) {
-								DrawCapsule3D(this->m_Line[(LS - 1) % this->m_Line.size()].get(), this->m_Line[LS % this->m_Line.size()].get(), this->m_cal*12.5f*1.f*((float)(i - min) / max), 4, GetColor(128, 128, 128), GetColor(64, 64, 64), TRUE);
+								DrawCapsule3D(this->m_Line[(LS - 1) % this->m_Line.size()].get(), this->m_Line[LS % this->m_Line.size()].get(), this->m_cal*12.5f*1.f*((float)(i - min) / max), 3, GetColor(128, 128, 128), GetColor(64, 64, 64), TRUE);
 							}
 						}
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -193,11 +176,21 @@ namespace FPS_n2 {
 						}
 					}
 				}
+				void DrawShadow(void) noexcept {
+					if (this->m_isActive) {
+						if (CheckCameraViewClip_Box(
+							this->m_move.repos.get(),
+							this->m_move.pos.get()) == FALSE
+							) {
+							this->m_obj.DrawModel();
+						}
+					}
+				}
 			};
 		private:
 			MV1 m_Cartobj;
 			GraphHandle m_reticle;
-			bool m_boltFlag{ false };
+			int m_animSel{ 0 };
 			std::array<BulletClass, 3> m_Bullet;
 			int m_NowShotBullet{ 0 };
 			std::array<CartClass, 3> m_Cart;
@@ -216,26 +209,36 @@ namespace FPS_n2 {
 			std::shared_ptr<MagazineClass> m_Mag_Ptr{ nullptr };
 		public://ÉQÉbÉ^Å[
 			void SetMagPtr(std::shared_ptr<MagazineClass>& pMagPtr) noexcept { this->m_Mag_Ptr = pMagPtr; }
-			const auto GetScopePos(void) noexcept { return this->obj.frame(8); }
-			const auto GetLensPos(void) noexcept { return this->obj.frame(10); }
+			const auto GetScopePos(void) noexcept { return this->m_obj.frame(8); }
+			const auto GetLensPos(void) noexcept { return this->m_obj.frame(10); }
 			const auto GetReticlePos(void) noexcept { return GetLensPos() + (GetLensPos() - GetScopePos()).Norm()*10.f; }
-			const auto GetLensPosSize(void) noexcept { return this->obj.frame(11); }
-			const auto GetMuzzleMatrix(void) noexcept { return this->obj.GetFrameLocalWorldMatrix(7); }
-			const auto GetCartMat(void) noexcept { return this->obj.GetFrameLocalWorldMatrix(5); }
-			const auto GetCartVec(void) noexcept { return (this->obj.frame(6) - this->obj.frame(5)).Norm(); }
-			const auto GetMagMat(void) noexcept { return this->obj.GetFrameLocalWorldMatrix(12); }
+			const auto GetLensPosSize(void) noexcept { return this->m_obj.frame(11); }
+			const auto GetMuzzleMatrix(void) noexcept { return this->m_obj.GetFrameLocalWorldMatrix(7); }
+			const auto GetCartMat(void) noexcept { return this->m_obj.GetFrameLocalWorldMatrix(5); }
+			const auto GetCartVec(void) noexcept { return (this->m_obj.frame(6) - this->m_obj.frame(5)).Norm(); }
+			const auto GetMagMat(void) noexcept { return this->m_obj.GetFrameLocalWorldMatrix(12); }
 			const auto GetCanshot(void) noexcept { return !this->m_Mag_Ptr->IsEmpty(); }
+
+			const auto GetIsEmpty(void) noexcept { return this->m_Mag_Ptr->IsEmpty(); }
+			const auto GetIsMagFull(void) noexcept { return this->m_Mag_Ptr->IsFull(); }
+			const auto GetAmmoNum(void) noexcept { return this->m_Mag_Ptr->GetAmmoNum() + (m_in_chamber ? 1 : 0); }
+			const auto GetAmmoAll(void) noexcept { return this->m_Mag_Ptr->GetAmmoAll(); }
+
 			const auto& GetReticle(void) noexcept { return this->m_reticle; }
 			const auto& GetIsHit(void) noexcept { return this->m_IsHit; }
 			const auto& GetHitPos(void) noexcept { return this->m_move_Hit.pos; }
 			const auto& GetHitVec(void) noexcept { return this->m_move_Hit.vec; }
 			const auto& GetIsShot(void) noexcept { return this->m_IsShot; }
 			void SetIsShot(bool value) noexcept { this->m_IsShot = value; }
-			const auto GetChamberIn(void) noexcept { return (this->obj.get_anime(0).per == 1.f) && (this->obj.get_anime(0).time >= 25.f); }
-			void SetMatrix(const MATRIX_ref& value, bool pBoltFlag) noexcept {
-				this->obj.SetMatrix(value);
+			const auto GetChamberIn(void) noexcept {
+				return
+					((this->m_obj.get_anime(0).per == 1.f) && (this->m_obj.get_anime(0).time >= 25.f))
+					|| ((this->m_obj.get_anime(3).per == 1.f) && (this->m_obj.get_anime(3).time >= 5.f));
+			}
+			void SetMatrix(const MATRIX_ref& value, int pBoltAnim) noexcept {
+				this->m_obj.SetMatrix(value);
 				this->m_Mag_Ptr->SetMatrix(this->GetMagMat());
-				this->m_boltFlag = pBoltFlag;
+				this->m_animSel = pBoltAnim;
 			}
 			void SetBullet(void) noexcept {
 				float Spd = 12.5f*800.f / 60.f;
@@ -255,16 +258,19 @@ namespace FPS_n2 {
 				this->m_CartFlag = true;
 			}
 			void SetCart(void) noexcept {
-				if (this->obj.get_anime(0).time >= 19.f) {
+				if (this->m_obj.get_anime(0).time >= 19.f || this->m_obj.get_anime(1).time >= 19.f) {
 					if (this->m_CartFlag) {
 						this->m_CartFlag = false;
 
-						float Spd = 12.5f*2.f / 60.f;
+						float Spd = 12.5f*2.5f / 60.f;
 						this->m_Cart[this->m_NowShotCart].Set(GetCartMat().pos(), GetMuzzleMatrix().GetRot(),
 							GetCartVec()*Spd);
 						++this->m_NowShotCart %= this->m_Cart.size();
 					}
 				}
+			}
+			void SetAmmoHandMatrix(const MATRIX_ref& value, float pPer) noexcept {
+				this->m_Mag_Ptr->SetHandMatrix(value, pPer);
 			}
 			const auto* GetLatestAmmoMove(void) noexcept {
 				auto Now = this->m_NowShotBullet - 1;
@@ -302,38 +308,88 @@ namespace FPS_n2 {
 				}
 			}
 			void Execute(void) noexcept override {
-				if (this->m_boltFlag) {
-					this->obj.get_anime(0).per = 1.f;
-					this->obj.get_anime(0).time += 1.f*30.f / FPS * 1.5f;
+				for (int i = 0; i < this->m_obj.get_anime().size(); i++) {
+					if (this->m_animSel == i) {
+						if (i == 2) {
+							if (this->m_obj.get_anime(i).time == 0.f) {
+								this->m_Mag_Ptr->AddAmmo();
+							}
+						}
+						this->m_obj.get_anime(i).per = 1.f;
+						this->m_obj.get_anime(i).time += 1.f*30.f / FPS * 1.5f;
+						if (this->m_obj.get_anime(i).TimeEnd()) {
+							this->m_obj.get_anime(i).time = 0.f;
+						}
+					}
+					else {
+						this->m_obj.get_anime(i).per = 0.f;
+						this->m_obj.get_anime(i).time = 0.f;
+					}
+				}
 
-					if ((5.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 6.f)) {
+				//0
+				{
+					if ((5.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 6.f)) {
 						if (!this->m_BoltSound[0].check()) {
 							this->m_BoltSound[0].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((11.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 12.f)) {
+					if ((11.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 12.f)) {
 						if (!this->m_BoltSound[1].check()) {
 							this->m_BoltSound[1].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((28.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 29.f)) {
+					if ((28.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 29.f)) {
 						if (!this->m_BoltSound[2].check()) {
 							this->m_BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((36.f < this->obj.get_anime(0).time && this->obj.get_anime(0).time < 37.f)) {
+					if ((36.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 37.f)) {
 						if (!this->m_BoltSound[3].check()) {
 							this->m_BoltSound[3].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
 				}
-				else {
-					this->obj.get_anime(0).per = 0.f;
-					this->obj.get_anime(0).time = 0.f;
+				//1
+				{
+					if ((5.f < this->m_obj.get_anime(1).time && this->m_obj.get_anime(1).time < 6.f)) {
+						if (!this->m_BoltSound[0].check()) {
+							this->m_BoltSound[0].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+					if ((11.f < this->m_obj.get_anime(1).time && this->m_obj.get_anime(1).time < 12.f)) {
+						if (!this->m_BoltSound[1].check()) {
+							this->m_BoltSound[1].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
 				}
-				this->obj.frame_Reset(1);
-				this->obj.work_anime();
-				this->obj.SetFrameLocalMatrix(1, this->obj.GetFrameLocalMatrix(1).GetRot());
+				//2
+				{
+					if ((10.f < this->m_obj.get_anime(2).time && this->m_obj.get_anime(2).time < 11.f)) {
+						if (!this->m_BoltSound[2].check()) {
+							this->m_BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+				}
+				//3
+				{
+					if ((8.f < this->m_obj.get_anime(3).time && this->m_obj.get_anime(3).time < 9.f)) {
+						if (!this->m_BoltSound[2].check()) {
+							this->m_BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+					if ((16.f < this->m_obj.get_anime(3).time && this->m_obj.get_anime(3).time < 17.f)) {
+						if (!this->m_BoltSound[3].check()) {
+							this->m_BoltSound[3].play_3D(GetMatrix().pos(), 12.5f*5.f);
+						}
+					}
+				}
+
+
+
+				this->m_obj.frame_Reset(1);
+				this->m_obj.work_anime();
+				this->m_obj.SetFrameLocalMatrix(1, this->m_obj.GetFrameLocalMatrix(1).GetRot());
 				if (this->m_CartFlag) {
 					this->m_Cartobj.SetMatrix(this->GetCartMat());
 				}
@@ -348,13 +404,25 @@ namespace FPS_n2 {
 
 				this->m_Mag_Ptr->SetChamberIntime(this->GetChamberIn());
 				this->m_Mag_Ptr->SetChamberMatrix(this->GetCartMat());
+
+			}
+			void DrawShadow(void) noexcept override {
+				ObjectBaseClass::DrawShadow();
+				for (auto& b : this->m_Cart) {
+					b.DrawShadow();
+				}
 			}
 			void Draw(void) noexcept override {
 				for (auto& b : this->m_Bullet) {
 					b.Draw();
 				}
 				if (this->m_CartFlag) {
-					this->m_Cartobj.DrawModel();
+					if (CheckCameraViewClip_Box(
+						(this->m_Cartobj.GetMatrix().pos() + VECTOR_ref::vget(-1, -1, -1)).get(),
+						(this->m_Cartobj.GetMatrix().pos() + VECTOR_ref::vget(1, 1, 1)).get()) == FALSE
+						) {
+						this->m_Cartobj.DrawModel();
+					}
 				}
 				ObjectBaseClass::Draw();
 				for (auto& b : this->m_Cart) {
@@ -374,10 +442,7 @@ namespace FPS_n2 {
 				this->m_IsHit = false;
 				for (auto& b : this->m_Bullet) {
 					if (b.CheckBullet(pCol)) {
-						auto* ptr = b.GetMoveHit();
-						if (ptr != nullptr) {
-							this->m_move_Hit = *ptr;
-						}
+						this->m_move_Hit = b.GetMoveHit();
 						this->m_IsHit = true;
 					}
 				}

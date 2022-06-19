@@ -8,8 +8,8 @@ namespace FPS_n2 {
 			GraphHandle HeartGraph;
 			FontPool UI;
 
-			int intParam[1];
-			float floatParam[3];
+			int intParam[3];
+			float floatParam[4];
 		public:
 			void Set(void) noexcept {
 				HeartGraph = GraphHandle::Load("data/UI/Heart.png");
@@ -36,11 +36,53 @@ namespace FPS_n2 {
 				}
 				//向き
 				{
-					float Xsize = (float)(y_r(200));
+					float Xsize = (float)(y_r(125));
 					int siz = y_r(12);
 					int xP = siz + (int)Xsize, yP = DrawParts->disp_y - siz - y_r(64);
+					int xpt = xP, ypt = yP;
+					for (int i = 0; i < 5; i++) {
+						float max = Xsize * (i + 1) / 5;
+						float rad = floatParam[2] * (i + 1) / 5;
+						DrawLine(
+							xpt, ypt,
+							xP + (int)(max*sin(rad)), yP + (int)(max*-cos(rad)),
+							GetColor(255, 0, 0), 5 - i);
+						xpt = xP + (int)(max*sin(rad));
+						ypt = yP + (int)(max*-cos(rad));
+					}
+					{
+						float max = Xsize;
+						float rad = floatParam[2];
+						xpt = xP + (int)(max*sin(rad));
+						ypt = yP + (int)(max*-cos(rad));
 
-					DrawLine(xP, yP, xP + (int)(Xsize*sin(floatParam[2])), yP + (int)(Xsize*-cos(floatParam[2])), GetColor(255, 0, 0), 5);
+						float yap = Xsize / 5;
+						DrawLine(
+							xpt - (int)(yap*sin(rad * 2.f - deg2rad(15))), ypt - (int)(yap*-cos(rad * 2.f - deg2rad(15))),
+							xpt, ypt,
+							GetColor(255, 0, 0), 2);
+						DrawLine(
+							xpt - (int)(yap*sin(rad * 2.f + deg2rad(15))), ypt - (int)(yap*-cos(rad * 2.f + deg2rad(15))),
+							xpt, ypt,
+							GetColor(255, 0, 0), 2);
+					}
+
+					UI.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xP - siz / 2, yP - y_r(14), GetColor((int)(192.f - 64.f*floatParam[2] * 2.f), 0, 0), "Q");
+					UI.Get(y_r(24)).Get_handle().DrawStringFormat(xP + siz / 2, yP - y_r(14), GetColor((int)(192.f + 64.f*floatParam[2] * 2.f), 0, 0), "E");
+				}
+				//弾数
+				{
+					int xP = DrawParts->disp_x - y_r(24), yP = DrawParts->disp_y - y_r(32);
+
+					UI.Get(y_r(32)).Get_handle().DrawStringFormat_RIGHT(xP - y_r(48), yP - y_r(18), GetColor(255, 255, 255), "%02d", intParam[1]);
+					UI.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xP - y_r(30), yP - y_r(6), GetColor(192, 192, 192), "/");
+					UI.Get(y_r(18)).Get_handle().DrawStringFormat_RIGHT(xP, yP, GetColor(192, 192, 192), "%02d", intParam[2]);
+				}
+				//スコア
+				{
+					int xP = y_r(150), yP = DrawParts->disp_y - y_r(64);
+					UI.Get(y_r(32)).Get_handle().DrawStringFormat(xP, yP, GetColor(255, 255, 255), "%02d", (int)floatParam[3]);
+					UI.Get(y_r(18)).Get_handle().DrawStringFormat(xP + y_r(54), yP + y_r(14), GetColor(255, 255, 255), ".%02d", (int)((floatParam[3] - (float)((int)floatParam[3]))*100.f));
 				}
 			}
 
@@ -72,8 +114,11 @@ namespace FPS_n2 {
 			float m_TurnRatePer{ 0.f };
 			//UI関連
 			UIClass UI_class;
+			float scoreBuf{ 0.f };
 			//銃関連
 			const int gun_num = 3;
+
+			const int chara_num = 3;
 
 			bool Reticle_on = false;
 			float Reticle_xpos = 0;
@@ -82,11 +127,10 @@ namespace FPS_n2 {
 			using TEMPSCENE::TEMPSCENE;
 			void Set(void) noexcept override {
 				Set_EnvLight(
-					VECTOR_ref::vget(1.f, 1.f, 1.f),
-					VECTOR_ref::vget(-1.f, -1.f, -1.f),
+					VECTOR_ref::vget(12.5f*-300.f, 12.5f*-10.f, 12.5f*-300.f),
+					VECTOR_ref::vget(12.5f*300.f, 12.5f*50.f, 12.5f*300.f),
 					VECTOR_ref::vget(-0.25f, -0.5f, 0.0f),
 					GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
-				TEMPSCENE::Set();
 				//Load
 				this->BackGround.Load();
 
@@ -94,7 +138,7 @@ namespace FPS_n2 {
 					this->Obj.AddObject(ObjType::Target);
 					this->Obj.LoadObj("data/model/Target/");
 				}
-				for (int i = 0; i < 3; i++) {
+				for (int i = 0; i < chara_num; i++) {
 					this->Obj.AddObject(ObjType::Human);
 					this->Obj.LoadObj("data/umamusume/WinningTicket/");
 				}
@@ -113,12 +157,18 @@ namespace FPS_n2 {
 				Env.vol(64);
 				//UI
 				UI_class.Set();
+				this->scoreBuf = 0.f;
+				//
+				TEMPSCENE::Set();
 				//Set
 				for (int i = 0; i < tgt_num; i++) {
 					auto& t = this->Obj.GetObj(ObjType::Target, i);
-					t->SetMove(deg2rad(90), VECTOR_ref::vget(732.f - 12.5f*100.f*(i / 3), 15.11f, -974.20f + 20 - 20.f*(i % 3)));
+					t->SetMove(deg2rad(-90), VECTOR_ref::vget(732.f - 12.5f*100.f*(i / 3), 15.11f, -974.20f + 20 - 20.f*(i % 3)));
+					if (i == 0) {
+						//	t->SetMove(deg2rad(-90), VECTOR_ref::vget(1970.f, 90.f, -973.72f));
+					}
 				}
-				for (int i = 0; i < 3; i++) {
+				for (int i = 0; i < chara_num; i++) {
 					auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 					c->SetGunPtr((std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i)));
 					//c->ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(-230.f, 0.f, 450.f + (float)i*20.f));
@@ -214,7 +264,7 @@ namespace FPS_n2 {
 						RunKey.press()
 					);
 
-					for (int i = 1; i < 3; i++) {
+					for (int i = 1; i < chara_num; i++) {
 						auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 						c->SetInput(
 							0.f,
@@ -225,37 +275,42 @@ namespace FPS_n2 {
 							false,
 							false,
 							false,
-							(GetRand(10)==0),
+							(GetRand(10) == 0),
 							true,
 							false
 						);
 					}
 				}
+
 				//Execute
 				this->Obj.ExecuteObject();
+
 				//col
-				for (int j = 0; j < gun_num; j++) {
-					auto& Gun = (std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, j));
-					for (int i = 0; i < tgt_num; i++) {
-						auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, i));
-						if (Gun->CheckBullet(t->GetCol())) {
-							//エフェクト
-							Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
-							//ヒット演算
-							if (j == 0) {
-								if (tgtSel != -1 && tgtSel != i) {
-									auto& tOLD = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, tgtSel));
-									tOLD->ResetHit();
+				for (int j = 0; j < chara_num; j++) {
+					auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, j));
+					if (c->GetGunPtr() != nullptr) {
+						auto& Gun = c->GetGunPtr();
+						for (int i = 0; i < tgt_num; i++) {
+							auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, i));
+							if (Gun->CheckBullet(t->GetCol())) {
+								//エフェクト
+								Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+								//ヒット演算
+								if (j == 0) {
+									if (tgtSel != -1 && tgtSel != i) {
+										auto& tOLD = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, tgtSel));
+										tOLD->ResetHit();
+									}
+									tgtSel = i;
+									tgtTimer = 5.f;
 								}
-								tgtSel = i;
-								tgtTimer = 5.f;
-								t->SetHitPos(Gun->GetHitPos());
+								c->AddScore(t->SetHitPos(Gun->GetHitPos()));
 							}
 						}
-					}
-					if (Gun->CheckBullet(&this->BackGround.GetGroundCol())) {
-						//エフェクト
-						Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+						if (Gun->CheckBullet(&this->BackGround.GetGroundCol())) {
+							//エフェクト
+							Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+						}
 					}
 				}
 				tgtTimer = std::max(tgtTimer - 1.f / FPS, 0.f);
@@ -307,9 +362,18 @@ namespace FPS_n2 {
 				//UIパラメーター
 				{
 					UI_class.SetIntParam(0, (int)(Chara->GetHeartRate()));
+					UI_class.SetIntParam(1, (int)(Chara->GetAmmoNum()));
+					UI_class.SetIntParam(2, (int)(Chara->GetAmmoAll()));
+
 					UI_class.SetfloatParam(0, 1.f + sin(Chara->GetHeartRateRad()*4.f)*0.1f);
 					UI_class.SetfloatParam(1, Chara->GetStamina() / Chara->GetStaminaMax());
 					UI_class.SetfloatParam(2, this->m_TurnRatePer);
+					UI_class.SetfloatParam(3, this->scoreBuf);
+
+					this->scoreBuf += std::clamp((Chara->GetScore() - this->scoreBuf)*100.f, -5.f, 5.f) / FPS;
+
+					
+
 				}
 				TEMPSCENE::Update();
 				Effect_UseControl::Update_Effect();
@@ -328,7 +392,7 @@ namespace FPS_n2 {
 			}
 			void Shadow_Draw(void) noexcept override {
 				this->BackGround.Shadow_Draw();
-				this->Obj.DrawObject();
+				this->Obj.DrawObject_Shadow();
 			}
 
 			void Main_Draw(void) noexcept override {

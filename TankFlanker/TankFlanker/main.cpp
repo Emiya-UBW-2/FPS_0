@@ -6,6 +6,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	auto* OptionParts = OPTION::Instance();
 	OptionParts->Load();							//İ’è“Ç‚İ‚İ
 	DXDraw::Create("FPS_n2", FPS_n2::Frame_Rate);	//”Ä—p
+
+	//MV1SetLoadModelUsePackDraw(TRUE);
+
 #ifdef DEBUG
 	DeBuG::Create(FPS_n2::Frame_Rate);
 #endif // DEBUG

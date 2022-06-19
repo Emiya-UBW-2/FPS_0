@@ -52,6 +52,14 @@ namespace FPS_n2 {
 
 			All_PronetoStand,
 
+			Upper_ReloadStart,
+			Upper_ReloadOne,
+			Upper_ReloadEnd,
+
+			All_Prone_ReloadStart,
+			All_Prone_ReloadOne,
+			All_Prone_ReloadEnd,
+
 			AnimeIDMax,
 		};
 		enum class ObjType {
@@ -70,6 +78,8 @@ namespace FPS_n2 {
 			RightFoot,
 			RightWrist,
 			RightHandJoint,
+			RightThumb,
+			RightPointer,
 			Max,
 		};
 		const char* CharaFrameName[(int)CharaFrame::Max] = {
@@ -82,6 +92,8 @@ namespace FPS_n2 {
 			"右足首",
 			"右手首",
 			"右ダミー",
+			"右人指３",
+			"右親指２",
 		};
 		enum class CharaShape {
 			None,
