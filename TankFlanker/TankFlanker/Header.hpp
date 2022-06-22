@@ -35,6 +35,9 @@
 #include "Gun.hpp"
 #include "Target.hpp"
 #include "Character.hpp"
+#include "Circle.hpp"
+#include "Gate.hpp"
+
 #include "ObjectManager.hpp"
 //
 #include "MainScene.hpp"

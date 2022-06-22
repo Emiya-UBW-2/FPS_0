@@ -110,6 +110,9 @@ namespace FPS_n2 {
 			}
 			//
 			virtual void Execute(void) noexcept {
+
+			}
+			virtual void Depth_Draw(void) noexcept {
 			}
 			virtual void Draw(void) noexcept {
 				if (this->m_IsDraw) {
@@ -122,14 +125,7 @@ namespace FPS_n2 {
 				}
 			}
 			virtual void DrawShadow(void) noexcept {
-				if (this->m_IsDraw) {
-					if (CheckCameraViewClip_Box(
-						(m_obj.GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
-						(m_obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)).get()) == FALSE
-						) {
-						this->m_obj.DrawModel();
-					}
-				}
+				this->m_obj.DrawModel();
 			}
 			//
 			virtual void Dispose(void) noexcept {
@@ -168,19 +164,16 @@ namespace FPS_n2 {
 				}
 			}
 			void ExecutePhysics(void) noexcept {
-				if (this->m_IsDraw) {
+				{
 					if (this->m_SetReset) {
 						this->m_SetReset = false;
 						this->m_obj.PhysicsResetState();
 					}
 					else {
-						if (this->m_DistanceToCam <= 12.5f*10.f) {
+						//if (this->m_DistanceToCam <= 10.f*12.5f) {
 							this->m_obj.PhysicsCalculation(1000.0f / FPS * 240.f);
-						}
+						//}
 					}
-				}
-				else {
-					this->m_SetReset = true;
 				}
 			}
 			//

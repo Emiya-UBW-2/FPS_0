@@ -37,6 +37,11 @@ cbuffer cbD3D11_CONST_BUFFER_PS_BASE				: register( b1 )
 	DX_D3D11_PS_CONST_BUFFER_BASE		g_Base ;
 } ;
 
+// プログラムとのやり取りのために使うレジスタ2
+cbuffer cbMULTIPLYCOLOR_CBUFFER2 : register(b3)
+{
+	float4	lenspos;
+}
 
 SamplerState g_DiffuseMapSampler            : register(s0) ;		// ディフューズマップテクスチャ
 Texture2D    g_DiffuseMapTexture            : register(t0) ;		// ディフューズマップテクスチャ
@@ -51,9 +56,9 @@ PS_OUTPUT main( PS_INPUT PSInput )
 	PS_OUTPUT PSOutput ;
 	float4 TextureDiffuseColor ;
 	float4 Depth;
-	float MaxOpacityDistance = 3.f;
+	float MaxOpacityDistance = lenspos.x;
 	float2 TexCoords;
-
+	//*
 	// テクスチャカラーの読み込み
 	TextureDiffuseColor = g_DiffuseMapTexture.Sample( g_DiffuseMapSampler, PSInput.TexCoords0 ) ;
 
@@ -63,12 +68,15 @@ PS_OUTPUT main( PS_INPUT PSInput )
 	Depth = g_DepthMapTexture.Sample(g_DepthMapSampler, TexCoords);
 
 	// 出力カラー = ディフューズカラー * テクスチャカラー + スペキュラカラー
-	PSOutput.Color0 = PSInput.Diffuse * TextureDiffuseColor + PSInput.Specular ;
+	PSOutput.Color0 = TextureDiffuseColor;
+	//*/
 
 	PSOutput.Color0.a = 1.f - saturate((Depth.r - PSInput.VPosition.z) / MaxOpacityDistance);
 	if (PSOutput.Color0.a == 1.f) {
 		PSOutput.Color0.a = 0.f;
 	}
+
+	PSOutput.Color0.a *= PSInput.Diffuse.a;
 
 	// 出力パラメータを返す
 	return PSOutput ;

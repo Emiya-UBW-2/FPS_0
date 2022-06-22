@@ -222,7 +222,7 @@ PS_OUTPUT main(PS_INPUT PSInput)
 	PSOutput.Color0.rgb = lerp(g_Common.Fog.Color.rgb, PSOutput.Color0.rgb, saturate(PSInput.Fog));//fog
 
 	// アルファ値 = テクスチャアルファ * マテリアルのディフューズアルファ * 不透明度
-	PSOutput.Color0.a = TextureDiffuseColor.a * g_Common.Material.Diffuse.a * g_Base.FactorColor.a;
+	PSOutput.Color0.a = TextureDiffuseColor.a * g_Common.Material.Diffuse.a;// *g_Base.FactorColor.a;
 
 	// 出力カラー計算 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++( 終了 )
 

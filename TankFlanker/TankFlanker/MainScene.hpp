@@ -100,6 +100,9 @@ namespace FPS_n2 {
 			const int tgt_num = 6;
 			int tgtSel = 0;
 			float tgtTimer = 0.f;
+			//ルール
+			float m_ReadyTime = 0.f;
+			bool m_StartSwitch{ false };
 			//操作関連
 			float EyePosPer_Prone = 0.f;
 			float EyePosPer = 0.f;
@@ -108,10 +111,6 @@ namespace FPS_n2 {
 			switchs MouseActive;
 			switchs RunKey;
 			switchs ADSKey;
-			switchs QKey;
-			switchs EKey;
-			int m_TurnRate{ 0 };
-			float m_TurnRatePer{ 0.f };
 			//UI関連
 			UIClass UI_class;
 			float scoreBuf{ 0.f };
@@ -148,6 +147,15 @@ namespace FPS_n2 {
 					this->Obj.AddObject(ObjType::Magazine);
 					this->Obj.LoadObj("data/gun/Mosin/", "model_mag");
 				}
+
+				this->Obj.AddObject(ObjType::Gate);
+				this->Obj.LoadObj("data/model/map/","model_gate");
+
+
+				this->Obj.AddObject(ObjType::Circle);
+				this->Obj.LoadObj("data/model/Circle/");
+
+
 				//init
 				this->Obj.InitObject(&this->BackGround.GetGroundCol());
 				//ロード
@@ -172,11 +180,22 @@ namespace FPS_n2 {
 					auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 					c->SetGunPtr((std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i)));
 					//c->ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(-230.f, 0.f, 450.f + (float)i*20.f));
-					c->ValueSet(deg2rad(50.f), deg2rad(90.f), false, true, VECTOR_ref::vget(1970.f, 90.f, -973.72f + (float)(i - 1)*20.f));
+					//c->ValueSet(deg2rad(50.f), deg2rad(90.f), false, true, VECTOR_ref::vget(1970.f, 90.f, -973.72f + (float)(i - 1)*20.f));
+					//c->ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(0.f, 0.f, 0.f + (float)(i - 1)*20.f));
+
+					c->ValueSet(deg2rad(0.f), deg2rad(-90.f), false, false, VECTOR_ref::vget(0.f, 0.f, -52.5f + (float)(i - 1)*20.f));
 				}
 				for (int i = 0; i < gun_num; i++) {
 					auto& m = (std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i));
 					m->SetMagPtr((std::shared_ptr<MagazineClass>&)(this->Obj.GetObj(ObjType::Magazine, i)));
+				}
+				{
+					auto& t = this->Obj.GetObj(ObjType::Circle, 0);
+					t->SetMove(deg2rad(0), VECTOR_ref::vget(1970.f-10.f, 90.f, -973.72f - 20.f));
+				}
+				{
+					auto& t = this->Obj.GetObj(ObjType::Gate, 0);
+					t->SetMove(deg2rad(-90), VECTOR_ref::vget(0.f, 0.f,90.f));
 				}
 				tgtSel = -1;
 				tgtTimer = 0.f;
@@ -184,9 +203,12 @@ namespace FPS_n2 {
 				camera_main.set_cam_info(deg2rad(65), 1.f, 100.f);
 				camera_main.set_cam_pos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
 				Set_zoom_lens(3.5f);
+				//
+				this->m_ReadyTime = 15.f;
+				this->m_StartSwitch = false;
 				//入力
 				FPSActive.Init(false);
-				MouseActive.Init(true);
+				MouseActive.Init(false);
 			}
 			//
 			bool Update(void) noexcept override {
@@ -196,10 +218,19 @@ namespace FPS_n2 {
 					SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
 					Env.play(DX_PLAYTYPE_LOOP, TRUE);
 					Chara->LoadReticle();
+
+					//this->m_ReadyTime = 5.f;
+				}
+				//
+				{
+					auto prev = this->m_ReadyTime;
+					this->m_ReadyTime -= 1.f / FPS;
+					this->m_StartSwitch = (prev >= 0.f && this->m_ReadyTime < 0.f);
+					printfDx("%f \n", this->m_ReadyTime);
 				}
 				//Input
 				{
-					MouseActive.GetInput(CheckHitKey_M(KEY_INPUT_TAB) != 0);
+					MouseActive.GetInput(CheckHitKey_M(KEY_INPUT_TAB) != 0 || this->m_StartSwitch);
 					FPSActive.GetInput(CheckHitKey_M(KEY_INPUT_V) != 0);
 					RunKey.GetInput(CheckHitKey_M(KEY_INPUT_LSHIFT) != 0);
 					ADSKey.GetInput((GetMouseInput_M() & MOUSE_INPUT_RIGHT) != 0);
@@ -215,44 +246,11 @@ namespace FPS_n2 {
 					else {
 						SetMouseDispFlag(TRUE);
 					}
-					{
-						EKey.GetInput(CheckHitKey_M(KEY_INPUT_E) != 0);
-						QKey.GetInput(CheckHitKey_M(KEY_INPUT_Q) != 0);
-						if (EKey.trigger()) {
-							if (this->m_TurnRate > -1) {
-								this->m_TurnRate--;
-							}
-							else {
-								this->m_TurnRate++;
-							}
-						}
-						if (QKey.trigger()) {
-							if (this->m_TurnRate < 1) {
-								this->m_TurnRate++;
-							}
-							else {
-								this->m_TurnRate--;
-							}
-						}
-						if (!Chara->GetIsRun()) {
-							this->m_TurnRate = 0;
-						}
-
-						this->m_TurnRate = std::clamp(this->m_TurnRate, -1, 1);
-						float xadd = 0.f;
-						if (Chara->GetIsSprint()) {
-							xadd = 0.279f*(-this->m_TurnRate);//スプリント
-						}
-						else if (Chara->GetIsRun()) {
-							xadd = 0.1845f*(-this->m_TurnRate);//走り
-						}
-						easing_set(&this->m_TurnRatePer, xadd, 0.9f);
-					}
 
 					float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
-						std::clamp(((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f + this->m_TurnRatePer), -9.f, 9.f) * cam_per,
+						std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per,
 						CheckHitKey_M(KEY_INPUT_W) != 0,
 						CheckHitKey_M(KEY_INPUT_S) != 0,
 						CheckHitKey_M(KEY_INPUT_A) != 0,
@@ -261,7 +259,10 @@ namespace FPS_n2 {
 						CheckHitKey_M(KEY_INPUT_X) != 0,
 						(GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0,
 						ADSKey.press(),
-						RunKey.press()
+						RunKey.press(),
+						this->m_ReadyTime < 0.f,
+						CheckHitKey_M(KEY_INPUT_Q) != 0,
+						CheckHitKey_M(KEY_INPUT_E) != 0
 					);
 
 					for (int i = 1; i < chara_num; i++) {
@@ -275,10 +276,20 @@ namespace FPS_n2 {
 							false,
 							false,
 							false,
-							(GetRand(10) == 0),
+							false,
+							false,
 							true,
-							false
+							this->m_ReadyTime < 0.f,
+							false,
+							true
 						);
+					}
+				}
+
+				{
+					auto& t = (std::shared_ptr<GateClass>&)(this->Obj.GetObj(ObjType::Gate, 0));
+					if (this->m_StartSwitch) {
+						t->SetStart();
 					}
 				}
 
@@ -367,7 +378,7 @@ namespace FPS_n2 {
 
 					UI_class.SetfloatParam(0, 1.f + sin(Chara->GetHeartRateRad()*4.f)*0.1f);
 					UI_class.SetfloatParam(1, Chara->GetStamina() / Chara->GetStaminaMax());
-					UI_class.SetfloatParam(2, this->m_TurnRatePer);
+					UI_class.SetfloatParam(2, Chara->GetTurnRatePer());
 					UI_class.SetfloatParam(3, this->scoreBuf);
 
 					this->scoreBuf += std::clamp((Chara->GetScore() - this->scoreBuf)*100.f, -5.f, 5.f) / FPS;
@@ -384,11 +395,16 @@ namespace FPS_n2 {
 				this->Obj.DisposeObject();
 			}
 			//
+			void Depth_Draw(void) noexcept override {
+				this->BackGround.Draw();
+				//this->Obj.DrawDepthObject();
+			}
 			void BG_Draw(void) noexcept override {
 				this->BackGround.BG_Draw();
 			}
 			void Shadow_Draw_NearFar(void) noexcept override {
 				this->BackGround.Shadow_Draw_NearFar();
+				//this->Obj.DrawObject_Shadow();
 			}
 			void Shadow_Draw(void) noexcept override {
 				this->BackGround.Shadow_Draw();
@@ -398,6 +414,7 @@ namespace FPS_n2 {
 			void Main_Draw(void) noexcept override {
 				this->BackGround.Draw();
 				this->Obj.DrawObject();
+				//this->Obj.DrawDepthObject();
 				//シェーダー描画用パラメーターセット
 				{
 					auto& Chara = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, 0));
@@ -427,6 +444,9 @@ namespace FPS_n2 {
 						Reticle_on = false;
 					}
 				}
+			}
+			void Main_Draw2(void) noexcept override {
+				this->Obj.DrawDepthObject();
 			}
 			void LAST_Draw(void) noexcept override {
 				auto* DrawParts = DXDraw::Instance();

@@ -71,18 +71,22 @@ namespace FPS_n2 {
 				//音位置指定
 				Set3DSoundListenerPosAndFrontPosAndUpVec(camera_main.campos.get(), camera_main.camvec.get(), camera_main.camup.get());
 				//影用意
-				auto NearShadow = std::min(camera_main.far_, 100.f);
-				DrawParts->Ready_Shadow(camera_main.campos, [&] { Shadow_Draw(); }, [&] { Shadow_Draw_NearFar(); }, VECTOR_ref::vget(NearShadow, 60.f, NearShadow), VECTOR_ref::vget(2000.f, 60.f, 2000.f));//MAIN_LOOPのnearはこれ (Get_Mine()->Damage.Get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
+				auto NearShadow = std::min(camera_main.far_, 25.f*12.5f);
+				DrawParts->Ready_Shadow(camera_main.campos, [&] { Shadow_Draw(); }, [&] { Shadow_Draw_NearFar(); }, VECTOR_ref::vget(NearShadow, 30.f, NearShadow), VECTOR_ref::vget(2000.f, 60.f, 2000.f));//MAIN_LOOPのnearはこれ (Get_Mine()->Damage.Get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
 			}
 			virtual void UI_Draw(void) noexcept {}
 			virtual void BG_Draw(void) noexcept {
 				auto* DrawParts = DXDraw::Instance();
 				DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_x, GetColor(192, 192, 192), TRUE);
 			}
+
+			virtual void Depth_Draw(void) noexcept {}
+
 			virtual void Shadow_Draw_Far(void) noexcept {}
 			virtual void Shadow_Draw_NearFar(void) noexcept {}
 			virtual void Shadow_Draw(void) noexcept {}
 			virtual void Main_Draw(void) noexcept {}
+			virtual void Main_Draw2(void) noexcept {}
 
 			const bool& is_lens(void) const noexcept { return shaderParam[0].use; }
 			const float& xp_lens(void) const noexcept { return shaderParam[0].param[0]; }
@@ -130,8 +134,24 @@ namespace FPS_n2 {
 			LONGLONG m_DrawWait, m_OldWait, m_Wait;
 			shaders::shader_Vertex m_ScreenVertex;			// 頂点データ
 			std::array<shaders, 2> m_Shader2D;
+			//深度
+			GraphHandle DepthScreen;						// 深度を取得するスクリーン
+			shaders shader;									/*シェーダー*/
+			shaders Depth;									/*シェーダー*/
 		public:
 			SceneControl(void) noexcept {
+				// 深度を描画するテクスチャの作成( １チャンネル浮動小数点１６ビットテクスチャ )
+				{
+					SetCreateDrawValidGraphChannelNum(1);
+					SetDrawValidFloatTypeGraphCreateFlag(TRUE);
+					SetCreateGraphChannelBitDepth(16);
+					DepthScreen = GraphHandle::Make(DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, false);
+					SetCreateDrawValidGraphChannelNum(0);
+					SetDrawValidFloatTypeGraphCreateFlag(FALSE);
+					SetCreateGraphChannelBitDepth(0);
+				}
+				Depth.Init("GetDepthVS.vso", "GetDepthPS.pso");
+				shader.Init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
 				//シェーダー
 				this->m_ScreenVertex.Set();																					// 頂点データの準備
 				this->m_Shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
@@ -197,6 +217,21 @@ namespace FPS_n2 {
 #endif // DEBUG
 				//共通の描画前用意
 				this->m_ScenesPtr->ReadyDraw();
+				//
+				{
+					cam_info tmp_cam = this->m_ScenesPtr->Get_Camera();
+					{
+						DepthScreen.SetDraw_Screen(tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_);
+						{
+							Depth.Draw_lamda(
+								[&] {
+								SetUseTextureToShader(0, -1);
+								this->m_ScenesPtr->Depth_Draw();
+							}
+							);
+						}
+					}
+				}
 				//UI書き込み
 				PostPassParts->Set_UI_Draw([&] { this->m_ScenesPtr->UI_Draw(); });
 				//VRに移す
@@ -207,7 +242,22 @@ namespace FPS_n2 {
 					tmp_cam.camvec = GetCameraTarget();
 					{
 						//被写体深度描画
-						PostPassParts->BUF_Draw([&] { this->m_ScenesPtr->BG_Draw(); }, [&] { DrawParts->Draw_by_Shadow([&] { this->m_ScenesPtr->Main_Draw(); }); }, tmp_cam, effectControl.Update_effect_f);
+						PostPassParts->BUF_Draw(
+							[&] { this->m_ScenesPtr->BG_Draw(); },
+							[&] { DrawParts->Draw_by_Shadow(
+								[&] {
+									this->m_ScenesPtr->Main_Draw();
+
+									//this->m_ScenesPtr->Main_Draw2();
+
+									shader.Set_param(3.f*12.5f, 0, 0, 0);
+									shader.Draw_lamda([&] {
+										SetUseTextureToShader(1, DepthScreen.get());
+										this->m_ScenesPtr->Main_Draw2();
+									});
+								}
+								);
+							}, tmp_cam, effectControl.Update_effect_f);
 						//最終描画
 						PostPassParts->Set_MAIN_Draw();
 					}
@@ -267,6 +317,8 @@ namespace FPS_n2 {
 					printfDx("DrawTime   :%5.2f ms\n", float(this->m_DrawWait) / 1000.f);
 					printfDx("All-Draw   :%5.2f ms\n", float(this->m_OldWait - this->m_DrawWait) / 1000.f);
 #endif // DEBUG
+
+					//DepthScreen.DrawExtendGraph(0, 0, 960, 540, true);
 				}
 			}
 			//垂直同期

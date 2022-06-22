@@ -31,7 +31,6 @@ namespace FPS_n2 {
 			bool m_TurnBody{ false };
 			bool m_IsRun{ false };
 			bool m_IsSprint{ false };
-			bool m_Ready{ false };
 			bool m_RunReady{ false };
 			bool m_RunReadyFirst{ false };
 			bool m_Running{ false };
@@ -50,18 +49,25 @@ namespace FPS_n2 {
 			//入力
 			switchs m_Squat;
 			switchs m_Prone;
+			switchs QKey;
+			switchs EKey;
 			bool m_Press_GoFront{ false };//
 			bool m_Press_GoRear{ false };
 			bool m_Press_GoLeft{ false };
 			bool m_Press_GoRight{ false };
 			bool m_Press_Shot{ false };
 			bool m_Press_Aim{ false };
+			bool m_Ready_Start{ false };
+			bool m_ReadySwitch{ false };
 			//スタミナ
 			float m_HeartRate{ HeartRateMin };//心拍数
 			float m_HeartRate_r{ HeartRateMin };//心拍数
 			float m_HeartRateRad{ 0.f };//呼吸Sin渡し
 			float m_Stamina{ StaminaMax };
 			bool m_CannotSprint{ false };
+			//
+			int m_TurnRate{ 0 };
+			float m_TurnRatePer{ 0.f };
 			//表情
 			int m_Eyeclose{ 0 };
 			float m_EyeclosePer{ 0.f };
@@ -142,11 +148,11 @@ namespace FPS_n2 {
 			void SetScore(float value) noexcept { this->m_Score = value; }
 			const auto& GetScore(void) const noexcept { return this->m_Score; }
 			const auto& GetIsRun(void) const noexcept { return this->m_IsRun; }
-			const auto& GetIsSprint(void) const noexcept { return this->m_IsSprint; }
 			const auto& GetHeartRate(void) const noexcept { return this->m_HeartRate; }
 			const auto& GetHeartRateRad(void) const noexcept { return this->m_HeartRateRad; }
 			const auto& GetStamina(void) const noexcept { return this->m_Stamina; }
 			const auto& GetStaminaMax(void) const noexcept { return this->StaminaMax; }
+			const auto& GetTurnRatePer(void) const noexcept { return this->m_TurnRatePer; }
 			const auto GetFrameWorldMatrix(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
 			const auto GetIsProne(void) const noexcept { return this->m_Prone.on(); }
 			const auto GetProneShotAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneShot : CharaAnimeID::Upper_Shot; }
@@ -178,6 +184,15 @@ namespace FPS_n2 {
 					{
 						PrevUpperAnimSel = UpperAnimSelect;
 						UpperAnimSelect = CharaAnimeID::Upper_Down;
+						if (!this->m_Ready_Start) {
+							UpperAnimSelect = CharaAnimeID::Upper_Ready;
+							this->m_SlingPer = 1.f;
+
+						}
+						if (this->m_ReadySwitch) {
+							this->m_RunReadyFirst = false;
+							this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
+						}
 						bool canreverse = true;
 						if (!this->m_RunReady && !this->m_Running && !this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
 							this->m_RunReady = true;
@@ -385,6 +400,7 @@ namespace FPS_n2 {
 					for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) {
 						//上半身
 						if (
+							i == (int)CharaAnimeID::Upper_Ready ||
 							i == (int)CharaAnimeID::Upper_Down ||
 							i == (int)CharaAnimeID::Upper_Aim ||
 							i == (int)CharaAnimeID::Upper_RunningStart ||
@@ -554,9 +570,6 @@ namespace FPS_n2 {
 
 				this->m_Stamina += std::clamp((100.f - this->m_HeartRate) / 40.f, -2.5f, 2.5f) / FPS;
 
-				if (!this->m_IsSprint && !this->m_IsRun) {
-					this->m_Stamina += 1.0f / FPS;
-				}
 				if (this->m_Squat.on()) {
 					this->m_Stamina += 1.0f / FPS;
 				}
@@ -566,6 +579,9 @@ namespace FPS_n2 {
 
 				if (this->m_IsSprint) {
 					this->m_Stamina += -0.75f / FPS;
+				}
+				else {
+					this->m_Stamina += 1.0f / FPS;
 				}
 
 				this->m_Stamina = std::clamp(this->m_Stamina, 0.f, StaminaMax);
@@ -912,7 +928,6 @@ namespace FPS_n2 {
 				this->m_ShotPhase = 0;
 				this->m_SetReset = true;
 				this->m_IsSprint = false;
-				this->m_Ready = false;
 				this->m_RunReady = false;
 				this->m_Running = false;
 				this->m_Press_GoFront = false;
@@ -921,6 +936,7 @@ namespace FPS_n2 {
 				this->m_Press_GoRight = false;
 				this->m_Press_Shot = false;
 				this->m_Press_Aim = false;
+				this->m_Ready_Start = false;
 				this->m_IsRun = false;
 
 				this->m_HeartSESel = 0;
@@ -951,19 +967,24 @@ namespace FPS_n2 {
 				bool pPronePress,
 				bool pShotPress,
 				bool pAimPress,
-				bool pRunPress
+				bool pRunPress,
+				bool pReady,
+				bool pQPress,
+				bool pEPress
 			) {
-				this->m_Press_GoFront = pGoFrontPress;
-				this->m_Press_GoRear = pGoBackPress;
-				this->m_Press_GoLeft = pGoLeftPress;
-				this->m_Press_GoRight = pGoRightPress;
+				this->m_ReadySwitch = (this->m_Ready_Start != pReady);
+				this->m_Ready_Start = pReady;
+				this->m_Press_GoFront = pGoFrontPress && this->m_Ready_Start;
+				this->m_Press_GoRear = pGoBackPress && this->m_Ready_Start;
+				this->m_Press_GoLeft = pGoLeftPress && this->m_Ready_Start;
+				this->m_Press_GoRight = pGoRightPress && this->m_Ready_Start;
 				if (this->m_Prone.on() && (!(this->m_ShotPhase == 0))) {
 					this->m_Press_GoFront = false;
 					this->m_Press_GoRear = false;
 					this->m_Press_GoLeft = false;
 					this->m_Press_GoRight = false;
 				}
-				this->m_Press_Shot = pShotPress;
+				this->m_Press_Shot = pShotPress && this->m_Ready_Start;
 				if (0.f != this->m_PronePer && this->m_PronePer != 1.0f) {
 					this->m_Press_Shot = false;
 				}
@@ -972,14 +993,14 @@ namespace FPS_n2 {
 				}
 
 
-				this->m_Press_Aim = pAimPress;
+				this->m_Press_Aim = pAimPress && this->m_Ready_Start;
 
 				if (this->m_PronetoStanding) {
 					this->m_Press_Aim = false;
 					this->m_ReadyTimer = UpperTimerLimit;
 				}
 
-				if (!this->m_IsRun& pRunPress) {
+				if (!this->m_IsRun& (pRunPress&& this->m_Ready_Start)) {
 					this->m_RunTimer = 1.f;
 				}
 				if (this->m_RunTimer > 0.f) {
@@ -988,7 +1009,7 @@ namespace FPS_n2 {
 				}
 				else {
 					this->m_RunTimer = 0.f;
-					this->m_IsRun = pRunPress;
+					this->m_IsRun = (pRunPress&& this->m_Ready_Start);
 				}
 				//
 				if (this->m_Press_GoRear || (!this->m_Press_GoFront && (this->m_Press_GoLeft || this->m_Press_GoRight))) {
@@ -1007,15 +1028,48 @@ namespace FPS_n2 {
 					}
 				}
 
-				this->m_Squat.GetInput(pSquatPress);
+				this->m_Squat.GetInput(pSquatPress&& this->m_Ready_Start);
 				if (this->m_IsRun) { this->m_Squat.first = false; }
 
-				this->m_Prone.GetInput(pPronePress && (this->m_ShotPhase == 0) && (this->m_PronePer == 0.f || this->m_PronePer == 1.f));
+				this->m_Prone.GetInput((pPronePress&& this->m_Ready_Start) && (this->m_ShotPhase == 0) && (this->m_PronePer == 0.f || this->m_PronePer == 1.f));
 				if (this->m_Prone.on()) { this->m_Squat.first = false; }
 				{
 					auto TmpReady = !(!this->m_IsRun || (this->m_ShotPhase >= 2));
 					this->m_RunReadyFirst = (TmpReady && !this->m_RunReady);
 					this->m_RunReady = TmpReady;
+				}
+				{
+					QKey.GetInput(pQPress);
+					EKey.GetInput(pEPress);
+					if (EKey.trigger()) {
+						if (this->m_TurnRate > -1) {
+							this->m_TurnRate--;
+						}
+						else {
+							this->m_TurnRate++;
+						}
+					}
+					if (QKey.trigger()) {
+						if (this->m_TurnRate < 1) {
+							this->m_TurnRate++;
+						}
+						else {
+							this->m_TurnRate--;
+						}
+					}
+					if (!this->m_IsRun) {
+						this->m_TurnRate = 0;
+					}
+
+					this->m_TurnRate = std::clamp(this->m_TurnRate, -1, 1);
+					float xadd = 0.f;
+					if (this->m_IsSprint) {
+						xadd = 0.279f*(-this->m_TurnRate);//スプリント
+					}
+					else if (this->m_IsRun) {
+						xadd = 0.2f*(-this->m_TurnRate);//走り
+					}
+					easing_set(&this->m_TurnRatePer, xadd, 0.9f);
 				}
 				{
 					auto limchange = Leap(Leap(1.f, powf(1.f - this->m_Vec[0], 0.5f), this->m_RunPer * 0.8f), 0.15f, this->m_PronePer);
@@ -1027,7 +1081,7 @@ namespace FPS_n2 {
 					easing_set(&this->m_yrad_Add, tmp2 + 0.0002f * sin(this->m_HeartRateRad * 3) * powf(this->m_HeartRate / HeartRateMin, 3.f), 0.95f);
 
 					this->m_rad_Buf.x(std::clamp(this->m_rad_Buf.x() + pAddxRad * tmp, -deg2rad(40.f) * limchange, deg2rad(25.f) * limchange));
-					this->m_rad_Buf.yadd(pAddyRad * tmp);
+					this->m_rad_Buf.yadd((pAddyRad + this->m_TurnRatePer / 100.f) * tmp);
 					this->m_rad_Buf.xadd(this->m_xrad_Add * tmp3);
 					this->m_rad_Buf.yadd(this->m_yrad_Add * tmp3);
 					easing_set(&this->m_rad, this->m_rad_Buf, 0.5f);

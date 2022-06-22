@@ -25,6 +25,14 @@ namespace FPS_n2 {
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<TargetClass>();
 					break;
+				case ObjType::Circle://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<CircleClass>();
+					break;
+				case ObjType::Gate://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<GateClass>();
+					break;
 				default:
 					break;
 				}
@@ -64,6 +72,11 @@ namespace FPS_n2 {
 				for (auto& o : this->m_Object) {
 					if (this->m_ResetP.trigger()) { o->SetResetP(true); }
 					o->ExecutePhysics();
+				}
+			}
+			void DrawDepthObject(void) noexcept {
+				for (auto& o : this->m_Object) {
+					o->Depth_Draw();
 				}
 			}
 			void DrawObject(void) noexcept {

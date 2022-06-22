@@ -232,16 +232,10 @@ VS_OUTPUT main( VS_INPUT VSInput )
 	//              マテリアルのディフューズカラー +
 	//              ライトのアンビエントカラーとマテリアルのアンビエントカラーを乗算したもの ) +
 	//            マテリアルのアンビエントカラーとグローバルアンビエントカラーを乗算したものとマテリアルエミッシブカラーを加算したもの
-	VSOutput.Diffuse.xyz = lLightGen * ( lLightLitDest.y * g_Common.Light[ 0 ].Diffuse * g_Common.Material.Diffuse.xyz + g_Common.Light[ 0 ].Ambient.xyz ) + g_Common.Material.Ambient_Emissive.xyz ;
-
-	// ディフューズアルファはマテリアルのディフューズカラーのアルファをそのまま使う
-	VSOutput.Diffuse.w = g_Common.Material.Diffuse.w ;
-
-	// スペキュラカラー = 距離減衰値 * スペキュラ角度減衰計算結果 * ライトのスペキュラカラー * マテリアルのスペキュラカラー
-	VSOutput.Specular.xyz = lLightGen * lLightLitDest.z * g_Common.Light[ 0 ].Specular * g_Common.Material.Specular.xyz ;
+	VSOutput.Diffuse = g_Common.Material.Diffuse;
 
 	// スペキュラアルファはマテリアルのスペキュラカラーのアルファをそのまま使う
-	VSOutput.Specular.w = g_Common.Material.Specular.w ;
+	VSOutput.Specular = g_Common.Material.Specular;
 
 
 	// テクスチャ座標変換行列による変換を行った結果のテクスチャ座標をセット

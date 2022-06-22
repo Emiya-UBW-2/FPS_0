@@ -60,6 +60,8 @@ namespace FPS_n2 {
 			All_Prone_ReloadOne,
 			All_Prone_ReloadEnd,
 
+			Upper_Ready,
+
 			AnimeIDMax,
 		};
 		enum class ObjType {
@@ -67,6 +69,8 @@ namespace FPS_n2 {
 			Gun,
 			Target,
 			Magazine,
+			Circle,
+			Gate,
 		};
 		enum class CharaFrame {
 			Center,

@@ -13,7 +13,9 @@
   <ItemGroup>
     <ClInclude Include="BackGround.hpp" />
     <ClInclude Include="Character.hpp" />
+    <ClInclude Include="Circle.hpp" />
     <ClInclude Include="Enums.hpp" />
+    <ClInclude Include="Gate.hpp" />
     <ClInclude Include="Gun.hpp" />
     <ClInclude Include="Header.hpp" />
     <ClInclude Include="Magazine.hpp" />
