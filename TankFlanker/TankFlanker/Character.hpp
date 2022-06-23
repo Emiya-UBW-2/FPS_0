@@ -167,6 +167,7 @@ namespace FPS_n2 {
 			const auto GetAmmoAll(void) const noexcept { return this->m_Gun_Ptr->GetAmmoAll(); }
 
 			const auto GetIsADS(void) const noexcept { return this->m_ReadyTimer == 0.f; }
+			const auto GetReadyPer(void) const noexcept { return this->m_ReadyPer; }
 		private:
 			void SetAnimLoop(int ID, float speed) {
 				this->m_obj.get_anime(ID).time += 30.f / FPS * speed;
@@ -618,15 +619,15 @@ namespace FPS_n2 {
 				this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
 
 				SetCreate3DSoundFlag(TRUE);
-				this->m_RunFootL = SoundHandle::Load("data/Sound/SE/m_move/runfoot.wav");
-				this->m_RunFootR = SoundHandle::Load("data/Sound/SE/m_move/runfoot.wav");
-				this->m_Sliding = SoundHandle::Load("data/Sound/SE/m_move/sliding.wav");
-				this->m_SlidingL = SoundHandle::Load("data/Sound/SE/m_move/sliding.wav");
-				this->m_SlidingR = SoundHandle::Load("data/Sound/SE/m_move/sliding.wav");
-				this->m_Standup = SoundHandle::Load("data/Sound/SE/m_move/standup.wav");
+				this->m_RunFootL = SoundHandle::Load("data/Sound/SE/move/runfoot.wav");
+				this->m_RunFootR = SoundHandle::Load("data/Sound/SE/move/runfoot.wav");
+				this->m_Sliding = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
+				this->m_SlidingL = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
+				this->m_SlidingR = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
+				this->m_Standup = SoundHandle::Load("data/Sound/SE/move/standup.wav");
 				this->m_Breath = SoundHandle::Load("data/Sound/SE/voice/WinningTicket/breath.wav");
 				for (int i = 0; i < 3; i++) {
-					this->m_Heart[i] = SoundHandle::Load("data/Sound/SE/m_move/heart.wav");
+					this->m_Heart[i] = SoundHandle::Load("data/Sound/SE/move/heart.wav");
 				}
 				SetCreate3DSoundFlag(FALSE);
 
@@ -673,7 +674,9 @@ namespace FPS_n2 {
 					if (this->m_Gun_Ptr != nullptr) {
 						this->m_Gun_Ptr->SetIsShot(false);
 						if (this->m_Press_Shot && (this->m_ShotPhase == 0)) {
-							this->m_ReadyTimer = 0.1f;
+							if (this->m_ReadyTimer >= 0.1f) {
+								this->m_ReadyTimer = 0.1f;
+							}
 							if (this->m_ReadyPer >= 0.9f) {
 								this->m_ReadyPer = 1.f;
 								this->m_ShotPhase = 1;
@@ -993,7 +996,7 @@ namespace FPS_n2 {
 				}
 
 
-				this->m_Press_Aim = pAimPress && this->m_Ready_Start;
+				this->m_Press_Aim = pAimPress && this->m_Ready_Start && (this->m_PronePer == 0.f || this->m_PronePer == 1.f);
 
 				if (this->m_PronetoStanding) {
 					this->m_Press_Aim = false;
@@ -1039,8 +1042,8 @@ namespace FPS_n2 {
 					this->m_RunReady = TmpReady;
 				}
 				{
-					QKey.GetInput(pQPress);
-					EKey.GetInput(pEPress);
+					QKey.GetInput(pQPress && this->m_Ready_Start);
+					EKey.GetInput(pEPress && this->m_Ready_Start);
 					if (EKey.trigger()) {
 						if (this->m_TurnRate > -1) {
 							this->m_TurnRate--;
@@ -1064,7 +1067,7 @@ namespace FPS_n2 {
 					this->m_TurnRate = std::clamp(this->m_TurnRate, -1, 1);
 					float xadd = 0.f;
 					if (this->m_IsSprint) {
-						xadd = 0.279f*(-this->m_TurnRate);//スプリント
+						xadd = 0.3f*(-this->m_TurnRate);//スプリント
 					}
 					else if (this->m_IsRun) {
 						xadd = 0.2f*(-this->m_TurnRate);//走り

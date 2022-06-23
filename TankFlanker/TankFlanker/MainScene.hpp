@@ -96,8 +96,10 @@ namespace FPS_n2 {
 			ObjectManager Obj;				//モデル
 			BackGroundClass BackGround;		//BG
 			SoundHandle Env;
+			//
+			static const int chara_num = 3;
 			//関連
-			const int tgt_num = 6;
+			static const int tgt_num = chara_num * 2;
 			int tgtSel = 0;
 			float tgtTimer = 0.f;
 			//ルール
@@ -115,13 +117,23 @@ namespace FPS_n2 {
 			UIClass UI_class;
 			float scoreBuf{ 0.f };
 			//銃関連
-			const int gun_num = 3;
-
-			const int chara_num = 3;
+			static const int gun_num = chara_num;
 
 			bool Reticle_on = false;
 			float Reticle_xpos = 0;
 			float Reticle_ypos = 0;
+
+			bool InTurnOn[chara_num];
+			bool InTurnOff[chara_num];
+			bool InTurnSwitch[chara_num];
+			bool InAimPoint[chara_num];
+			bool InAimStart[chara_num];
+			bool InAiming[chara_num];
+			bool InShot[chara_num];
+			bool CanSprint[chara_num];
+			bool IsProne[chara_num];
+			float AimX[chara_num];
+			float AimY[chara_num];
 		public:
 			using TEMPSCENE::TEMPSCENE;
 			void Set(void) noexcept override {
@@ -140,6 +152,15 @@ namespace FPS_n2 {
 				for (int i = 0; i < chara_num; i++) {
 					this->Obj.AddObject(ObjType::Human);
 					this->Obj.LoadObj("data/umamusume/WinningTicket/");
+					InTurnOn[i] = false;
+					InTurnOff[i] = false;
+					InTurnSwitch[i] = false;
+					InAimPoint[i] = false;
+					InAimStart[i] = false;
+					InAiming[i] = false;
+					InShot[i] = false;
+					CanSprint[i] = true;
+					IsProne[i] = false;
 				}
 				for (int i = 0; i < gun_num; i++) {
 					this->Obj.AddObject(ObjType::Gun);
@@ -171,7 +192,8 @@ namespace FPS_n2 {
 				//Set
 				for (int i = 0; i < tgt_num; i++) {
 					auto& t = this->Obj.GetObj(ObjType::Target, i);
-					t->SetMove(deg2rad(-90), VECTOR_ref::vget(732.f - 12.5f*100.f*(i / 3), 15.11f, -974.20f + 20 - 20.f*(i % 3)));
+
+					t->SetMove(deg2rad(-90), BackGround.ShotPos[1 + (i / chara_num)] + VECTOR_ref::vget(0, 0, -20 + 20.f*(i % chara_num)));
 					if (i == 0) {
 						//	t->SetMove(deg2rad(-90), VECTOR_ref::vget(1970.f, 90.f, -973.72f));
 					}
@@ -179,10 +201,6 @@ namespace FPS_n2 {
 				for (int i = 0; i < chara_num; i++) {
 					auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 					c->SetGunPtr((std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i)));
-					//c->ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(-230.f, 0.f, 450.f + (float)i*20.f));
-					//c->ValueSet(deg2rad(50.f), deg2rad(90.f), false, true, VECTOR_ref::vget(1970.f, 90.f, -973.72f + (float)(i - 1)*20.f));
-					//c->ValueSet(deg2rad(0.f), deg2rad(0.f), false, false, VECTOR_ref::vget(0.f, 0.f, 0.f + (float)(i - 1)*20.f));
-
 					c->ValueSet(deg2rad(0.f), deg2rad(-90.f), false, false, VECTOR_ref::vget(0.f, 0.f, -52.5f + (float)(i - 1)*20.f));
 				}
 				for (int i = 0; i < gun_num; i++) {
@@ -219,7 +237,7 @@ namespace FPS_n2 {
 					Env.play(DX_PLAYTYPE_LOOP, TRUE);
 					Chara->LoadReticle();
 
-					//this->m_ReadyTime = 5.f;
+					this->m_ReadyTime = 10.f;
 				}
 				//
 				{
@@ -248,6 +266,7 @@ namespace FPS_n2 {
 					}
 
 					float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
+					/*
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
 						std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per,
@@ -264,24 +283,154 @@ namespace FPS_n2 {
 						CheckHitKey_M(KEY_INPUT_Q) != 0,
 						CheckHitKey_M(KEY_INPUT_E) != 0
 					);
-
-					for (int i = 1; i < chara_num; i++) {
+					//*/
+					for (int i = 0; i < chara_num; i++) {
 						auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
+						InTurnSwitch[i] = false;
+						{
+							bool pp = false;
+							for (auto& t : BackGround.TurnOn) {
+								auto p = (t - c->GetMatrix().pos());
+								p.y(0.f);
+								if (p.size() <= 12.5f*10.f) {
+									if (!InTurnOn[i]) {
+										InTurnSwitch[i] = true;
+									}
+									InTurnOn[i] = true;
+									pp = true;
+								}
+							}
+							if (pp) {
+								InTurnOn[i] = false;
+							}
+						}
+						{
+							bool pp = false;
+							for (auto& t : BackGround.TurnOff) {
+								auto p = (t - c->GetMatrix().pos());
+								p.y(0.f);
+								if (p.size() <= 12.5f*10.f) {
+									if (!InTurnOff[i]) {
+										InTurnSwitch[i] = true;
+									}
+									InTurnOff[i] = true;
+									pp = true;
+								}
+							}
+							if (pp) {
+								InTurnOff[i] = false;
+							}
+						}
+						//InAimPoint[i] = false;
+						CanSprint[i] = true;
+						IsProne[i] = false;
+						//InAiming[i] = false;
+						InShot[i] = false;
+						auto t1 = BackGround.ShotPos[0] + VECTOR_ref::vget(0, 0, -20 + 20.f*(i % chara_num));
+						if (!InAimStart[i]) {
+							auto p = (t1 - c->GetMatrix().pos());
+							p.y(0.f);
+							if (p.size() <= 12.5f*2.f) {
+								InAimPoint[i] = true;
+							}
+							if (p.size() <= 12.5f*10.f) {
+								CanSprint[i] = false;
+							}
+							if (p.size() <= 12.5f*20.f) {
+
+								auto q = c->GetCharaDir().zvec()*-1.f;
+								q.y(0.f);
+								if (InAimPoint[i]) {
+									auto t2 = BackGround.ShotPos[1] + VECTOR_ref::vget(0, 0, -20 + 20.f*(i % chara_num));
+									p = (t2 - t1).Norm();
+									p.y(0.f);
+								}
+
+
+								float vecsin = -q.cross(p.Norm()).y();
+
+								easing_set(&AimY[i], -0.06f*vecsin, 0.9f);
+
+								AimX[i] = 0.f;
+
+								if (InAimPoint[i] && (!InAimStart[i] && abs(vecsin)<=0.01f)) {
+									InAimStart[i] = true;
+									IsProne[i] = true;
+								}
+							}
+						}
+						else {
+							CanSprint[i] = false;
+
+							auto q = c->GetEyeVector().Norm();
+							auto yq = q.y();
+							q.y(0.f);
+							auto XZq = q.size();
+
+							bool aim = false;
+
+							auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, i));
+							auto t2 = t->GetCenterPos();
+							auto p = (t2 - t1).Norm();
+							auto yp = p.y();
+							p.y(0.f);
+							auto XZp = p.size();
+							//
+							float vecsin = -q.cross(p.Norm()).y();
+							if (vecsin > 0.1f) {
+								easing_set(&AimY[i], -0.06f*std::clamp(vecsin, 0.5f, 1.0f), 0.9f);
+							}
+							else if (vecsin < -0.1f) {
+								easing_set(&AimY[i], -0.06f*std::clamp(vecsin, -1.0f, -0.5f), 0.9f);
+							}
+							else {
+								easing_set(&AimY[i], -0.06f*10.f*vecsin, 0.9f);
+
+								aim = true;
+							}
+							bool aim2 = (abs(vecsin) < 0.003f);
+							//
+							vecsin = -(XZq*yp - XZp * yq);
+							if (vecsin > 0.1f) {
+								easing_set(&AimX[i], -0.06f*std::clamp(vecsin, 0.5f, 1.0f), 0.9f);
+								aim = false;
+							}
+							else if (vecsin < -0.1f) {
+								easing_set(&AimX[i], -0.06f*std::clamp(vecsin, -1.0f, -0.5f), 0.9f);
+								aim = false;
+							}
+							else {
+								easing_set(&AimX[i], -0.06f*10.f*vecsin, 0.9f);
+
+								if (aim) {
+									InAiming[i] = true;
+								}
+							}
+							aim2 &= (abs(vecsin) < 0.003f);
+							//
+							if (aim2) {
+								InShot[i] = (Chara->GetReadyPer() > 0.95f) ? (GetRand(50) == 0) : false;
+							}
+							else {
+								InShot[i] = false;
+							}
+						}
+
 						c->SetInput(
-							0.f,
-							0.f,
+							AimX[i],
+							AimY[i],
+							!CanSprint[i] && !InAimPoint[i],
 							false,
 							false,
 							false,
 							false,
-							false,
-							false,
-							false,
-							false,
-							true,
+							IsProne[i],
+							InShot[i],
+							InAiming[i],
+							CanSprint[i],
 							this->m_ReadyTime < 0.f,
 							false,
-							true
+							InTurnSwitch[i]
 						);
 					}
 				}
@@ -349,9 +498,13 @@ namespace FPS_n2 {
 						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
 					}
 					easing_set(&EyeRunPer, Chara->GetIsRun() ? 1.f : 0.f, 0.95f);
-					easing_set(&EyePosPer, Chara->GetIsADS() ? 1.f : 0.f, 0.8f);
+					easing_set(&EyePosPer, Chara->GetIsADS() ? 1.f : 0.f, 0.8f);//
+
+					//EyePosPer = 0.f;
+
 					easing_set(&EyePosPer_Prone, Chara->GetIsProne() ? 1.f : 0.f, 0.8f);
 					if (Chara->GetIsADS()) {
+						//easing_set(&camera_main.fov, deg2rad(90), 0.9f);
 						easing_set(&camera_main.fov, deg2rad(17), 0.8f);
 						easing_set(&camera_main.near_, 10.f, 0.9f);
 						easing_set(&camera_main.far_, 12.5f * 300.f, 0.9f);
@@ -443,6 +596,12 @@ namespace FPS_n2 {
 					else {
 						Reticle_on = false;
 					}
+				}
+				for (auto& t : BackGround.TurnOff) {
+					DrawCone3D(t.get(), (t + VECTOR_ref::up()*12.5f*10.f).get(), 12.5f*10.f, 16, GetColor(255, 0, 0), GetColor(255, 0, 0), FALSE);
+				}
+				for (auto& t : BackGround.TurnOn) {
+					DrawCone3D(t.get(), (t + VECTOR_ref::up()*12.5f*10.f).get(), 12.5f*10.f, 16, GetColor(255, 0, 0), GetColor(255, 0, 0), FALSE);
 				}
 			}
 			void Main_Draw2(void) noexcept override {

@@ -11,14 +11,15 @@ namespace FPS_n2 {
 			}
 			~TargetClass(void) noexcept {}
 		public:
+			const auto GetCenterPos() const noexcept { return this->col.frame(2); }
 			const auto SetHitPos(const VECTOR_ref& value) noexcept {
 				HitPosRec.emplace_back(value);
 				this->m_obj.get_anime(0).time = 0.f;
 
-				auto vecx = this->col.frame(3) - this->col.frame(2);
-				auto vecy = this->col.frame(4) - this->col.frame(2);
+				auto vecx = this->col.frame(3) - GetCenterPos();
+				auto vecy = this->col.frame(4) - GetCenterPos();
 				auto vecsize = (vecx.size() + vecy.size()) / 2;
-				auto vec2 = HitPosRec.back() - this->col.frame(2);
+				auto vec2 = HitPosRec.back() - GetCenterPos();
 				return ((1.f - (vec2.size() / vecsize)) * 10.f);
 			}
 			void ResetHit(void) noexcept {
@@ -51,13 +52,13 @@ namespace FPS_n2 {
 						DrawCircle(xp + xs / 2, yp + ys / 2, xs / 2 * i / 10, GetColor(255, 255, 255), FALSE);
 					}
 					//–½’†‰ÓŠ
-					auto vecx = this->col.frame(3) - this->col.frame(2);
-					auto vecy = this->col.frame(4) - this->col.frame(2);
+					auto vecx = this->col.frame(3) - GetCenterPos();
+					auto vecy = this->col.frame(4) - GetCenterPos();
 					auto vecsize = (vecx.size() + vecy.size()) / 2;
 					vecx = vecx.Norm();
 					vecy = vecy.Norm();
 					for (auto& r : HitPosRec) {
-						auto vec2 = r - this->col.frame(2);
+						auto vec2 = r - GetCenterPos();
 						float cos_t = -vecx.dot(vec2.Norm());
 						float sin_t = -vecy.dot(vec2.Norm());
 
@@ -70,7 +71,7 @@ namespace FPS_n2 {
 					//“_”
 					int ypAdd = 0;
 					for (auto& r : HitPosRec) {
-						auto vec2 = r - this->col.frame(2);
+						auto vec2 = r - GetCenterPos();
 						DrawFormatString(xp, yp2 + ypAdd, GetColor(255, 255, 255), "[%4.1f]", (1.f - (vec2.size() / vecsize)) * 10.f);
 						ypAdd += 18;
 					}

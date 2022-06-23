@@ -20,6 +20,11 @@ namespace FPS_n2 {
 			MV1 Build;
 			VECTOR_ref minBuild, maxBuild;
 		public:
+			std::vector<VECTOR_ref> TurnOn;
+			std::vector<VECTOR_ref> TurnOff;
+
+			std::array<VECTOR_ref, 3> ShotPos;
+		public:
 			void Load(void) noexcept {
 				MV1::Load("data/model/sky/model.mv1", &Sky);
 				MV1::Load("data/model/ground/model.mv1", &Ground);
@@ -38,9 +43,21 @@ namespace FPS_n2 {
 				}
 
 				int TowerFrame = -1;
+				int TurnOnFrame = -1;
+				int TurnOffFrame = -1;
+				int ShotPosFrame = -1;
 				for (int i = 0; i < GroundPos.frame_num(); i++) {
 					if (GroundPos.frame_name(i) == "Tower") {
 						TowerFrame = i;
+					}
+					else if(GroundPos.frame_name(i) == "TurnOn") {
+						TurnOnFrame = i;
+					}
+					else if (GroundPos.frame_name(i) == "TurnOff") {
+						TurnOffFrame = i;
+					}
+					else if (GroundPos.frame_name(i) == "Shot") {
+						ShotPosFrame = i;
 					}
 				}
 
@@ -83,6 +100,28 @@ namespace FPS_n2 {
 							MATRIX_ref::RotY(std::atan2f(buf.x(), buf.z()))*
 							MATRIX_ref::Mtrans(Pos));
 					}
+				}
+				{
+					TurnOn.clear();
+					auto Base = GroundPos.frame(TurnOnFrame);
+					for (int i = 0; i < GroundPos.frame_child_num(TurnOnFrame); i++) {
+						auto Pos = GroundPos.frame((int)GroundPos.frame_child(TurnOnFrame, i));
+						TurnOn.emplace_back(Pos);
+					}
+				}
+				{
+					TurnOff.clear();
+					auto Base = GroundPos.frame(TurnOffFrame);
+					for (int i = 0; i < GroundPos.frame_child_num(TurnOffFrame); i++) {
+						auto Pos = GroundPos.frame((int)GroundPos.frame_child(TurnOffFrame, i));
+						TurnOff.emplace_back(Pos);
+					}
+				}
+				{
+					auto Base = GroundPos.frame(ShotPosFrame);
+					ShotPos[0] = GroundPos.frame((int)GroundPos.frame_child(ShotPosFrame, 0));
+					ShotPos[1] = GroundPos.frame((int)GroundPos.frame_child(GroundPos.frame_child(ShotPosFrame, 0), 0));
+					ShotPos[2] = GroundPos.frame((int)GroundPos.frame_child(GroundPos.frame_child(GroundPos.frame_child(ShotPosFrame, 0), 0), 0));
 				}
 			}
 			//DrawCall => 100
