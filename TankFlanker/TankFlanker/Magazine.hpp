@@ -16,11 +16,6 @@ namespace FPS_n2 {
 			MATRIX_ref HandMatrix;
 			float HandPer = 0.f;
 		public://ƒQƒbƒ^[
-			void SetMagMatrix(const MATRIX_ref& value, const VECTOR_ref& pos) noexcept {
-				this->m_move.mat = value;
-				this->m_move.pos = pos;
-				UpdateMove();
-			}
 			void SetHandMatrix(const MATRIX_ref& value, float pPer) noexcept {
 				this->HandMatrix = value;
 				this->HandPer = pPer;
@@ -50,16 +45,13 @@ namespace FPS_n2 {
 					b->SetActive(i < this->m_Capacity);
 					auto mat = this->m_obj.GetFrameLocalWorldMatrix(1 + i);
 					if (i == 0) {
-						b->SetCartMatrix(
+						b->SetMove(
 							MATRIX_ref::RotVec2(VECTOR_ref::front(), Leap(mat.GetRot().zvec(), this->HandMatrix.zvec(), this->HandPer)),
 							Leap(Leap(mat.pos(), this->ChamberMatrix.pos(), this->ShotPer), this->HandMatrix.pos(), this->HandPer)
 						);
 					}
 					else {
-						b->SetCartMatrix(
-							mat.GetRot(),
-							mat.pos()
-						);
+						b->SetMove(mat.GetRot(), mat.pos());
 					}
 				}
 				//‹¤’Ê

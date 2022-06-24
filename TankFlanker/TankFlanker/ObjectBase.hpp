@@ -23,6 +23,17 @@ namespace FPS_n2 {
 			bool m_IsBaseModel{ false };
 		public:
 			void SetActive(bool value) noexcept { this->m_IsActive = value; }
+			void SetMapCol(const MV1* MapCol) noexcept { this->m_MapCol = MapCol; }
+			void SetResetP(bool value) { this->m_IsResetPhysics = value; }
+			void SetShape(CharaShape pShape, float Per) noexcept { if (this->m_objType == ObjType::Human) { Shapes[(int)pShape].second = Per; } }
+			const auto GetFrameWorldMatrix(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
+			const auto GetFrameWorldMatrix(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
+			const auto GetMatrix(void) const noexcept { return this->m_obj.GetMatrix(); }
+			const auto& GetobjType(void) const noexcept { return this->m_objType; }
+			const auto* GetCol(void) const noexcept { return &this->col; }
+
+			//const auto GetAnime(CharaAnimeID anim) noexcept { return this->m_obj.get_anime((int)anim); }
+			const auto GetAnime(GunAnimeID anim) noexcept { return this->m_obj.get_anime((int)anim); }
 		public:
 			void LoadModel(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") noexcept {
 				this->m_FilePath = filepath;
@@ -89,8 +100,6 @@ namespace FPS_n2 {
 					(this->m_ColFileName == colfilename) );
 			}
 			//
-			void SetMapCol(const MV1* MapCol) noexcept { this->m_MapCol = MapCol; }
-			//
 			virtual void Init(void) noexcept {
 				this->m_IsActive = true;
 				this->m_IsResetPhysics = true;
@@ -139,63 +148,10 @@ namespace FPS_n2 {
 					break;
 				}
 			}
-			const auto GetFrameWorldMatrix(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
-			const auto GetFrameWorldMatrix(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
 			//
 			virtual void Execute(void) noexcept { }
 			void ExecuteCommon(void) noexcept {
-				if (this->m_IsResetPhysics) {
-					this->m_IsResetPhysics = false;
-					this->m_obj.PhysicsResetState();
-				}
-				else {
-					this->m_obj.PhysicsCalculation(1000.0f / FPS * 240.f);
-				}
-				this->m_IsFirstLoop = false;
-			}
-			virtual void Depth_Draw(void) noexcept { }
-			virtual void Draw(void) noexcept {
-				if (this->m_IsActive && this->m_IsDraw) {
-					if (CheckCameraViewClip_Box(
-						(m_obj.GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
-						(m_obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)).get()) == FALSE
-						) {
-						this->m_obj.DrawModel();
-					}
-				}
-			}
-			virtual void DrawShadow(void) noexcept {
-				if (this->m_IsActive) {
-					this->m_obj.DrawModel();
-				}
-			}
-			//
-			virtual void Dispose(void) noexcept {
-				this->m_obj.Dispose();
-			}
-		public:
-			void SetResetP(bool value) { this->m_IsResetPhysics = value; }
-			const auto& GetobjType(void) noexcept { return this->m_objType; }
-			const auto GetMatrix(void) noexcept { return this->m_obj.GetMatrix(); }
-			const auto* GetCol(void) noexcept { return &this->col; }
-			void SetMove(float Yrad, const VECTOR_ref& pos) noexcept {
-				this->m_move.mat = MATRIX_ref::RotY(Yrad);
-				this->m_move.pos = pos;
-				this->m_move.vec.clear();
-				UpdateMove();
-				if (this->col.IsActive()) {
-					this->col.SetMatrix(this->m_move.MatIn());
-					this->col.RefreshCollInfo();
-				}
-			}
-			void UpdateMove(void) noexcept { this->m_obj.SetMatrix(this->m_move.MatIn()); }
-			void SetShape(CharaShape pShape, float Per) noexcept {
-				if (this->m_objType == ObjType::Human) {
-					Shapes[(int)pShape].second = Per;
-				}
-			}
-			//
-			void ExecuteShape(void) noexcept {
+				//シェイプ更新
 				switch (this->m_objType) {
 				case ObjType::Human://human
 					for (int j = 1; j < (int)CharaShape::Max; j++) {
@@ -205,8 +161,24 @@ namespace FPS_n2 {
 				default:
 					break;
 				}
+				//物理更新
+				if (this->m_IsResetPhysics) {
+					this->m_IsResetPhysics = false;
+					this->m_obj.PhysicsResetState();
+				}
+				else {
+					this->m_obj.PhysicsCalculation(1000.0f / FPS * 240.f);
+				}
+				//最初のループ終わり
+				this->m_IsFirstLoop = false;
 			}
 			//
+			virtual void Depth_Draw(void) noexcept { }
+			virtual void DrawShadow(void) noexcept {
+				if (this->m_IsActive) {
+					this->m_obj.DrawModel();
+				}
+			}
 			void CheckDraw(void) noexcept {
 				this->m_IsDraw = false;
 				this->m_DistanceToCam = (m_obj.GetMatrix().pos() - GetCameraPosition()).size();
@@ -217,6 +189,34 @@ namespace FPS_n2 {
 					this->m_IsDraw |= true;
 				}
 			}
+			virtual void Draw(void) noexcept {
+				if (this->m_IsActive && this->m_IsDraw) {
+					if (CheckCameraViewClip_Box(
+						(m_obj.GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
+						(m_obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)).get()) == FALSE
+						) {
+						this->m_obj.DrawModel();
+					}
+				}
+			}
+			//
+			virtual void Dispose(void) noexcept {
+				this->m_obj.Dispose();
+			}
+		public:
+			void SetMove(const MATRIX_ref& mat, const VECTOR_ref& pos) noexcept {
+				this->m_move.mat = mat;
+				this->m_move.pos = pos;
+				UpdateMove();
+			}
+			void UpdateMove(void) noexcept {
+				this->m_obj.SetMatrix(this->m_move.MatIn());
+				if (this->col.IsActive()) {
+					this->col.SetMatrix(this->m_move.MatIn());
+					this->col.RefreshCollInfo();
+				}
+			}
+			//
 		};
 	};
 };

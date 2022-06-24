@@ -33,6 +33,20 @@ namespace FPS_n2 {
 			ShootingMat,
 			Cart,
 		};
+		enum class SoundEnum {
+			Shot_Gun,
+			Trigger,
+			Cocking0,
+			Cocking1,
+			Cocking2,
+			Cocking3,
+			RunFoot,
+			SlideFoot,
+			StandupFoot,
+			Heart,
+			GateOpen,
+			Num,
+		};
 	};
 	namespace Sceneclass {
 		enum class CharaAnimeID : int {

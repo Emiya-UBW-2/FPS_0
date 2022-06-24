@@ -73,15 +73,9 @@ namespace FPS_n2 {
 			//銃
 			std::shared_ptr<GunClass> m_Gun_Ptr{ nullptr };
 			//サウンド
-			SoundHandle m_RunFootL;
-			SoundHandle m_RunFootR;
-			SoundHandle m_Sliding;
-			SoundHandle m_SlidingL;
-			SoundHandle m_SlidingR;
-			SoundHandle m_Standup;
+			int charaSound{ -1 };
 			SoundHandle m_Breath;
-			std::array<SoundHandle, 3> m_Heart;
-			size_t m_HeartSESel;
+			bool heartp;
 		public://ゲッター
 			const auto GetCharaDir(void) const noexcept { return this->Frames[(int)CharaFrame::Upper].second.mat * this->m_move.mat; }//プライベートで良い
 			//
@@ -177,6 +171,7 @@ namespace FPS_n2 {
 			}
 		private:
 			void ExecuteAnim(void) noexcept {
+				auto SE = SoundPool::Instance();
 				//アニメ演算
 				{
 					//上半身
@@ -204,7 +199,7 @@ namespace FPS_n2 {
 						if (this->m_RunReady) {
 							if (!this->m_Running) {
 								this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time += 30.f / FPS * 2.f;
-								easing_set(&this->m_SlingPer, (canreverse && this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time > 16) ? 1.f : 0.f, 0.9f);
+								easing_set(&this->m_SlingPer, (canreverse && (this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time > 16)) ? 1.f : 0.f, 0.9f);
 								this->m_SprintPer = 0.f;
 								if (this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
 									this->m_Running = true;
@@ -469,28 +464,32 @@ namespace FPS_n2 {
 						auto Time = this->m_obj.get_anime((int)BottomAnimSelect).time;
 						if (BottomAnimSelect != CharaAnimeID::Bottom_Run) {
 							//L
-							if ((9.f < Time &&Time < 10.f)) {
+							if ((9.f < Time && Time < 10.f)) {
 								if (!this->m_Prone.on()) {
-									if (!this->m_RunFootL.check()) {
-										this->m_RunFootL.play_3D(GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f);
+									if (charaSound != 1) {
+										charaSound = 1;
+										SE->Get((int)SoundEnum::RunFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f);
 									}
 								}
 								else {
-									if (!this->m_SlidingL.check()) {
-										this->m_SlidingL.play_3D(GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f);
+									if (charaSound != 2) {
+										charaSound = 2;
+										SE->Get((int)SoundEnum::SlideFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f, 128);
 									}
 								}
 							}
 							//R
 							if ((27.f < Time &&Time < 28.f)) {
 								if (!this->m_Prone.on()) {
-									if (!this->m_RunFootR.check()) {
-										this->m_RunFootR.play_3D(GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
+									if (charaSound != 3) {
+										charaSound = 3;
+										SE->Get((int)SoundEnum::RunFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
 									}
 								}
 								else {
-									if (!this->m_SlidingR.check()) {
-										this->m_SlidingR.play_3D(GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
+									if (charaSound != 4) {
+										charaSound = 4;
+										SE->Get((int)SoundEnum::SlideFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f, 128);
 									}
 								}
 							}
@@ -501,8 +500,9 @@ namespace FPS_n2 {
 								(18.f < Time &&Time < 19.f) ||
 								(38.f < Time &&Time < 39.f)
 								) {
-								if (!this->m_RunFootL.check()) {
-									this->m_RunFootL.play_3D(GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f);
+								if (charaSound != 5) {
+									charaSound = 5;
+									SE->Get((int)SoundEnum::RunFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f);
 								}
 							}
 							//R
@@ -510,29 +510,32 @@ namespace FPS_n2 {
 								(8.f < Time &&Time < 9.f) ||
 								(28.f < Time &&Time < 29.f)
 								) {
-								if (!this->m_RunFootR.check()) {
-									this->m_RunFootR.play_3D(GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
+								if (charaSound != 6) {
+									charaSound = 6;
+									SE->Get((int)SoundEnum::RunFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
 								}
 							}
 						}
 						this->m_ReturnStand = true;
 					}
 					else if (this->m_ReturnStand) {
-						if (!this->m_Sliding.check()) {
-							this->m_Sliding.vol((int)(192.f * this->m_RunPer2 / SpeedLimit));
-							this->m_Sliding.play_3D(GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
+						if (charaSound != 7) {
+							charaSound = 7;
+							SE->Get((int)SoundEnum::SlideFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f, (int)(192.f * this->m_RunPer2 / SpeedLimit));
 						}
 						this->m_ReturnStand = false;
 					}
 					if (0.1f < this->m_PronePer&&this->m_PronePer < 0.2f) {
-						if (!this->m_Standup.check()) {
-							this->m_Standup.play_3D(GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
+						if (charaSound != 8) {
+							charaSound = 8;
+							SE->Get((int)SoundEnum::StandupFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
 						}
 					}
 				}
 				//
 			}
 			void ExecuteHeartRate(void) noexcept {
+				auto SE = SoundPool::Instance();
 				auto addRun = (this->m_RunPer2 - this->m_PrevRunPer2);
 				if (addRun > 0.f) {
 					this->m_HeartRate_r += (10.f + GetRandf(10.f)) / FPS;
@@ -560,10 +563,13 @@ namespace FPS_n2 {
 					(deg2rad(120) <= this->m_HeartRateRad && this->m_HeartRateRad <= deg2rad(130)) ||
 					(deg2rad(240) <= this->m_HeartRateRad && this->m_HeartRateRad <= deg2rad(250))
 					) {
-					if (!this->m_Heart[this->m_HeartSESel].check()) {
-						this->m_Heart[this->m_HeartSESel].play_3D(GetFrameWorldMatrix(CharaFrame::Upper2).pos(), 12.5f * 0.85f);
-						++this->m_HeartSESel %= this->m_Heart.size();
+					if (!this->heartp) {
+						this->heartp = true;
+						SE->Get((int)SoundEnum::Heart).Play_3D(0, GetFrameWorldMatrix(CharaFrame::Upper2).pos(), 12.5f * 1.f);
 					}
+				}
+				else {
+					this->heartp = false;
 				}
 
 
@@ -613,40 +619,13 @@ namespace FPS_n2 {
 		public:
 			void Init(void) noexcept override {
 				ObjectBaseClass::Init();
-
 				this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
-
+				//
 				SetCreate3DSoundFlag(TRUE);
-				this->m_RunFootL = SoundHandle::Load("data/Sound/SE/move/runfoot.wav");
-				this->m_RunFootR = SoundHandle::Load("data/Sound/SE/move/runfoot.wav");
-				this->m_Sliding = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
-				this->m_SlidingL = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
-				this->m_SlidingR = SoundHandle::Load("data/Sound/SE/move/sliding.wav");
-				this->m_Standup = SoundHandle::Load("data/Sound/SE/move/standup.wav");
 				this->m_Breath = SoundHandle::Load("data/Sound/SE/voice/WinningTicket/breath.wav");
-				for (int i = 0; i < 3; i++) {
-					this->m_Heart[i] = SoundHandle::Load("data/Sound/SE/move/heart.wav");
-				}
 				SetCreate3DSoundFlag(FALSE);
-
-				this->m_RunFootL.vol(128);
-				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_RunFootL.get());
-				this->m_RunFootR.vol(128);
-				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_RunFootR.get());
-				this->m_Sliding.vol(128);
-				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_Sliding.get());
-				this->m_SlidingL.vol(128);
-				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_SlidingL.get());
-				this->m_SlidingR.vol(128);
-				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_SlidingR.get());
-				this->m_Standup.vol(128);
-				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_Standup.get());
 				this->m_Breath.vol(128);
 				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_Breath.get());
-				for (int i = 0; i < 3; i++) {
-					this->m_Heart[i].vol(92);
-					Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_Heart[i].get());
-				}
 			}
 			void Execute(void) noexcept override {
 				if (this->m_IsFirstLoop) {
@@ -796,15 +775,7 @@ namespace FPS_n2 {
 							easing_set(&yPos, HitResult.HitPosition.y, 0.8f);
 							this->m_posBuf.y(yPos);
 							this->m_move.vec.y(0.f);
-
 							easing_set(&this->m_ProneNormal, VECTOR_ref(HitResult.Normal), 0.95f);
-							//auto HitResult2 = this->m_MapCol->CollCheck_Line(GetEyePosition() + VECTOR_ref::up() * -15.f, GetEyePosition() + VECTOR_ref::up() * 15.f);
-							//if (HitResult2.HitFlag == TRUE) {
-							//	easing_set(&this->m_ProneNormal, (VECTOR_ref(HitResult.Normal) + VECTOR_ref(HitResult2.Normal)) / 2.f, 0.95f);
-							//}
-							//else {
-							//	easing_set(&this->m_ProneNormal, VECTOR_ref(HitResult.Normal), 0.95f);
-							//}
 						}
 						else {
 							this->m_move.vec.yadd(2.f * M_GR / (FPS * FPS));
@@ -896,7 +867,6 @@ namespace FPS_n2 {
 					}
 					easing_set(&this->m_EyeclosePer, (float)this->m_Eyeclose, 0.5f);
 					SetShape(CharaShape::EYECLOSE, this->m_EyeclosePer);
-					ExecuteShape();
 				}
 				//心拍数
 				ExecuteHeartRate();//0.00ms
@@ -934,11 +904,9 @@ namespace FPS_n2 {
 				this->m_Press_Aim = false;
 				this->m_Ready_Start = false;
 				this->m_IsRun = false;
-
-				this->m_HeartSESel = 0;
-
+				this->heartp = false;
+				//
 				this->m_Score = 0.f;
-
 				//動作にかかわる操作
 				this->m_Squat.Init(SquatOn);
 				this->m_Prone.Init(ProneOn);
@@ -951,7 +919,8 @@ namespace FPS_n2 {
 				this->m_SquatPer = SquatOn ? 1.f : 0.f;
 				this->m_PronePer = ProneOn ? 1.f : 0.f;
 				this->m_posBuf = pPos;
-				SetMove(this->m_yrad_Bottom, this->m_posBuf);
+				this->m_move.vec.clear();
+				SetMove(MATRIX_ref::RotY(this->m_yrad_Bottom), this->m_posBuf);
 			}
 			void SetInput(
 				float pAddxRad, float pAddyRad,
