@@ -13,7 +13,6 @@ namespace FPS_n2 {
 			MV1 Ground;
 			MV1 GroundAdd;
 			MV1 GroundCol;
-			std::vector< MV1> ShootingMat;
 			std::vector< MV1> Tower;
 			VECTOR_ref minTower, maxTower;
 
@@ -31,16 +30,6 @@ namespace FPS_n2 {
 				MV1::Load("data/model/ground/model_add.mv1", &GroundAdd);
 				MV1::Load("data/model/ground/col.mv1", &GroundCol);
 				MV1::Load("data/model/ground/pos.mv1", &GroundPos);
-
-				for (int i = 0; i < 3; i++) {
-					ShootingMat.resize(ShootingMat.size() + 1);
-					if (ShootingMat.size() == 1) {
-						MV1::Load("data/model/ShootingMat/model.mv1", &ShootingMat.back());
-					}
-					else {
-						ShootingMat.back() = ShootingMat[0].Duplicate();
-					}
-				}
 
 				int TowerFrame = -1;
 				int TurnOnFrame = -1;
@@ -88,9 +77,6 @@ namespace FPS_n2 {
 				maxTower = Tower[0].mesh_maxpos(0);
 
 				GroundCol.SetupCollInfo(64, 16, 64);
-				for (int i = 0; i < 3; i++) {
-					ShootingMat[i].SetMatrix(MATRIX_ref::RotY(deg2rad(-90))*MATRIX_ref::Mtrans(VECTOR_ref::vget(1960.f, 90.0f, -973.72f + (20.f*(i - 1)))));
-				}
 				{
 					auto Base = GroundPos.frame(TowerFrame);
 					for (int i = 0; i < GroundPos.frame_child_num(TowerFrame); i++) {
@@ -119,9 +105,12 @@ namespace FPS_n2 {
 				}
 				{
 					auto Base = GroundPos.frame(ShotPosFrame);
-					ShotPos[0] = GroundPos.frame((int)GroundPos.frame_child(ShotPosFrame, 0));
-					ShotPos[1] = GroundPos.frame((int)GroundPos.frame_child(GroundPos.frame_child(ShotPosFrame, 0), 0));
-					ShotPos[2] = GroundPos.frame((int)GroundPos.frame_child(GroundPos.frame_child(GroundPos.frame_child(ShotPosFrame, 0), 0), 0));
+					auto child = (int)GroundPos.frame_child(ShotPosFrame, 0);
+					ShotPos[0] = GroundPos.frame(child);
+					child = (int)GroundPos.frame_child(child, 0);
+					ShotPos[1] = GroundPos.frame(child);
+					child = (int)GroundPos.frame_child(child, 0);
+					ShotPos[2] = GroundPos.frame(child);
 				}
 			}
 			//DrawCall => 100
@@ -151,16 +140,6 @@ namespace FPS_n2 {
 				}
 				GroundAdd.DrawModel();
 			}
-			void DrawMat(void) noexcept {
-				for (auto& m : ShootingMat) {
-					if (CheckCameraViewClip_Box(
-						(m.GetMatrix().pos() + VECTOR_ref::vget(-10, -1, -10)).get(),
-						(m.GetMatrix().pos() + VECTOR_ref::vget(10, 10, 10)).get()) == FALSE
-						) {
-						m.DrawModel();
-					}
-				}
-			}
 			void Shadow_Draw_NearFar(void) noexcept {
 				//*
 				DrawCommon();
@@ -169,13 +148,11 @@ namespace FPS_n2 {
 			void Shadow_Draw(void) noexcept {
 				//*
 				DrawCommon();
-				DrawMat();
 				//*/
 			}
 			void Draw(void) noexcept {
 				//*
 				DrawCommon();
-				DrawMat();
 				//*/
 			}
 

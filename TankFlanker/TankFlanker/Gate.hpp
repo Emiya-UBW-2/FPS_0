@@ -7,12 +7,11 @@ namespace FPS_n2 {
 			bool m_setstart;
 			SoundHandle m_Open;
 		public:
-			GateClass(void) noexcept {
-				this->m_objType = ObjType::Gate;
-			}
+			GateClass(void) noexcept { this->m_objType = ObjType::Gate; }
 			~GateClass(void) noexcept {}
 		public:
 			void Init(void) noexcept override {
+				ObjectBaseClass::Init();
 				this->m_obj.get_anime(1).per = 1.f;
 				this->m_obj.get_anime(1).time = 0.f;
 				this->m_setstart = false;
@@ -35,17 +34,12 @@ namespace FPS_n2 {
 
 				this->m_obj.work_anime();
 			}
-
-
 			void Draw(void) noexcept override {
 				this->m_obj.DrawModel();
 			}
-
 			void DrawShadow(void) noexcept override {
 				this->m_obj.DrawModel();
 			}
-
-
 			void SetStart(void) noexcept {
 				if (!this->m_setstart) {
 					if (!this->m_Open.check()) {

@@ -38,7 +38,6 @@ namespace FPS_n2 {
 			CharaAnimeID UpperAnimSelect, PrevUpperAnimSel;
 			CharaAnimeID BottomAnimSelect;
 			MATRIX_ref m_RightWristRot;
-			bool m_IsFirstLoop{ true };
 			//スコア
 			float m_Score{ 0.f };
 			//銃
@@ -109,7 +108,7 @@ namespace FPS_n2 {
 					return GetCharaDir().zvec() * -1.f;
 				}
 			}
-			const auto GetEyePosition(void) const noexcept { return (this->m_obj.frame(Frames[(int)CharaFrame::LeftEye].first) + this->m_obj.frame(Frames[(int)CharaFrame::RightEye].first)) / 2.f + this->GetEyeVector().Norm() * 0.5f; }
+			const auto GetEyePosition(void) const noexcept { return (GetFrameWorldMatrix(CharaFrame::LeftEye).pos() + GetFrameWorldMatrix(CharaFrame::RightEye).pos()) / 2.f + this->GetEyeVector().Norm() * 0.5f; }
 			const auto GetScopePos(void) noexcept {
 				if (this->m_Gun_Ptr != nullptr) {
 					return this->m_Gun_Ptr->GetScopePos();
@@ -153,7 +152,6 @@ namespace FPS_n2 {
 			const auto& GetStamina(void) const noexcept { return this->m_Stamina; }
 			const auto& GetStaminaMax(void) const noexcept { return this->StaminaMax; }
 			const auto& GetTurnRatePer(void) const noexcept { return this->m_TurnRatePer; }
-			const auto GetFrameWorldMatrix(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
 			const auto GetIsProne(void) const noexcept { return this->m_Prone.on(); }
 			const auto GetProneShotAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneShot : CharaAnimeID::Upper_Shot; }
 			const auto GetProneCockingAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneCocking : CharaAnimeID::Upper_Cocking; }
@@ -649,9 +647,7 @@ namespace FPS_n2 {
 					this->m_Heart[i].vol(92);
 					Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_Heart[i].get());
 				}
-				this->m_IsFirstLoop = true;
 			}
-			//*
 			void Execute(void) noexcept override {
 				if (this->m_IsFirstLoop) {
 					for (int i = 0; i < this->m_obj.get_anime().size(); i++) { this->m_obj.get_anime(i).per = 0.f; }
@@ -659,7 +655,6 @@ namespace FPS_n2 {
 					this->m_obj.work_anime();
 					this->m_RightWristRot = this->m_obj.GetFrameLocalMatrix(Frames[(int)CharaFrame::RightWrist].first).GetRot();
 				}
-				this->m_IsFirstLoop = false;
 				//操作
 				{
 					//0.01ms
@@ -820,7 +815,7 @@ namespace FPS_n2 {
 					this->m_move.mat = MATRIX_ref::RotZ(this->m_rad.z()) * MATRIX_ref::RotY(this->m_yrad_Bottom)
 						* MATRIX_ref::RotVec2(VECTOR_ref::up(), Leap(VECTOR_ref::up(), this->m_ProneNormal, this->m_PronePer));
 					easing_set(&this->m_move.pos, this->m_posBuf, 0.9f);
-					this->m_obj.SetMatrix(this->m_move.MatIn());
+					UpdateMove();
 				}
 				//銃座標指定(アニメアップデート含む)
 				if (this->m_Gun_Ptr != nullptr) {
@@ -845,10 +840,10 @@ namespace FPS_n2 {
 						//アニメアップデート
 						this->m_obj.work_anime();//0.35ms
 
-						auto mat = (this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)CharaFrame::RightWrist].first).GetRot()*GetCharaDir().Inverse());
+						auto mat = (GetFrameWorldMatrix(CharaFrame::RightWrist).GetRot()*GetCharaDir().Inverse());
 						yVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, -1).Norm(), mat);
 						zVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(-1, -1, 0).Norm(), mat);
-						Pos1 = this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)CharaFrame::RightHandJoint].first).pos();
+						Pos1 = GetFrameWorldMatrix(CharaFrame::RightHandJoint).pos();
 
 						if (change) {
 							this->m_obj.get_anime((int)GetProneAimAnimSel()).per = 0.f;
@@ -863,12 +858,12 @@ namespace FPS_n2 {
 					//背負い場所探索
 					VECTOR_ref yVec2, zVec2, Pos2;
 					{
-						yVec2 = (MATRIX_ref::RotZ(deg2rad(30)) * this->m_obj.GetFrameLocalWorldMatrix(this->Frames[(int)CharaFrame::Upper2].first).GetRot() * GetCharaDir().Inverse()).xvec();
-						zVec2 = (MATRIX_ref::RotZ(deg2rad(30)) * this->m_obj.GetFrameLocalWorldMatrix(this->Frames[(int)CharaFrame::Upper2].first).GetRot() * GetCharaDir().Inverse()).yvec();
+						yVec2 = (MATRIX_ref::RotZ(deg2rad(30)) * GetFrameWorldMatrix(CharaFrame::Upper2).GetRot() * GetCharaDir().Inverse()).xvec();
+						zVec2 = (MATRIX_ref::RotZ(deg2rad(30)) * GetFrameWorldMatrix(CharaFrame::Upper2).GetRot() * GetCharaDir().Inverse()).yvec();
 						Pos2 =
-							this->m_obj.GetFrameLocalWorldMatrix(this->Frames[(int)CharaFrame::Upper2].first).pos() +
-							this->m_obj.GetFrameLocalWorldMatrix(this->Frames[(int)CharaFrame::Upper2].first).GetRot().yvec() * -1.75f +
-							this->m_obj.GetFrameLocalWorldMatrix(this->Frames[(int)CharaFrame::Upper2].first).GetRot().zvec() * 1.75f;
+							GetFrameWorldMatrix(CharaFrame::Upper2).pos() +
+							GetFrameWorldMatrix(CharaFrame::Upper2).GetRot().yvec() * -1.75f +
+							GetFrameWorldMatrix(CharaFrame::Upper2).GetRot().zvec() * 1.75f;
 					}
 					auto yVec = Leap(yVec1, yVec2, this->m_SlingPer);
 					auto zVec = Leap(zVec1, zVec2, this->m_SlingPer);
@@ -876,7 +871,7 @@ namespace FPS_n2 {
 					auto tmp_gunrat = MATRIX_ref::RotVec2(VECTOR_ref::vget(0, 0, -1).Norm(), zVec);
 					tmp_gunrat *= MATRIX_ref::RotVec2(tmp_gunrat.yvec(), yVec);
 					tmp_gunrat *= GetCharaDir() * MATRIX_ref::Mtrans(PosBuf);
-					this->m_Gun_Ptr->SetMatrix(tmp_gunrat, this->m_ShotPhase - 2);
+					this->m_Gun_Ptr->SetGunMatrix(tmp_gunrat, this->m_ShotPhase - 2);
 					//弾を手持ち
 					{
 						//スコープ内0.01ms
@@ -906,7 +901,6 @@ namespace FPS_n2 {
 				//心拍数
 				ExecuteHeartRate();//0.00ms
 			}
-			//*/
 		public:
 			void ValueSet(float pxRad, float pyRad, bool SquatOn, bool ProneOn, const VECTOR_ref& pPos) {
 				for (int i = 0; i < 4; i++) {
@@ -929,7 +923,6 @@ namespace FPS_n2 {
 				this->m_yrad_Add = 0.f;
 				this->m_TurnBody = false;
 				this->m_ShotPhase = 0;
-				this->m_SetReset = true;
 				this->m_IsSprint = false;
 				this->m_RunReady = false;
 				this->m_Running = false;

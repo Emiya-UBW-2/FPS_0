@@ -33,11 +33,25 @@ namespace FPS_n2 {
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<GateClass>();
 					break;
+				case ObjType::ShootingMat ://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<ShootingMatClass>();
+					break;
+				case ObjType::Cart://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<CartClass>();
+					break;
 				default:
 					break;
 				}
 			}
 			void LoadObj(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") {
+				for (auto& o : this->m_Object) {
+					if (o->GetIsBaseModel(filepath, objfilename, colfilename)) {
+						this->m_Object.back()->CopyModel(o);
+						return;
+					}
+				}
 				this->m_Object.back()->LoadModel(filepath, objfilename, colfilename);
 			}
 
@@ -59,7 +73,7 @@ namespace FPS_n2 {
 				for (auto& o : this->m_Object) {
 					o->Init();
 					o->SetFrameNum();
-					o->SetCol(MapCol);
+					o->SetMapCol(MapCol);
 				}
 			}
 			void ExecuteObject(void) noexcept {
@@ -71,7 +85,7 @@ namespace FPS_n2 {
 
 				for (auto& o : this->m_Object) {
 					if (this->m_ResetP.trigger()) { o->SetResetP(true); }
-					o->ExecutePhysics();
+					o->ExecuteCommon();
 				}
 			}
 			void DrawDepthObject(void) noexcept {

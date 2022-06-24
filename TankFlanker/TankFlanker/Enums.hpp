@@ -23,6 +23,18 @@ namespace FPS_n2 {
 			LOAD_SCENE,
 			MAIN_LOOP
 		};
+		enum class ObjType {
+			Human,
+			Gun,
+			Target,
+			Magazine,
+			Circle,
+			Gate,
+			ShootingMat,
+			Cart,
+		};
+	};
+	namespace Sceneclass {
 		enum class CharaAnimeID : int {
 			RightHand,
 
@@ -63,14 +75,6 @@ namespace FPS_n2 {
 			Upper_Ready,
 
 			AnimeIDMax,
-		};
-		enum class ObjType {
-			Human,
-			Gun,
-			Target,
-			Magazine,
-			Circle,
-			Gate,
 		};
 		enum class CharaFrame {
 			Center,
@@ -119,6 +123,66 @@ namespace FPS_n2 {
 			"お",
 			"真面目",
 			"まばたき",
+		};
+	};
+	namespace Sceneclass {
+		enum class GunAnimeID : int {
+			Cocking,
+			ReloadStart,
+			ReloadOne,
+			ReloadEnd,
+			AnimeIDMax,
+		};
+		enum class GunFrame {
+			Center,
+			Cart,
+			CartVec,
+			Muzzle,
+			Eyepos,
+			Lens,
+			LensSize,
+			Magpos,
+			Max,
+		};
+		const char* GunFrameName[(int)GunFrame::Max] = {
+			"センター",
+			"cart",
+			"cartvec",
+			"muzzle",
+			"EyePos",
+			"lens",
+			"lenssize",
+			"magpos",
+		};
+	};
+	namespace Sceneclass {
+		enum class TargetAnimeID : int {
+			Cocking,
+			ReloadStart,
+			ReloadOne,
+			ReloadEnd,
+			AnimeIDMax,
+		};
+		enum class TargetFrame {
+			Center,
+			Cart,
+			CartVec,
+			Muzzle,
+			Eyepos,
+			Lens,
+			LensSize,
+			Magpos,
+			Max,
+		};
+		const char* TargetFrameName[(int)TargetFrame::Max] = {
+			"センター",
+			"cart",
+			"cartvec",
+			"muzzle",
+			"EyePos",
+			"lens",
+			"lenssize",
+			"magpos",
 		};
 	};
 };

@@ -6,9 +6,7 @@ namespace FPS_n2 {
 		class TargetClass : public ObjectBaseClass {
 			std::vector<VECTOR_ref> HitPosRec;
 		public:
-			TargetClass(void) noexcept {
-				this->m_objType = ObjType::Target;
-			}
+			TargetClass(void) noexcept { this->m_objType = ObjType::Target; }
 			~TargetClass(void) noexcept {}
 		public:
 			const auto GetCenterPos() const noexcept { return this->col.frame(2); }

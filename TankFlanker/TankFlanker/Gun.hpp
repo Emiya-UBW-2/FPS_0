@@ -90,7 +90,7 @@ namespace FPS_n2 {
 				}
 				const auto& GetMoveHit(void) noexcept { return this->m_move_Hit; }
 			};
-			class CartClass {
+			class ECartClass {
 			private:
 				float m_cal{ 0.00762f };
 			private:
@@ -193,7 +193,7 @@ namespace FPS_n2 {
 			int m_animSel{ 0 };
 			std::array<BulletClass, 3> m_Bullet;
 			int m_NowShotBullet{ 0 };
-			std::array<CartClass, 3> m_Cart;
+			std::array<ECartClass, 3> m_Cart;
 			int m_NowShotCart{ 0 };
 			moves m_move_Hit;
 			bool m_IsHit{ false };
@@ -209,17 +209,17 @@ namespace FPS_n2 {
 			std::shared_ptr<MagazineClass> m_Mag_Ptr{ nullptr };
 		public://ÉQÉbÉ^Å[
 			void SetMagPtr(std::shared_ptr<MagazineClass>& pMagPtr) noexcept { this->m_Mag_Ptr = pMagPtr; }
-			const auto GetScopePos(void) noexcept { return this->m_obj.frame(8); }
-			const auto GetLensPos(void) noexcept { return this->m_obj.frame(10); }
+			const auto GetScopePos(void) noexcept { return GetFrameWorldMatrix(GunFrame::Eyepos).pos(); }
+			const auto GetLensPos(void) noexcept { return GetFrameWorldMatrix(GunFrame::Lens).pos(); }
 			const auto GetReticlePos(void) noexcept { return GetLensPos() + (GetLensPos() - GetScopePos()).Norm()*10.f; }
-			const auto GetLensPosSize(void) noexcept { return this->m_obj.frame(11); }
-			const auto GetMuzzleMatrix(void) noexcept { return this->m_obj.GetFrameLocalWorldMatrix(7); }
-			const auto GetCartMat(void) noexcept { return this->m_obj.GetFrameLocalWorldMatrix(5); }
-			const auto GetCartVec(void) noexcept { return (this->m_obj.frame(6) - this->m_obj.frame(5)).Norm(); }
-			const auto GetMagMat(void) noexcept { return this->m_obj.GetFrameLocalWorldMatrix(12); }
-			const auto GetCanshot(void) noexcept { return !this->m_Mag_Ptr->IsEmpty(); }
-
+			const auto GetLensPosSize(void) noexcept { return GetFrameWorldMatrix(GunFrame::LensSize).pos(); }
+			const auto GetMuzzleMatrix(void) noexcept { return GetFrameWorldMatrix(GunFrame::Muzzle); }
+			const auto GetCartMat(void) noexcept { return GetFrameWorldMatrix(GunFrame::Cart); }
+			const auto GetCartVec(void) noexcept { return (GetFrameWorldMatrix(GunFrame::CartVec).pos() - GetCartMat().pos()).Norm(); }
+			const auto GetMagMat(void) noexcept { return GetFrameWorldMatrix(GunFrame::Magpos); }
 			const auto GetIsEmpty(void) noexcept { return this->m_Mag_Ptr->IsEmpty(); }
+			const auto GetCanshot(void) noexcept { return !this->GetIsEmpty(); }
+
 			const auto GetIsMagFull(void) noexcept { return this->m_Mag_Ptr->IsFull(); }
 			const auto GetAmmoNum(void) noexcept { return this->m_Mag_Ptr->GetAmmoNum() + (m_in_chamber ? 1 : 0); }
 			const auto GetAmmoAll(void) noexcept { return this->m_Mag_Ptr->GetAmmoAll(); }
@@ -232,12 +232,14 @@ namespace FPS_n2 {
 			void SetIsShot(bool value) noexcept { this->m_IsShot = value; }
 			const auto GetChamberIn(void) noexcept {
 				return
-					((this->m_obj.get_anime(0).per == 1.f) && (this->m_obj.get_anime(0).time >= 25.f))
-					|| ((this->m_obj.get_anime(3).per == 1.f) && (this->m_obj.get_anime(3).time >= 5.f));
+					((this->m_obj.get_anime((int)GunAnimeID::Cocking).per == 1.f) && (this->m_obj.get_anime((int)GunAnimeID::Cocking).time >= 25.f))
+					|| ((this->m_obj.get_anime((int)GunAnimeID::ReloadEnd).per == 1.f) && (this->m_obj.get_anime((int)GunAnimeID::ReloadEnd).time >= 5.f));
 			}
-			void SetMatrix(const MATRIX_ref& value, int pBoltAnim) noexcept {
-				this->m_obj.SetMatrix(value);
-				this->m_Mag_Ptr->SetMatrix(this->GetMagMat());
+			void SetGunMatrix(const MATRIX_ref& value, int pBoltAnim) noexcept {
+				this->m_move.mat = value.GetRot();
+				this->m_move.pos = value.pos();
+				UpdateMove();
+				this->m_Mag_Ptr->SetMagMatrix(this->GetMagMat().GetRot(), this->GetMagMat().pos());
 				this->m_animSel = pBoltAnim;
 			}
 			void SetBullet(void) noexcept {
@@ -258,7 +260,7 @@ namespace FPS_n2 {
 				this->m_CartFlag = true;
 			}
 			void SetCart(void) noexcept {
-				if (this->m_obj.get_anime(0).time >= 19.f || this->m_obj.get_anime(1).time >= 19.f) {
+				if (this->m_obj.get_anime((int)GunAnimeID::Cocking).time >= 19.f || this->m_obj.get_anime((int)GunAnimeID::ReloadStart).time >= 19.f) {
 					if (this->m_CartFlag) {
 						this->m_CartFlag = false;
 
@@ -278,11 +280,9 @@ namespace FPS_n2 {
 				return this->m_Bullet[Now].GetMove();
 			}
 		public:
-			GunClass(void) noexcept {
-				this->m_objType = ObjType::Gun;
-			}
+			GunClass(void) noexcept { this->m_objType = ObjType::Gun; }
 			~GunClass(void) noexcept {}
-
+		public:
 			void Init(void) noexcept override {
 				ObjectBaseClass::Init();
 				SetCreate3DSoundFlag(TRUE);
@@ -329,22 +329,22 @@ namespace FPS_n2 {
 
 				//0
 				{
-					if ((5.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 6.f)) {
+					if ((5.f < this->m_obj.get_anime((int)GunAnimeID::Cocking).time && this->m_obj.get_anime((int)GunAnimeID::Cocking).time < 6.f)) {
 						if (!this->m_BoltSound[0].check()) {
 							this->m_BoltSound[0].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((11.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 12.f)) {
+					if ((11.f < this->m_obj.get_anime((int)GunAnimeID::Cocking).time && this->m_obj.get_anime((int)GunAnimeID::Cocking).time < 12.f)) {
 						if (!this->m_BoltSound[1].check()) {
 							this->m_BoltSound[1].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((28.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 29.f)) {
+					if ((28.f < this->m_obj.get_anime((int)GunAnimeID::Cocking).time && this->m_obj.get_anime((int)GunAnimeID::Cocking).time < 29.f)) {
 						if (!this->m_BoltSound[2].check()) {
 							this->m_BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((36.f < this->m_obj.get_anime(0).time && this->m_obj.get_anime(0).time < 37.f)) {
+					if ((36.f < this->m_obj.get_anime((int)GunAnimeID::Cocking).time && this->m_obj.get_anime((int)GunAnimeID::Cocking).time < 37.f)) {
 						if (!this->m_BoltSound[3].check()) {
 							this->m_BoltSound[3].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
@@ -352,12 +352,12 @@ namespace FPS_n2 {
 				}
 				//1
 				{
-					if ((5.f < this->m_obj.get_anime(1).time && this->m_obj.get_anime(1).time < 6.f)) {
+					if ((5.f < this->m_obj.get_anime((int)GunAnimeID::ReloadStart).time && this->m_obj.get_anime((int)GunAnimeID::ReloadStart).time < 6.f)) {
 						if (!this->m_BoltSound[0].check()) {
 							this->m_BoltSound[0].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((11.f < this->m_obj.get_anime(1).time && this->m_obj.get_anime(1).time < 12.f)) {
+					if ((11.f < this->m_obj.get_anime((int)GunAnimeID::ReloadStart).time && this->m_obj.get_anime((int)GunAnimeID::ReloadStart).time < 12.f)) {
 						if (!this->m_BoltSound[1].check()) {
 							this->m_BoltSound[1].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
@@ -365,7 +365,7 @@ namespace FPS_n2 {
 				}
 				//2
 				{
-					if ((10.f < this->m_obj.get_anime(2).time && this->m_obj.get_anime(2).time < 11.f)) {
+					if ((10.f < this->m_obj.get_anime((int)GunAnimeID::ReloadOne).time && this->m_obj.get_anime((int)GunAnimeID::ReloadOne).time < 11.f)) {
 						if (!this->m_BoltSound[2].check()) {
 							this->m_BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
@@ -373,20 +373,17 @@ namespace FPS_n2 {
 				}
 				//3
 				{
-					if ((8.f < this->m_obj.get_anime(3).time && this->m_obj.get_anime(3).time < 9.f)) {
+					if ((8.f < this->m_obj.get_anime((int)GunAnimeID::ReloadEnd).time && this->m_obj.get_anime((int)GunAnimeID::ReloadEnd).time < 9.f)) {
 						if (!this->m_BoltSound[2].check()) {
 							this->m_BoltSound[2].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
-					if ((16.f < this->m_obj.get_anime(3).time && this->m_obj.get_anime(3).time < 17.f)) {
+					if ((16.f < this->m_obj.get_anime((int)GunAnimeID::ReloadEnd).time && this->m_obj.get_anime((int)GunAnimeID::ReloadEnd).time < 17.f)) {
 						if (!this->m_BoltSound[3].check()) {
 							this->m_BoltSound[3].play_3D(GetMatrix().pos(), 12.5f*5.f);
 						}
 					}
 				}
-
-
-
 				this->m_obj.frame_Reset(1);
 				this->m_obj.work_anime();
 				this->m_obj.SetFrameLocalMatrix(1, this->m_obj.GetFrameLocalMatrix(1).GetRot());

@@ -31,12 +31,14 @@
 #include "BackGround.hpp"
 
 #include "ObjectBase.hpp"
+#include "Cart.hpp"
 #include "Magazine.hpp"
 #include "Gun.hpp"
 #include "Target.hpp"
 #include "Character.hpp"
 #include "Circle.hpp"
 #include "Gate.hpp"
+#include "ShootingMat.hpp"
 
 #include "ObjectManager.hpp"
 //

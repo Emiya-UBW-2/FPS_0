@@ -118,6 +118,7 @@ namespace FPS_n2 {
 			float scoreBuf{ 0.f };
 			//eŠÖ˜A
 			static const int gun_num = chara_num;
+			static const int cart_num = 2;
 
 			bool Reticle_on = false;
 			float Reticle_xpos = 0;
@@ -150,6 +151,10 @@ namespace FPS_n2 {
 					this->Obj.LoadObj("data/model/Target/");
 				}
 				for (int i = 0; i < chara_num; i++) {
+					this->Obj.AddObject(ObjType::ShootingMat);
+					this->Obj.LoadObj("data/model/ShootingMat/");
+				}
+				for (int i = 0; i < chara_num; i++) {
 					this->Obj.AddObject(ObjType::Human);
 					this->Obj.LoadObj("data/umamusume/WinningTicket/");
 					InTurnOn[i] = false;
@@ -167,6 +172,13 @@ namespace FPS_n2 {
 					this->Obj.LoadObj("data/gun/Mosin/");
 					this->Obj.AddObject(ObjType::Magazine);
 					this->Obj.LoadObj("data/gun/Mosin/", "model_mag");
+
+					auto& m = (std::shared_ptr<MagazineClass>&)(this->Obj.GetObj(ObjType::Magazine, i));
+					m->GetAmmoAll();
+					for (int j = 0; j < gun_num; j++) {
+						this->Obj.AddObject(ObjType::Cart);
+						this->Obj.LoadObj("data/gun/Mosin/", "ammo");
+					}
 				}
 
 				this->Obj.AddObject(ObjType::Gate);
@@ -192,11 +204,11 @@ namespace FPS_n2 {
 				//Set
 				for (int i = 0; i < tgt_num; i++) {
 					auto& t = this->Obj.GetObj(ObjType::Target, i);
-
 					t->SetMove(deg2rad(-90), BackGround.ShotPos[1 + (i / chara_num)] + VECTOR_ref::vget(0, 0, -20 + 20.f*(i % chara_num)));
-					if (i == 0) {
-						//	t->SetMove(deg2rad(-90), VECTOR_ref::vget(1970.f, 90.f, -973.72f));
-					}
+				}
+				for (int i = 0; i < chara_num; i++) {
+					auto& t = this->Obj.GetObj(ObjType::ShootingMat, i);
+					t->SetMove(deg2rad(-90), BackGround.ShotPos[0] + VECTOR_ref::vget(-10.f, 0, -20 + 20.f*(i % chara_num)));
 				}
 				for (int i = 0; i < chara_num; i++) {
 					auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
@@ -204,12 +216,16 @@ namespace FPS_n2 {
 					c->ValueSet(deg2rad(0.f), deg2rad(-90.f), false, false, VECTOR_ref::vget(0.f, 0.f, -52.5f + (float)(i - 1)*20.f));
 				}
 				for (int i = 0; i < gun_num; i++) {
-					auto& m = (std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i));
-					m->SetMagPtr((std::shared_ptr<MagazineClass>&)(this->Obj.GetObj(ObjType::Magazine, i)));
+					auto& g = (std::shared_ptr<GunClass>&)(this->Obj.GetObj(ObjType::Gun, i));
+					auto& m = (std::shared_ptr<MagazineClass>&)(this->Obj.GetObj(ObjType::Magazine, i));
+					g->SetMagPtr(m);
+					for (int j = 0; j < cart_num; j++) {
+						m->SetCartPtr((std::shared_ptr<CartClass>&)(this->Obj.GetObj(ObjType::Cart, i*cart_num + j)));
+					}
 				}
 				{
 					auto& t = this->Obj.GetObj(ObjType::Circle, 0);
-					t->SetMove(deg2rad(0), VECTOR_ref::vget(1970.f-10.f, 90.f, -973.72f - 20.f));
+					t->SetMove(deg2rad(-90), BackGround.ShotPos[0] + VECTOR_ref::vget(-10.f, 0, -20));
 				}
 				{
 					auto& t = this->Obj.GetObj(ObjType::Gate, 0);
@@ -265,7 +281,7 @@ namespace FPS_n2 {
 						SetMouseDispFlag(TRUE);
 					}
 
-					float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
+					//float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					/*
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,

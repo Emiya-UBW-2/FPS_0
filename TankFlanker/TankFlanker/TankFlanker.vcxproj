@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackGround.hpp" />
+    <ClInclude Include="Cart.hpp" />
     <ClInclude Include="Character.hpp" />
     <ClInclude Include="Circle.hpp" />
     <ClInclude Include="Enums.hpp" />
@@ -23,6 +24,7 @@
     <ClInclude Include="ObjectBase.hpp" />
     <ClInclude Include="ObjectManager.hpp" />
     <ClInclude Include="sequence.hpp" />
+    <ClInclude Include="ShootingMat.hpp" />
     <ClInclude Include="sub.hpp" />
     <ClInclude Include="Target.hpp" />
   </ItemGroup>
