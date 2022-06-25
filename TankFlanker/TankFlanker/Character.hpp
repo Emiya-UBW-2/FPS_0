@@ -4,7 +4,7 @@
 namespace FPS_n2 {
 	namespace Sceneclass {
 		class CharacterClass : public ObjectBaseClass {
-			//キャラパラメーター
+		private://キャラパラメーター
 			const float SpeedLimit{ 2.f };
 			const float UpperTimerLimit = 3.f;
 			const float HeartRateMin{ 60.f };//心拍数最小
@@ -38,8 +38,7 @@ namespace FPS_n2 {
 			CharaAnimeID UpperAnimSelect, PrevUpperAnimSel;
 			CharaAnimeID BottomAnimSelect;
 			MATRIX_ref m_RightWristRot;
-			//スコア
-			float m_Score{ 0.f };
+			float m_Score{ 0.f };			//スコア
 			//銃
 			float m_ReadyTimer{ 0.f };
 			float m_ReadyPer{ 0.f };
@@ -50,42 +49,40 @@ namespace FPS_n2 {
 			switchs m_Prone;
 			switchs QKey;
 			switchs EKey;
-			bool m_Press_GoFront{ false };//
+			bool m_Press_GoFront{ false };
 			bool m_Press_GoRear{ false };
 			bool m_Press_GoLeft{ false };
 			bool m_Press_GoRight{ false };
 			bool m_Press_Shot{ false };
+			bool m_Press_Reload{ false };
 			bool m_Press_Aim{ false };
 			bool m_Ready_Start{ false };
 			bool m_ReadySwitch{ false };
-			//スタミナ
 			float m_HeartRate{ HeartRateMin };//心拍数
 			float m_HeartRate_r{ HeartRateMin };//心拍数
 			float m_HeartRateRad{ 0.f };//呼吸Sin渡し
-			float m_Stamina{ StaminaMax };
-			bool m_CannotSprint{ false };
-			//
+			float m_Stamina{ StaminaMax };//スタミナ
+			bool m_CannotSprint{ false };//スタミナ切れ
 			int m_TurnRate{ 0 };
 			float m_TurnRatePer{ 0.f };
 			//表情
 			int m_Eyeclose{ 0 };
 			float m_EyeclosePer{ 0.f };
-			//銃
-			std::shared_ptr<GunClass> m_Gun_Ptr{ nullptr };
 			//サウンド
 			int charaSound{ -1 };
 			SoundHandle m_Breath;
 			bool heartp;
+			std::shared_ptr<GunClass> m_Gun_Ptr{ nullptr };			//銃
 		public://ゲッター
-			const auto GetCharaDir(void) const noexcept { return this->Frames[(int)CharaFrame::Upper].second.mat * this->m_move.mat; }//プライベートで良い
-			//
 			void SetGunPtr(std::shared_ptr<GunClass>& pGunPtr) noexcept { this->m_Gun_Ptr = pGunPtr; }
-			auto& GetGunPtr(void) noexcept { return this->m_Gun_Ptr; }
 			void LoadReticle(void) noexcept {
 				if (this->m_Gun_Ptr != nullptr) {
 					this->m_Gun_Ptr->LoadReticle();
 				}
 			}
+			void AddScore(float value) noexcept { this->m_Score += value; }
+			void SetScore(float value) noexcept { this->m_Score = value; }
+			const auto GetCharaDir(void) const noexcept { return this->Frames[(int)CharaFrame::Upper].second.mat * this->m_move.mat; }//プライベートで良い
 			const auto GetShotSwitch(void) const noexcept {
 				if (this->m_Gun_Ptr != nullptr) {
 					return this->m_Gun_Ptr->GetIsShot();
@@ -135,10 +132,8 @@ namespace FPS_n2 {
 					return VECTOR_ref::zero();
 				}
 			}
+			auto& GetGunPtr(void) noexcept { return this->m_Gun_Ptr; }
 			const auto& GetReticle(void) noexcept { return this->m_Gun_Ptr->GetReticle(); }
-			//
-			void AddScore(float value) noexcept { this->m_Score += value; }
-			void SetScore(float value) noexcept { this->m_Score = value; }
 			const auto& GetScore(void) const noexcept { return this->m_Score; }
 			const auto& GetIsRun(void) const noexcept { return this->m_IsRun; }
 			const auto& GetHeartRate(void) const noexcept { return this->m_HeartRate; }
@@ -147,45 +142,41 @@ namespace FPS_n2 {
 			const auto& GetStaminaMax(void) const noexcept { return this->StaminaMax; }
 			const auto& GetTurnRatePer(void) const noexcept { return this->m_TurnRatePer; }
 			const auto GetIsProne(void) const noexcept { return this->m_Prone.on(); }
-			const auto GetProneShotAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneShot : CharaAnimeID::Upper_Shot; }
-			const auto GetProneCockingAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_ProneCocking : CharaAnimeID::Upper_Cocking; }
-
-			const auto GetProneAimAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_Prone : CharaAnimeID::Upper_Aim; }
-			const auto GetProneReloadStartAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_Prone_ReloadStart : CharaAnimeID::Upper_ReloadStart; }
-			const auto GetProneReloadOneAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_Prone_ReloadOne : CharaAnimeID::Upper_ReloadOne; }
-			const auto GetProneReloadEndAnimSel(void) const noexcept { return (this->m_Prone.on()) ? CharaAnimeID::All_Prone_ReloadEnd : CharaAnimeID::Upper_ReloadEnd; }
-
+			const auto GetProneShotAnimSel(void) const noexcept { return (GetIsProne()) ? CharaAnimeID::All_ProneShot : CharaAnimeID::Upper_Shot; }
+			const auto GetProneCockingAnimSel(void) const noexcept { return (GetIsProne()) ? CharaAnimeID::All_ProneCocking : CharaAnimeID::Upper_Cocking; }
+			const auto GetProneAimAnimSel(void) const noexcept { return (GetIsProne()) ? CharaAnimeID::All_Prone : CharaAnimeID::Upper_Aim; }
+			const auto GetProneReloadStartAnimSel(void) const noexcept { return (GetIsProne()) ? CharaAnimeID::All_Prone_ReloadStart : CharaAnimeID::Upper_ReloadStart; }
+			const auto GetProneReloadOneAnimSel(void) const noexcept { return (GetIsProne()) ? CharaAnimeID::All_Prone_ReloadOne : CharaAnimeID::Upper_ReloadOne; }
+			const auto GetProneReloadEndAnimSel(void) const noexcept { return (GetIsProne()) ? CharaAnimeID::All_Prone_ReloadEnd : CharaAnimeID::Upper_ReloadEnd; }
 			const auto GetAmmoNum(void) const noexcept { return this->m_Gun_Ptr->GetAmmoNum(); }
 			const auto GetAmmoAll(void) const noexcept { return this->m_Gun_Ptr->GetAmmoAll(); }
-
 			const auto GetIsADS(void) const noexcept { return this->m_ReadyTimer == 0.f; }
 			const auto GetReadyPer(void) const noexcept { return this->m_ReadyPer; }
 		private:
-			void SetAnimLoop(int ID, float speed) {
-				this->m_obj.get_anime(ID).time += 30.f / FPS * speed;
-				if (this->m_obj.get_anime(ID).TimeEnd()) { this->m_obj.get_anime(ID).time = 0.f; }
-			}
 			void SetVec(int pDir, bool Press) {
 				this->m_Vec[pDir] += (Press ? 1.f : -1.f)*2.f / FPS;
 				this->m_Vec[pDir] = std::clamp(this->m_Vec[pDir], 0.f, 1.f);
 			}
 		private:
+			//以前の状態保持
+			void ExecuteSavePrev(void) noexcept {
+				this->PrevUpperAnimSel = this->UpperAnimSelect;
+				this->m_PrevRunPer2 = this->m_RunPer2;
+			}
+			//アニメ
 			void ExecuteAnim(void) noexcept {
 				auto SE = SoundPool::Instance();
 				//アニメ演算
 				{
 					//上半身
 					{
-						PrevUpperAnimSel = UpperAnimSelect;
-						UpperAnimSelect = CharaAnimeID::Upper_Down;
+						UpperAnimSelect = (!this->m_Ready_Start) ? CharaAnimeID::Upper_Ready : CharaAnimeID::Upper_Down;
 						if (!this->m_Ready_Start) {
-							UpperAnimSelect = CharaAnimeID::Upper_Ready;
 							this->m_SlingPer = 1.f;
-
 						}
 						if (this->m_ReadySwitch) {
 							this->m_RunReadyFirst = false;
-							this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
+							this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).GoEnd();
 						}
 						bool canreverse = true;
 						if (!this->m_RunReady && !this->m_Running && !this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
@@ -194,28 +185,24 @@ namespace FPS_n2 {
 						}
 						if (this->m_RunReadyFirst) {
 							this->m_SlingPer = 0.f;
-							this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = 0.f;
+							this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).GoStart();
 						}
 						if (this->m_RunReady) {
 							if (!this->m_Running) {
-								this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time += 30.f / FPS * 2.f;
+								SetAnimOnce((int)CharaAnimeID::Upper_RunningStart, 2.f);
 								easing_set(&this->m_SlingPer, (canreverse && (this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time > 16)) ? 1.f : 0.f, 0.9f);
 								this->m_SprintPer = 0.f;
 								if (this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).TimeEnd()) {
 									this->m_Running = true;
-									this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
-									this->m_obj.get_anime((int)CharaAnimeID::Upper_Running).time = 0.f;
+									this->m_obj.get_anime((int)CharaAnimeID::Upper_Running).GoStart();
 									if (canreverse) {
 										this->m_SlingPer = 1.f;
 									}
 								}
 								UpperAnimSelect = CharaAnimeID::Upper_RunningStart;
 							}
-							else if (!this->m_IsSprint) {
-								UpperAnimSelect = CharaAnimeID::Upper_Running;
-							}
 							else {
-								UpperAnimSelect = CharaAnimeID::Upper_Sprint;
+								UpperAnimSelect = (!this->m_IsSprint) ? CharaAnimeID::Upper_Running : CharaAnimeID::Upper_Sprint;
 							}
 						}
 						else {
@@ -227,11 +214,9 @@ namespace FPS_n2 {
 						}
 						if (this->m_ShotPhase == 1) {
 							UpperAnimSelect = GetProneShotAnimSel();
-							if (!this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time += 30.f / FPS * 1.5f;
-							}
+							SetAnimOnce((int)UpperAnimSelect, 1.5f);
 							if (this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd() && !this->m_Press_Shot) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time = 0.f;
+								this->m_obj.get_anime((int)UpperAnimSelect).GoStart();
 								if (!this->m_Gun_Ptr->GetIsEmpty()) {
 									this->m_ShotPhase = 2;
 								}
@@ -243,11 +228,8 @@ namespace FPS_n2 {
 						//コッキング
 						if (this->m_ShotPhase == 2) {
 							UpperAnimSelect = GetProneCockingAnimSel();
-							if (!this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time += 30.f / FPS * 1.5f;
-							}
-							if (this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time = 0.f;
+							SetAnimLoop((int)UpperAnimSelect, 1.5f);
+							if (this->m_obj.get_anime((int)UpperAnimSelect).time == 0.f) {
 								this->m_ShotPhase = 0;
 								this->m_ReadyTimer = 0.1f;
 							}
@@ -255,22 +237,16 @@ namespace FPS_n2 {
 						//リロード開始
 						if (this->m_ShotPhase == 3) {
 							UpperAnimSelect = GetProneReloadStartAnimSel();
-							if (!this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time += 30.f / FPS * 1.5f;
-							}
-							if (this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time = 0.f;
+							SetAnimLoop((int)UpperAnimSelect, 1.5f);
+							if (this->m_obj.get_anime((int)UpperAnimSelect).time == 0.f) {
 								this->m_ShotPhase++;
 								this->m_ReadyTimer = 0.1f;
 							}
 						}
 						if (this->m_ShotPhase == 4) {
 							UpperAnimSelect = GetProneReloadOneAnimSel();
-							if (!this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time += 30.f / FPS * 1.5f;
-							}
-							if (this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time = 0.f;
+							SetAnimLoop((int)UpperAnimSelect, 1.5f);
+							if (this->m_obj.get_anime((int)UpperAnimSelect).time == 0.f) {
 								if (this->m_Gun_Ptr->GetIsMagFull()) {
 									this->m_ShotPhase++;
 								}
@@ -279,11 +255,8 @@ namespace FPS_n2 {
 						}
 						if (this->m_ShotPhase == 5) {
 							UpperAnimSelect = GetProneReloadEndAnimSel();
-							if (!this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time += 30.f / FPS * 1.5f;
-							}
-							if (this->m_obj.get_anime((int)UpperAnimSelect).TimeEnd()) {
-								this->m_obj.get_anime((int)UpperAnimSelect).time = 0.f;
+							SetAnimLoop((int)UpperAnimSelect, 1.5f);
+							if (this->m_obj.get_anime((int)UpperAnimSelect).time == 0.f) {
 								this->m_ShotPhase = 0;
 								this->m_ReadyTimer = 0.1f;
 							}
@@ -294,7 +267,10 @@ namespace FPS_n2 {
 								this->m_Gun_Ptr->SetCart();
 							}
 						}
-						if (this->m_ShotPhase >= 3) {
+						if (this->m_ShotPhase < 3) {
+							this->m_LoadAmmoPer = 0.f;
+						}
+						else {
 							if (this->m_ShotPhase == 3) {
 								if (this->m_obj.get_anime((int)UpperAnimSelect).time >= 37.f) {
 									this->m_LoadAmmoPer = 1.f;
@@ -309,60 +285,36 @@ namespace FPS_n2 {
 								}
 							}
 						}
-						else {
-							this->m_LoadAmmoPer = 0.f;
-						}
-						//
-						SetAnimLoop((int)CharaAnimeID::Upper_Sprint, 0.5f * this->m_Vec[0] * this->m_RunPer2);
-						SetAnimLoop((int)CharaAnimeID::Upper_Running, 0.5f * this->m_Vec[0] * this->m_RunPer2);
 					}
 					//下半身
 					{
-						BottomAnimSelect = CharaAnimeID::Bottom_Stand;
 						if (this->m_Press_GoFront) {
-							if (this->m_IsRun) {
-								BottomAnimSelect = CharaAnimeID::Bottom_Run;
-							}
-							else {
-								BottomAnimSelect = CharaAnimeID::Bottom_Walk;
-							}
+							BottomAnimSelect = (this->m_IsRun) ? CharaAnimeID::Bottom_Run : CharaAnimeID::Bottom_Walk;
 						}
 						else {
-							if (this->m_Press_GoLeft) {
-								BottomAnimSelect = CharaAnimeID::Bottom_LeftStep;
-							}
-							if (this->m_Press_GoRight) {
-								BottomAnimSelect = CharaAnimeID::Bottom_RightStep;
-							}
-							if (this->m_Press_GoRear) {
-								BottomAnimSelect = CharaAnimeID::Bottom_WalkBack;
-							}
-							if (this->m_IsSprint) {
-								BottomAnimSelect = CharaAnimeID::Bottom_Run;
-							}
+							BottomAnimSelect = CharaAnimeID::Bottom_Stand;
+							if (this->m_Press_GoLeft) { BottomAnimSelect = CharaAnimeID::Bottom_LeftStep; }
+							if (this->m_Press_GoRight) { BottomAnimSelect = CharaAnimeID::Bottom_RightStep; }
+							if (this->m_Press_GoRear) { BottomAnimSelect = CharaAnimeID::Bottom_WalkBack; }
+							if (this->m_IsSprint) { BottomAnimSelect = CharaAnimeID::Bottom_Run; }
 						}
-						SetAnimLoop((int)CharaAnimeID::Bottom_Turn, 0.5f);
-						SetAnimLoop((int)CharaAnimeID::Bottom_Run, 0.5f * this->m_Vec[0] * this->m_RunPer2);
-						SetAnimLoop((int)CharaAnimeID::Bottom_Walk, 1.15f * this->m_Vec[0]);
-						SetAnimLoop((int)CharaAnimeID::Bottom_LeftStep, 1.15f * this->m_Vec[1]);
-						SetAnimLoop((int)CharaAnimeID::Bottom_WalkBack, 1.15f * this->m_Vec[2]);
-						SetAnimLoop((int)CharaAnimeID::Bottom_RightStep, 1.15f * this->m_Vec[3]);
-						SetAnimLoop((int)CharaAnimeID::All_ProneWalk, 1.15f * this->m_MoveVector);
 					}
 					//
-					{
-						this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).time += 30.f / FPS;
-						if (this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).TimeEnd()) {
-							this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).time = this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).alltime;
-						}
-					}
+					SetAnimOnce((int)CharaAnimeID::All_PronetoStand, 1.f);
+					SetAnimLoop((int)CharaAnimeID::Upper_Sprint, 0.5f * this->m_Vec[0] * this->m_RunPer2);
+					SetAnimLoop((int)CharaAnimeID::Upper_Running, 0.5f * this->m_Vec[0] * this->m_RunPer2);
+					SetAnimLoop((int)CharaAnimeID::Bottom_Turn, 0.5f);
+					SetAnimLoop((int)CharaAnimeID::Bottom_Run, 0.5f * this->m_Vec[0] * this->m_RunPer2);
+					SetAnimLoop((int)CharaAnimeID::Bottom_Walk, 1.15f * this->m_Vec[0]);
+					SetAnimLoop((int)CharaAnimeID::Bottom_LeftStep, 1.15f * this->m_Vec[1]);
+					SetAnimLoop((int)CharaAnimeID::Bottom_WalkBack, 1.15f * this->m_Vec[2]);
+					SetAnimLoop((int)CharaAnimeID::Bottom_RightStep, 1.15f * this->m_Vec[3]);
+					SetAnimLoop((int)CharaAnimeID::All_ProneWalk, 1.15f * this->m_MoveVector);
 				}
 				//アニメセレクト
 				{
 					//上半身
-					if (PrevUpperAnimSel == CharaAnimeID::Upper_Aim && UpperAnimSelect == GetProneShotAnimSel()) {
-						this->m_AnimPerBuf[(int)PrevUpperAnimSel] = 0.f;
-					}
+					if (PrevUpperAnimSel == CharaAnimeID::Upper_Aim && UpperAnimSelect == GetProneShotAnimSel()) { this->m_AnimPerBuf[(int)PrevUpperAnimSel] = 0.f; }
 					if (
 						(PrevUpperAnimSel == GetProneCockingAnimSel() || PrevUpperAnimSel == GetProneReloadEndAnimSel())
 						&& UpperAnimSelect == CharaAnimeID::Upper_Aim) {
@@ -465,7 +417,7 @@ namespace FPS_n2 {
 						if (BottomAnimSelect != CharaAnimeID::Bottom_Run) {
 							//L
 							if ((9.f < Time && Time < 10.f)) {
-								if (!this->m_Prone.on()) {
+								if (!GetIsProne()) {
 									if (charaSound != 1) {
 										charaSound = 1;
 										SE->Get((int)SoundEnum::RunFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::LeftFoot).pos(), 12.5f * 5.f);
@@ -480,7 +432,7 @@ namespace FPS_n2 {
 							}
 							//R
 							if ((27.f < Time &&Time < 28.f)) {
-								if (!this->m_Prone.on()) {
+								if (!GetIsProne()) {
 									if (charaSound != 3) {
 										charaSound = 3;
 										SE->Get((int)SoundEnum::RunFoot).Play_3D(0, GetFrameWorldMatrix(CharaFrame::RightFoot).pos(), 12.5f * 5.f);
@@ -534,6 +486,7 @@ namespace FPS_n2 {
 				}
 				//
 			}
+			//
 			void ExecuteHeartRate(void) noexcept {
 				auto SE = SoundPool::Instance();
 				auto addRun = (this->m_RunPer2 - this->m_PrevRunPer2);
@@ -578,7 +531,7 @@ namespace FPS_n2 {
 				if (this->m_Squat.on()) {
 					this->m_Stamina += 1.0f / FPS;
 				}
-				if (this->m_Prone.on()) {
+				if (GetIsProne()) {
 					this->m_Stamina += 1.5f / FPS;
 				}
 
@@ -619,7 +572,7 @@ namespace FPS_n2 {
 		public:
 			void Init(void) noexcept override {
 				ObjectBaseClass::Init();
-				this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).time = this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).alltime;
+				this->m_obj.get_anime((int)CharaAnimeID::Upper_RunningStart).GoEnd();
 				//
 				SetCreate3DSoundFlag(TRUE);
 				this->m_Breath = SoundHandle::Load("data/Sound/SE/voice/WinningTicket/breath.wav");
@@ -634,9 +587,9 @@ namespace FPS_n2 {
 					this->m_obj.work_anime();
 					this->m_RightWristRot = this->m_obj.GetFrameLocalMatrix(Frames[(int)CharaFrame::RightWrist].first).GetRot();
 				}
-				//操作
+				ExecuteSavePrev();
+				//操作//0.01ms
 				{
-					//0.01ms
 					//移動ベクトル取得
 					{
 						SetVec(0, this->m_Press_GoFront || this->m_IsSprint);
@@ -647,23 +600,28 @@ namespace FPS_n2 {
 					//
 					if (this->m_Gun_Ptr != nullptr) {
 						this->m_Gun_Ptr->SetIsShot(false);
-						if (this->m_Press_Shot && (this->m_ShotPhase == 0)) {
+						if ((this->m_Press_Shot || this->m_Press_Reload) && (this->m_ShotPhase == 0)) {
 							if (this->m_ReadyTimer >= 0.1f) {
 								this->m_ReadyTimer = 0.1f;
 							}
 							if (this->m_ReadyPer >= 0.9f) {
 								this->m_ReadyPer = 1.f;
-								this->m_ShotPhase = 1;
-								if (this->m_Gun_Ptr != nullptr) {
-									this->m_Gun_Ptr->SetBullet();
+								if (this->m_Press_Shot) {
+									this->m_ShotPhase = 1;
+									if (this->m_Gun_Ptr != nullptr) {
+										this->m_Gun_Ptr->SetBullet();
+									}
+								}
+								if (this->m_Press_Reload) {
+									this->m_ShotPhase = 3;
 								}
 							}
 						}
 						else {
 							this->m_ReadyTimer += 1.f / FPS;
 							this->m_ReadyTimer = std::clamp(this->m_ReadyTimer, 0.f, this->m_Press_Aim ? 0.f : UpperTimerLimit);
-							this->m_ReadyTimer = std::clamp(this->m_ReadyTimer, 0.f, this->m_Prone.on() ? 0.1f : UpperTimerLimit);
-							if (this->m_Prone.on() && this->m_MoveVector > 0.6f) {
+							this->m_ReadyTimer = std::clamp(this->m_ReadyTimer, 0.f, GetIsProne() ? 0.1f : UpperTimerLimit);
+							if (GetIsProne() && this->m_MoveVector > 0.6f) {
 								this->m_ReadyTimer = UpperTimerLimit;
 							}
 						}
@@ -673,8 +631,8 @@ namespace FPS_n2 {
 					}
 					else {
 						this->m_ReadyTimer += 1.f / FPS;
-						this->m_ReadyTimer = std::clamp(this->m_ReadyTimer, 0.f, this->m_Prone.on() ? 0.1f : UpperTimerLimit);
-						if (this->m_Prone.on() && this->m_MoveVector > 0.6f) {
+						this->m_ReadyTimer = std::clamp(this->m_ReadyTimer, 0.f, GetIsProne() ? 0.1f : UpperTimerLimit);
+						if (GetIsProne() && this->m_MoveVector > 0.6f) {
 							this->m_ReadyTimer = UpperTimerLimit;
 						}
 						if (this->m_IsRun) {
@@ -686,9 +644,9 @@ namespace FPS_n2 {
 					easing_set(&this->m_SprintPer, this->m_IsSprint ? 1.f : 0.f, 0.95f);
 					easing_set(&this->m_SquatPer, this->m_Squat.on() ? 1.f : 0.f, 0.9f);
 
-					if (!this->m_Prone.on() && (this->m_PronePer == 1.f)) {
+					if (!GetIsProne() && (this->m_PronePer == 1.f)) {
 						if (!this->m_PronetoStanding) {
-							this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).time = 0.f;
+							this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).GoStart();
 							this->m_PronePer2 = 0.f;
 						}
 						this->m_PronetoStanding = true;
@@ -698,16 +656,16 @@ namespace FPS_n2 {
 					}
 
 					if (this->m_PronetoStanding) {
-						if ((this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).time / this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).alltime) > 0.9f) {
+						if ((this->m_obj.get_anime((int)CharaAnimeID::All_PronetoStand).GetTimePer()) > 0.9f) {
 							easing_set(&this->m_PronePer2, 1.f, 0.95f);
 						}
 					}
 
-					easing_set(&this->m_PronePer, this->m_Prone.on() ? 1.f : 0.f, 0.95f);
-					if (!this->m_Prone.on() && (0.01f >= this->m_PronePer)) { this->m_PronePer = 0.f; }
-					if (this->m_Prone.on() && (0.99f <= this->m_PronePer)) { this->m_PronePer = 1.f; }
+					easing_set(&this->m_PronePer, GetIsProne() ? 1.f : 0.f, 0.95f);
+					if (!GetIsProne() && (0.01f >= this->m_PronePer)) { this->m_PronePer = 0.f; }
+					if (GetIsProne() && (0.99f <= this->m_PronePer)) { this->m_PronePer = 1.f; }
 
-					//this->m_PronePer = std::clamp(this->m_PronePer + (this->m_Prone.on() ? 1.f : -3.f) / FPS, 0.f, 1.f);
+					//this->m_PronePer = std::clamp(this->m_PronePer + (GetIsProne() ? 1.f : -3.f) / FPS, 0.f, 1.f);
 					//this->m_yrad_Upper、this->m_yrad_Bottom、this->m_rad.z()決定
 					{
 						if (this->m_MoveVector <= 0.1f) {
@@ -725,7 +683,7 @@ namespace FPS_n2 {
 						auto FrontP = (this->m_IsSprint || (this->m_Press_GoFront && !this->m_Press_GoRear)) ? (atan2f(this->m_Vec[1] - this->m_Vec[3], this->m_Vec[0] - this->m_Vec[2]) * this->m_Vec[0]) : 0.f;
 						FrontP += (!this->m_Press_GoFront && this->m_Press_GoRear) ? (atan2f(-(this->m_Vec[1] - this->m_Vec[3]), -(this->m_Vec[0] - this->m_Vec[2])) * this->m_Vec[2]) : 0.f;
 						auto TmpRunPer = Leap(Leap(0.85f, 0.7f, this->m_RunPer), 0.f, this->m_PronePer);
-						if (this->m_TurnBody || (this->m_MoveVector > 0.1f) || this->m_Prone.on()) { easing_set(&this->m_yrad_Upper, this->m_rad.y(), TmpRunPer); }
+						if (this->m_TurnBody || (this->m_MoveVector > 0.1f) || GetIsProne()) { easing_set(&this->m_yrad_Upper, this->m_rad.y(), TmpRunPer); }
 						auto OLDP = this->m_yrad_Bottom;
 						easing_set(&this->m_yrad_Bottom, this->m_yrad_Upper - FrontP * (1.f - this->m_PronePer), TmpRunPer);
 						{
@@ -735,20 +693,17 @@ namespace FPS_n2 {
 						}
 					}
 				}
-				//上半身回転
+				//上半身回転//0.06ms
 				{
-					//0.06ms
 					auto * F = &this->Frames[(int)CharaFrame::Upper];
 					F->second.mat = MATRIX_ref::RotX(this->m_rad.x()) * MATRIX_ref::RotY(this->m_rad.y() - this->m_yrad_Bottom);
 					this->m_obj.frame_Reset(F->first);
 					this->m_obj.SetFrameLocalMatrix(F->first, this->m_obj.GetFrameLocalMatrix(F->first).GetRot() * F->second.MatIn());
 				}
-				//AnimUpdte
-				ExecuteAnim();//0.03ms
-				//SetMat指示
+				//AnimUpdte//0.03ms
+				ExecuteAnim();
+				//SetMat指示//0.03ms
 				{
-					//0.03ms
-					this->m_PrevRunPer2 = this->m_RunPer2;
 					this->m_RunPer2 = Leap(0.35f, (SpeedLimit * (1.f + 0.5f * this->m_SprintPer)), this->m_RunPer);
 					this->m_RunPer2 = Leap(this->m_RunPer2, 0.15f, this->m_SquatPer);
 					this->m_RunPer2 = Leap(this->m_RunPer2, 0.1f, this->m_PronePer);
@@ -778,7 +733,7 @@ namespace FPS_n2 {
 							easing_set(&this->m_ProneNormal, VECTOR_ref(HitResult.Normal), 0.95f);
 						}
 						else {
-							this->m_move.vec.yadd(2.f * M_GR / (FPS * FPS));
+							this->m_move.vec.yadd(M_GR / (FPS * FPS));
 						}
 					}
 					this->m_posBuf += this->m_move.vec;
@@ -788,9 +743,8 @@ namespace FPS_n2 {
 					easing_set(&this->m_move.pos, this->m_posBuf, 0.9f);
 					UpdateMove();
 				}
-				//銃座標指定(アニメアップデート含む)
+				//銃座標指定(アニメアップデート含む)//0.19ms
 				if (this->m_Gun_Ptr != nullptr) {
-					//0.19ms
 					//持ち手探索
 					VECTOR_ref yVec1, zVec1, Pos1;
 					{
@@ -843,9 +797,8 @@ namespace FPS_n2 {
 					tmp_gunrat *= MATRIX_ref::RotVec2(tmp_gunrat.yvec(), yVec);
 					tmp_gunrat *= GetCharaDir() * MATRIX_ref::Mtrans(PosBuf);
 					this->m_Gun_Ptr->SetGunMatrix(tmp_gunrat, this->m_ShotPhase - 2);
-					//弾を手持ち
+					//弾を手持ち//スコープ内0.01ms
 					{
-						//スコープ内0.01ms
 						auto Thumb = GetFrameWorldMatrix(CharaFrame::RightThumb);
 						auto Pointer = GetFrameWorldMatrix(CharaFrame::RightPointer);
 						MATRIX_ref mat =
@@ -854,9 +807,8 @@ namespace FPS_n2 {
 						this->m_Gun_Ptr->SetAmmoHandMatrix(mat, this->m_LoadAmmoPer);
 					}
 				}
-				//顔
+				//顔//スコープ内0.01ms
 				{
-					//スコープ内0.01ms
 					SetShape(CharaShape::None, 0.f);
 					SetShape(CharaShape::O, (0.75f + sin(this->m_HeartRateRad * 3)*0.25f)*(1.f - this->m_Stamina / StaminaMax));
 					if (this->m_EyeclosePer <= 0.05f && (GetRand(100) == 0)) {
@@ -868,8 +820,8 @@ namespace FPS_n2 {
 					easing_set(&this->m_EyeclosePer, (float)this->m_Eyeclose, 0.5f);
 					SetShape(CharaShape::EYECLOSE, this->m_EyeclosePer);
 				}
-				//心拍数
-				ExecuteHeartRate();//0.00ms
+				//心拍数//0.00ms
+				ExecuteHeartRate();
 			}
 		public:
 			void ValueSet(float pxRad, float pyRad, bool SquatOn, bool ProneOn, const VECTOR_ref& pPos) {
@@ -901,6 +853,7 @@ namespace FPS_n2 {
 				this->m_Press_GoLeft = false;
 				this->m_Press_GoRight = false;
 				this->m_Press_Shot = false;
+				this->m_Press_Reload = false;
 				this->m_Press_Aim = false;
 				this->m_Ready_Start = false;
 				this->m_IsRun = false;
@@ -935,7 +888,8 @@ namespace FPS_n2 {
 				bool pRunPress,
 				bool pReady,
 				bool pQPress,
-				bool pEPress
+				bool pEPress,
+				bool pReloadPress
 			) {
 				this->m_ReadySwitch = (this->m_Ready_Start != pReady);
 				this->m_Ready_Start = pReady;
@@ -943,20 +897,24 @@ namespace FPS_n2 {
 				this->m_Press_GoRear = pGoBackPress && this->m_Ready_Start;
 				this->m_Press_GoLeft = pGoLeftPress && this->m_Ready_Start;
 				this->m_Press_GoRight = pGoRightPress && this->m_Ready_Start;
-				if (this->m_Prone.on() && (!(this->m_ShotPhase == 0))) {
+				if (GetIsProne() && (!(this->m_ShotPhase == 0))) {
 					this->m_Press_GoFront = false;
 					this->m_Press_GoRear = false;
 					this->m_Press_GoLeft = false;
 					this->m_Press_GoRight = false;
 				}
 				this->m_Press_Shot = pShotPress && this->m_Ready_Start;
+				this->m_Press_Reload = (pReloadPress && this->m_Ready_Start && (this->m_Gun_Ptr->GetAmmoNum() <= this->m_Gun_Ptr->GetAmmoAll()));
+
 				if (0.f != this->m_PronePer && this->m_PronePer != 1.0f) {
 					this->m_Press_Shot = false;
 				}
 				if ((this->m_Gun_Ptr != nullptr) && (!this->m_Gun_Ptr->GetCanshot())) {
+					if (this->m_Press_Shot) {
+						this->m_Press_Reload = true;
+					}
 					this->m_Press_Shot = false;
 				}
-
 
 				this->m_Press_Aim = pAimPress && this->m_Ready_Start && (this->m_PronePer == 0.f || this->m_PronePer == 1.f);
 
@@ -980,7 +938,7 @@ namespace FPS_n2 {
 				if (this->m_Press_GoRear || (!this->m_Press_GoFront && (this->m_Press_GoLeft || this->m_Press_GoRight))) {
 					this->m_IsRun = false;
 				}
-				if (this->m_Prone.on() || this->m_PronetoStanding) {
+				if (GetIsProne() || this->m_PronetoStanding) {
 					this->m_IsRun = false;
 				}
 
@@ -997,7 +955,7 @@ namespace FPS_n2 {
 				if (this->m_IsRun) { this->m_Squat.first = false; }
 
 				this->m_Prone.GetInput((pPronePress&& this->m_Ready_Start) && (this->m_ShotPhase == 0) && (this->m_PronePer == 0.f || this->m_PronePer == 1.f));
-				if (this->m_Prone.on()) { this->m_Squat.first = false; }
+				if (GetIsProne()) { this->m_Squat.first = false; }
 				{
 					auto TmpReady = !(!this->m_IsRun || (this->m_ShotPhase >= 2));
 					this->m_RunReadyFirst = (TmpReady && !this->m_RunReady);

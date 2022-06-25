@@ -5,8 +5,8 @@ namespace FPS_n2 {
 	namespace Sceneclass {
 		//
 		struct shaderparam {
-			bool use;
-			float param[4];
+			bool use{ false };
+			float param[4]{ 0,0,0,0 };
 		};
 		//
 		class TEMPSCENE {
@@ -17,7 +17,7 @@ namespace FPS_n2 {
 			COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 		protected:
 			//初回チェック
-			bool IsFirstLoop = true;
+			bool IsFirstLoop{ true };
 			//カメラ
 			cam_info camera_main;
 			float fov_base = DX_PI_F / 2;
@@ -131,7 +131,7 @@ namespace FPS_n2 {
 			bool m_SelPause{ true };
 			scenes m_SelScene{ scenes::NONE_SCENE };		//現在のシーン
 			std::shared_ptr<Sceneclass::TEMPSCENE> m_ScenesPtr{ nullptr };
-			LONGLONG m_DrawWait, m_OldWait, m_Wait;
+			LONGLONG m_DrawWait{ 0 }, m_OldWait{ 0 }, m_Wait{ 0 };
 			shaders::shader_Vertex m_ScreenVertex;			// 頂点データ
 			std::array<shaders, 2> m_Shader2D;
 			//深度

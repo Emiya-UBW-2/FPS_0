@@ -6,15 +6,15 @@ namespace FPS_n2 {
 		class MagazineClass : public ObjectBaseClass {
 		private:
 			std::vector<std::shared_ptr<CartClass>> m_Cart;
-			int m_Capacity;
-			int m_CapacityMax;
+			int m_Capacity{ 0 };
+			int m_CapacityMax{ 0 };
 			//e
 			bool ChamberIntime{ false };
 			MATRIX_ref ChamberMatrix;
-			float ShotPer = 0.f;
+			float ShotPer{ 0.f };
 			//
 			MATRIX_ref HandMatrix;
-			float HandPer = 0.f;
+			float HandPer{ 0.f };
 		public://ƒQƒbƒ^[
 			void SetHandMatrix(const MATRIX_ref& value, float pPer) noexcept {
 				this->HandMatrix = value;
@@ -22,8 +22,9 @@ namespace FPS_n2 {
 			}
 			void SetChamberIntime(bool value) noexcept { this->ChamberIntime = value; }
 			void SetChamberMatrix(const MATRIX_ref& value) noexcept { this->ChamberMatrix = value; }
-			void SubAmmo(void) noexcept { this->m_Capacity = std::clamp(this->m_Capacity - 1, 0, this->m_CapacityMax); }
-			void AddAmmo(void) noexcept { this->m_Capacity = std::clamp(this->m_Capacity + 1, 0, this->m_CapacityMax); }
+			void SetAmmo(int value) noexcept { this->m_Capacity = std::clamp(value, 0, this->m_CapacityMax); }
+			void SubAmmo(void) noexcept { SetAmmo(this->m_Capacity - 1); }
+			void AddAmmo(void) noexcept { SetAmmo(this->m_Capacity + 1); }
 			bool IsEmpty(void) noexcept { return this->m_Capacity == 0; }
 			bool IsFull(void) noexcept { return this->m_Capacity == this->m_CapacityMax; }
 			const auto GetAmmoNum(void) noexcept { return this->m_Capacity; }
@@ -51,7 +52,8 @@ namespace FPS_n2 {
 						);
 					}
 					else {
-						b->SetMove(mat.GetRot(), mat.pos());
+						auto mat2 = this->m_obj.GetFrameLocalWorldMatrix(i);
+						b->SetMove(mat.GetRot(), Leap(mat.pos(), mat2.pos(), this->HandPer));
 					}
 				}
 				//‹¤’Ê

@@ -6,13 +6,15 @@ namespace FPS_n2 {
 		class UIClass {
 		private:
 			GraphHandle HeartGraph;
+			GraphHandle ScoreBoard;
 			FontPool UI;
 
-			int intParam[3];
-			float floatParam[4];
+			int intParam[3]{ 0 };
+			float floatParam[4]{ 0 };
 		public:
 			void Set(void) noexcept {
 				HeartGraph = GraphHandle::Load("data/UI/Heart.png");
+				ScoreBoard = GraphHandle::Load("data/UI/Score.png");
 			}
 			void Draw(void) noexcept {
 				auto* DrawParts = DXDraw::Instance();
@@ -88,6 +90,8 @@ namespace FPS_n2 {
 
 			void SetIntParam(int ID, int value) { intParam[ID] = value; }
 			void SetfloatParam(int ID, float value) { floatParam[ID] = value; }
+
+			auto& GetScoreBoard(void) { return ScoreBoard; }
 		};
 
 		class MAINLOOP : public TEMPSCENE, public Effect_UseControl {
@@ -221,10 +225,10 @@ namespace FPS_n2 {
 				for (int i = 0; i < chara_num; i++) {
 					for (int j = 0; j < tgt_num; j++) {
 						auto& t = this->Obj.GetObj(ObjType::Target, i*tgt_num + j);
-						t->SetMove(MATRIX_ref::RotY(deg2rad(-90)), BackGround.ShotPos[1 + j] + VECTOR_ref::vget(0, 0, -20 + 20.f*i));
+						t->SetMove(MATRIX_ref::RotY(deg2rad(-90)), BackGround.ShotPos[j + 1] + VECTOR_ref::vget(0, 0, -20 + 20.f*i));
 					}
 					auto& m = this->Obj.GetObj(ObjType::ShootingMat, i);
-					m->SetMove(MATRIX_ref::RotY(deg2rad(-90)), BackGround.ShotPos[0] + VECTOR_ref::vget(-10.f, 0, -20 + 20.f*(i % chara_num)));
+					m->SetMove(MATRIX_ref::RotY(deg2rad(-90)), BackGround.ShotPos[0] + VECTOR_ref::vget(-10.f, 0, -20 + 20.f*i));
 				}
 				{
 					auto& g = this->Obj.GetObj(ObjType::Gate, 0);
@@ -249,6 +253,7 @@ namespace FPS_n2 {
 					auto& c = this->Obj.GetObj(ObjType::Circle, 0);
 					c->SetMove(MATRIX_ref::RotY(deg2rad(-90)), BackGround.ShotPos[0] + VECTOR_ref::vget(-10.f, 0, -20));
 				}
+				//UI
 				tgtSel = -1;
 				tgtTimer = 0.f;
 				//Cam
@@ -264,13 +269,10 @@ namespace FPS_n2 {
 				}
 				SE->Add((int)SoundEnum::RunFoot, 6, "data/Sound/SE/move/runfoot.wav");
 				SE->Add((int)SoundEnum::SlideFoot, 9, "data/Sound/SE/move/sliding.wav");
-
 				SE->Add((int)SoundEnum::StandupFoot, 3, "data/Sound/SE/move/standup.wav");
 				SE->Add((int)SoundEnum::Heart, 9, "data/Sound/SE/move/heart.wav");
-
 				SE->Add((int)SoundEnum::GateOpen, 1, "data/Sound/SE/GateOpen.wav");
 				
-
 				SE->Get((int)SoundEnum::Shot_Gun).SetVol_Local(128);
 				SE->Get((int)SoundEnum::Trigger).SetVol_Local(128);
 				for (int i = 0; i < 4; i++) {
@@ -330,7 +332,7 @@ namespace FPS_n2 {
 					}
 
 					//*
-					float cam_per = (camera_main.fov / deg2rad(65) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
+					float cam_per = (camera_main.fov / deg2rad(75) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
 						std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per,
@@ -345,7 +347,8 @@ namespace FPS_n2 {
 						RunKey.press(),
 						this->m_ReadyTime < 0.f,
 						CheckHitKey_M(KEY_INPUT_Q) != 0,
-						CheckHitKey_M(KEY_INPUT_E) != 0
+						CheckHitKey_M(KEY_INPUT_E) != 0,
+						CheckHitKey_M(KEY_INPUT_R) != 0
 					);
 					//*/
 					for (int i = 1; i < chara_num; i++) {
@@ -385,7 +388,7 @@ namespace FPS_n2 {
 								this->m_AI[i].InTurnOff = false;
 							}
 						}
-						auto t1 = BackGround.ShotPos[0] + VECTOR_ref::vget(0, 0, -20 + 20.f*(i % chara_num));
+						auto t1 = BackGround.ShotPos[0] + VECTOR_ref::vget(0, 0, -20 + 20.f*i);
 						if (!this->m_AI[i].InAimStart) {
 							auto p = (t1 - c->GetMatrix().pos());
 							p.y(0.f);
@@ -399,7 +402,7 @@ namespace FPS_n2 {
 								auto q = c->GetCharaDir().zvec()*-1.f;
 								q.y(0.f);
 								if (this->m_AI[i].InAimPoint) {
-									auto t2 = BackGround.ShotPos[1] + VECTOR_ref::vget(0, 0, -20 + 20.f*(i % chara_num));
+									auto t2 = BackGround.ShotPos[1] + VECTOR_ref::vget(0, 0, -20 + 20.f*i);
 									p = (t2 - t1).Norm();
 									p.y(0.f);
 								}
@@ -419,7 +422,7 @@ namespace FPS_n2 {
 							q.y(0.f);
 							auto XZq = q.size();
 							bool aim = false;
-							auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, i));
+							auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, i*tgt_num + 0));
 							auto t2 = t->GetCenterPos();
 							auto p = (t2 - t1).Norm();
 							auto yp = p.y();
@@ -473,7 +476,8 @@ namespace FPS_n2 {
 							this->m_AI[i].CanSprint,
 							this->m_ReadyTime < 0.f,
 							false,
-							this->m_AI[i].InTurnSwitch
+							this->m_AI[i].InTurnSwitch,
+							false
 						);
 					}
 				}
@@ -643,21 +647,47 @@ namespace FPS_n2 {
 				this->Obj.DrawDepthObject();
 			}
 			void LAST_Draw(void) noexcept override {
-				auto* DrawParts = DXDraw::Instance();
 				auto& Chara = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, 0));
 				//レティクル表示
 				if (Reticle_on) {
 					Chara->GetReticle().DrawRotaGraph((int)Reticle_xpos, (int)Reticle_ypos, size_lens() / (3072.f / 2.f), 0.f, true);
 				}
-				//的ヒット状況表示
-				if (tgtSel >= 0) {
-					auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, tgtSel));
-					t->DrawHitCard(DrawParts->disp_x / 2 - y_r(300), DrawParts->disp_y / 2 + y_r(100), y_r(100), tgtTimer / 5.f);
-				}
 			}
 			//UI表示
 			void UI_Draw(void) noexcept  override {
+				auto* DrawParts = DXDraw::Instance();
 				UI_class.Draw();
+				//的ヒット状況表示
+				if (tgtSel >= 0) {
+					auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, tgtSel));
+
+					int xp = DrawParts->disp_x / 2 - y_r(300);
+					int yp = DrawParts->disp_y / 2 + y_r(100);
+					int size = y_r(100);
+					int xs = size / 2;
+					int ys = size / 2;
+					int xp2 = xp + ys * 2;
+					int yp2 = yp + ys * 2;
+					float AlphaPer = tgtTimer / 5.f;
+					if (AlphaPer > 0.01f) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(255.f*AlphaPer));
+						//背景
+						UI_class.GetScoreBoard().DrawExtendGraph(xp, yp, xp2, yp2, true);
+						//命中箇所
+						for (auto& r : t->GetHitPosRec()) {
+							float cos_t, sin_t;
+							t->GetHitPoint(r, &cos_t, &sin_t);
+							DrawCircle(xp + xs + (int)((float)xs * cos_t), yp + ys + (int)((float)ys * sin_t), 2, GetColor(0, 255, 0));
+						}
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+						//点数
+						int ypAdd = 0;
+						for (auto& r : t->GetHitPosRec()) {
+							DrawFormatString(xp, yp2 + ypAdd, GetColor(255, 255, 255), "[%4.1f]", t->GetHitPoint(r));
+							ypAdd += 18;
+						}
+					}
+				}
 			}
 		};
 	};

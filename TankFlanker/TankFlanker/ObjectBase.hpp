@@ -11,7 +11,7 @@ namespace FPS_n2 {
 			const MV1* m_MapCol{ nullptr };
 			std::vector<std::pair<int, moves>> Frames;
 			std::vector< std::pair<int, float>> Shapes;
-			ObjType m_objType;
+			ObjType m_objType{ ObjType::Human };
 			std::string m_FilePath;
 			std::string m_ObjFileName;
 			std::string m_ColFileName;
@@ -34,6 +34,15 @@ namespace FPS_n2 {
 
 			//const auto GetAnime(CharaAnimeID anim) noexcept { return this->m_obj.get_anime((int)anim); }
 			const auto GetAnime(GunAnimeID anim) noexcept { return this->m_obj.get_anime((int)anim); }
+
+			void SetAnimOnce(int ID, float speed) {
+				this->m_obj.get_anime(ID).time += 30.f / FPS * speed;
+				if (this->m_obj.get_anime(ID).TimeEnd()) { this->m_obj.get_anime(ID).GoEnd(); }
+			}
+			void SetAnimLoop(int ID, float speed) {
+				this->m_obj.get_anime(ID).time += 30.f / FPS * speed;
+				if (this->m_obj.get_anime(ID).TimeEnd()) { this->m_obj.get_anime(ID).GoStart(); }
+			}
 		public:
 			void LoadModel(const char* filepath, const char* objfilename = "model", const char* colfilename = "col") noexcept {
 				this->m_FilePath = filepath;
