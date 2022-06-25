@@ -83,7 +83,7 @@ namespace FPS_n2 {
 				//ƒXƒRƒA
 				{
 					int xP = y_r(150), yP = DrawParts->disp_y - y_r(64);
-					UI.Get(y_r(32)).Get_handle().DrawStringFormat(xP, yP, GetColor(255, 255, 255), "%02d", (int)floatParam[3]);
+					UI.Get(y_r(32)).Get_handle().DrawStringFormat_RIGHT(xP + y_r(54), yP, GetColor(255, 255, 255), "%02d", (int)floatParam[3]);
 					UI.Get(y_r(18)).Get_handle().DrawStringFormat(xP + y_r(54), yP + y_r(14), GetColor(255, 255, 255), ".%02d", (int)((floatParam[3] - (float)((int)floatParam[3]))*100.f));
 				}
 			}
@@ -140,6 +140,8 @@ namespace FPS_n2 {
 				bool IsProne{ false };
 				float AimX{ 0.f };
 				float AimY{ 0.f };
+				int shotCounter = 5;
+				bool GoNextPoint{ false };
 			public:
 				void Init() {
 					InTurnOn = false;
@@ -151,6 +153,8 @@ namespace FPS_n2 {
 					InShot = false;
 					CanSprint = true;
 					IsProne = false;
+					shotCounter = 5;
+					GoNextPoint = false;
 				}
 
 				void Execute() {
@@ -331,8 +335,8 @@ namespace FPS_n2 {
 						SetMouseDispFlag(TRUE);
 					}
 
-					//*
-					float cam_per = (camera_main.fov / deg2rad(75) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
+					/*
+					float cam_per = ((camera_main.fov / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
 						std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per,
@@ -351,7 +355,7 @@ namespace FPS_n2 {
 						CheckHitKey_M(KEY_INPUT_R) != 0
 					);
 					//*/
-					for (int i = 1; i < chara_num; i++) {
+					for (int i = 0; i < chara_num; i++) {
 						auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 						this->m_AI[i].Execute();
 						{
@@ -379,6 +383,13 @@ namespace FPS_n2 {
 								if (p.size() <= 12.5f*10.f) {
 									if (!this->m_AI[i].InTurnOff) {
 										this->m_AI[i].InTurnSwitch = true;
+										if (this->m_AI[i].GoNextPoint) {
+											this->m_AI[i].GoNextPoint = false;
+
+											this->m_AI[i].shotCounter = 5;
+											this->m_AI[i].InAimPoint = false;
+											this->m_AI[i].InAiming = false;
+										}
 									}
 									this->m_AI[i].InTurnOff = true;
 									pp = true;
@@ -392,26 +403,45 @@ namespace FPS_n2 {
 						if (!this->m_AI[i].InAimStart) {
 							auto p = (t1 - c->GetMatrix().pos());
 							p.y(0.f);
-							if (p.size() <= 12.5f*2.f) {
-								this->m_AI[i].InAimPoint = true;
+
+							if (this->m_AI[i].shotCounter > 0) {
+								if (p.size() <= 12.5f*1.5f) {
+									this->m_AI[i].InAimPoint = true;
+								}
+								if (p.size() <= 12.5f*10.f) {
+									this->m_AI[i].CanSprint = false;
+								}
+								if (p.size() <= 12.5f*20.f) {
+									auto q = c->GetCharaDir().zvec()*-1.f;
+									q.y(0.f);
+									if (this->m_AI[i].InAimPoint) {
+										auto t2 = BackGround.ShotPos[1] + VECTOR_ref::vget(-10, 0, -20 + 20.f*i);
+										p = (t2 - t1).Norm();
+										p.y(0.f);
+									}
+									float vecsin = -q.cross(p.Norm()).y();
+									easing_set(&this->m_AI[i].AimY, -0.08f*vecsin, 0.9f);
+									this->m_AI[i].AimX = 0.f;
+									if (this->m_AI[i].InAimPoint && (!this->m_AI[i].InAimStart && abs(vecsin) <= 0.01f)) {
+										this->m_AI[i].InAimStart = true;
+										this->m_AI[i].IsProne = true;
+									}
+								}
 							}
-							if (p.size() <= 12.5f*10.f) {
-								this->m_AI[i].CanSprint = false;
-							}
-							if (p.size() <= 12.5f*20.f) {
+							else {
 								auto q = c->GetCharaDir().zvec()*-1.f;
 								q.y(0.f);
-								if (this->m_AI[i].InAimPoint) {
-									auto t2 = BackGround.ShotPos[1] + VECTOR_ref::vget(0, 0, -20 + 20.f*i);
-									p = (t2 - t1).Norm();
-									p.y(0.f);
-								}
-								float vecsin = -q.cross(p.Norm()).y();
-								easing_set(&this->m_AI[i].AimY, -0.06f*vecsin, 0.9f);
-								this->m_AI[i].AimX = 0.f;
-								if (this->m_AI[i].InAimPoint && (!this->m_AI[i].InAimStart && abs(vecsin) <= 0.01f)) {
-									this->m_AI[i].InAimStart = true;
-									this->m_AI[i].IsProne = true;
+								auto t2 = BackGround.ShotPos[0] + VECTOR_ref::vget(0, 0, -100.f);
+								p = (t2 - t1).Norm();
+								p.y(0.f);
+								if (!this->m_AI[i].GoNextPoint) {
+									float vecsin = -q.cross(p.Norm()).y();
+									easing_set(&this->m_AI[i].AimY, -0.06f*vecsin, 0.9f);
+									this->m_AI[i].AimX = 0.f;
+									if (abs(this->m_AI[i].AimY) <= 0.001f) {
+										this->m_AI[i].AimY = 0.f;
+										this->m_AI[i].GoNextPoint = true;
+									}
 								}
 							}
 						}
@@ -458,8 +488,20 @@ namespace FPS_n2 {
 								}
 							}
 							aim2 &= (abs(vecsin) < 0.003f);
-							//
+							if (!c->GetCanshot()) {
+								this->m_AI[i].AimX = 0.f;
+								this->m_AI[i].AimY = 0.f;
+							}
 							this->m_AI[i].InShot = ((Chara->GetReadyPer() > 0.95f) && aim2) ? (GetRand(50) == 0) : false;
+							if (this->m_AI[i].InShot) {
+								this->m_AI[i].shotCounter = std::clamp(this->m_AI[i].shotCounter - 1, 0, 5);
+							}
+
+							if (this->m_AI[i].shotCounter==0) {
+								this->m_AI[i].InAimStart = false;
+								this->m_AI[i].IsProne = true;
+								this->m_AI[i].GoNextPoint = false;
+							}
 						}
 
 						c->SetInput(
@@ -477,7 +519,7 @@ namespace FPS_n2 {
 							this->m_ReadyTime < 0.f,
 							false,
 							this->m_AI[i].InTurnSwitch,
-							false
+							this->m_AI[i].InAimStart && c->GetIsEmpty()
 						);
 					}
 				}

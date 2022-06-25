@@ -287,6 +287,9 @@ namespace FPS_n2 {
 					if (this->m_animSel == i) {
 						if (i == 2) {
 							if (this->m_obj.get_anime(i).time == 0.f) {
+								if (this->GetIsMagFull()) {
+									this->m_in_chamber = true;
+								}
 								this->m_Mag_Ptr->AddAmmo();
 							}
 						}

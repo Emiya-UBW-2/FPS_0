@@ -152,6 +152,24 @@ namespace FPS_n2 {
 			const auto GetAmmoAll(void) const noexcept { return this->m_Gun_Ptr->GetAmmoAll(); }
 			const auto GetIsADS(void) const noexcept { return this->m_ReadyTimer == 0.f; }
 			const auto GetReadyPer(void) const noexcept { return this->m_ReadyPer; }
+
+			const auto GetCanshot(void) const noexcept {
+				if (this->m_Gun_Ptr != nullptr) {
+					return this->m_Gun_Ptr->GetCanshot() && (this->m_ShotPhase <= 1) ;
+				}
+				else {
+					return false;
+				}
+			}
+			const auto GetIsEmpty(void) const noexcept {
+				if (this->m_Gun_Ptr != nullptr) {
+					return this->m_Gun_Ptr->GetIsEmpty();
+				}
+				else {
+					return false;
+				}
+			}
+
 		private:
 			void SetVec(int pDir, bool Press) {
 				this->m_Vec[pDir] += (Press ? 1.f : -1.f)*2.f / FPS;
@@ -221,7 +239,7 @@ namespace FPS_n2 {
 									this->m_ShotPhase = 2;
 								}
 								else {
-									this->m_ShotPhase = 3;
+									this->m_ShotPhase = 0;
 								}
 							}
 						}
@@ -316,7 +334,7 @@ namespace FPS_n2 {
 					//上半身
 					if (PrevUpperAnimSel == CharaAnimeID::Upper_Aim && UpperAnimSelect == GetProneShotAnimSel()) { this->m_AnimPerBuf[(int)PrevUpperAnimSel] = 0.f; }
 					if (
-						(PrevUpperAnimSel == GetProneCockingAnimSel() || PrevUpperAnimSel == GetProneReloadEndAnimSel())
+						(PrevUpperAnimSel == GetProneShotAnimSel() || PrevUpperAnimSel == GetProneCockingAnimSel() || PrevUpperAnimSel == GetProneReloadEndAnimSel())
 						&& UpperAnimSelect == CharaAnimeID::Upper_Aim) {
 						this->m_AnimPerBuf[(int)PrevUpperAnimSel] = 0.f;
 						this->m_AnimPerBuf[(int)UpperAnimSelect] = 1.f;
@@ -831,7 +849,7 @@ namespace FPS_n2 {
 				for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) {
 					this->m_AnimPerBuf[i] = 0.f;
 				}
-				this->m_ReadyPer = 1.f;
+				this->m_ReadyPer = 0.f;
 				this->m_ReadyTimer = UpperTimerLimit;
 				this->m_HeartRate = HeartRateMin;
 				this->m_Stamina = StaminaMax;
@@ -908,8 +926,9 @@ namespace FPS_n2 {
 
 				if (0.f != this->m_PronePer && this->m_PronePer != 1.0f) {
 					this->m_Press_Shot = false;
+					this->m_Press_Reload = false;
 				}
-				if ((this->m_Gun_Ptr != nullptr) && (!this->m_Gun_Ptr->GetCanshot())) {
+				if (!GetCanshot()) {
 					if (this->m_Press_Shot) {
 						this->m_Press_Reload = true;
 					}
@@ -987,7 +1006,7 @@ namespace FPS_n2 {
 					this->m_TurnRate = std::clamp(this->m_TurnRate, -1, 1);
 					float xadd = 0.f;
 					if (this->m_IsSprint) {
-						xadd = 0.3f*(-this->m_TurnRate);//スプリント
+						xadd = 0.315f*(-this->m_TurnRate);//スプリント
 					}
 					else if (this->m_IsRun) {
 						xadd = 0.2f*(-this->m_TurnRate);//走り
