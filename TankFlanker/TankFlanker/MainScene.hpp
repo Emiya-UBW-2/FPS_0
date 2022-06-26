@@ -111,6 +111,7 @@ namespace FPS_n2 {
 			//ƒ‹[ƒ‹
 			float m_ReadyTime = 0.f;
 			bool m_StartSwitch{ false };
+			bool m_RemoveSwitch{ false };
 			//‘€ìŠÖ˜A
 			float EyePosPer_Prone = 0.f;
 			float EyePosPer = 0.f;
@@ -288,6 +289,7 @@ namespace FPS_n2 {
 				//
 				this->m_ReadyTime = 15.f;
 				this->m_StartSwitch = false;
+				this->m_RemoveSwitch = false;
 				//“ü—Í
 				FPSActive.Init(false);
 				MouseActive.Init(false);
@@ -307,13 +309,21 @@ namespace FPS_n2 {
 				{
 					auto prev = this->m_ReadyTime;
 					this->m_ReadyTime -= 1.f / FPS;
-					this->m_StartSwitch = (prev >= 0.f && this->m_ReadyTime < 0.f);
+					auto timep = 0.f;
+
+					timep = 0.f;
+					this->m_StartSwitch = (prev >= timep && this->m_ReadyTime < timep);
+					timep = -10.f;
+					this->m_RemoveSwitch = (prev >= timep && this->m_ReadyTime < timep);
 					printfDx("%f \n", this->m_ReadyTime);
 				}
 				{
 					auto& g = (std::shared_ptr<GateClass>&)(this->Obj.GetObj(ObjType::Gate, 0));
 					if (this->m_StartSwitch) {
 						g->SetStart();
+					}
+					if (this->m_RemoveSwitch) {
+						g->SetRemove();
 					}
 				}
 				//Input,AI
@@ -335,7 +345,7 @@ namespace FPS_n2 {
 						SetMouseDispFlag(TRUE);
 					}
 
-					/*
+					//*
 					float cam_per = ((camera_main.fov / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					Chara->SetInput(
 						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
@@ -355,7 +365,7 @@ namespace FPS_n2 {
 						CheckHitKey_M(KEY_INPUT_R) != 0
 					);
 					//*/
-					for (int i = 0; i < chara_num; i++) {
+					for (int i = 1; i < chara_num; i++) {
 						auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 						this->m_AI[i].Execute();
 						{
