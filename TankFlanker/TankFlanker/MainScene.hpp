@@ -128,6 +128,12 @@ namespace FPS_n2 {
 			float Reticle_xpos = 0;
 			float Reticle_ypos = 0;
 
+			float TPS_Xrad = 0;
+			float TPS_Yrad = 0;
+			float TPS_XradR = 0;
+			float TPS_YradR = 0;
+			float TPS_Per = 1.f;
+
 			class AIControl {
 			public:
 				bool InTurnOn{ false };
@@ -345,27 +351,50 @@ namespace FPS_n2 {
 						SetMouseDispFlag(TRUE);
 					}
 
-					//*
 					float cam_per = ((camera_main.fov / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
-					Chara->SetInput(
-						std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per,
-						std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per,
-						CheckHitKey_M(KEY_INPUT_W) != 0,
-						CheckHitKey_M(KEY_INPUT_S) != 0,
-						CheckHitKey_M(KEY_INPUT_A) != 0,
-						CheckHitKey_M(KEY_INPUT_D) != 0,
-						CheckHitKey_M(KEY_INPUT_C) != 0,
-						CheckHitKey_M(KEY_INPUT_X) != 0,
-						(GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0,
-						ADSKey.press(),
-						RunKey.press(),
-						this->m_ReadyTime < 0.f,
-						CheckHitKey_M(KEY_INPUT_Q) != 0,
-						CheckHitKey_M(KEY_INPUT_E) != 0,
-						CheckHitKey_M(KEY_INPUT_R) != 0
-					);
-					//*/
-					for (int i = 1; i < chara_num; i++) {
+					float pp_x = std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per;
+					float pp_y = std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per;
+					
+					easing_set(&TPS_Per, (!(FPSActive.on() || ADSKey.press()) &&  !Chara->GetIsProne()) ? 1.f : 0.f, 0.9f);
+
+					TPS_Xrad += pp_x;
+					TPS_Yrad += pp_y;
+					TPS_Xrad = std::clamp(TPS_Xrad, deg2rad(-40), deg2rad(40));
+					if (TPS_Yrad >= deg2rad(180)) { TPS_Yrad -= deg2rad(360); }
+					if (TPS_Yrad <= deg2rad(-180)) { TPS_Yrad += deg2rad(360); }
+
+					TPS_Xrad *= TPS_Per;
+					TPS_Yrad *= TPS_Per;
+
+					easing_set(&TPS_XradR, TPS_Xrad, 0.5f);
+
+					TPS_YradR += (sin(TPS_Yrad)*cos(TPS_YradR) - cos(TPS_Yrad) * sin(TPS_YradR))*20.f / FPS;
+
+					for (int i = 0; i < chara_num; i++) {
+						if (i == 0
+							//&& false
+							) {
+							Chara->SetInput(
+								pp_x*(1.f - TPS_Per),
+								pp_y*(1.f - TPS_Per),
+								CheckHitKey_M(KEY_INPUT_W) != 0,
+								CheckHitKey_M(KEY_INPUT_S) != 0,
+								CheckHitKey_M(KEY_INPUT_A) != 0,
+								CheckHitKey_M(KEY_INPUT_D) != 0,
+								CheckHitKey_M(KEY_INPUT_C) != 0,
+								CheckHitKey_M(KEY_INPUT_X) != 0,
+								(GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0,
+								ADSKey.press(),
+								RunKey.press(),
+								this->m_ReadyTime < 0.f,
+								CheckHitKey_M(KEY_INPUT_Q) != 0,
+								CheckHitKey_M(KEY_INPUT_E) != 0,
+								CheckHitKey_M(KEY_INPUT_R) != 0
+							);
+							continue;
+						}
+
+
 						auto& c = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, i));
 						this->m_AI[i].Execute();
 						{
@@ -507,7 +536,7 @@ namespace FPS_n2 {
 								this->m_AI[i].shotCounter = std::clamp(this->m_AI[i].shotCounter - 1, 0, 5);
 							}
 
-							if (this->m_AI[i].shotCounter==0) {
+							if (this->m_AI[i].shotCounter == 0) {
 								this->m_AI[i].InAimStart = false;
 								this->m_AI[i].IsProne = true;
 								this->m_AI[i].GoNextPoint = false;
@@ -575,17 +604,24 @@ namespace FPS_n2 {
 				}
 				//Ž‹“_
 				{
+
 					if (FPSActive.on() || ADSKey.press()) {
 						camera_main.campos = Leap(Chara->GetEyePosition(), Chara->GetScopePos(), EyePosPer);
 						camera_main.camvec = camera_main.campos + Chara->GetEyeVector();
 						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
 					}
 					else {
-						MATRIX_ref UpperMat = Chara->GetFrameWorldMatrix(CharaFrame::Upper).GetRot();
+						MATRIX_ref UpperMat = Chara->GetFrameWorldMatrix(CharaFrame::Upper).GetRot()*MATRIX_ref::RotY(TPS_YradR);
 						VECTOR_ref CamPos = Chara->GetMatrix().pos() + Chara->GetMatrix().yvec() * Leap(14.f, 6.f, EyePosPer_Prone);
+
+						VECTOR_ref CamVec = MATRIX_ref::Vtrans(Chara->GetEyeVector(), MATRIX_ref::RotY(TPS_YradR));
+
+						CamVec = MATRIX_ref::Vtrans(CamVec, MATRIX_ref::RotAxis(UpperMat.xvec(), TPS_XradR));
+						CamVec = Leap(Chara->GetEyeVector(), CamVec, TPS_Per);
+
 						CamPos += Leap((UpperMat.xvec()*-8.f + UpperMat.yvec()*3.f), (UpperMat.xvec()*-3.f + UpperMat.yvec()*4.f), EyeRunPer);
-						camera_main.campos = Leap(CamPos + Chara->GetEyeVector() * Leap(-20.f, 2.f, EyePosPer_Prone), Chara->GetScopePos(), EyePosPer);
-						camera_main.camvec = Leap(CamPos, Chara->GetScopePos(), EyePosPer) + Chara->GetEyeVector() * 100.f;
+						camera_main.campos = Leap(CamPos + CamVec * Leap(-20.f, 2.f, EyePosPer_Prone), Chara->GetScopePos(), EyePosPer);
+						camera_main.camvec = Leap(CamPos, Chara->GetScopePos(), EyePosPer) + CamVec * 100.f;
 						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
 					}
 					easing_set(&EyeRunPer, Chara->GetIsRun() ? 1.f : 0.f, 0.95f);
