@@ -298,7 +298,7 @@ namespace FPS_n2 {
 				this->m_RemoveSwitch = false;
 				//“ü—Í
 				FPSActive.Init(false);
-				MouseActive.Init(false);
+				MouseActive.Init(true);
 			}
 			//
 			bool Update(void) noexcept override {
@@ -334,10 +334,11 @@ namespace FPS_n2 {
 				}
 				//Input,AI
 				{
-					MouseActive.GetInput(CheckHitKey_M(KEY_INPUT_TAB) != 0 || this->m_StartSwitch);
+					MouseActive.GetInput(CheckHitKey_M(KEY_INPUT_TAB) != 0);
 					FPSActive.GetInput(CheckHitKey_M(KEY_INPUT_V) != 0);
 					RunKey.GetInput(CheckHitKey_M(KEY_INPUT_LSHIFT) != 0);
 					ADSKey.GetInput((GetMouseInput_M() & MOUSE_INPUT_RIGHT) != 0);
+					auto MidPress = (GetMouseInput_M() & MOUSE_INPUT_MIDDLE) != 0;
 					int mx = DXDraw::Instance()->disp_x / 2, my = DXDraw::Instance()->disp_y / 2;
 					if (MouseActive.on()) {
 						if (MouseActive.trigger()) {
@@ -355,7 +356,7 @@ namespace FPS_n2 {
 					float pp_x = std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per;
 					float pp_y = std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per;
 					
-					easing_set(&TPS_Per, (!(FPSActive.on() || ADSKey.press()) &&  !Chara->GetIsProne()) ? 1.f : 0.f, 0.9f);
+					easing_set(&TPS_Per, (!(FPSActive.on() || ADSKey.press()) &&  !Chara->GetIsProne() && !MidPress) ? 1.f : 0.f, 0.9f);
 
 					TPS_Xrad += pp_x;
 					TPS_Yrad += pp_y;
@@ -369,6 +370,8 @@ namespace FPS_n2 {
 					easing_set(&TPS_XradR, TPS_Xrad, 0.5f);
 
 					TPS_YradR += (sin(TPS_Yrad)*cos(TPS_YradR) - cos(TPS_Yrad) * sin(TPS_YradR))*20.f / FPS;
+
+					Chara->SetEyeVec((camera_main.camvec - camera_main.campos).Norm());
 
 					for (int i = 0; i < chara_num; i++) {
 						if (i == 0

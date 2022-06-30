@@ -1029,6 +1029,21 @@ namespace FPS_n2 {
 					easing_set(&this->m_rad, this->m_rad_Buf, 0.5f);
 				}
 			}
+			void SetEyeVec(const VECTOR_ref& camvec) noexcept {
+				auto * F = &this->Frames[(int)CharaFrame::Head];
+				this->m_obj.frame_Reset(F->first);
+				auto mt = this->m_obj.GetFrameLocalMatrix(F->first);
+				auto m = GetFrameWorldMatrix(CharaFrame::Head).GetRot() * GetCharaDir().Inverse();
+				auto v1 = m.zvec()*-1.f;
+				auto v2 = MATRIX_ref::Vtrans(camvec.Norm(), GetCharaDir().Inverse());
+
+				auto radlimit = deg2rad(50);
+				if (v1.dot(v2) <= cos(radlimit)) {
+					v2 = v1 * cos(radlimit) + v1.cross(v1.cross(v2)) * (-sin(radlimit));
+				}
+
+				this->m_obj.SetFrameLocalMatrix(F->first, MATRIX_ref::RotVec2(v1, v2) * mt);
+			}
 		};
 	};
 };
