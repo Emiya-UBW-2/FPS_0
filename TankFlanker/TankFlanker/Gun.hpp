@@ -18,7 +18,7 @@ namespace FPS_n2 {
 				int m_LineSel = 0;
 				moves m_move_Hit;
 			public:
-				void Set(const MATRIX_ref& mat, const VECTOR_ref& pos ,float speed) noexcept {
+				void Set(const MATRIX_ref& mat, const VECTOR_ref& pos, float speed) noexcept {
 					this->m_IsActive = true;
 					this->m_move.mat = mat;
 					this->m_move.pos = pos;
@@ -204,14 +204,14 @@ namespace FPS_n2 {
 		public://ゲッター
 			void SetMagPtr(std::shared_ptr<MagazineClass>& pMagPtr) noexcept { this->m_Mag_Ptr = pMagPtr; }
 			void SetIsShot(bool value) noexcept { this->m_IsShot = value; }
-			const auto GetScopePos(void) noexcept { return GetFrameWorldMatrix(GunFrame::Eyepos).pos(); }
-			const auto GetLensPos(void) noexcept { return GetFrameWorldMatrix(GunFrame::Lens).pos(); }
+			const auto GetScopePos(void) noexcept { return GetFrameWorldMat(GunFrame::Eyepos).pos(); }
+			const auto GetLensPos(void) noexcept { return GetFrameWorldMat(GunFrame::Lens).pos(); }
 			const auto GetReticlePos(void) noexcept { return GetLensPos() + (GetLensPos() - GetScopePos()).Norm()*10.f; }
-			const auto GetLensPosSize(void) noexcept { return GetFrameWorldMatrix(GunFrame::LensSize).pos(); }
-			const auto GetMuzzleMatrix(void) noexcept { return GetFrameWorldMatrix(GunFrame::Muzzle); }
-			const auto GetCartMat(void) noexcept { return GetFrameWorldMatrix(GunFrame::Cart); }
-			const auto GetCartVec(void) noexcept { return (GetFrameWorldMatrix(GunFrame::CartVec).pos() - GetCartMat().pos()).Norm(); }
-			const auto GetMagMat(void) noexcept { return GetFrameWorldMatrix(GunFrame::Magpos); }
+			const auto GetLensPosSize(void) noexcept { return GetFrameWorldMat(GunFrame::LensSize).pos(); }
+			const auto GetMuzzleMatrix(void) noexcept { return GetFrameWorldMat(GunFrame::Muzzle); }
+			const auto GetCartMat(void) noexcept { return GetFrameWorldMat(GunFrame::Cart); }
+			const auto GetCartVec(void) noexcept { return (GetFrameWorldMat(GunFrame::CartVec).pos() - GetCartMat().pos()).Norm(); }
+			const auto GetMagMat(void) noexcept { return GetFrameWorldMat(GunFrame::Magpos); }
 			const auto GetIsEmpty(void) noexcept { return this->m_Mag_Ptr->IsEmpty(); }
 			const auto GetIsMagFull(void) noexcept { return this->m_Mag_Ptr->IsFull(); }
 			const auto GetAmmoAll(void) noexcept { return this->m_Mag_Ptr->GetAmmoAll(); }
@@ -350,7 +350,7 @@ namespace FPS_n2 {
 							SE->Get((int)SoundEnum::Cocking2).Play_3D(0, GetMatrix().pos(), 12.5f*50.f);
 						}
 					}
-					else {
+					else if (GetAnime(GunAnimeID::ReloadOne).per != 0.f) {
 						boltSound = -1;
 					}
 				}
@@ -369,10 +369,9 @@ namespace FPS_n2 {
 						}
 					}
 				}
-				int p = Frames[(int)GunFrame::Center].first;
-				this->m_obj.frame_Reset(p);
+				ResetFrameLocalMat(GunFrame::Center);
 				this->m_obj.work_anime();
-				this->m_obj.SetFrameLocalMatrix(p, this->m_obj.GetFrameLocalMatrix(p).GetRot());//1のフレーム移動量を無視する
+				this->m_obj.SetFrameLocalMatrix(Frames[(int)GunFrame::Center].first, GetFrameLocalMat(GunFrame::Center).GetRot());//1のフレーム移動量を無視する
 				if (this->m_CartFlag) {
 					this->m_Cartobj.SetMatrix(this->GetCartMat());
 				}

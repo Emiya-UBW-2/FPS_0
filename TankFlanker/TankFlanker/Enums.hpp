@@ -51,8 +51,8 @@ namespace FPS_n2 {
 	namespace Sceneclass {
 		enum class CharaAnimeID : int {
 			RightHand,
+			LeftHand,
 
-			Upper_Down,
 			Upper_Aim,
 			Upper_Shot,
 			Upper_Cocking,
@@ -87,6 +87,7 @@ namespace FPS_n2 {
 			All_Prone_ReloadEnd,
 
 			Upper_Ready,
+			Upper_Down,
 
 			AnimeIDMax,
 		};
@@ -103,6 +104,10 @@ namespace FPS_n2 {
 			RightHandJoint,
 			RightThumb,
 			RightPointer,
+			LeftArm,
+			LeftArm2,
+			LeftWrist,
+			LeftHandJoint,
 			Max,
 		};
 		const char* CharaFrameName[(int)CharaFrame::Max] = {
@@ -118,6 +123,10 @@ namespace FPS_n2 {
 			"右ダミー",
 			"右人指３",
 			"右親指２",
+			"左腕",
+			"左ひじ",
+			"左手首",
+			"左ダミー",
 		};
 		enum class CharaShape {
 			None,
@@ -158,6 +167,7 @@ namespace FPS_n2 {
 			Lens,
 			LensSize,
 			Magpos,
+			LeftHandPos,
 			Max,
 		};
 		const char* GunFrameName[(int)GunFrame::Max] = {
@@ -169,6 +179,7 @@ namespace FPS_n2 {
 			"lens",
 			"lenssize",
 			"magpos",
+			"lefthand",
 		};
 	};
 	namespace Sceneclass {

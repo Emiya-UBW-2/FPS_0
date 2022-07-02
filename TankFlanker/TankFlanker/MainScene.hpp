@@ -356,7 +356,7 @@ namespace FPS_n2 {
 					float pp_x = std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per;
 					float pp_y = std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per;
 					
-					easing_set(&TPS_Per, (!(FPSActive.on() || ADSKey.press()) &&  !Chara->GetIsProne() && !MidPress) ? 1.f : 0.f, 0.9f);
+					easing_set(&TPS_Per, (!(FPSActive.on() || ADSKey.press()) &&  !Chara->GetIsProne() && MidPress) ? 1.f : 0.f, 0.9f);
 
 					TPS_Xrad += pp_x;
 					TPS_Yrad += pp_y;
@@ -614,7 +614,7 @@ namespace FPS_n2 {
 						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
 					}
 					else {
-						MATRIX_ref UpperMat = Chara->GetFrameWorldMatrix(CharaFrame::Upper).GetRot()*MATRIX_ref::RotY(TPS_YradR);
+						MATRIX_ref UpperMat = Chara->GetFrameWorldMat(CharaFrame::Upper).GetRot()*MATRIX_ref::RotY(TPS_YradR);
 						VECTOR_ref CamPos = Chara->GetMatrix().pos() + Chara->GetMatrix().yvec() * Leap(14.f, 6.f, EyePosPer_Prone);
 
 						VECTOR_ref CamVec = MATRIX_ref::Vtrans(Chara->GetEyeVector(), MATRIX_ref::RotY(TPS_YradR));

@@ -9,7 +9,7 @@ namespace FPS_n2 {
 			MV1 col;
 			moves m_move;
 			const MV1* m_MapCol{ nullptr };
-			std::vector<std::pair<int, moves>> Frames;
+			std::vector<std::pair<int, MATRIX_ref>> Frames;
 			std::vector< std::pair<int, float>> Shapes;
 			ObjType m_objType{ ObjType::Human };
 			std::string m_FilePath;
@@ -26,8 +26,18 @@ namespace FPS_n2 {
 			void SetMapCol(const MV1* MapCol) noexcept { this->m_MapCol = MapCol; }
 			void SetResetP(bool value) { this->m_IsResetPhysics = value; }
 			void SetShape(CharaShape pShape, float Per) noexcept { if (this->m_objType == ObjType::Human) { Shapes[(int)pShape].second = Per; } }
-			const auto GetFrameWorldMatrix(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
-			const auto GetFrameWorldMatrix(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
+
+			const auto GetFrameLocalMat(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalMatrix(Frames[(int)frame].first); }
+			const auto GetFrameLocalMat(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalMatrix(Frames[(int)frame].first); }
+			const auto GetFrameWorldMat(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
+			const auto GetFrameWorldMat(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
+
+			void ResetFrameLocalMat(CharaFrame frame) noexcept { this->m_obj.frame_Reset(Frames[(int)frame].first); }
+			void ResetFrameLocalMat(GunFrame frame) noexcept { this->m_obj.frame_Reset(Frames[(int)frame].first); }
+
+			void SetFrameLocalMat(CharaFrame frame, const MATRIX_ref&value) noexcept { this->m_obj.SetFrameLocalMatrix(Frames[(int)frame].first, value * Frames[(int)frame].second); }
+			void SetFrameLocalMat(GunFrame frame, const MATRIX_ref&value) noexcept { this->m_obj.SetFrameLocalMatrix(Frames[(int)frame].first, value * Frames[(int)frame].second); }
+
 			const auto GetMatrix(void) const noexcept { return this->m_obj.GetMatrix(); }
 			const auto& GetobjType(void) const noexcept { return this->m_objType; }
 			const auto* GetCol(void) const noexcept { return &this->col; }
@@ -137,7 +147,7 @@ namespace FPS_n2 {
 					if (compare) {
 						this->Frames.resize(this->Frames.size() + 1);
 						this->Frames.back().first = f;
-						this->Frames.back().second.pos = this->m_obj.GetFrameLocalMatrix(this->Frames.back().first).pos();
+						this->Frames.back().second = MATRIX_ref::Mtrans(this->m_obj.GetFrameLocalMatrix(this->Frames.back().first).pos());
 						i++;
 						f = 0;
 					}
