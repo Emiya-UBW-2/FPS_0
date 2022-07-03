@@ -29,8 +29,13 @@ namespace FPS_n2 {
 
 			const auto GetFrameLocalMat(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalMatrix(Frames[(int)frame].first); }
 			const auto GetFrameLocalMat(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalMatrix(Frames[(int)frame].first); }
+			const auto GetParentFrameLocalMat(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalMatrix(this->m_obj.frame_parent(Frames[(int)frame].first)); }
+			const auto GetParentFrameLocalMat(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalMatrix(this->m_obj.frame_parent(Frames[(int)frame].first)); }
+
 			const auto GetFrameWorldMat(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
 			const auto GetFrameWorldMat(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(Frames[(int)frame].first); }
+			const auto GetParentFrameWorldMat(CharaFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(this->m_obj.frame_parent(Frames[(int)frame].first)); }
+			const auto GetParentFrameWorldMat(GunFrame frame) const noexcept { return this->m_obj.GetFrameLocalWorldMatrix(this->m_obj.frame_parent(Frames[(int)frame].first)); }
 
 			void ResetFrameLocalMat(CharaFrame frame) noexcept { this->m_obj.frame_Reset(Frames[(int)frame].first); }
 			void ResetFrameLocalMat(GunFrame frame) noexcept { this->m_obj.frame_Reset(Frames[(int)frame].first); }

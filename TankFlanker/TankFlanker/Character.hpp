@@ -488,6 +488,7 @@ namespace FPS_n2 {
 				ResetFrameLocalMat(CharaFrame::LeftArm);
 				ResetFrameLocalMat(CharaFrame::LeftArm2);
 				ResetFrameLocalMat(CharaFrame::LeftWrist);
+				matBase = GetParentFrameWorldMat(CharaFrame::LeftArm).GetRot().Inverse();
 
 				MATRIX_ref GunMat = this->m_Gun_Ptr->GetFrameWorldMat(GunFrame::LeftHandPos);
 
@@ -504,24 +505,27 @@ namespace FPS_n2 {
 				MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(GetFrameWorldMat(CharaFrame::LeftArm2).pos() - GetFrameWorldMat(CharaFrame::LeftArm).pos(), matBase), vec_t);
 				SetFrameLocalMat(CharaFrame::LeftArm, a1_inv);
 				//‰º˜r
-				matBase = matBase * a1_inv.Inverse();
+				matBase = GetParentFrameWorldMat(CharaFrame::LeftArm2).GetRot().Inverse();
 				SetFrameLocalMat(CharaFrame::LeftArm2, MGetIdent());
 				MATRIX_ref a2_inv = MATRIX_ref::RotVec2(
 					MATRIX_ref::Vtrans(GetFrameWorldMat(CharaFrame::LeftWrist).pos() - GetFrameWorldMat(CharaFrame::LeftArm2).pos(), matBase),
 					MATRIX_ref::Vtrans(HandAim.pos - GetFrameWorldMat(CharaFrame::LeftArm2).pos(), matBase));
 				SetFrameLocalMat(CharaFrame::LeftArm2, a2_inv);
 				//Žè
-				matBase = matBase * a2_inv.Inverse();
+				matBase = GetParentFrameWorldMat(CharaFrame::LeftWrist).GetRot().Inverse();
 				MATRIX_ref mat1;
 				MATRIX_ref mat2 = GetFrameLocalMat(CharaFrame::LeftWrist);
 				{
 					auto Lmat = GetFrameLocalMat(CharaFrame::LeftWrist);
 					auto Wmat = GetFrameWorldMat(CharaFrame::LeftWrist);
 					auto Base = MATRIX_ref::Vtrans(VECTOR_ref::vget(1, -1, 0), Wmat.GetRot());
-					mat1 = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(Base, matBase), MATRIX_ref::Vtrans(GunMat.zvec()*-1.f, matBase));
+					mat1 = MATRIX_ref::RotVec2(
+						MATRIX_ref::Vtrans(Base, matBase),
+						MATRIX_ref::Vtrans(GunMat.zvec()*-1.f, matBase));
 					SetFrameLocalMat(CharaFrame::LeftWrist, mat1);
-					mat1 = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(GetFrameWorldMat(CharaFrame::LeftHandJoint).zvec()*-1.f, matBase), MATRIX_ref::Vtrans(GunMat.yvec(), matBase)) * mat1;
-					mat1 *= Lmat;
+					mat1 = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(GetFrameWorldMat(CharaFrame::LeftWrist).zvec()*-1.f, matBase), MATRIX_ref::Vtrans(GunMat.yvec(), matBase)) * mat1;
+
+					mat1 = Lmat * mat1;
 				}
 				HandAim.mat = Leap(mat1, mat2, this->m_LeftHandPer);
 				SetFrameLocalMat(CharaFrame::LeftWrist, HandAim.mat);
