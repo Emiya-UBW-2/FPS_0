@@ -63,6 +63,33 @@
     <ClInclude Include="source\MainScene\UI\MainSceneUIControl.hpp">
       <Filter>ソース ファイル\MainScene\UI</Filter>
     </ClInclude>
+    <ClInclude Include="source\MainScene\Object\Gun.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\Magazine.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\ObjectBaseEnum.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\ShootingMat.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\Target.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\Cart.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\CharacterEnum.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\CircleEnum.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\Gate.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">

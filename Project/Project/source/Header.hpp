@@ -35,8 +35,14 @@ using namespace DXLib_ref;
 #include "MainScene/BackGround/BackGround.hpp"
 
 #include "MainScene/Object/ObjectBase.hpp"
+#include "MainScene/Object/Cart.hpp"
+#include "MainScene/Object/Magazine.hpp"
+#include "MainScene/Object/Gun.hpp"
+#include "MainScene/Object/Target.hpp"
 #include "MainScene/Object/Character.hpp"
 #include "MainScene/Object/Circle.hpp"
+#include "MainScene/Object/Gate.hpp"
+#include "MainScene/Object/ShootingMat.hpp"
 
 #include "ObjectManager.hpp"
 

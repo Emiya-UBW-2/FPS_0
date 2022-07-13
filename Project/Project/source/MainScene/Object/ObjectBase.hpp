@@ -1,5 +1,5 @@
 #pragma once
-#include"../../Header.hpp"
+#include"Header.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {
@@ -108,7 +108,7 @@ namespace FPS_n2 {
 				this->m_obj = pBase->m_obj.Duplicate();
 				MV1::SetAnime(&this->m_obj, pBase->m_obj);
 				//col
-				if(pBase->m_col.IsActive()){
+				if (pBase->m_col.IsActive()) {
 					this->m_col = pBase->m_col.Duplicate();
 					this->m_col.SetupCollInfo(1, 1, 1);
 				}
@@ -131,6 +131,10 @@ namespace FPS_n2 {
 					case ObjType::Human://human
 						if (i == (int)CharaFrame::Max) { break; }
 						compare = (FName == CharaFrameName[i]);
+						break;
+					case ObjType::Gun://human
+						if (i == (int)GunFrame::Max) { break; }
+						compare = (FName == GunFrameName[i]);
 						break;
 					default:
 						break;

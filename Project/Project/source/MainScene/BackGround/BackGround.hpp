@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include"../../Header.hpp"
+#include"Header.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {
@@ -39,7 +39,7 @@ namespace FPS_n2 {
 					if (GroundPos.frame_name(i) == "Tower") {
 						TowerFrame = i;
 					}
-					else if(GroundPos.frame_name(i) == "TurnOn") {
+					else if (GroundPos.frame_name(i) == "TurnOn") {
 						TurnOnFrame = i;
 					}
 					else if (GroundPos.frame_name(i) == "TurnOff") {
@@ -62,7 +62,7 @@ namespace FPS_n2 {
 					if (maxBuild.y() < Build.mesh_maxpos(i).y()) { maxBuild.y(Build.mesh_maxpos(i).y()); }
 					if (maxBuild.z() < Build.mesh_maxpos(i).z()) { maxBuild.z(Build.mesh_maxpos(i).z()); }
 				}
-				
+
 
 				for (int i = 0; i < GroundPos.frame_child_num(TowerFrame); i++) {
 					Tower.resize(Tower.size() + 1);

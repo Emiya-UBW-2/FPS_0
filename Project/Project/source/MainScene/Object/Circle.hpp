@@ -1,5 +1,5 @@
 #pragma once
-#include"../../Header.hpp"
+#include"Header.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {
@@ -18,12 +18,16 @@ namespace FPS_n2 {
 				MV1SetMeshDifColorScale(this->m_obj.get(), 0, GetColorF(1.f, 1.f, 1.f, std::clamp(q, 0.f, 1.f)));
 				this->m_obj.DrawModel();
 			}
+
 			void Draw(void) noexcept override {
 				//ObjectBaseClass::Draw();
 			}
+
 			void DrawShadow(void) noexcept override {
 				//ObjectBaseClass::Draw();
 			}
+
+
 		};
 	};
 };

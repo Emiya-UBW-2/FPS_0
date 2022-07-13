@@ -13,9 +13,33 @@ namespace FPS_n2 {
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<CharacterClass>();
 					break;
+				case ObjType::Magazine://mag
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<MagazineClass>();
+					break;
+				case ObjType::Gun://gun
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<GunClass>();
+					break;
+				case ObjType::Target://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<TargetClass>();
+					break;
 				case ObjType::Circle://human
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<CircleClass>();
+					break;
+				case ObjType::Gate://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<GateClass>();
+					break;
+				case ObjType::ShootingMat://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<ShootingMatClass>();
+					break;
+				case ObjType::Cart://human
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<CartClass>();
 					break;
 				default:
 					break;
