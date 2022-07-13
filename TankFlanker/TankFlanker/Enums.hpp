@@ -168,6 +168,8 @@ namespace FPS_n2 {
 			LensSize,
 			Magpos,
 			LeftHandPos,
+			LeftHandYvec,
+			LeftHandZvec,
 			Max,
 		};
 		const char* GunFrameName[(int)GunFrame::Max] = {
@@ -180,6 +182,8 @@ namespace FPS_n2 {
 			"lenssize",
 			"magpos",
 			"lefthand",
+			"lefthand_yvec",
+			"lefthand_zvec",
 		};
 	};
 	namespace Sceneclass {

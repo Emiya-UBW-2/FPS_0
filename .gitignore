@@ -259,3 +259,6 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/Project/Project/FPS_0.ipdb
+/Project/Project/FPS_0.iobj
+/Project/Project/FPS_0.exe.lastcodeanalysissucceeded

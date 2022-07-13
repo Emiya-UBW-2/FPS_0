@@ -490,10 +490,12 @@ namespace FPS_n2 {
 				ResetFrameLocalMat(CharaFrame::LeftWrist);
 				matBase = GetParentFrameWorldMat(CharaFrame::LeftArm).GetRot().Inverse();
 
-				MATRIX_ref GunMat = this->m_Gun_Ptr->GetFrameWorldMat(GunFrame::LeftHandPos);
+				VECTOR_ref GunPos = this->m_Gun_Ptr->GetFrameWorldMat(GunFrame::LeftHandPos).pos();
+				VECTOR_ref Gunyvec = this->m_Gun_Ptr->GetFrameWorldMat(GunFrame::LeftHandYvec).pos() - GunPos;
+				VECTOR_ref Gunzvec = this->m_Gun_Ptr->GetFrameWorldMat(GunFrame::LeftHandZvec).pos() - GunPos;
 
 				moves HandAim;// = this->LEFTHAND.move;
-				HandAim.pos = Leap(GunMat.pos(), GetFrameWorldMat(CharaFrame::LeftWrist).pos(), this->m_LeftHandPer);
+				HandAim.pos = Leap(GunPos, GetFrameWorldMat(CharaFrame::LeftWrist).pos(), this->m_LeftHandPer);
 				//äÓèÄ
 				auto vec_a1 = MATRIX_ref::Vtrans((HandAim.pos - GetFrameWorldMat(CharaFrame::LeftArm).pos()).Norm(), matBase);//äÓèÄ
 				auto vec_a1L1 = VECTOR_ref(VECTOR_ref::vget(0.f, -1.f, vec_a1.y() / -abs(vec_a1.z()))).Norm();//x=0Ç∆Ç∑ÇÈ
@@ -518,12 +520,15 @@ namespace FPS_n2 {
 				{
 					auto Lmat = GetFrameLocalMat(CharaFrame::LeftWrist);
 					auto Wmat = GetFrameWorldMat(CharaFrame::LeftWrist);
-					auto Base = MATRIX_ref::Vtrans(VECTOR_ref::vget(1, -1, 0), Wmat.GetRot());
+					auto zvec = MATRIX_ref::Vtrans(VECTOR_ref::vget(1, -1, 0), Wmat.GetRot());
+					auto yvec = MATRIX_ref::Vtrans(VECTOR_ref::vget(1, 1, 0), Wmat.GetRot());
 					mat1 = MATRIX_ref::RotVec2(
-						MATRIX_ref::Vtrans(Base, matBase),
-						MATRIX_ref::Vtrans(GunMat.zvec()*-1.f, matBase));
+						MATRIX_ref::Vtrans(zvec, matBase),
+						MATRIX_ref::Vtrans(Gunzvec, matBase));
 					SetFrameLocalMat(CharaFrame::LeftWrist, mat1);
-					mat1 = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(GetFrameWorldMat(CharaFrame::LeftWrist).zvec()*-1.f, matBase), MATRIX_ref::Vtrans(GunMat.yvec(), matBase)) * mat1;
+					mat1 = MATRIX_ref::RotVec2(
+						MATRIX_ref::Vtrans(yvec, matBase),
+						MATRIX_ref::Vtrans(Gunyvec, matBase)) * mat1;
 
 					mat1 = Lmat * mat1;
 				}
