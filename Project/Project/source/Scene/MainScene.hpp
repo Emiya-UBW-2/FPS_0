@@ -282,11 +282,12 @@ namespace FPS_n2 {
 
 					Chara->SetEyeVec((camera_main.camvec - camera_main.campos).Norm());
 
+					InputControl Input;
 					for (int i = 0; i < chara_num; i++) {
 						if (i == 0
 							//&& false
 							) {
-							Chara->SetInput(
+							Input.SetInput(
 								pp_x*(1.f - TPS_Per),
 								pp_y*(1.f - TPS_Per),
 								CheckHitKeyWithCheck(KEY_INPUT_W) != 0,
@@ -298,11 +299,12 @@ namespace FPS_n2 {
 								(GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0,
 								ADSKey.press(),
 								RunKey.press(),
-								this->m_ReadyTime < 0.f,
 								CheckHitKeyWithCheck(KEY_INPUT_Q) != 0,
 								CheckHitKeyWithCheck(KEY_INPUT_E) != 0,
-								CheckHitKeyWithCheck(KEY_INPUT_R) != 0
+								CheckHitKeyWithCheck(KEY_INPUT_R) != 0,
+								CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0
 							);
+							Chara->SetInput(Input, this->m_ReadyTime < 0.f);
 							continue;
 						}
 
@@ -454,8 +456,7 @@ namespace FPS_n2 {
 								this->m_AI[i].GoNextPoint = false;
 							}
 						}
-
-						c->SetInput(
+						Input.SetInput(
 							this->m_AI[i].AimX,
 							this->m_AI[i].AimY,
 							!this->m_AI[i].CanSprint && !this->m_AI[i].InAimPoint,
@@ -467,11 +468,12 @@ namespace FPS_n2 {
 							this->m_AI[i].InShot,
 							this->m_AI[i].InAiming,
 							this->m_AI[i].CanSprint,
-							this->m_ReadyTime < 0.f,
 							false,
 							this->m_AI[i].InTurnSwitch,
-							this->m_AI[i].InAimStart && c->GetIsEmpty()
+							this->m_AI[i].InAimStart && c->GetIsEmpty(),
+							false
 						);
+						c->SetInput(Input, this->m_ReadyTime < 0.f);
 					}
 				}
 				//Execute

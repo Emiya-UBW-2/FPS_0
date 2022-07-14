@@ -12,6 +12,64 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
+	//入力
+	class InputControl {
+	public:
+		float m_AddxRad; float m_AddyRad;
+
+		bool m_GoFrontPress;
+		bool m_GoBackPress;
+		bool m_GoLeftPress;
+		bool m_GoRightPress;
+
+		bool m_SquatPress;
+		bool m_PronePress;
+		bool m_ShotPress;
+		bool m_AimPress;
+		bool m_RunPress;
+		bool m_QPress;
+		bool m_EPress;
+		bool m_ReloadPress;
+		bool m_GoFlight;
+	public:
+		void			SetInput(
+			float pAddxRad, float pAddyRad,
+			bool pGoFrontPress,
+			bool pGoBackPress,
+			bool pGoLeftPress,
+			bool pGoRightPress,
+
+			bool pSquatPress,
+			bool pPronePress,
+			bool pShotPress,
+			bool pAimPress,
+			bool pRunPress,
+			bool pQPress,
+			bool pEPress,
+			bool pReloadPress,
+			bool pGoFlight
+		) {
+			this->m_AddxRad = pAddxRad;
+			this->m_AddyRad = pAddyRad;
+
+			this->m_GoFrontPress = pGoFrontPress;
+			this->m_GoBackPress = pGoBackPress;
+			this->m_GoLeftPress = pGoLeftPress;
+			this->m_GoRightPress = pGoRightPress;
+
+			this->m_SquatPress = pSquatPress;
+			this->m_PronePress = pPronePress;
+			this->m_ShotPress = pShotPress;
+			this->m_AimPress = pAimPress;
+			this->m_RunPress = pRunPress;
+			this->m_QPress = pQPress;
+			this->m_EPress = pEPress;
+			this->m_ReloadPress = pReloadPress;
+			this->m_GoFlight = pGoFlight;
+		}
+	};
+
+
 	//フォントプール
 	class FontPool {
 	public:

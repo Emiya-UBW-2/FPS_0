@@ -1204,48 +1204,33 @@ namespace FPS_n2 {
 				SetMove(MATRIX_ref::RotY(this->m_yrad_Bottom), this->m_PosBuf);
 			}
 			//
-			void			SetInput(
-				float pAddxRad, float pAddyRad,
-				bool pGoFrontPress,
-				bool pGoBackPress,
-				bool pGoLeftPress,
-				bool pGoRightPress,
-				bool pSquatPress,
-				bool pPronePress,
-				bool pShotPress,
-				bool pAimPress,
-				bool pRunPress,
-				bool pReady,
-				bool pQPress,
-				bool pEPress,
-				bool pReloadPress
-			) {
+			void			SetInput(const InputControl& pInput, bool pReady) {
+
+				this->m_Flightmode |= pInput.m_GoFlight && this->m_KeyActive;
+
 				this->m_ReadySwitch = (this->m_KeyActive != pReady);
 				this->m_KeyActive = pReady;
-				if ((GetIsProne() && (!(this->m_ShotPhase == 0))) || !this->m_KeyActive) {
-					pGoFrontPress = false;
-					pGoBackPress = false;
-					pGoLeftPress = false;
-					pGoRightPress = false;
-				}
+
+				bool CannotMoveinProne = ((GetIsProne() && (!(this->m_ShotPhase == 0))) || !this->m_KeyActive);
+
 				m_InputGround.SetInput(
-					pAddxRad*(1.f - this->m_FlightPer), pAddyRad*(1.f - this->m_FlightPer),
+					pInput.m_AddxRad*(1.f - this->m_FlightPer), pInput.m_AddyRad*(1.f - this->m_FlightPer),
 					GetHeartRandVec()*(1.f - this->m_FlightPer),
-					pGoFrontPress && !this->m_Flightmode,
-					pGoBackPress && !this->m_Flightmode,
-					pGoLeftPress && !this->m_Flightmode,
-					pGoRightPress && !this->m_Flightmode,
-					pSquatPress && !this->m_Flightmode,
-					pPronePress && !this->m_Flightmode && (this->m_ShotPhase == 0),
-					pRunPress && !this->m_Flightmode,
+					pInput.m_GoFrontPress && !this->m_Flightmode && !CannotMoveinProne,
+					pInput.m_GoBackPress && !this->m_Flightmode && !CannotMoveinProne,
+					pInput.m_GoLeftPress && !this->m_Flightmode && !CannotMoveinProne,
+					pInput.m_GoRightPress && !this->m_Flightmode && !CannotMoveinProne,
+					pInput.m_SquatPress && !this->m_Flightmode,
+					pInput.m_PronePress && !this->m_Flightmode && (this->m_ShotPhase == 0),
+					pInput.m_RunPress && !this->m_Flightmode,
 					pReady,
-					pQPress,
-					pEPress,
+					pInput.m_QPress,
+					pInput.m_EPress,
 					this->m_CannotSprint
 				);
 				//AIM
-				this->m_Press_Shot = pShotPress && this->m_KeyActive;
-				this->m_Press_Reload = (pReloadPress && this->m_KeyActive && (this->m_Gun_Ptr->GetAmmoNum() <= this->m_Gun_Ptr->GetAmmoAll()));
+				this->m_Press_Shot = pInput.m_ShotPress && this->m_KeyActive;
+				this->m_Press_Reload = (pInput.m_ReloadPress && this->m_KeyActive && (this->m_Gun_Ptr->GetAmmoNum() <= this->m_Gun_Ptr->GetAmmoAll()));
 				if (0.f != this->m_InputGround.GetPronePer() && this->m_InputGround.GetPronePer() != 1.0f) {
 					if (this->m_Press_Shot) {
 						this->m_Press_Shot = false;
@@ -1260,7 +1245,7 @@ namespace FPS_n2 {
 						}
 					}
 				}
-				this->m_Press_Aim = pAimPress && this->m_KeyActive && (this->m_InputGround.GetPronePer() == 0.f || this->m_InputGround.GetPronePer() == 1.f);
+				this->m_Press_Aim = pInput.m_AimPress && this->m_KeyActive && (this->m_InputGround.GetPronePer() == 0.f || this->m_InputGround.GetPronePer() == 1.f);
 				if (this->m_InputGround.GetPronetoStanding()) {
 					this->m_Press_Aim = false;
 					this->m_ReadyTimer = UpperTimerLimit;
@@ -1273,9 +1258,9 @@ namespace FPS_n2 {
 				}
 				//‘€c
 				{
-					//this->m_FradAdd_Buf.x(-pAddxRad);
-					//this->m_FradAdd_Buf.y(pAddyRad);
-					//Easing(&this->m_FradAdd, this->m_FradAdd_Buf, 0.95f, EasingType::OutExpo);
+					this->m_FradAdd_Buf.x(-pInput.m_AddxRad);
+					this->m_FradAdd_Buf.y(pInput.m_AddyRad);
+					Easing(&this->m_FradAdd, this->m_FradAdd_Buf, 0.95f, EasingType::OutExpo);
 				}
 			}
 			//
