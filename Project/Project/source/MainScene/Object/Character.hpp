@@ -206,7 +206,7 @@ namespace FPS_n2 {
 						+ this->m_radAdd.x()
 					);
 					this->m_rad_Buf.y(
-						this->m_rad_Buf.y() + (pAddyRad + this->m_TurnRatePer / 100.f)
+						this->m_rad_Buf.y() + (pAddyRad + this->m_TurnRatePer / 100.f)*tmp
 						+ this->m_radAdd.y()
 					);
 
