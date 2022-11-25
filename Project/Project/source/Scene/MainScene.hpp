@@ -3,7 +3,7 @@
 
 namespace FPS_n2 {
 	namespace Sceneclass {
-		class MAINLOOP : public TEMPSCENE, public Effect_UseControl {
+		class MAINLOOP : public TEMPSCENE, public EffectControl {
 		private:
 			//リソース関連
 			ObjectManager Obj;				//モデル
@@ -88,7 +88,7 @@ namespace FPS_n2 {
 			using TEMPSCENE::TEMPSCENE;
 			void Set(void) noexcept override {
 				SoundPool::Create();
-				Set_EnvLight(
+				SetAmbientShadow(
 					VECTOR_ref::vget(12.5f*-300.f, 12.5f*-10.f, 12.5f*-300.f),
 					VECTOR_ref::vget(12.5f*300.f, 12.5f*50.f, 12.5f*300.f),
 					VECTOR_ref::vget(-0.25f, -0.5f, 0.0f),
@@ -177,8 +177,8 @@ namespace FPS_n2 {
 				tgtSel = -1;
 				tgtTimer = 0.f;
 				//Cam
-				camera_main.set_cam_info(deg2rad(65), 1.f, 100.f);
-				camera_main.set_cam_pos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
+				m_MainCamera.SetCamInfo(deg2rad(65), 1.f, 100.f);
+				m_MainCamera.SetCamPos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
 				Set_zoom_lens(3.5f);
 				//サウンド
 				auto SE = SoundPool::Instance();
@@ -206,15 +206,15 @@ namespace FPS_n2 {
 				this->m_StartSwitch = false;
 				this->m_RemoveSwitch = false;
 				//入力
-				FPSActive.Init(false);
-				MouseActive.Init(true);
+				FPSActive.Set(false);
+				MouseActive.Set(true);
 			}
 			//
 			bool Update(void) noexcept override {
 				auto& Chara = (std::shared_ptr<CharacterClass>&)(this->Obj.GetObj(ObjType::Human, 0));//自分
 				//FirstDoing
-				if (IsFirstLoop) {
-					SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
+				if (m_IsFirstLoop) {
+					SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
 					Env.play(DX_PLAYTYPE_LOOP, TRUE);
 					Chara->LoadReticle();
 
@@ -243,27 +243,27 @@ namespace FPS_n2 {
 				}
 				//Input,AI
 				{
-					MouseActive.GetInput(CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0);
-					FPSActive.GetInput(CheckHitKeyWithCheck(KEY_INPUT_V) != 0);
-					RunKey.GetInput(CheckHitKeyWithCheck(KEY_INPUT_LSHIFT) != 0);
-					ADSKey.GetInput((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0);
+					MouseActive.Execute(CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0);
+					FPSActive.Execute(CheckHitKeyWithCheck(KEY_INPUT_V) != 0);
+					RunKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_LSHIFT) != 0);
+					ADSKey.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0);
 					auto MidPress = (GetMouseInputWithCheck() & MOUSE_INPUT_MIDDLE) != 0;
-					int mx = DXDraw::Instance()->disp_x / 2, my = DXDraw::Instance()->disp_y / 2;
+					int mx = DXDraw::Instance()->m_DispXSize / 2, my = DXDraw::Instance()->m_DispYSize / 2;
 					if (MouseActive.on()) {
 						if (MouseActive.trigger()) {
-							SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
+							SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
 						}
 						GetMousePoint(&mx, &my);
-						SetMousePoint(DXDraw::Instance()->disp_x / 2, DXDraw::Instance()->disp_y / 2);
+						SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
 						SetMouseDispFlag(FALSE);
 					}
 					else {
 						SetMouseDispFlag(TRUE);
 					}
 
-					float cam_per = ((camera_main.fov / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
-					float pp_x = std::clamp(-(float)(my - DXDraw::Instance()->disp_y / 2)*1.f, -9.f, 9.f) * cam_per;
-					float pp_y = std::clamp((float)(mx - DXDraw::Instance()->disp_x / 2)*1.f, -9.f, 9.f) * cam_per;
+					float cam_per = ((m_MainCamera.GetCamFov() / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
+					float pp_x = std::clamp(-(float)(my - DXDraw::Instance()->m_DispYSize / 2)*1.f, -9.f, 9.f) * cam_per;
+					float pp_y = std::clamp((float)(mx - DXDraw::Instance()->m_DispXSize / 2)*1.f, -9.f, 9.f) * cam_per;
 
 					Easing(&TPS_Per, (!(FPSActive.on() || ADSKey.press()) && !Chara->GetIsProne() && MidPress) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
 
@@ -280,7 +280,7 @@ namespace FPS_n2 {
 
 					TPS_YradR += (sin(TPS_Yrad)*cos(TPS_YradR) - cos(TPS_Yrad) * sin(TPS_YradR))*20.f / FPS;
 
-					Chara->SetEyeVec((camera_main.camvec - camera_main.campos).Norm());
+					Chara->SetEyeVec((m_MainCamera.GetCamVec() - m_MainCamera.GetCamPos()).Norm());
 
 					InputControl Input;
 					for (int i = 0; i < chara_num; i++) {
@@ -488,7 +488,7 @@ namespace FPS_n2 {
 							auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, s));
 							if (Gun->CheckBullet(&t->GetCol())) {
 								//エフェクト
-								Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+								EffectControl::SetOnce(EffectResource::Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
 								//ヒット演算
 								if (i == 0) {
 									if (tgtSel != -1 && tgtSel != s) {
@@ -503,7 +503,7 @@ namespace FPS_n2 {
 						}
 						if (Gun->CheckBullet(&this->BackGround.GetGroundCol())) {
 							//エフェクト
-							Effect_UseControl::Set_Effect(Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
+							EffectControl::SetOnce(EffectResource::Effect::ef_fire, Gun->GetHitPos(), Gun->GetHitVec(), 1.f);
 						}
 					}
 				}
@@ -513,30 +513,28 @@ namespace FPS_n2 {
 					if (Gun->GetIsShot()) {
 						//エフェクト
 						auto mat = Gun->GetMuzzleMatrix();
-						Effect_UseControl::Set_Effect(Effect::ef_fire2, mat.pos(), mat.GetRot().zvec()*-1.f, 1.f);
+						EffectControl::SetOnce(EffectResource::Effect::ef_fire2, mat.pos(), mat.GetRot().zvec()*-1.f, 1.f);
 					}
 				}
 				//視点
 				{
 
 					if (FPSActive.on() || ADSKey.press()) {
-						camera_main.campos = Leap(Chara->GetEyePosition(), Chara->GetScopePos(), EyePosPer);
-						camera_main.camvec = camera_main.campos + Chara->GetEyeVector();
-						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
+						VECTOR_ref CamPos = Lerp(Chara->GetEyePosition(), Chara->GetScopePos(), EyePosPer);
+						m_MainCamera.SetCamPos(CamPos, CamPos + Chara->GetEyeVector(), Chara->GetMatrix().GetRot().yvec());
 					}
 					else {
 						MATRIX_ref UpperMat = Chara->GetFrameWorldMat(CharaFrame::Upper).GetRot()*MATRIX_ref::RotY(TPS_YradR);
-						VECTOR_ref CamPos = Chara->GetMatrix().pos() + Chara->GetMatrix().yvec() * Leap(14.f, 6.f, EyePosPer_Prone);
-
 						VECTOR_ref CamVec = MATRIX_ref::Vtrans(Chara->GetEyeVector(), MATRIX_ref::RotY(TPS_YradR));
-
 						CamVec = MATRIX_ref::Vtrans(CamVec, MATRIX_ref::RotAxis(UpperMat.xvec(), TPS_XradR));
-						CamVec = Leap(Chara->GetEyeVector(), CamVec, TPS_Per);
+						CamVec = Lerp(Chara->GetEyeVector(), CamVec, TPS_Per);
+						VECTOR_ref CamPos = Chara->GetMatrix().pos() + Chara->GetMatrix().yvec() * Lerp(14.f, 6.f, EyePosPer_Prone);
+						CamPos += Lerp((UpperMat.xvec()*-8.f + UpperMat.yvec()*3.f), (UpperMat.xvec()*-3.f + UpperMat.yvec()*4.f), EyeRunPer);
 
-						CamPos += Leap((UpperMat.xvec()*-8.f + UpperMat.yvec()*3.f), (UpperMat.xvec()*-3.f + UpperMat.yvec()*4.f), EyeRunPer);
-						camera_main.campos = Leap(CamPos + CamVec * Leap(-20.f, 2.f, EyePosPer_Prone), Chara->GetScopePos(), EyePosPer);
-						camera_main.camvec = Leap(CamPos, Chara->GetScopePos(), EyePosPer) + CamVec * 100.f;
-						camera_main.camup = Chara->GetMatrix().GetRot().yvec();
+						m_MainCamera.SetCamPos(
+							Lerp(CamPos + CamVec * Lerp(-20.f, 2.f, EyePosPer_Prone), Chara->GetScopePos(), EyePosPer),
+							Lerp(CamPos, Chara->GetScopePos(), EyePosPer) + CamVec * 100.f,
+							Chara->GetMatrix().GetRot().yvec());
 					}
 					Easing(&EyeRunPer, Chara->GetIsRun() ? 1.f : 0.f, 0.95f, EasingType::OutExpo);
 					Easing(&EyePosPer, Chara->GetIsADS() ? 1.f : 0.f, 0.8f, EasingType::OutExpo);//
@@ -544,25 +542,29 @@ namespace FPS_n2 {
 					//EyePosPer = 0.f;
 
 					Easing(&EyePosPer_Prone, Chara->GetIsProne() ? 1.f : 0.f, 0.8f, EasingType::OutExpo);
+					auto fov_t = m_MainCamera.GetCamFov();
+					auto near_t = m_MainCamera.GetCamNear();
+					auto far_t = m_MainCamera.GetCamFar();
+
 					if (Chara->GetIsADS()) {
-						//Easing(&camera_main.fov, deg2rad(90), 0.9f, EasingType::OutExpo);
-						Easing(&camera_main.fov, deg2rad(17), 0.8f, EasingType::OutExpo);
-						Easing(&camera_main.near_, 10.f, 0.9f, EasingType::OutExpo);
-						Easing(&camera_main.far_, 12.5f * 300.f, 0.9f, EasingType::OutExpo);
+						Easing(&fov_t, deg2rad(17), 0.8f, EasingType::OutExpo);
+						Easing(&near_t, 10.f, 0.9f, EasingType::OutExpo);
+						Easing(&far_t, 12.5f * 300.f, 0.9f, EasingType::OutExpo);
 					}
 					else if (Chara->GetIsRun()) {
-						Easing(&camera_main.fov, deg2rad(90), 0.9f, EasingType::OutExpo);
-						Easing(&camera_main.near_, 3.f, 0.9f, EasingType::OutExpo);
-						Easing(&camera_main.far_, 12.5f * 150.f, 0.9f, EasingType::OutExpo);
+						Easing(&fov_t, deg2rad(90), 0.9f, EasingType::OutExpo);
+						Easing(&near_t, 3.f, 0.9f, EasingType::OutExpo);
+						Easing(&far_t, 12.5f * 150.f, 0.9f, EasingType::OutExpo);
 					}
 					else {
-						Easing(&camera_main.fov, deg2rad(75), 0.9f, EasingType::OutExpo);
-						Easing(&camera_main.near_, 10.f, 0.9f, EasingType::OutExpo);
-						Easing(&camera_main.far_, 12.5f * 300.f, 0.9f, EasingType::OutExpo);
+						Easing(&fov_t, deg2rad(75), 0.9f, EasingType::OutExpo);
+						Easing(&near_t, 10.f, 0.9f, EasingType::OutExpo);
+						Easing(&far_t, 12.5f * 300.f, 0.9f, EasingType::OutExpo);
 					}
 					if (Chara->GetShotSwitch()) {
-						camera_main.fov -= deg2rad(10);
+						fov_t -= deg2rad(10);
 					}
+					m_MainCamera.SetCamInfo(fov_t, near_t, far_t);
 				}
 				//UIパラメーター
 				{
@@ -581,11 +583,11 @@ namespace FPS_n2 {
 
 				}
 				TEMPSCENE::Update();
-				Effect_UseControl::Update_Effect();
+				EffectControl::Execute();
 				return true;
 			}
 			void Dispose(void) noexcept override {
-				Effect_UseControl::Dispose_Effect();
+				EffectControl::Dispose();
 				this->Obj.DisposeObject();
 			}
 			//
@@ -663,8 +665,8 @@ namespace FPS_n2 {
 				if (tgtSel >= 0) {
 					auto& t = (std::shared_ptr<TargetClass>&)(this->Obj.GetObj(ObjType::Target, tgtSel));
 
-					int xp = DrawParts->disp_x / 2 - y_r(300);
-					int yp = DrawParts->disp_y / 2 + y_r(100);
+					int xp = DrawParts->m_DispXSize / 2 - y_r(300);
+					int yp = DrawParts->m_DispYSize / 2 + y_r(100);
 					int size = y_r(100);
 					int xs = size / 2;
 					int ys = size / 2;

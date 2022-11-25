@@ -96,8 +96,8 @@ namespace FPS_n2 {
 				//動作にかかわる操作
 				this->m_rad_Buf.x(pxRad);
 				this->m_rad_Buf.y(pyRad);
-				this->m_Squat.Init(SquatOn);
-				this->m_Prone.Init(ProneOn);
+				this->m_Squat.Set(SquatOn);
+				this->m_Prone.Set(ProneOn);
 				//上記を反映するもの
 				this->m_rad = this->m_rad_Buf;
 				this->m_SquatPer = SquatOn ? 1.f : 0.f;
@@ -152,19 +152,19 @@ namespace FPS_n2 {
 					}
 				}
 
-				this->m_Squat.GetInput(pSquatPress && this->m_KeyActive);
-				if (this->m_IsRun) { this->m_Squat.first = false; }
+				this->m_Squat.Execute(pSquatPress && this->m_KeyActive);
+				if (this->m_IsRun) { this->m_Squat.Set(false); }
 
-				this->m_Prone.GetInput((pPronePress && this->m_KeyActive) && (this->m_PronePer == 0.f || this->m_PronePer == 1.f));
-				if (GetIsProne()) { this->m_Squat.first = false; }
+				this->m_Prone.Execute((pPronePress && this->m_KeyActive) && (this->m_PronePer == 0.f || this->m_PronePer == 1.f));
+				if (GetIsProne()) { this->m_Squat.Set(false); }
 
 				Easing(&this->m_PronePer, GetIsProne() ? 1.f : 0.f, 0.95f, EasingType::OutExpo);
 				if (!GetIsProne() && (0.01f >= this->m_PronePer)) { this->m_PronePer = 0.f; }
 				if (GetIsProne() && (0.99f <= this->m_PronePer)) { this->m_PronePer = 1.f; }
 				//this->m_PronePer = std::clamp(this->m_PronePer + (GetIsProne() ? 1.f : -3.f) / FPS, 0.f, 1.f);
 				{
-					QKey.GetInput(pQPress && this->m_KeyActive);
-					EKey.GetInput(pEPress && this->m_KeyActive);
+					QKey.Execute(pQPress && this->m_KeyActive);
+					EKey.Execute(pEPress && this->m_KeyActive);
 					if (EKey.trigger()) {
 						if (this->m_TurnRate > -1) {
 							this->m_TurnRate--;
@@ -197,8 +197,8 @@ namespace FPS_n2 {
 				}
 				//回転
 				{
-					auto limchange = Leap(Leap(1.f, powf(1.f - this->GetVecFront(), 0.5f), this->m_RunPer * 0.8f), 0.15f, this->GetPronePer());
-					auto tmp = Leap(1.f, 0.1f, this->GetPronePer());
+					auto limchange = Lerp(Lerp(1.f, powf(1.f - this->GetVecFront(), 0.5f), this->m_RunPer * 0.8f), 0.15f, this->GetPronePer());
+					auto tmp = Lerp(1.f, 0.1f, this->GetPronePer());
 					Easing(&this->m_radAdd, pAddRadvec, 0.95f, EasingType::OutExpo);
 
 					this->m_rad_Buf.x(
@@ -329,7 +329,7 @@ namespace FPS_n2 {
 					return this->m_UpperMatrix * this->m_FlightMatrix;
 				}
 			}
-			const auto		GetEyeVector(void) const noexcept { return (this->m_Gun_Ptr != nullptr) ? (Leap(GetCharaDir().zvec(), this->m_Gun_Ptr->GetMatrix().zvec(), this->m_ReadyPer) * -1.f) : (GetCharaDir().zvec() * -1.f); }
+			const auto		GetEyeVector(void) const noexcept { return (this->m_Gun_Ptr != nullptr) ? (Lerp(GetCharaDir().zvec(), this->m_Gun_Ptr->GetMatrix().zvec(), this->m_ReadyPer) * -1.f) : (GetCharaDir().zvec() * -1.f); }
 			const auto		GetEyePosition(void) const noexcept { return (GetFrameWorldMat(CharaFrame::LeftEye).pos() + GetFrameWorldMat(CharaFrame::RightEye).pos()) / 2.f + this->GetEyeVector().Norm() * 0.5f; }
 			const auto		GetScopePos(void) noexcept { return (this->m_Gun_Ptr != nullptr) ? this->m_Gun_Ptr->GetScopePos() : GetEyePosition(); }
 			const auto		GetLensPos(void) noexcept { return (this->m_Gun_Ptr != nullptr) ? this->m_Gun_Ptr->GetLensPos() : VECTOR_ref::zero(); }
@@ -348,7 +348,7 @@ namespace FPS_n2 {
 
 			const auto		GetHeartRandVec(void) const noexcept {
 				auto tmp2 = 0.2f * GetRandf(deg2rad(1.f - this->m_InputGround.GetPronePer()));
-				auto tmp3 = Leap(0.5f, Leap(0.35f, 0.2f, this->m_InputGround.GetSquatPer()), this->m_InputGround.GetPronePer());
+				auto tmp3 = Lerp(0.5f, Lerp(0.35f, 0.2f, this->m_InputGround.GetSquatPer()), this->m_InputGround.GetPronePer());
 				VECTOR_ref tmpvec = VECTOR_ref::vget(
 					tmp2 + 0.0002f * sin(this->m_HeartRateRad) * powf(this->m_HeartRate / HeartRateMin, 3.f),
 					tmp2 + 0.0002f * sin(this->m_HeartRateRad * 3) * powf(this->m_HeartRate / HeartRateMin, 3.f),
@@ -454,7 +454,7 @@ namespace FPS_n2 {
 				}
 				//
 				auto FrontP = this->m_InputGround.GetFrontP();
-				auto TmpRunPer = Leap(Leap(0.85f, 0.7f, this->m_InputGround.GetRunPer()), 0.f, this->m_InputGround.GetPronePer());
+				auto TmpRunPer = Lerp(Lerp(0.85f, 0.7f, this->m_InputGround.GetRunPer()), 0.f, this->m_InputGround.GetPronePer());
 				if (this->m_Flightmode) { TmpRunPer = 0.95f; }
 				if (this->m_TurnBody || (this->m_Speed > 0.1f) || this->m_Flightmode || GetIsProne()) { Easing(&this->m_yrad_Upper, this->m_InputGround.GetRad().y(), TmpRunPer, EasingType::OutExpo); }
 				auto OLDP = this->m_yrad_Bottom;
@@ -466,7 +466,7 @@ namespace FPS_n2 {
 			void			ExecuteUpperMatrix(void) noexcept {
 				this->m_UpperMatrix = MATRIX_ref::RotX(this->m_InputGround.GetRad().x()) * MATRIX_ref::RotY(this->m_InputGround.GetRad().y() - this->m_yrad_Bottom);
 				this->m_obj.frame_Reset(this->Frames[(int)CharaFrame::Upper].first);
-				SetFrameLocalMat(CharaFrame::Upper, GetFrameLocalMat(CharaFrame::Upper).GetRot() * Leap_Matrix(this->m_UpperMatrix, MATRIX_ref::zero(), this->m_FlightPer));
+				SetFrameLocalMat(CharaFrame::Upper, GetFrameLocalMat(CharaFrame::Upper).GetRot() * Lerp_Matrix(this->m_UpperMatrix, MATRIX_ref::zero(), this->m_FlightPer));
 			}
 			//SetMat指示															//0.03ms
 			void			ExecuteAnim(void) noexcept {
@@ -837,9 +837,9 @@ namespace FPS_n2 {
 			}
 			//SetMat指示更新														//0.03ms
 			void			ExecuteMatrix(void) noexcept {
-				this->m_RunPer2 = Leap(0.35f, (SpeedLimit * (1.f + 0.5f * this->m_InputGround.GetSprintPer())), this->m_InputGround.GetRunPer());
-				this->m_RunPer2 = Leap(this->m_RunPer2, 0.15f, this->m_InputGround.GetSquatPer());
-				this->m_RunPer2 = Leap(this->m_RunPer2, 0.1f, this->m_InputGround.GetPronePer());
+				this->m_RunPer2 = Lerp(0.35f, (SpeedLimit * (1.f + 0.5f * this->m_InputGround.GetSprintPer())), this->m_InputGround.GetRunPer());
+				this->m_RunPer2 = Lerp(this->m_RunPer2, 0.15f, this->m_InputGround.GetSquatPer());
+				this->m_RunPer2 = Lerp(this->m_RunPer2, 0.1f, this->m_InputGround.GetPronePer());
 				if (this->m_PrevRunPer2 == 0.f) {
 					this->m_PrevRunPer2 = this->m_RunPer2;
 				}
@@ -889,10 +889,10 @@ namespace FPS_n2 {
 				}
 				col_wall(OLDpos, &this->m_PosBuf, *this->m_MapCol);
 				//this->m_move.mat = MATRIX_ref::RotZ(this->m_InputGround.GetRad().z()) * MATRIX_ref::RotY(this->m_yrad_Bottom)
-				//	* MATRIX_ref::RotVec2(VECTOR_ref::up(), Leap(VECTOR_ref::up(), this->m_ProneNormal, this->m_InputGround.GetPronePer()));
+				//	* MATRIX_ref::RotVec2(VECTOR_ref::up(), Lerp(VECTOR_ref::up(), this->m_ProneNormal, this->m_InputGround.GetPronePer()));
 				if (!this->m_Flightmode) {
 					auto mat_tmp = MATRIX_ref::RotZ(this->m_InputGround.GetRad().z()) * MATRIX_ref::RotY(this->m_yrad_Bottom)
-						* MATRIX_ref::RotVec2(VECTOR_ref::up(), Leap(VECTOR_ref::up(), this->m_ProneNormal, this->m_InputGround.GetPronePer()));
+						* MATRIX_ref::RotVec2(VECTOR_ref::up(), Lerp(VECTOR_ref::up(), this->m_ProneNormal, this->m_InputGround.GetPronePer()));
 					Easing_Matrix(&this->m_move.mat, mat_tmp, 0.8f, EasingType::OutExpo);
 					this->m_FlightMatrix = this->m_move.mat;
 				}
@@ -964,9 +964,9 @@ namespace FPS_n2 {
 							GetFrameWorldMat(CharaFrame::Upper2).GetRot().yvec() * -1.75f +
 							GetFrameWorldMat(CharaFrame::Upper2).GetRot().zvec() * 1.75f;
 					}
-					auto yVec = Leap(yVec1, yVec2, this->m_SlingPer);
-					auto zVec = Leap(zVec1, zVec2, this->m_SlingPer);
-					auto PosBuf = Leap(Pos1, Pos2, this->m_SlingPer);
+					auto yVec = Lerp(yVec1, yVec2, this->m_SlingPer);
+					auto zVec = Lerp(zVec1, zVec2, this->m_SlingPer);
+					auto PosBuf = Lerp(Pos1, Pos2, this->m_SlingPer);
 					auto tmp_gunrat = MATRIX_ref::RotVec2(VECTOR_ref::vget(0, 0, -1).Norm(), zVec);
 					tmp_gunrat *= MATRIX_ref::RotVec2(tmp_gunrat.yvec(), yVec);
 					tmp_gunrat *= GetCharaDir() * MATRIX_ref::Mtrans(PosBuf);
@@ -1093,7 +1093,7 @@ namespace FPS_n2 {
 				VECTOR_ref Gunzvec = this->m_Gun_Ptr->GetFrameWorldMat(GunFrame::LeftHandZvec).pos() - GunPos;
 
 				moves HandAim;// = this->LEFTHAND.move;
-				HandAim.pos = Leap(GunPos, GetFrameWorldMat(CharaFrame::LeftWrist).pos(), this->m_LeftHandPer);
+				HandAim.pos = Lerp(GunPos, GetFrameWorldMat(CharaFrame::LeftWrist).pos(), this->m_LeftHandPer);
 				//基準
 				auto vec_a1 = MATRIX_ref::Vtrans((HandAim.pos - GetFrameWorldMat(CharaFrame::LeftArm).pos()).Norm(), matBase);//基準
 				auto vec_a1L1 = VECTOR_ref(VECTOR_ref::vget(0.f, -1.f, vec_a1.y() / -abs(vec_a1.z()))).Norm();//x=0とする
@@ -1130,7 +1130,7 @@ namespace FPS_n2 {
 
 					mat1 = Lmat * mat1;
 				}
-				HandAim.mat = Leap_Matrix(mat1, mat2, this->m_LeftHandPer);
+				HandAim.mat = Lerp_Matrix(mat1, mat2, this->m_LeftHandPer);
 				SetFrameLocalMat(CharaFrame::LeftWrist, HandAim.mat);
 			}
 			void			Init(void) noexcept override {
@@ -1267,7 +1267,7 @@ namespace FPS_n2 {
 			void			SetEyeVec(const VECTOR_ref& camvec) noexcept {
 				this->m_obj.frame_Reset(this->Frames[(int)CharaFrame::Head].first);
 				auto v1 = (GetFrameWorldMat(CharaFrame::Head).GetRot() * GetCharaDir().Inverse()).zvec()*-1.f;
-				auto v2 = Leap(MATRIX_ref::Vtrans(camvec.Norm(), GetCharaDir().Inverse()), v1, m_NeckPer);
+				auto v2 = Lerp(MATRIX_ref::Vtrans(camvec.Norm(), GetCharaDir().Inverse()), v1, m_NeckPer);
 
 				auto radlimit = deg2rad(70);
 				if (v1.dot(v2) <= cos(radlimit)) {

@@ -47,13 +47,13 @@ namespace FPS_n2 {
 					auto mat = this->m_obj.GetFrameLocalWorldMatrix(1 + i);
 					if (i == 0) {
 						b->SetMove(
-							MATRIX_ref::RotVec2(VECTOR_ref::front(), Leap(mat.GetRot().zvec(), this->HandMatrix.zvec(), this->HandPer)),
-							Leap(Leap(mat.pos(), this->ChamberMatrix.pos(), this->ShotPer), this->HandMatrix.pos(), this->HandPer)
+							MATRIX_ref::RotVec2(VECTOR_ref::front(), Lerp(mat.GetRot().zvec(), this->HandMatrix.zvec(), this->HandPer)),
+							Lerp(Lerp(mat.pos(), this->ChamberMatrix.pos(), this->ShotPer), this->HandMatrix.pos(), this->HandPer)
 						);
 					}
 					else {
 						auto mat2 = this->m_obj.GetFrameLocalWorldMatrix(i);
-						b->SetMove(mat.GetRot(), Leap(mat.pos(), mat2.pos(), this->HandPer));
+						b->SetMove(mat.GetRot(), Lerp(mat.pos(), mat2.pos(), this->HandPer));
 					}
 				}
 				//‹¤’Ê
