@@ -1,45 +1,55 @@
 #include"Header.hpp"
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-
 	OPTION::Create();
-	auto* OptionParts = OPTION::Instance();
-	OptionParts->Load();							//設定読み込み
 	DXDraw::Create("FPS_n2");						//汎用
-
 	//MV1SetLoadModelUsePackDraw(TRUE);
-
+	PostPassEffect::Create();						//シェーダー
+	EffectResource::Create();						//エフェクト
+	SoundPool::Create();							//サウンド
+	FontPool::Create();								//フォント
 #ifdef DEBUG
-	DebugClass::Create(FPS_n2::Frame_Rate);
+	DebugClass::Create();
+	auto* DebugParts = DebugClass::Instance();		//デバッグ
 #endif // DEBUG
-
-	auto scene = std::make_unique<FPS_n2::Sceneclass::SceneControl>();
-	//シェーダー
-	PostPassEffect::Create();
-	//シーン
-	auto MAINLOOPscene = std::make_shared<FPS_n2::Sceneclass::MAINLOOP>();
-	//
+	auto* DrawParts = DXDraw::Instance();
 	auto* EffectUseControl = EffectResource::Instance();
-	EffectUseControl->Init();																						//エフェクト
+	//シーン
+	auto MAINLOOPloader = std::make_shared<FPS_n2::MAINLOOPLOADER>();
+	
+	auto MAINLOOPscene = std::make_shared<FPS_n2::MAINLOOP>();
+	//シーンコントロール
+	auto scene = std::make_unique<SceneControl>(MAINLOOPloader);
 	//遷移先指定
-	MAINLOOPscene->Set_Next(MAINLOOPscene, FPS_n2::Sceneclass::scenes::MAIN_LOOP);
-	//開始時遷移先
-	scene->ChangeScene(FPS_n2::Sceneclass::scenes::MAIN_LOOP, (std::shared_ptr<FPS_n2::Sceneclass::TEMPSCENE>&)MAINLOOPscene);
+	MAINLOOPloader->Set_Next(MAINLOOPscene);
+	MAINLOOPscene->Set_Next(MAINLOOPloader);
 	//繰り返し
-	do {
+	while (true) {
 		scene->StartScene();
 		while (true) {
-			if (scene->Execute()) { break; }
+			if ((ProcessMessage() != 0) || (CheckHitKeyWithCheck(KEY_INPUT_ESCAPE) != 0)) {
+				return 0;
+			}
+			FPS = GetFPS();
+#ifdef DEBUG
+			clsDx();
+			DebugParts->SetStartPoint();
+#endif // DEBUG
+			if (scene->Execute()) { break; }		//更新
 			if (!scene->isPause()) {
 				EffectUseControl->Calc();			//エフェクシアのアプデを60FPS相当に変更
 			}
-			scene->Draw();
-			//60FPSを待機
-			scene->Vsync();
+			scene->Draw();							//描画
+			//デバッグ
+#ifdef DEBUG
+			DebugParts->DebugWindow(1920 - 300, 50);
+			printfDx("AsyncCount :%d\n", GetASyncLoadNum());
+			printfDx("Drawcall   :%d\n", GetDrawCallCount());
+			printfDx("FPS        :%5.2f fps\n", FPS);
+#endif // DEBUG
+			DrawParts->Screen_Flip();				//画面の反映
 		}
-		//終了処理
-		scene->NextScene();
-	} while (!scene->isEnd());
-	EffectUseControl->Dispose();
+		scene->NextScene();							//次のシーンへ移行
+	}
 	return 0;
 }

@@ -19,20 +19,8 @@
     <Filter Include="ソース ファイル\MainScene">
       <UniqueIdentifier>{83422936-319b-4532-8063-ff7f98825515}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\MainScene\Object">
-      <UniqueIdentifier>{7e7d2c6d-acfb-42c0-8d84-c51bfae30724}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\MainScene\BackGround">
-      <UniqueIdentifier>{f8f7caa6-07a4-4b61-981f-3b99bc5d3bb1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\MainScene\UI">
-      <UniqueIdentifier>{a481be59-68ff-4107-9bce-dabca4ec7642}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\sequence.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="source\sub.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
@@ -42,53 +30,11 @@
     <ClInclude Include="source\Header.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Character.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Circle.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\ObjectBase.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\BackGround\BackGround.hpp">
-      <Filter>ソース ファイル\MainScene\BackGround</Filter>
-    </ClInclude>
     <ClInclude Include="source\Scene\MainScene.hpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="source\ObjectManager.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\UI\MainSceneUIControl.hpp">
-      <Filter>ソース ファイル\MainScene\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Gun.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Magazine.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\ObjectBaseEnum.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\ShootingMat.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Target.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Cart.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\CharacterEnum.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\CircleEnum.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Gate.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
+    <ClInclude Include="source\Scene\MainSceneLoader.hpp">
+      <Filter>ソース ファイル\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

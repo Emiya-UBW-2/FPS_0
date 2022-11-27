@@ -13,23 +13,8 @@
   <ItemGroup>
     <ClInclude Include="source\Enums.hpp" />
     <ClInclude Include="source\Header.hpp" />
-    <ClInclude Include="source\MainScene\BackGround\BackGround.hpp" />
-    <ClInclude Include="source\MainScene\Object\Cart.hpp" />
-    <ClInclude Include="source\MainScene\Object\Character.hpp" />
-    <ClInclude Include="source\MainScene\Object\CharacterEnum.hpp" />
-    <ClInclude Include="source\MainScene\Object\Circle.hpp" />
-    <ClInclude Include="source\MainScene\Object\CircleEnum.hpp" />
-    <ClInclude Include="source\MainScene\Object\Gate.hpp" />
-    <ClInclude Include="source\MainScene\Object\Gun.hpp" />
-    <ClInclude Include="source\MainScene\Object\Magazine.hpp" />
-    <ClInclude Include="source\MainScene\Object\ObjectBase.hpp" />
-    <ClInclude Include="source\MainScene\Object\ObjectBaseEnum.hpp" />
-    <ClInclude Include="source\MainScene\Object\ShootingMat.hpp" />
-    <ClInclude Include="source\MainScene\Object\Target.hpp" />
-    <ClInclude Include="source\MainScene\UI\MainSceneUIControl.hpp" />
-    <ClInclude Include="source\ObjectManager.hpp" />
     <ClInclude Include="source\Scene\MainScene.hpp" />
-    <ClInclude Include="source\sequence.hpp" />
+    <ClInclude Include="source\Scene\MainSceneLoader.hpp" />
     <ClInclude Include="source\sub.hpp" />
   </ItemGroup>
   <ItemGroup>
