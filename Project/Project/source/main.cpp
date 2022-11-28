@@ -2,6 +2,7 @@
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	OPTION::Create();
+	SetValidMousePointerWindowOutClientAreaMoveFlag(FALSE);
 	DXDraw::Create("FPS_n2");						//汎用
 	//MV1SetLoadModelUsePackDraw(TRUE);
 	PostPassEffect::Create();						//シェーダー
