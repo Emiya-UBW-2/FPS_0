@@ -899,6 +899,7 @@ namespace FPS_n2 {
 
 			std::list<std::unique_ptr<SaveParam>> m_SaveParams;
 			std::list<std::unique_ptr<SaveParam>>::iterator m_NowSaveSelect;
+			float				m_SaveAnimPer{ 0.f };
 			float				m_SaveChangeTime{ 0.f };
 		public:
 			const auto&		GetLeftColor(void) const noexcept { return this->m_LeftColor; }
@@ -1228,6 +1229,7 @@ namespace FPS_n2 {
 									this->m_NowSaveSelect--;
 									(*this->m_NowSaveSelect)->UndoWrite(&this->m_OutScreen);
 									this->m_SaveChangeTime = 2.f;
+									this->m_SaveAnimPer = 1.f;
 								}
 							}
 						}
@@ -1246,6 +1248,7 @@ namespace FPS_n2 {
 										SetDrawScreen(DX_SCREEN_BACK);
 									}
 									this->m_SaveChangeTime = 2.f;
+									this->m_SaveAnimPer = -1.f;
 								}
 							}
 						}
@@ -1277,7 +1280,7 @@ namespace FPS_n2 {
 					}
 				}
 				this->m_SaveChangeTime = std::clamp(this->m_SaveChangeTime - 1.f / FPS, 0.f, 2.f);
-
+				Easing(&this->m_SaveAnimPer, 0.f, 0.9f, EasingType::OutExpo);
 
 				if (!Input->GetLeftClick().press()) {
 					m_DrawType = EnumDrawType::Write;
@@ -1416,33 +1419,41 @@ namespace FPS_n2 {
 					ys = y_r(300)*this->m_ysize / this->m_xsize;
 
 
-					xp = y_r(10);
+					xp = y_r(10) - (int)((float)y_r(400) * (1.f - std::clamp(this->m_SaveChangeTime, 0.f, 0.2f) / 0.2f));
 					yp = DrawParts->m_DispYSize / 2 - ys / 2;
 					{
 						auto Itr = this->m_NowSaveSelect;
 						if (Itr != m_SaveParams.begin()) {
 							for (int i = 1; i < 5; i++) {
+								int x_t = xp;
+								int y_t = yp - (int)((float)(ys + y_r(5)) * ((float)i + this->m_SaveAnimPer));
 								Itr--;
-								(*Itr)->GetGraphHandle().DrawExtendGraph(xp, yp - (ys + y_r(5)) * i, xp + xs, yp + ys - (ys + y_r(5)) * i, false);
-								DrawBox(xp, yp - (ys + y_r(5)) * i, xp + xs, yp + ys - (ys + y_r(5)) * i, Green, FALSE);
+								DrawBox(x_t + 2, y_t + 2, x_t + xs + 2, y_t + ys + 2, Black, TRUE);
+								(*Itr)->GetGraphHandle().DrawExtendGraph(x_t, y_t, x_t + xs, y_t + ys, false);
+								DrawBox(x_t, y_t, x_t + xs, y_t + ys, Gray75, FALSE);
 								if (Itr == m_SaveParams.begin()) { break; }
 							}
 						}
 					}
-					xp = y_r(110);
 					{
 						auto Itr = this->m_NowSaveSelect;
 						for (int i = 0; i < 5; i++) {
+							int x_t = xp;
+							if (i == 0) {
+								x_t = xp + (int)((float)y_r(100) *(1.f - std::abs(this->m_SaveAnimPer)));
+							}
+							int y_t = yp + (int)((float)(ys + y_r(5)) * ((float)i - this->m_SaveAnimPer));
 							if (Itr == m_SaveParams.end()) {
-								DrawBox(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, Green, FALSE);
-								this->m_OutScreen_After.DrawExtendGraph(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, false);
-								Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp, yp + (ys + y_r(5)) * i, this->m_LeftColor, backcolor, "[NEW]");
+								DrawBox(x_t + 2, y_t + 2, x_t + xs + 2, y_t + ys + 2, Black, TRUE);
+								this->m_OutScreen_After.DrawExtendGraph(x_t, y_t, x_t + xs, y_t + ys, false);
+								DrawBox(x_t, y_t, x_t + xs, y_t + ys, Gray75, FALSE);
+								Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, x_t, y_t, this->m_LeftColor, backcolor, "[NEW]");
 								break;
 							}
-							(*Itr)->GetGraphHandle().DrawExtendGraph(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, false);
-							DrawBox(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, Green, FALSE);
+							DrawBox(x_t + 2, y_t + 2, x_t + xs + 2, y_t + ys + 2, Black, TRUE);
+							(*Itr)->GetGraphHandle().DrawExtendGraph(x_t, y_t, x_t + xs, y_t + ys, false);
+							DrawBox(x_t, y_t, x_t + xs, y_t + ys, Gray75, FALSE);
 							Itr++;
-							xp = y_r(10);
 						}
 					}
 					SetDrawMode(prevmodet);
@@ -1452,14 +1463,15 @@ namespace FPS_n2 {
 				printfDx("\n");
 				printfDx("\n");
 				printfDx("左クリック\n");
-				printfDx("　何も押さない               ペン\n");
-				printfDx("　　左クリック中に右クリック リセット\n");
-				printfDx("　LShift押しながら           バケツ\n");
-				printfDx("ホイールクリック             スポイト\n");
-				printfDx("右クリック                   視点移動\n");
-				printfDx("何も押さずマウスホイール     ズーム\n");
-				printfDx("Cを押しながらマウスホイール  ペンの太さチェンジ\n");
-				printfDx("LCtrl                        特殊メニュー\n");
+				printfDx("　何も押さない                  ペン\n");
+				printfDx("　　左クリック中に右クリック     リセット\n");
+				printfDx("　LShift押しながら              バケツ\n");
+				printfDx("ホイールクリック                スポイト\n");
+				printfDx("右クリック                      視点移動\n");
+				printfDx("何も押さずマウスホイール        ズーム\n");
+				printfDx("Cを押しながらマウスホイール     ペンの太さチェンジ\n");
+				printfDx("LCtrl                         特殊メニュー\n");
+				printfDx("Esc                           終了\n");
 			}
 		};
 	};
