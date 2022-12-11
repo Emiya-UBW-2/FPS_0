@@ -8,7 +8,7 @@
 
 #endif // _DEBUG
 
-#define DEBUG
+//#define DEBUG
 
 #include "DXLib_ref/DXLib_ref.h"
 #include "Box2D/Box2D.h"

@@ -181,44 +181,44 @@ namespace FPS_n2 {
 		};
 		//
 		class ScrollBoxClass {
-			bool		IsChangeScrollY{ false };
-			int			BaseScrollY{ 0 };
-			float		NowScrollYPer{ 0.f };
+			bool		m_IsChangeScrollY{ false };
+			int			m_BaseScrollY{ 0 };
+			float		m_NowScrollYPer{ 0.f };
 		public:
-			const auto&		GetNowScrollYPer(void) const noexcept { return this->NowScrollYPer; }
+			const auto&		GetNowScrollYPer(void) const noexcept { return this->m_NowScrollYPer; }
 			void			ScrollBox(int xp1, int yp1, int xp2, int yp2, float TotalPer, bool IsActive) {
 				auto* Input = InputControl::Instance();
 				unsigned int color = Gray25;
 
 				int length = (int)((float)(yp2 - yp1) / TotalPer);
 				float Total = (float)(yp2 - yp1 - length);
-				int Yp_t = (int)(Total * NowScrollYPer);
+				int Yp_t = (int)(Total * m_NowScrollYPer);
 				int Yp_s = std::max(yp1, yp1 + Yp_t);
 				int Yp_e = std::min(yp2, Yp_s + length);
 
 				if (IsActive) {
 					if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp1, yp1, xp2, yp2)) {
 						if (Input->GetLeftClick().trigger()) {
-							IsChangeScrollY = true;
+							m_IsChangeScrollY = true;
 						}
 					}
-					if (IsChangeScrollY) {
+					if (m_IsChangeScrollY) {
 						if (Input->GetLeftClick().press()) {
 							color = White;
-							NowScrollYPer = std::clamp((float)(Input->GetMouseY() - BaseScrollY) / Total, 0.f, 1.f);
+							m_NowScrollYPer = std::clamp((float)(Input->GetMouseY() - m_BaseScrollY) / Total, 0.f, 1.f);
 						}
 						else {
-							IsChangeScrollY = false;
+							m_IsChangeScrollY = false;
 						}
 					}
 					else {
-						BaseScrollY = Input->GetMouseY() - Yp_t;
+						m_BaseScrollY = Input->GetMouseY() - Yp_t;
 						if (Input->GetMouseY() < Yp_s) {
-							BaseScrollY += Yp_s - Input->GetMouseY();
+							m_BaseScrollY += Yp_s - Input->GetMouseY();
 						}
 
 						if (Input->GetMouseY() > Yp_e) {
-							BaseScrollY += Yp_e - Input->GetMouseY();
+							m_BaseScrollY += Yp_e - Input->GetMouseY();
 						}
 					}
 				}
@@ -228,89 +228,89 @@ namespace FPS_n2 {
 		};
 		class WindowControl {
 		public:
-			bool				isDelete{ false };
+			bool				m_isDelete{ false };
 		private:
-			bool				ActiveSwitch{ false };
-			bool				IsActive{ false };
-			int					PosX{ 0 }, PosY{ 0 };
-			int					SizeX{ 100 }, SizeY{ 100 };
-			int					TotalSizeY{ 200 };
-			std::string			TabName;
+			bool				m_ActiveSwitch{ false };
+			bool				m_IsActive{ false };
+			int					m_PosX{ 0 }, m_PosY{ 0 };
+			int					m_SizeX{ 100 }, m_SizeY{ 100 };
+			int					m_TotalSizeY{ 200 };
+			std::string			m_TabName;
 			std::function<void(WindowControl*)> m_DoingOnWindow;
 
-			ScrollBoxClass		Scroll;
+			ScrollBoxClass		m_Scroll;
 		private:
-			bool				isMaxSize{ false };
-			int					PosXSave{ 0 }, PosYSave{ 0 };
-			int					SizeXSave{ 100 }, SizeYSave{ 100 };
+			bool				m_isMaxSize{ false };
+			int					m_PosXSave{ 0 }, m_PosYSave{ 0 };
+			int					m_SizeXSave{ 100 }, m_SizeYSave{ 100 };
 
-			bool				CanChageSize{ false };
+			bool				m_CanChageSize{ false };
 
-			bool				IsMoving{ false };
-			int					PosAddX{ 0 }, PosAddY{ 0 };
+			bool				m_IsMoving{ false };
+			int					m_PosAddX{ 0 }, m_PosAddY{ 0 };
 
-			bool				IsChangeScaleXY{ false };
-			bool				IsChangeScale1X{ false };
-			bool				IsChangeScale1Y{ false };
-			bool				IsChangeScale2X{ false };
-			bool				IsChangeScale2Y{ false };
-			int					BaseScaleX{ 0 }, BaseScaleY{ 0 };
-			int					BasePos1X{ 0 }, BasePos1Y{ 0 };
-			int					BaseScale1X{ 0 }, BaseScale1Y{ 0 };
-			int					BaseScale2X{ 0 }, BaseScale2Y{ 0 };
+			bool				m_IsChangeScaleXY{ false };
+			bool				m_IsChangeScale1X{ false };
+			bool				m_IsChangeScale1Y{ false };
+			bool				m_IsChangeScale2X{ false };
+			bool				m_IsChangeScale2Y{ false };
+			int					m_BaseScaleX{ 0 }, m_BaseScaleY{ 0 };
+			int					m_BasePos1X{ 0 }, m_BasePos1Y{ 0 };
+			int					m_BaseScale1X{ 0 }, m_BaseScale1Y{ 0 };
+			int					m_BaseScale2X{ 0 }, m_BaseScale2Y{ 0 };
 		public:
 			const auto		GetIsEditing(void) const noexcept {
 				auto* Input = InputControl::Instance();
-				int xp1 = PosX;
-				int yp1 = PosY;
-				int xp2 = PosX + SizeX;
-				int yp2 = PosY + SizeY;
+				int xp1 = m_PosX;
+				int yp1 = m_PosY;
+				int xp2 = m_PosX + m_SizeX;
+				int yp2 = m_PosY + m_SizeY;
 				return
 					in2_(Input->GetMouseX(), Input->GetMouseY(), xp1, yp1, xp2, yp2) ||
-					this->CanChageSize ||
-					this->IsMoving ||
-					this->IsChangeScaleXY ||
-					this->IsChangeScale1X ||
-					this->IsChangeScale1Y ||
-					this->IsChangeScale2X ||
-					this->IsChangeScale2Y;
+					this->m_CanChageSize ||
+					this->m_IsMoving ||
+					this->m_IsChangeScaleXY ||
+					this->m_IsChangeScale1X ||
+					this->m_IsChangeScale1Y ||
+					this->m_IsChangeScale2X ||
+					this->m_IsChangeScale2Y;
 			}
 
-			const auto&		GetPosX(void) const noexcept { return this->PosX; }
-			const auto&		GetPosY(void) const noexcept { return this->PosY; }
-			const auto&		GetSizeX(void) const noexcept { return this->SizeX; }
-			const auto&		GetSizeY(void) const noexcept { return this->SizeY; }
+			const auto&		GetPosX(void) const noexcept { return this->m_PosX; }
+			const auto&		GetPosY(void) const noexcept { return this->m_PosY; }
+			const auto&		GetSizeX(void) const noexcept { return this->m_SizeX; }
+			const auto&		GetSizeY(void) const noexcept { return this->m_SizeY; }
 
-			const auto&		GetActiveSwitch(void) const noexcept { return this->ActiveSwitch; }
-			void			SetIsActive(bool value) noexcept { IsActive = value; }
-			const auto&		GetIsActive(void) const noexcept { return this->IsActive; }
+			const auto&		GetActiveSwitch(void) const noexcept { return this->m_ActiveSwitch; }
+			void			SetIsActive(bool value) noexcept { m_IsActive = value; }
+			const auto&		GetIsActive(void) const noexcept { return this->m_IsActive; }
 
-			void			SetTotalSizeY(bool value) noexcept { this->TotalSizeY = value; }
-			const auto&		GetNowScrollPer(void) const noexcept { return this->Scroll.GetNowScrollYPer(); }
+			void			SetTotalSizeY(bool value) noexcept { this->m_TotalSizeY = value; }
+			const auto&		GetNowScrollPer(void) const noexcept { return this->m_Scroll.GetNowScrollYPer(); }
 		public:
 			void Set(int posx, int posy, int sizex, int sizey, int Totalsizey, const char* tabName, bool canChageSize, const std::function<void(WindowControl*)>& DoingOnWindow) noexcept {
-				this->PosX = posx;
-				this->PosY = posy;
+				this->m_PosX = posx;
+				this->m_PosY = posy;
 
 
-				this->SizeX = sizex;
-				this->SizeY = LineHeight + sizey;
-				this->TotalSizeY = Totalsizey;
-				this->TabName = tabName;
+				this->m_SizeX = sizex;
+				this->m_SizeY = LineHeight + sizey;
+				this->m_TotalSizeY = Totalsizey;
+				this->m_TabName = tabName;
 
-				int widthLimit = SetMsg(0, 0, 0, 0 + LineHeight, LineHeight - y_r(6), FontHandle::FontXCenter::LEFT, TabName) + EdgeSize * 2 + LineHeight * 2;
-				this->SizeX = std::max(this->SizeX, widthLimit);
+				int widthLimit = SetMsg(0, 0, 0, 0 + LineHeight, LineHeight - y_r(6), FontHandle::FontXCenter::LEFT, m_TabName) + EdgeSize * 2 + LineHeight * 2;
+				this->m_SizeX = std::max(this->m_SizeX, widthLimit);
 
-				this->CanChageSize = canChageSize;
+				this->m_CanChageSize = canChageSize;
 				this->m_DoingOnWindow = DoingOnWindow;
 			}
 			void Draw(void) noexcept {
 				auto* DrawParts = DXDraw::Instance();
 				auto* Input = InputControl::Instance();
-				int xp1 = PosX;
-				int yp1 = PosY;
-				int xp2 = PosX + SizeX;
-				int yp2 = PosY + SizeY;
+				int xp1 = m_PosX;
+				int yp1 = m_PosY;
+				int xp2 = m_PosX + m_SizeX;
+				int yp2 = m_PosY + m_SizeY;
 				int widthLimit = 0;
 				//背景
 				{
@@ -319,77 +319,77 @@ namespace FPS_n2 {
 					SetBox(xp1, yp1, xp2, yp2, Gray10);
 				}
 
-				ActiveSwitch = false;
+				m_ActiveSwitch = false;
 				if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp1, yp1, xp2, yp2)) {
 					if (Input->GetLeftClick().trigger()) {
-						ActiveSwitch = true;
+						m_ActiveSwitch = true;
 					}
 				}
 				//内容
 				m_DoingOnWindow(this);
 				//スクロールバー
 				{
-					float Total = (float)this->TotalSizeY / (SizeY - LineHeight);
+					float Total = (float)this->m_TotalSizeY / (m_SizeY - LineHeight);
 					if (Total > 1.f) {
-						Scroll.ScrollBox(xp2 - y_r(24), yp1 + LineHeight, xp2, yp2, Total, IsActive);
+						m_Scroll.ScrollBox(xp2 - y_r(24), yp1 + LineHeight, xp2, yp2, Total, m_IsActive);
 					}
 				}
 				//タブ
 				{
-					int xp3 = PosX + SizeX - LineHeight - LineHeight;
+					int xp3 = m_PosX + m_SizeX - LineHeight - LineHeight;
 					unsigned int color = Gray25;
 					SetBox(xp1, yp1, xp2, yp1 + LineHeight, color);
-					widthLimit = SetMsg(xp1, yp1, xp3, yp1 + LineHeight, LineHeight - y_r(6), FontHandle::FontXCenter::LEFT, TabName) + EdgeSize * 2 + LineHeight * 2;
+					widthLimit = SetMsg(xp1, yp1, xp3, yp1 + LineHeight, LineHeight - y_r(6), FontHandle::FontXCenter::LEFT, m_TabName) + EdgeSize * 2 + LineHeight * 2;
 				}
 				//最大化ボタン
-				if (CanChageSize) {
-					int xp3 = PosX + SizeX - LineHeight - LineHeight;
-					int yp3 = PosY + EdgeSize;
-					int xp4 = PosX + SizeX - LineHeight - EdgeSize;
-					int yp4 = PosY + LineHeight - EdgeSize;
+				if (m_CanChageSize) {
+					int xp3 = m_PosX + m_SizeX - LineHeight - LineHeight;
+					int yp3 = m_PosY + EdgeSize;
+					int xp4 = m_PosX + m_SizeX - LineHeight - EdgeSize;
+					int yp4 = m_PosY + LineHeight - EdgeSize;
 					unsigned int color = Gray25;
 
 					if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp3 + EdgeSize, yp3 + EdgeSize, xp4 - EdgeSize, yp4 - EdgeSize)) {
 						color = White;
 						if (Input->GetLeftClick().trigger()) {
-							isMaxSize ^= 1;
-							if (isMaxSize) {
-								PosXSave = PosX;
-								PosYSave = PosY;
-								SizeXSave = SizeX;
-								SizeYSave = SizeY;
+							this->m_isMaxSize ^= 1;
+							if (this->m_isMaxSize) {
+								this->m_PosXSave = this->m_PosX;
+								this->m_PosYSave = this->m_PosY;
+								this->m_SizeXSave = this->m_SizeX;
+								this->m_SizeYSave = this->m_SizeY;
 
-								PosX = y_r(0);
-								PosY = y_r(0);
-								SizeX = DrawParts->m_DispXSize;
-								SizeY = DrawParts->m_DispYSize;
+								this->m_PosX = y_r(0);
+								this->m_PosY = y_r(0);
+								this->m_SizeX = DrawParts->m_DispXSize;
+								this->m_SizeY = DrawParts->m_DispYSize;
 							}
 							else {
-								PosX = PosXSave;
-								PosY = PosYSave;
-								SizeX = SizeXSave;
-								SizeY = SizeYSave;
+								this->m_PosX = this->m_PosXSave;
+								this->m_PosY = this->m_PosYSave;
+								this->m_SizeX = this->m_SizeXSave;
+								this->m_SizeY = this->m_SizeYSave;
 							}
 						}
 						HCURSOR hCursor = LoadCursor(NULL, IDC_HAND);
 						SetCursor(hCursor);
 					}
 					DrawBox(xp3 + EdgeSize, yp3 + EdgeSize, xp4 - EdgeSize, yp4 - EdgeSize, color, TRUE);
-					SetMsg(xp3, yp3, xp4, yp4, LineHeight - EdgeSize * 2 - y_r(6), FontHandle::FontXCenter::MIDDLE, !isMaxSize ? "□" : "ﾛ");
+					SetMsg(xp3, yp3, xp4, yp4, LineHeight - EdgeSize * 2 - y_r(6), FontHandle::FontXCenter::MIDDLE, !this->m_isMaxSize ? "□" : "ﾛ");
 				}
 				//×ボタン
 				{
-					int xp3 = PosX + SizeX - LineHeight;
-					int yp3 = PosY + EdgeSize;
-					int xp4 = PosX + SizeX - EdgeSize;
-					int yp4 = PosY + LineHeight - EdgeSize;
+					int xp3 = this->m_PosX + this->m_SizeX - LineHeight;
+					int yp3 = this->m_PosY + EdgeSize;
+					int xp4 = this->m_PosX + this->m_SizeX - EdgeSize;
+					int yp4 = this->m_PosY + LineHeight - EdgeSize;
 					unsigned int color = Red25;
 
 					if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp3 + EdgeSize, yp3 + EdgeSize, xp4 - EdgeSize, yp4 - EdgeSize)) {
 						color = Red;
 						if (Input->GetLeftClick().trigger()) {
 							//color = Red50;
-							isDelete = true;
+							this->m_isDelete = true;
 						}
 						HCURSOR hCursor = LoadCursor(NULL, IDC_HAND);
 						SetCursor(hCursor);
@@ -398,7 +398,7 @@ namespace FPS_n2 {
 					DrawBox(xp3 + EdgeSize, yp3 + EdgeSize, xp4 - EdgeSize, yp4 - EdgeSize, color, TRUE);
 					SetMsg(xp3, yp3, xp4, yp4, LineHeight - EdgeSize * 2 - y_r(6), FontHandle::FontXCenter::MIDDLE, "X");
 				}
-				if (CanChageSize && !isMaxSize && IsActive) {
+				if (this->m_CanChageSize && !this->m_isMaxSize && this->m_IsActive) {
 					//xyサイズ
 					{
 						unsigned int color = Gray25;
@@ -406,22 +406,22 @@ namespace FPS_n2 {
 						if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp2 - EdgeSize - radius, yp2 - EdgeSize - radius, xp2 - EdgeSize + radius, yp2 - EdgeSize + radius)) {
 							color = White;
 							if (Input->GetLeftClick().trigger()) {
-								IsChangeScaleXY = true;
+								this->m_IsChangeScaleXY = true;
 							}
 						}
-						if (IsChangeScaleXY) {
+						if (this->m_IsChangeScaleXY) {
 							if (Input->GetLeftClick().press()) {
 								color = Gray50;
-								SizeX = std::max((Input->GetMouseX() - BaseScaleX) - PosX, widthLimit);
-								SizeY = std::max((Input->GetMouseY() - BaseScaleY) - PosY, LineHeight + y_r(10));
+								this->m_SizeX = std::max((Input->GetMouseX() - this->m_BaseScaleX) - this->m_PosX, widthLimit);
+								this->m_SizeY = std::max((Input->GetMouseY() - this->m_BaseScaleY) - this->m_PosY, LineHeight + y_r(10));
 							}
 							else {
-								IsChangeScaleXY = false;
+								this->m_IsChangeScaleXY = false;
 							}
 						}
 						else {
-							BaseScaleX = Input->GetMouseX() - (PosX + SizeX);
-							BaseScaleY = Input->GetMouseY() - (PosY + SizeY);
+							this->m_BaseScaleX = Input->GetMouseX() - (this->m_PosX + this->m_SizeX);
+							this->m_BaseScaleY = Input->GetMouseY() - (this->m_PosY + this->m_SizeY);
 						}
 						if (color != Gray25) {
 							DrawCircle(xp2 - EdgeSize, yp2 - EdgeSize, radius, color);
@@ -434,20 +434,20 @@ namespace FPS_n2 {
 						if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp1 + EdgeSize - radius, yp2 - EdgeSize - radius, xp2 - EdgeSize - radius, yp2 - EdgeSize + radius)) {
 							color = White;
 							if (Input->GetLeftClick().trigger()) {
-								IsChangeScale2Y = true;
+								this->m_IsChangeScale2Y = true;
 							}
 						}
-						if (IsChangeScale2Y) {
+						if (this->m_IsChangeScale2Y) {
 							if (Input->GetLeftClick().press()) {
 								color = Gray50;
-								SizeY = std::max((Input->GetMouseY() - BaseScale2Y) - PosY, LineHeight + y_r(10));
+								this->m_SizeY = std::max((Input->GetMouseY() - this->m_BaseScale2Y) - this->m_PosY, LineHeight + y_r(10));
 							}
 							else {
-								IsChangeScale2Y = false;
+								this->m_IsChangeScale2Y = false;
 							}
 						}
 						else {
-							BaseScale2Y = Input->GetMouseY() - (PosY + SizeY);
+							this->m_BaseScale2Y = Input->GetMouseY() - (this->m_PosY + this->m_SizeY);
 						}
 						if (color != Gray25) {
 							DrawBox(xp1 + EdgeSize, yp2 - EdgeSize - radius, xp2 - EdgeSize, yp2 - EdgeSize + radius, color, TRUE);
@@ -460,20 +460,20 @@ namespace FPS_n2 {
 						if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp2 + EdgeSize - radius, yp1 - EdgeSize - radius, xp2 - EdgeSize + radius, yp2 - EdgeSize - radius)) {
 							color = White;
 							if (Input->GetLeftClick().trigger()) {
-								IsChangeScale2X = true;
+								this->m_IsChangeScale2X = true;
 							}
 						}
-						if (IsChangeScale2X) {
+						if (this->m_IsChangeScale2X) {
 							if (Input->GetLeftClick().press()) {
 								color = Gray50;
-								SizeX = std::max((Input->GetMouseX() - BaseScale2X) - PosX, widthLimit);
+								this->m_SizeX = std::max((Input->GetMouseX() - this->m_BaseScale2X) - this->m_PosX, widthLimit);
 							}
 							else {
-								IsChangeScale2X = false;
+								this->m_IsChangeScale2X = false;
 							}
 						}
 						else {
-							BaseScale2X = Input->GetMouseX() - (PosX + SizeX);
+							this->m_BaseScale2X = Input->GetMouseX() - (this->m_PosX + this->m_SizeX);
 						}
 						if (color != Gray25) {
 							DrawBox(xp2 - EdgeSize, yp1, xp2 + EdgeSize, yp2 - EdgeSize + radius, color, TRUE);
@@ -486,22 +486,22 @@ namespace FPS_n2 {
 						if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp1 + EdgeSize - radius, yp1 - radius * 2, xp2 - EdgeSize - radius, yp1)) {
 							color = White;
 							if (Input->GetLeftClick().trigger()) {
-								IsChangeScale1Y = true;
+								this->m_IsChangeScale1Y = true;
 							}
 						}
-						if (IsChangeScale1Y) {
+						if (this->m_IsChangeScale1Y) {
 							if (Input->GetLeftClick().press()) {
 								color = Gray50;
-								PosY = std::min((Input->GetMouseY() - BasePos1Y), BaseScale1Y - (LineHeight + y_r(10)));
-								SizeY = BaseScale1Y - PosY;
+								this->m_PosY = std::min((Input->GetMouseY() - this->m_BasePos1Y), this->m_BaseScale1Y - (LineHeight + y_r(10)));
+								this->m_SizeY = this->m_BaseScale1Y - this->m_PosY;
 							}
 							else {
-								IsChangeScale1Y = false;
+								this->m_IsChangeScale1Y = false;
 							}
 						}
 						else {
-							BasePos1Y = Input->GetMouseY() - PosY;
-							BaseScale1Y = PosY + SizeY;
+							this->m_BasePos1Y = Input->GetMouseY() - this->m_PosY;
+							this->m_BaseScale1Y = this->m_PosY + this->m_SizeY;
 						}
 						if (color != Gray25) {
 							DrawBox(xp1 + EdgeSize, yp1 - radius * 2, xp2 - EdgeSize, yp1, color, TRUE);
@@ -514,22 +514,22 @@ namespace FPS_n2 {
 						if (in2_(Input->GetMouseX(), Input->GetMouseY(), xp1 + EdgeSize - radius, yp1 - EdgeSize - radius, xp1 + EdgeSize + radius, yp2 - EdgeSize - radius)) {
 							color = White;
 							if (Input->GetLeftClick().trigger()) {
-								IsChangeScale1X = true;
+								this->m_IsChangeScale1X = true;
 							}
 						}
-						if (IsChangeScale1X) {
+						if (this->m_IsChangeScale1X) {
 							if (Input->GetLeftClick().press()) {
 								color = Gray50;
-								PosX = std::min((Input->GetMouseX() - BasePos1X), BaseScale1X - widthLimit);
-								SizeX = BaseScale1X - PosX;
+								this->m_PosX = std::min((Input->GetMouseX() - this->m_BasePos1X), this->m_BaseScale1X - widthLimit);
+								this->m_SizeX = this->m_BaseScale1X - this->m_PosX;
 							}
 							else {
-								IsChangeScale1X = false;
+								this->m_IsChangeScale1X = false;
 							}
 						}
 						else {
-							BasePos1X = Input->GetMouseX() - PosX;
-							BaseScale1X = PosX + SizeX;
+							this->m_BasePos1X = Input->GetMouseX() - this->m_PosX;
+							this->m_BaseScale1X = this->m_PosX + this->m_SizeX;
 						}
 						if (color != Gray25) {
 							DrawBox(xp1 - EdgeSize, yp1, xp1 + EdgeSize, yp2 - EdgeSize + radius, color, TRUE);
@@ -537,7 +537,7 @@ namespace FPS_n2 {
 					}
 				}
 				//非アクティブ
-				if (!IsActive) {
+				if (!this->m_IsActive) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 24);
 					DrawBox(xp1, yp1, xp2, yp2, Black, TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -545,67 +545,67 @@ namespace FPS_n2 {
 
 				//タブ演算
 				{
-					int xp3 = PosX + SizeX - LineHeight - LineHeight;
+					int xp3 = this->m_PosX + this->m_SizeX - LineHeight - LineHeight;
 					unsigned int color = Gray25;
 
-					if (IsActive && in2_(Input->GetMouseX(), Input->GetMouseY(), xp1 + EdgeSize, yp1 + EdgeSize, xp3 - EdgeSize, yp1 + LineHeight - EdgeSize)) {
+					if (this->m_IsActive && in2_(Input->GetMouseX(), Input->GetMouseY(), xp1 + EdgeSize, yp1 + EdgeSize, xp3 - EdgeSize, yp1 + LineHeight - EdgeSize)) {
 						if (Input->GetLeftClick().trigger()) {
-							IsMoving = true;
+							this->m_IsMoving = true;
 						}
 						HCURSOR hCursor = LoadCursor(NULL, IDC_SIZEALL);
 						SetCursor(hCursor);
 					}
-					if (IsMoving) {
+					if (this->m_IsMoving) {
 						if (Input->GetLeftClick().press()) {
 							color = Gray50;
-							PosX = Input->GetMouseX() - PosAddX;
-							PosY = Input->GetMouseY() - PosAddY;
+							this->m_PosX = Input->GetMouseX() - this->m_PosAddX;
+							this->m_PosY = Input->GetMouseY() - this->m_PosAddY;
 
 
 							HCURSOR hCursor = LoadCursor(NULL, IDC_SIZEALL);
 							SetCursor(hCursor);
 						}
 						else {
-							if (CanChageSize) {
+							if (this->m_CanChageSize) {
 								if (y_r(10) < Input->GetMouseY() && Input->GetMouseY() < DrawParts->m_DispYSize - y_r(10)) {
 									if (Input->GetMouseX() < y_r(10)) {
-										PosX = y_r(0);
-										PosY = y_r(0);
-										SizeX = DrawParts->m_DispXSize / 2;
-										SizeY = DrawParts->m_DispYSize;
+										this->m_PosX = y_r(0);
+										this->m_PosY = y_r(0);
+										this->m_SizeX = DrawParts->m_DispXSize / 2;
+										this->m_SizeY = DrawParts->m_DispYSize;
 									}
 									if (Input->GetMouseX() > DrawParts->m_DispXSize - y_r(10)) {
-										PosX = DrawParts->m_DispXSize / 2;
-										PosY = y_r(0);
-										SizeX = DrawParts->m_DispXSize / 2;
-										SizeY = DrawParts->m_DispYSize;
+										this->m_PosX = DrawParts->m_DispXSize / 2;
+										this->m_PosY = y_r(0);
+										this->m_SizeX = DrawParts->m_DispXSize / 2;
+										this->m_SizeY = DrawParts->m_DispYSize;
 									}
 								}
 								else {
 									if (Input->GetMouseX() < y_r(10)) {
-										PosX = y_r(0);
-										PosY = (Input->GetMouseY() < DrawParts->m_DispYSize / 2) ? y_r(0) : DrawParts->m_DispYSize / 2;
-										SizeX = DrawParts->m_DispXSize / 2;
-										SizeY = DrawParts->m_DispYSize / 2;
+										this->m_PosX = y_r(0);
+										this->m_PosY = (Input->GetMouseY() < DrawParts->m_DispYSize / 2) ? y_r(0) : DrawParts->m_DispYSize / 2;
+										this->m_SizeX = DrawParts->m_DispXSize / 2;
+										this->m_SizeY = DrawParts->m_DispYSize / 2;
 									}
 									if (Input->GetMouseX() > DrawParts->m_DispXSize - y_r(10)) {
-										PosX = DrawParts->m_DispXSize / 2;
-										PosY = (Input->GetMouseY() < DrawParts->m_DispYSize / 2) ? y_r(0) : DrawParts->m_DispYSize / 2;
-										SizeX = DrawParts->m_DispXSize / 2;
-										SizeY = DrawParts->m_DispYSize / 2;
+										this->m_PosX = DrawParts->m_DispXSize / 2;
+										this->m_PosY = (Input->GetMouseY() < DrawParts->m_DispYSize / 2) ? y_r(0) : DrawParts->m_DispYSize / 2;
+										this->m_SizeX = DrawParts->m_DispXSize / 2;
+										this->m_SizeY = DrawParts->m_DispYSize / 2;
 									}
 								}
 							}
-							IsMoving = false;
+							this->m_IsMoving = false;
 						}
 					}
 					else {
-						PosAddX = Input->GetMouseX() - PosX;
-						PosAddY = Input->GetMouseY() - PosY;
+						this->m_PosAddX = Input->GetMouseX() - this->m_PosX;
+						this->m_PosAddY = Input->GetMouseY() - this->m_PosY;
 					}
 				}
 
-				if (CanChageSize && IsMoving && Input->GetLeftClick().press()) {
+				if (this->m_CanChageSize && this->m_IsMoving && Input->GetLeftClick().press()) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 24);
 					if (y_r(10) < Input->GetMouseY() && Input->GetMouseY() < DrawParts->m_DispYSize - y_r(10)) {
 						if (Input->GetMouseX() < y_r(10)) {
@@ -673,7 +673,7 @@ namespace FPS_n2 {
 				}
 				//削除チェック
 				for (int i = 0; i < m_WindowControl.size(); i++) {
-					if (m_WindowControl[i]->isDelete) {
+					if (m_WindowControl[i]->m_isDelete) {
 						std::swap(m_WindowControl[i], m_WindowControl.back());
 						m_WindowControl.pop_back();
 						i--;
@@ -695,7 +695,6 @@ namespace FPS_n2 {
 		enum class EnumDrawType : int {
 			Write,
 			Paint,
-			Dropper,
 		};
 		enum class EnumFilterParamType : int {
 			None,
@@ -707,129 +706,111 @@ namespace FPS_n2 {
 		};
 		class FilterParamValue {
 		public:
-			std::string			Name;
-			EnumFilterParamType	Type{ 0 };
-			long long int		Min{ 0 };
-			long long int		Max{ 0 };
-			long long int		Param{ 0 };
-			std::array<int, 3>	Color{ 0 };
+			std::string			m_Name;
+			EnumFilterParamType	m_Type{ 0 };
+			long long int		m_Min{ 0 };
+			long long int		m_Max{ 0 };
+			long long int		m_Param{ 0 };
+			std::array<int, 3>	m_Color{ 0 };
 		public:
 			void Set_Num(const char* name, int min, int max) {
-				this->Name = name;
-				this->Type = EnumFilterParamType::Num;
-				this->Min = min;
-				this->Max = max;
-				Param = std::clamp(Param, this->Min, this->Max);
+				this->m_Name = name;
+				this->m_Type = EnumFilterParamType::Num;
+				this->m_Min = min;
+				this->m_Max = max;
+				m_Param = std::clamp(m_Param, this->m_Min, this->m_Max);
 			}
 			void Set_Color(const char* name) {
-				this->Name = name;
-				this->Type = EnumFilterParamType::Color;
-				this->Color[0] = 255;
-				this->Color[1] = 255;
-				this->Color[2] = 255;
-				Param = GetColor(this->Color[0], this->Color[1], this->Color[2]);
+				this->m_Name = name;
+				this->m_Type = EnumFilterParamType::Color;
+				this->m_Color[0] = 255;
+				this->m_Color[1] = 255;
+				this->m_Color[2] = 255;
+				m_Param = GetColor(this->m_Color[0], this->m_Color[1], this->m_Color[2]);
 			}
 			void Set_GaussWidth(const char* name) {
-				this->Name = name;
-				Type = EnumFilterParamType::GaussWidth;
-				Param = 8;
+				this->m_Name = name;
+				this->m_Type = EnumFilterParamType::GaussWidth;
+				this->m_Param = 8;
 			}
 			void Set_CmpType(const char* name) {
-				this->Name = name;
-				Type = EnumFilterParamType::CmpType;
-				Param = DX_CMP_LESS;
+				this->m_Name = name;
+				this->m_Type = EnumFilterParamType::CmpType;
+				this->m_Param = DX_CMP_LESS;
 			}
 			void Set_TrueFalse(const char* name) {
-				this->Name = name;
-				Type = EnumFilterParamType::TrueFalse;
-				Param = TRUE;
+				this->m_Name = name;
+				this->m_Type = EnumFilterParamType::TrueFalse;
+				this->m_Param = TRUE;
 			}
 
 			void Add() {
-				switch (Type) {
+				switch (this->m_Type) {
 				case EnumFilterParamType::None:
 					break;
 				case EnumFilterParamType::Num:
-					Param = std::clamp(Param + 1, this->Min, this->Max);
+					this->m_Param = std::clamp(this->m_Param + 1, this->m_Min, this->m_Max);
 					break;
 				case EnumFilterParamType::Color:
 					break;
 				case EnumFilterParamType::CmpType:
-					switch (Param) {
+					switch (this->m_Param) {
 					case DX_CMP_LESS:
-						Param = DX_CMP_GREATER;
-						break;
-					case DX_CMP_GREATER:
-						Param = DX_CMP_LESS;
+						this->m_Param = DX_CMP_GREATER;
 						break;
 					default:
-						Param = DX_CMP_LESS;
+						this->m_Param = DX_CMP_LESS;
 						break;
 					}
 					break;
 				case EnumFilterParamType::GaussWidth:
-					switch (Param) {
+					switch (this->m_Param) {
 					case 8:
-						Param = 16;
-						break;
-					case 16:
-						Param = 32;
-						break;
-					case 32:
-						Param = 32;
+						this->m_Param = 16;
 						break;
 					default:
-						Param = 8;
+						this->m_Param = 32;
 						break;
 					}
 					break;
 				case EnumFilterParamType::TrueFalse:
-					Param ^= 1;
+					this->m_Param ^= 1;
 					break;
 				default:
 					break;
 				}
 			}
 			void Sub() {
-				switch (Type) {
+				switch (this->m_Type) {
 				case EnumFilterParamType::None:
 					break;
 				case EnumFilterParamType::Num:
-					Param = std::clamp(Param - 1, this->Min, this->Max);
+					this->m_Param = std::clamp(this->m_Param - 1, this->m_Min, this->m_Max);
 					break;
 				case EnumFilterParamType::Color:
 					break;
 				case EnumFilterParamType::CmpType:
-					switch (Param) {
+					switch (this->m_Param) {
 					case DX_CMP_LESS:
-						Param = DX_CMP_GREATER;
-						break;
-					case DX_CMP_GREATER:
-						Param = DX_CMP_LESS;
+						this->m_Param = DX_CMP_GREATER;
 						break;
 					default:
-						Param = DX_CMP_LESS;
+						this->m_Param = DX_CMP_LESS;
 						break;
 					}
 					break;
 				case EnumFilterParamType::GaussWidth:
-					switch (Param) {
-					case 8:
-						Param = 8;
-						break;
-					case 16:
-						Param = 8;
-						break;
+					switch (this->m_Param) {
 					case 32:
-						Param = 16;
+						this->m_Param = 16;
 						break;
 					default:
-						Param = 8;
+						this->m_Param = 8;
 						break;
 					}
 					break;
 				case EnumFilterParamType::TrueFalse:
-					Param ^= 1;
+					this->m_Param ^= 1;
 					break;
 				default:
 					break;
@@ -839,15 +820,15 @@ namespace FPS_n2 {
 
 		class Canvas {
 			class SaveParam {
-				GraphHandle		GraphBuf;
+				GraphHandle		m_GraphBuf;
 			public:
-				auto& GetGraphHandle(void) noexcept { return GraphBuf; }
+				auto& GetGraphHandle(void) noexcept { return this->m_GraphBuf; }
 			public:
 				void		Set(const GraphHandle& BaseGraph) {
 					int x, y;
 					BaseGraph.GetSize(&x, &y);
-					GraphBuf = GraphHandle::Make(x, y, true);
-					GraphBuf.SetDraw_Screen();
+					this->m_GraphBuf = GraphHandle::Make(x, y, false);
+					this->m_GraphBuf.SetDraw_Screen();
 					{
 						DrawGraph(0, 0, BaseGraph.get(), FALSE);
 					}
@@ -856,335 +837,334 @@ namespace FPS_n2 {
 				void		UndoWrite(GraphHandle* OutGraph) {
 					OutGraph->SetDraw_Screen(false);
 					{
-						GraphBuf.DrawGraph(0, 0, true);
+						this->m_GraphBuf.DrawGraph(0, 0, false);
 					}
 					SetDrawScreen(DX_SCREEN_BACK);
 				}
 				void		Dispose() {
-					GraphBuf.Dispose();
+					this->m_GraphBuf.Dispose();
 				}
 			};
 		private:
-			int					xsize{ 1024 };
-			int					ysize{ 768 };
+			int					m_xsize{ 1024 };
+			int					m_ysize{ 768 };
 		private:
-			int					xpos{ 0 };
-			int					ypos{ 0 };
+			int					m_xpos{ 0 };
+			int					m_ypos{ 0 };
 
-			int					xposBase{ 0 };
-			int					yposBase{ 0 };
+			int					m_xposBase{ 0 };
+			int					m_yposBase{ 0 };
 
-			int					xposPrev;
-			int					yposPrev;
+			int					m_xposPrev;
+			int					m_yposPrev;
 
-			int					PenSize{ 1 };
-			float				PenSizeChangeTimer = 1.f;
+			int					m_PenSize{ 1 };
+			float				m_PenSizeChangeTimer = 1.f;
 
-			unsigned int		LeftColor{ GetColor(0, 0, 0) };
-			std::vector<unsigned int> ColorList;
+			unsigned int		m_LeftColor{ GetColor(0, 0, 0) };
+			std::vector<unsigned int> m_ColorList;
 
-			int					imgHandle{ -1 };
-			GraphHandle			OutScreen;
-			GraphHandle			OutScreen_Before;
-			GraphHandle			OutScreen_After;
+			int					m_imgHandle{ -1 };
+			GraphHandle			m_OutScreen;
+			GraphHandle			m_OutScreen_Before;
+			GraphHandle			m_OutScreen_After;
 
-			float				scale{ 1.f };
+			float				m_scale{ 1.f };
 
 			EnumDrawType		m_DrawType{ EnumDrawType::Write };
 
-			bool				isDraw{ true };
+			bool				m_isDraw{ true };
 
-			float				CtrlChangeTimer = 1.f;
+			float				m_CtrlChangeTimer = 1.f;
 
 			DialogManager		m_DialogManager;
-			bool				DialogClick{ false };
+			bool				m_DialogClick{ false };
 
-			bool				IsNewFile{ false };
-			std::string			SavePath;
+			bool				m_IsNewFile{ false };
+			std::string			m_SavePath;
 
-			std::string			FilterName;
-			std::array<FilterParamValue, 5>	FilterParam;
+			std::string			m_FilterName;
+			std::array<FilterParamValue, 5>	m_FilterParam;
 
-			int					FilterType{ 0 };
-			bool				FilterChangeSwitch{ false };
-			bool				FilterSetSwitch{ false };
+			int					m_FilterType{ 0 };
+			bool				m_FilterChangeSwitch{ false };
+			bool				m_FilterSetSwitch{ false };
 
-			bool				IsWriting{ true };
-			int					WriteMinX{ 0 };
-			int					WriteMinY{ 0 };
-			int					WriteMaxX{ 0 };
-			int					WriteMaxY{ 0 };
+			bool				m_IsWriting{ true };
+			int					m_WriteMinX{ 0 };
+			int					m_WriteMinY{ 0 };
+			int					m_WriteMaxX{ 0 };
+			int					m_WriteMaxY{ 0 };
 
 
 			std::list<std::unique_ptr<SaveParam>> m_SaveParams;
-			std::list<std::unique_ptr<SaveParam>>::iterator NowSaveSelect;
-			float				SaveChangeTime{ 0.f };
+			std::list<std::unique_ptr<SaveParam>>::iterator m_NowSaveSelect;
+			float				m_SaveChangeTime{ 0.f };
 		public:
-			const auto&		GetLeftColor(void) const noexcept { return this->LeftColor; }
-			void			SetLeftColor(unsigned int value) noexcept { this->LeftColor = value; }
+			const auto&		GetLeftColor(void) const noexcept { return this->m_LeftColor; }
+			void			SetLeftColor(unsigned int value) noexcept { this->m_LeftColor = value; }
 
-			const auto&		GetFilterSelect(void) const noexcept { return this->FilterName; }
-			auto&			GetFilterParam(void) noexcept { return this->FilterParam; }
+			const auto&		GetFilterSelect(void) const noexcept { return this->m_FilterName; }
+			auto&			GetFilterParam(void) noexcept { return this->m_FilterParam; }
 
-			auto&			GetColorList(void) noexcept { return this->ColorList; }
-			void			SetIsDraw(bool value) noexcept { this->isDraw = value; }
+			auto&			GetColorList(void) noexcept { return this->m_ColorList; }
+			void			SetIsDraw(bool value) noexcept { this->m_isDraw = value; }
 
-			void			FilterChange() noexcept { this->FilterChangeSwitch = true; }
-			void			FilterSet() noexcept { this->FilterSetSwitch = true; }
+			void			FilterChange() noexcept { this->m_FilterChangeSwitch = true; }
+			void			FilterSet() noexcept { this->m_FilterSetSwitch = true; }
 		private:
 			void SetDo() {
 				if (!m_SaveParams.empty()) {
-					if (NowSaveSelect != m_SaveParams.end()) {
-						m_SaveParams.erase(NowSaveSelect, m_SaveParams.end());
+					if (m_NowSaveSelect != m_SaveParams.end()) {
+						m_SaveParams.erase(m_NowSaveSelect, m_SaveParams.end());
 					}
 				}
 				m_SaveParams.emplace_back(std::make_unique<SaveParam>());
-				m_SaveParams.back()->Set(OutScreen_Before);
-				NowSaveSelect = m_SaveParams.end();
-				OutScreen.SetDraw_Screen(false);
+				m_SaveParams.back()->Set(m_OutScreen_Before);
+				m_NowSaveSelect = m_SaveParams.end();
+				m_OutScreen.SetDraw_Screen(false);
 				{
-					OutScreen_After.DrawGraph(0, 0, true);
+					m_OutScreen_After.DrawGraph(0, 0, false);
 				}
 				SetDrawScreen(DX_SCREEN_BACK);
 			}
 		private:
 			void CreatePic() noexcept {
-				imgHandle = MakeSoftImage(xsize, ysize);
-				OutScreen = GraphHandle::Make(xsize, ysize, true);
-				OutScreen_Before = GraphHandle::Make(xsize, ysize, true);
-				OutScreen_After = GraphHandle::Make(xsize, ysize, true);
+				this->m_imgHandle = MakeSoftImage(this->m_xsize, this->m_ysize);
+				this->m_OutScreen = GraphHandle::Make(this->m_xsize, this->m_ysize, false);
+				this->m_OutScreen_Before = GraphHandle::Make(this->m_xsize, this->m_ysize, false);
+				this->m_OutScreen_After = GraphHandle::Make(this->m_xsize, this->m_ysize, false);
 			}
 			void DisposePic() noexcept {
-				if (imgHandle != -1) {
-					DeleteSoftImage(imgHandle);
+				if (this->m_imgHandle != -1) {
+					DeleteSoftImage(this->m_imgHandle);
 				}
-				OutScreen.Dispose();
-				OutScreen_Before.Dispose();
-				OutScreen_After.Dispose();
+				this->m_OutScreen.Dispose();
+				this->m_OutScreen_Before.Dispose();
+				this->m_OutScreen_After.Dispose();
 			}
 			void InitPic() noexcept {
-				SavePath = "新しいファイル";
+				this->m_SavePath = "新しいファイル";
 
 				DisposePic();
 				CreatePic();
-				OutScreen.SetDraw_Screen();
+				this->m_OutScreen.SetDraw_Screen();
 				{
-					DrawBox(0, 0, xsize, ysize, GetColor(255, 255, 255), TRUE);
+					DrawBox(0, 0, this->m_xsize, this->m_ysize, GetColor(255, 255, 255), TRUE);
 				}
 				SetDrawScreen(DX_SCREEN_BACK);
-				IsNewFile = true;
+				this->m_IsNewFile = true;
 			}
 			void Load() noexcept {
 				if (m_DialogManager.Open()) {
-					SavePath = m_DialogManager.GetPath();
+					this->m_SavePath = m_DialogManager.GetPath();
 
-					GraphHandle	Buffer = GraphHandle::Load(SavePath);
-					Buffer.GetSize(&xsize, &ysize);
+					GraphHandle	Buffer = GraphHandle::Load(this->m_SavePath);
+					Buffer.GetSize(&this->m_xsize, &this->m_ysize);
 
 					DisposePic();
 					CreatePic();
-					OutScreen.SetDraw_Screen();
+					this->m_OutScreen.SetDraw_Screen();
 					{
-						DrawBox(0, 0, xsize, ysize, GetColor(255, 255, 255), TRUE);
+						DrawBox(0, 0, this->m_xsize, this->m_ysize, GetColor(255, 255, 255), TRUE);
 						Buffer.DrawGraph(0, 0, false);
 					}
 					SetDrawScreen(DX_SCREEN_BACK);
 					Buffer.Dispose();
 
-					xpos = 0;
-					ypos = 0;
-					scale = 1.f;
+					this->m_xpos = 0;
+					this->m_ypos = 0;
+					this->m_scale = 1.f;
 				}
 			}
 			void Save(void) noexcept {
-				if (IsNewFile) {
+				if (this->m_IsNewFile) {
 					if (m_DialogManager.Save()) {
-						SavePath = m_DialogManager.GetPath();
+						this->m_SavePath = m_DialogManager.GetPath();
 					}
 				}
 				{
-					if (SavePath.find(".bmp") != std::string::npos) {
-						SaveDrawValidGraphToBMP(OutScreen.get(), 0, 0, xsize, ysize, SavePath.c_str());					// ＢＭＰ形式で保存する
+					if (this->m_SavePath.find(".bmp") != std::string::npos) {
+						SaveDrawValidGraphToBMP(this->m_OutScreen.get(), 0, 0, this->m_xsize, this->m_ysize, this->m_SavePath.c_str());					// ＢＭＰ形式で保存する
 					}
-					else if (SavePath.find(".dds") != std::string::npos) {
-						SaveDrawValidGraphToDDS(OutScreen.get(), 0, 0, xsize, ysize, SavePath.c_str());					// ＤＤＳ形式で保存する
+					else if (this->m_SavePath.find(".dds") != std::string::npos) {
+						SaveDrawValidGraphToDDS(this->m_OutScreen.get(), 0, 0, this->m_xsize, this->m_ysize, this->m_SavePath.c_str());					// ＤＤＳ形式で保存する
 					}
-					else if (SavePath.find(".jpg") != std::string::npos) {
-						SaveDrawValidGraphToJPEG(OutScreen.get(), 0, 0, xsize, ysize, SavePath.c_str(), 100, TRUE);		// ＪＰＥＧ形式で保存する Quality = 画質、値が大きいほど低圧縮高画質,0～100 
+					else if (this->m_SavePath.find(".jpg") != std::string::npos) {
+						SaveDrawValidGraphToJPEG(this->m_OutScreen.get(), 0, 0, this->m_xsize, this->m_ysize, this->m_SavePath.c_str(), 100, TRUE);		// ＪＰＥＧ形式で保存する Quality = 画質、値が大きいほど低圧縮高画質,0～100 
 					}
-					else if (SavePath.find(".png") != std::string::npos) {
-						SaveDrawValidGraphToPNG(OutScreen.get(), 0, 0, xsize, ysize, SavePath.c_str(), 0);				// ＰＮＧ形式で保存する CompressionLevel = 圧縮率、値が大きいほど高圧縮率高負荷、０は無圧縮,0～9
+					else if (this->m_SavePath.find(".png") != std::string::npos) {
+						SaveDrawValidGraphToPNG(this->m_OutScreen.get(), 0, 0, this->m_xsize, this->m_ysize, this->m_SavePath.c_str(), 0);				// ＰＮＧ形式で保存する CompressionLevel = 圧縮率、値が大きいほど高圧縮率高負荷、０は無圧縮,0～9
 					}
 					else {
-						SaveDrawValidGraphToBMP(OutScreen.get(), 0, 0, xsize, ysize, SavePath.c_str());
+						SaveDrawValidGraphToBMP(this->m_OutScreen.get(), 0, 0, this->m_xsize, this->m_ysize, this->m_SavePath.c_str());
 					}
 				}
 			}
 
 			void SetDraw(EnumDrawType DrawType) {
 				auto* Input = InputControl::Instance();
-				int m_x = std::clamp((int)((float)(Input->GetMouseX() - xpos) / scale), -1, xsize);
-				int m_y = std::clamp((int)((float)(Input->GetMouseY() - ypos) / scale), -1, ysize);
+				int m_x = std::clamp((int)((float)(Input->GetMouseX() - this->m_xpos) / this->m_scale), -1, this->m_xsize);
+				int m_y = std::clamp((int)((float)(Input->GetMouseY() - this->m_ypos) / this->m_scale), -1, this->m_ysize);
 				switch (DrawType) {
 				case EnumDrawType::Write:
 					if (Input->GetLeftClick().press()) {
-						if (!IsWriting) {
-							OutScreen_Before.SetDraw_Screen(false);
+						if (!this->m_IsWriting) {
+							this->m_OutScreen_Before.SetDraw_Screen(false);
 							{
-								OutScreen.DrawGraph(0, 0, true);
+								this->m_OutScreen.DrawGraph(0, 0, false);
 							}
-							OutScreen_After.SetDraw_Screen(false);
+							this->m_OutScreen_After.SetDraw_Screen(false);
 							{
-								OutScreen_Before.DrawGraph(0, 0, true);
+								this->m_OutScreen_Before.DrawGraph(0, 0, false);
 							}
-							IsWriting = true;
+							this->m_IsWriting = true;
 						}
-						if ((in2_(xposPrev, yposPrev, 0, 0, xsize - 1, ysize - 1)) || (in2_(m_x, m_y, 0, 0, xsize - 1, ysize - 1))) {
-							OutScreen_After.SetDraw_Screen(false);
+						if ((in2_(this->m_xposPrev, this->m_yposPrev, 0, 0, this->m_xsize - 1, this->m_ysize - 1)) || (in2_(m_x, m_y, 0, 0, this->m_xsize - 1, this->m_ysize - 1))) {
+							this->m_OutScreen_After.SetDraw_Screen(false);
 							{
-								DrawLine(xposPrev, yposPrev, m_x, m_y, LeftColor, PenSize);
-								if (PenSize == 1) {
-									DrawPixel(xposPrev, yposPrev, LeftColor);
-									DrawPixel(m_x, m_y, LeftColor);
+								DrawLine(this->m_xposPrev, this->m_yposPrev, m_x, m_y, this->m_LeftColor, this->m_PenSize);
+								if (this->m_PenSize == 1) {
+									DrawPixel(this->m_xposPrev, this->m_yposPrev, this->m_LeftColor);
+									DrawPixel(m_x, m_y, this->m_LeftColor);
 								}
-								else if (PenSize == 2) {
-									DrawBox(xposPrev, yposPrev, xposPrev, yposPrev, LeftColor, TRUE);
-									DrawBox(m_x, m_y, m_x, m_y, LeftColor, TRUE);
+								else if (this->m_PenSize == 2) {
+									DrawBox(this->m_xposPrev, this->m_yposPrev, this->m_xposPrev, this->m_yposPrev, this->m_LeftColor, TRUE);
+									DrawBox(m_x, m_y, m_x, m_y, this->m_LeftColor, TRUE);
 								}
 								else {
-									DrawCircle(xposPrev, yposPrev, PenSize / 2, LeftColor);
-									DrawCircle(m_x, m_y, (PenSize - 1) / 2, LeftColor);
+									DrawCircle(this->m_xposPrev, this->m_yposPrev, this->m_PenSize / 2, this->m_LeftColor);
+									DrawCircle(m_x, m_y, (this->m_PenSize - 1) / 2, this->m_LeftColor);
 								}
 							}
-							WriteMinX = std::min(m_x - PenSize / 2, WriteMinX);
-							WriteMinY = std::min(m_y - PenSize / 2, WriteMinY);
-							WriteMaxX = std::max(m_x + PenSize / 2 + 1, WriteMaxX);
-							WriteMaxY = std::max(m_y + PenSize / 2 + 1, WriteMaxY);
+							this->m_WriteMinX = std::min(m_x - this->m_PenSize / 2, this->m_WriteMinX);
+							this->m_WriteMinY = std::min(m_y - this->m_PenSize / 2, this->m_WriteMinY);
+							this->m_WriteMaxX = std::max(m_x + this->m_PenSize / 2 + 1, this->m_WriteMaxX);
+							this->m_WriteMaxY = std::max(m_y + this->m_PenSize / 2 + 1, this->m_WriteMaxY);
 						}
 						if (Input->GetRightClick().trigger()) {//リセット
-							OutScreen_After.SetDraw_Screen(false);
+							this->m_OutScreen_After.SetDraw_Screen(false);
 							{
-								OutScreen_Before.DrawGraph(0, 0, true);
+								this->m_OutScreen_Before.DrawGraph(0, 0, false);
 							}
-							WriteMinX = m_x;
-							WriteMinY = m_y;
-							WriteMaxX = m_x;
-							WriteMaxY = m_y;
+							this->m_WriteMinX = m_x;
+							this->m_WriteMinY = m_y;
+							this->m_WriteMaxX = m_x;
+							this->m_WriteMaxY = m_y;
 						}
 					}
 					else {
-						if (IsWriting) {
-							IsWriting = false;
+						if (this->m_IsWriting) {
+							this->m_IsWriting = false;
 							SetDo();
 						}
-						WriteMinX = m_x;
-						WriteMinY = m_y;
-						WriteMaxX = m_x;
-						WriteMaxY = m_y;
+						this->m_WriteMinX = m_x;
+						this->m_WriteMinY = m_y;
+						this->m_WriteMaxX = m_x;
+						this->m_WriteMaxY = m_y;
 					}
-					xposPrev = m_x;
-					yposPrev = m_y;
+					this->m_xposPrev = m_x;
+					this->m_yposPrev = m_y;
 					break;
 				case EnumDrawType::Paint:
-					if ((in2_(m_x, m_y, 0, 0, xsize - 1, ysize - 1)) && Input->GetLeftClick().trigger()) {
-						OutScreen_Before.SetDraw_Screen(false);
+					if ((in2_(m_x, m_y, 0, 0, this->m_xsize - 1, this->m_ysize - 1)) && Input->GetLeftClick().trigger()) {
+						this->m_OutScreen_Before.SetDraw_Screen(false);
 						{
-							OutScreen.DrawGraph(0, 0, true);
+							this->m_OutScreen.DrawGraph(0, 0, false);
 						}
-						OutScreen_After.SetDraw_Screen(false);
+						this->m_OutScreen_After.SetDraw_Screen(false);
 						{
-							OutScreen_Before.DrawGraph(0, 0, true);
-							Paint(m_x, m_y, LeftColor);
+							this->m_OutScreen_Before.DrawGraph(0, 0, false);
+							Paint(m_x, m_y, this->m_LeftColor);
 						}
 						SetDo();
 					}
 					break;
-				case EnumDrawType::Dropper:
-					if ((in2_(m_x, m_y, 0, 0, xsize - 1, ysize - 1)) && Input->GetLeftClick().trigger()) {
-						OutScreen.SetDraw_Screen(false);
-						{
-							GetDrawScreenSoftImage(0, 0, xsize, ysize, imgHandle);
-						}
-						int r, g, b, a;
-						GetPixelSoftImage(imgHandle, m_x, m_y, &r, &g, &b, &a);
-						LeftColor = GetColor(r, g, b);
-					}
-					break;
 				default:
 					break;
+				}
+
+				if ((in2_(m_x, m_y, 0, 0, this->m_xsize - 1, this->m_ysize - 1)) && Input->GetMiddleClick().trigger()) {
+					this->m_OutScreen.SetDraw_Screen(false);
+					{
+						GetDrawScreenSoftImage(0, 0, this->m_xsize, this->m_ysize, this->m_imgHandle);
+					}
+					int r, g, b, a;
+					GetPixelSoftImage(this->m_imgHandle, m_x, m_y, &r, &g, &b, &a);
+					this->m_LeftColor = GetColor(r, g, b);
 				}
 			}
 
 			void SetFilterParamData(int FilterSet) {
-				for (auto& p : FilterParam) {
-					p.Type = EnumFilterParamType::None;
-					p.Param = 0;
-					p.Min = 0;
-					p.Max = 0;
+				for (auto& p : this->m_FilterParam) {
+					p.m_Type = EnumFilterParamType::None;
+					p.m_Param = 0;
+					p.m_Min = 0;
+					p.m_Max = 0;
 				}
 				switch (FilterSet) {
 				case DX_GRAPH_FILTER_MONO:
-					FilterName = "モノトーンフィルタ";
-					FilterParam[0].Set_Num("青色差", -255, 255);
-					FilterParam[1].Set_Num("赤色差", -255, 255);
+					this->m_FilterName = "モノトーンフィルタ";
+					this->m_FilterParam[0].Set_Num("青色差", -255, 255);
+					this->m_FilterParam[1].Set_Num("赤色差", -255, 255);
 					break;
 				case DX_GRAPH_FILTER_GAUSS:
-					FilterName = "ガウスフィルタ";
-					FilterParam[0].Set_GaussWidth("使用幅");
-					FilterParam[1].Set_Num("ぼかし", 0, 2000);
+					this->m_FilterName = "ガウスフィルタ";
+					this->m_FilterParam[0].Set_GaussWidth("使用幅");
+					this->m_FilterParam[1].Set_Num("ぼかし", 0, 2000);
 					break;
 				case DX_GRAPH_FILTER_BRIGHT_CLIP:
-					FilterName = "明るさクリップフィルタ";
-					FilterParam[0].Set_CmpType("クリップタイプ");
-					FilterParam[1].Set_Num("クリップしきい値", 0, 255);
-					FilterParam[2].Set_TrueFalse("クリップしたピクセルを塗りつぶすかどうか");
-					FilterParam[3].Set_Color("塗る色");
-					FilterParam[4].Set_Num("塗るアルファ", 0, 255);
+					this->m_FilterName = "明るさクリップフィルタ";
+					this->m_FilterParam[0].Set_CmpType("クリップタイプ");
+					this->m_FilterParam[1].Set_Num("クリップしきい値", 0, 255);
+					this->m_FilterParam[2].Set_TrueFalse("クリップしたピクセルを塗りつぶすかどうか");
+					this->m_FilterParam[3].Set_Color("塗る色");
+					this->m_FilterParam[4].Set_Num("塗るアルファ", 0, 255);
 					break;
 				case DX_GRAPH_FILTER_HSB:
-					FilterName = "色相,彩度,明度フィルタ";
-					FilterParam[0].Set_TrueFalse("色相が絶対値(0～360)か否(-180～180)か");
-					FilterParam[1].Set_Num("色相の絶対値か元の色相に対する相対値", -180, 360);
-					FilterParam[2].Set_Num("彩度", -255, 1024);
-					FilterParam[3].Set_Num("輝度", -255, 255);
+					this->m_FilterName = "色相,彩度,明度フィルタ";
+					this->m_FilterParam[0].Set_TrueFalse("色相が絶対値(0～360)か否(-180～180)か");
+					this->m_FilterParam[1].Set_Num("色相の絶対値か元の色相に対する相対値", -180, 360);
+					this->m_FilterParam[2].Set_Num("彩度", -255, 1024);
+					this->m_FilterParam[3].Set_Num("輝度", -255, 255);
 					break;
 				case DX_GRAPH_FILTER_INVERT:
-					FilterName = "反転フィルタ";
+					this->m_FilterName = "反転フィルタ";
 					break;
 				case DX_GRAPH_FILTER_LEVEL:
-					FilterName = "レベル補正フィルタ";
-					FilterParam[0].Set_Num("変換元の下限値", 0, 255);
-					FilterParam[1].Set_Num("変換元の上限値", 0, 255);
-					FilterParam[2].Set_Num("ガンマ値x100", 100, 1000);
-					FilterParam[3].Set_Num("変換後の最低値", 0, 255);
-					FilterParam[4].Set_Num("変換後の最大値", 0, 255);
+					this->m_FilterName = "レベル補正フィルタ";
+					this->m_FilterParam[0].Set_Num("変換元の下限値", 0, 255);
+					this->m_FilterParam[1].Set_Num("変換元の上限値", 0, 255);
+					this->m_FilterParam[2].Set_Num("ガンマ値x100", 100, 1000);
+					this->m_FilterParam[3].Set_Num("変換後の最低値", 0, 255);
+					this->m_FilterParam[4].Set_Num("変換後の最大値", 0, 255);
 					break;
 				case DX_GRAPH_FILTER_TWO_COLOR:
-					FilterName = "２階調化フィルタ";
-					FilterParam[0].Set_Num("閾値", 0, 255);
-					FilterParam[1].Set_Color("閾値より値が低かった場合の色");
-					FilterParam[2].Set_Num("閾値より値が低かった場合のアルファ", 0, 255);
-					FilterParam[3].Set_Color("閾値より値が高かった場合の色");
-					FilterParam[4].Set_Num("閾値より値が高かった場合のアルファ", 0, 255);
+					this->m_FilterName = "２階調化フィルタ";
+					this->m_FilterParam[0].Set_Num("閾値", 0, 255);
+					this->m_FilterParam[1].Set_Color("閾値より値が低かった場合の色");
+					this->m_FilterParam[2].Set_Num("閾値より値が低かった場合のアルファ", 0, 255);
+					this->m_FilterParam[3].Set_Color("閾値より値が高かった場合の色");
+					this->m_FilterParam[4].Set_Num("閾値より値が高かった場合のアルファ", 0, 255);
 					break;
 				default:
-					FilterName = "フィルタ無し";
+					this->m_FilterName = "フィルタ無し";
 					break;
 				}
 			}
 		public:
 			void ChangeSize(int x_size, int y_size) {
-				xsize = x_size;
-				ysize = y_size;
+				this->m_xsize = x_size;
+				this->m_ysize = y_size;
 
-				GraphHandle	Buffer = GraphHandle::Make(xsize, ysize, true);
+				GraphHandle	Buffer = GraphHandle::Make(this->m_xsize, this->m_ysize, false);
 				Buffer.SetDraw_Screen();
 				{
-					OutScreen.DrawGraph(0, 0, true);
+					this->m_OutScreen.DrawGraph(0, 0, false);
 				}
 				DisposePic();
 				CreatePic();
-				OutScreen.SetDraw_Screen();
+				this->m_OutScreen.SetDraw_Screen();
 				{
 					Buffer.DrawGraph(0, 0, false);
 				}
@@ -1192,16 +1172,16 @@ namespace FPS_n2 {
 				Buffer.Dispose();
 
 			}
-			const auto&		GetXsize(void) const noexcept { return this->xsize; }
-			const auto&		GetYsize(void) const noexcept { return this->ysize; }
+			const auto&		GetXsize(void) const noexcept { return this->m_xsize; }
+			const auto&		GetYsize(void) const noexcept { return this->m_ysize; }
 		public:
 			void Set(void) noexcept {
 				m_DialogManager.Init();
 
 				InitPic();
 
-				LeftColor = GetColor(0, 0, 0);
-				IsWriting = false;
+				this->m_LeftColor = GetColor(0, 0, 0);
+				this->m_IsWriting = false;
 
 				SetFilterParamData(-1);
 			}
@@ -1209,77 +1189,94 @@ namespace FPS_n2 {
 				auto* Input = InputControl::Instance();
 
 				if (Input->GetRightClick().press()) {
-					xpos = Input->GetMouseX() - xposBase;
-					ypos = Input->GetMouseY() - yposBase;
+					this->m_xpos = Input->GetMouseX() - this->m_xposBase;
+					this->m_ypos = Input->GetMouseY() - this->m_yposBase;
 				}
 				else {
-					xposBase = Input->GetMouseX() - xpos;
-					yposBase = Input->GetMouseY() - ypos;
+					this->m_xposBase = Input->GetMouseX() - this->m_xpos;
+					this->m_yposBase = Input->GetMouseY() - this->m_ypos;
 				}
 
 				if (Input->GetWheelAdd() != 0) {
-					if (Input->GetMiddleClick().press()) {
-						if (!IsWriting) {
-							PenSize = std::clamp(PenSize + Input->GetWheelAdd(), 1, 100);
-							PenSizeChangeTimer = 1.f;
+					if (Input->GetKey('C').press()) {
+						if (!this->m_IsWriting) {
+							this->m_PenSize = std::clamp(this->m_PenSize + Input->GetWheelAdd(), 1, 100);
+							this->m_PenSizeChangeTimer = 1.f;
 						}
 					}
 					else {
-						auto PrevScale = scale;
-						scale = std::clamp(scale + (float)Input->GetWheelAdd() / 10.f, 0.1f, 100.f);
-						xpos -= (int)((float)(Input->GetMouseX() - xpos) * (scale - PrevScale) / scale);
-						ypos -= (int)((float)(Input->GetMouseY() - ypos) * (scale - PrevScale) / scale);
+						auto PrevScale = this->m_scale;
+						this->m_scale = std::clamp(this->m_scale + (float)Input->GetWheelAdd() / 10.f, 0.1f, 100.f);
+						this->m_xpos -= (int)((float)(Input->GetMouseX() - this->m_xpos) * (this->m_scale - PrevScale) / this->m_scale);
+						this->m_ypos -= (int)((float)(Input->GetMouseY() - this->m_ypos) * (this->m_scale - PrevScale) / this->m_scale);
 					}
 				}
 
-				if (!DialogClick) {
+				if (!this->m_DialogClick) {
 					if (Input->GetCtrlKey().press()) {
 						if (Input->GetKey('S').trigger()) {
 							Save();
-							DialogClick = true;
+							this->m_DialogClick = true;
 						}
 						if (Input->GetKey('O').trigger()) {
 							Load();
-							DialogClick = true;
+							this->m_DialogClick = true;
 						}
 						if (Input->GetKey('Z').trigger()) {
 							if (!m_SaveParams.empty()) {
-								if (NowSaveSelect != m_SaveParams.begin()) {
-									NowSaveSelect--;
-									(*NowSaveSelect)->UndoWrite(&OutScreen);
-									SaveChangeTime = 2.f;
+								if (this->m_NowSaveSelect != m_SaveParams.begin()) {
+									this->m_NowSaveSelect--;
+									(*this->m_NowSaveSelect)->UndoWrite(&this->m_OutScreen);
+									this->m_SaveChangeTime = 2.f;
 								}
 							}
 						}
 						if (Input->GetKey('Y').trigger()) {
 							if (!m_SaveParams.empty()) {
-								if (NowSaveSelect != m_SaveParams.end()) {
-									NowSaveSelect++;
-									if (NowSaveSelect != m_SaveParams.end()) {
-										(*NowSaveSelect)->UndoWrite(&OutScreen);
+								if (this->m_NowSaveSelect != m_SaveParams.end()) {
+									this->m_NowSaveSelect++;
+									if (this->m_NowSaveSelect != m_SaveParams.end()) {
+										(*this->m_NowSaveSelect)->UndoWrite(&this->m_OutScreen);
 									}
 									else {
-										OutScreen.SetDraw_Screen(false);
+										this->m_OutScreen.SetDraw_Screen(false);
 										{
-											OutScreen_After.DrawGraph(0, 0, true);
+											this->m_OutScreen_After.DrawGraph(0, 0, false);
 										}
 										SetDrawScreen(DX_SCREEN_BACK);
 									}
-									SaveChangeTime = 2.f;
+									this->m_SaveChangeTime = 2.f;
 								}
+							}
+						}
+						if (Input->GetKey('V').trigger()) {
+							GraphHandle ClipBoadBmp;
+							bool IsGetClipBoadBmp = FPS_n2::GetClipBoardGraphHandle(&ClipBoadBmp);
+							if (IsGetClipBoadBmp) {
+								this->m_OutScreen_Before.SetDraw_Screen(false);
+								{
+									this->m_OutScreen.DrawGraph(0, 0, false);
+								}
+								this->m_OutScreen_After.SetDraw_Screen(false);
+								{
+									this->m_OutScreen_Before.DrawGraph(0, 0, false);
+									ClipBoadBmp.DrawGraph(0, 0, false);
+								}
+								SetDo();
+								ClipBoadBmp.Dispose();
 							}
 						}
 					}
 				}
 				else {
 					if (CheckHitKeyAll()) {
-						this->isDraw = false;
+						this->m_isDraw = false;
 					}
 					else {
-						DialogClick = false;
+						this->m_DialogClick = false;
 					}
 				}
-				SaveChangeTime = std::clamp(SaveChangeTime - 1.f / FPS, 0.f, 2.f);
+				this->m_SaveChangeTime = std::clamp(this->m_SaveChangeTime - 1.f / FPS, 0.f, 2.f);
 
 
 				if (!Input->GetLeftClick().press()) {
@@ -1287,26 +1284,23 @@ namespace FPS_n2 {
 					if (Input->GetShiftKey().press()) {
 						m_DrawType = EnumDrawType::Paint;
 					}
-					if (Input->GetSpaceKey().press()) {
-						m_DrawType = EnumDrawType::Dropper;
-					}
 				}
-				if (this->isDraw) {
+				if (this->m_isDraw) {
 					SetDraw(m_DrawType);
 				}
 
-				if (FilterSetSwitch) {
-					OutScreen_Before.SetDraw_Screen(false);
+				if (this->m_FilterSetSwitch) {
+					this->m_OutScreen_Before.SetDraw_Screen(false);
 					{
-						OutScreen.DrawGraph(0, 0, true);
+						this->m_OutScreen.DrawGraph(0, 0, false);
 					}
 					SetDo();
-					FilterType = 0;
+					this->m_FilterType = 0;
 				}
-				FilterSetSwitch = false;
+				this->m_FilterSetSwitch = false;
 
-				PenSizeChangeTimer = std::max(PenSizeChangeTimer - 1.f / FPS, 0.f);
-				Easing(&CtrlChangeTimer, (Input->GetCtrlKey().press() ? 1.f : 0.f), 0.8f, EasingType::OutExpo);
+				this->m_PenSizeChangeTimer = std::max(this->m_PenSizeChangeTimer - 1.f / FPS, 0.f);
+				Easing(&this->m_CtrlChangeTimer, (Input->GetCtrlKey().press() ? 1.f : 0.f), 0.8f, EasingType::OutExpo);
 
 			}
 			void Draw(void) noexcept {
@@ -1315,7 +1309,7 @@ namespace FPS_n2 {
 				auto* DrawParts = DXDraw::Instance();
 
 				auto prevmode = GetDrawMode();
-				if (scale < 1.f) {
+				if (this->m_scale < 1.f) {
 					SetDrawMode(DX_DRAWMODE_BILINEAR);
 				}
 				else {
@@ -1332,48 +1326,45 @@ namespace FPS_n2 {
 						DX_GRAPH_FILTER_LEVEL,
 						DX_GRAPH_FILTER_TWO_COLOR,
 					};
-					if (FilterChangeSwitch) {
-						++FilterType %= 8;
-						SetFilterParamData(FILTERS[FilterType]);
+					if (this->m_FilterChangeSwitch) {
+						++this->m_FilterType %= 8;
+						SetFilterParamData(FILTERS[this->m_FilterType]);
 					}
-					FilterChangeSwitch = false;
-					if (FILTERS[FilterType] != -1) {
-						GraphFilterBlt(OutScreen.get(), OutScreen_After.get(), FILTERS[FilterType], FilterParam[0].Param, FilterParam[1].Param, FilterParam[2].Param, FilterParam[3].Param, FilterParam[4].Param);
-						OutScreen_After.DrawExtendGraph(y_r(xpos), y_r(ypos), y_r(xpos + (int)((float)xsize * scale)), y_r(ypos + (int)((float)ysize * scale)), true);
+					this->m_FilterChangeSwitch = false;
+					if (FILTERS[this->m_FilterType] != -1) {
+						GraphFilterBlt(this->m_OutScreen.get(), this->m_OutScreen_After.get(), FILTERS[this->m_FilterType], this->m_FilterParam[0].m_Param, this->m_FilterParam[1].m_Param, this->m_FilterParam[2].m_Param, this->m_FilterParam[3].m_Param, this->m_FilterParam[4].m_Param);
+						this->m_OutScreen_After.DrawExtendGraph(y_r(this->m_xpos), y_r(this->m_ypos), y_r(this->m_xpos + (int)((float)this->m_xsize * this->m_scale)), y_r(this->m_ypos + (int)((float)this->m_ysize * this->m_scale)), false);
 					}
 					else {
-						OutScreen.DrawExtendGraph(y_r(xpos), y_r(ypos), y_r(xpos + (int)((float)xsize * scale)), y_r(ypos + (int)((float)ysize * scale)), true);
-						if (IsWriting) {
-							OutScreen_After.DrawExtendGraph(y_r(xpos), y_r(ypos), y_r(xpos + (int)((float)xsize * scale)), y_r(ypos + (int)((float)ysize * scale)), true);
+						this->m_OutScreen.DrawExtendGraph(y_r(this->m_xpos), y_r(this->m_ypos), y_r(this->m_xpos + (int)((float)this->m_xsize * this->m_scale)), y_r(this->m_ypos + (int)((float)this->m_ysize * this->m_scale)), false);
+						if (this->m_IsWriting) {
+							this->m_OutScreen_After.DrawExtendGraph(y_r(this->m_xpos), y_r(this->m_ypos), y_r(this->m_xpos + (int)((float)this->m_xsize * this->m_scale)), y_r(this->m_ypos + (int)((float)this->m_ysize * this->m_scale)), false);
 						}
 					}
 				}
 				SetDrawMode(prevmode);
 
 				int r, g, b;
-				GetColor2(LeftColor, &r, &g, &b);
+				GetColor2(this->m_LeftColor, &r, &g, &b);
 				unsigned int backcolor = GetColor(255 - r, 255 - g, 255 - b);
 
 				//普通のガイド
-				if (CtrlChangeTimer < 0.95f) {
+				if (this->m_CtrlChangeTimer < 0.95f) {
 					int Posx = Input->GetMouseX();
 					int Posy = Input->GetMouseY();
-					int Size = (int)((float)LineHeight*(1.f - CtrlChangeTimer));
+					int Size = (int)((float)LineHeight*(1.f - this->m_CtrlChangeTimer));
 
 					switch (m_DrawType) {
 					case EnumDrawType::Write:
-						DrawCircle(Posx, Posy, (int)((float)PenSize / 2.f*scale), backcolor, FALSE, 3);
-						DrawCircle(Posx, Posy, (int)((float)PenSize / 2.f*scale), LeftColor, FALSE);
-						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy, LeftColor, backcolor, " ペン");
-						if (Input->GetMiddleClick().press() || (PenSizeChangeTimer > 0)) {
-							Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy + Size, LeftColor, backcolor, "太さ:%d", PenSize);
+						DrawCircle(Posx, Posy, (int)((float)this->m_PenSize / 2.f*this->m_scale), backcolor, FALSE, 3);
+						DrawCircle(Posx, Posy, (int)((float)this->m_PenSize / 2.f*this->m_scale), this->m_LeftColor, FALSE);
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy, this->m_LeftColor, backcolor, " ペン");
+						if (Input->GetKey('C').press() || (this->m_PenSizeChangeTimer > 0)) {
+							Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy + Size, this->m_LeftColor, backcolor, "太さ:%d", this->m_PenSize);
 						}
 						break;
 					case EnumDrawType::Paint:
-						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy, LeftColor, backcolor, " バケツ");
-						break;
-					case EnumDrawType::Dropper:
-						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy, LeftColor, backcolor, " スポイト");
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, Posx, Posy, this->m_LeftColor, backcolor, " バケツ");
 						break;
 					default:
 						break;
@@ -1381,14 +1372,15 @@ namespace FPS_n2 {
 
 				}
 				//ctrlガイド
-				if (CtrlChangeTimer > 0.05f) {
+				if (this->m_CtrlChangeTimer > 0.05f) {
 					int Posx = Input->GetMouseX();
 					int Posy = Input->GetMouseY();
-					int Size = (int)((float)LineHeight*CtrlChangeTimer);
-					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 3, LeftColor, backcolor, "戻る:Z ");
-					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 2, LeftColor, backcolor, "やり直す:Y ");
-					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 1, LeftColor, backcolor, "開く:O ");
-					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 0, LeftColor, backcolor, "保存:S ");
+					int Size = (int)((float)LineHeight*this->m_CtrlChangeTimer);
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 4, this->m_LeftColor, backcolor, "ペースト:V ");
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 3, this->m_LeftColor, backcolor, "戻る:Z ");
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 2, this->m_LeftColor, backcolor, "やり直す:Y ");
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 1, this->m_LeftColor, backcolor, "開く:O ");
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(Size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, Posx, Posy - Size * 0, this->m_LeftColor, backcolor, "保存:S ");
 				}
 				//場所ガイド
 				{
@@ -1398,10 +1390,10 @@ namespace FPS_n2 {
 					int xs = y_r(320);
 					int ys = y_r(180);
 
-					int x_p1 = std::max(xp + y_r(xpos) * xs / DrawParts->m_DispXSize, xp - xs / 2);
-					int y_p1 = std::max(yp + y_r(ypos) * ys / DrawParts->m_DispYSize, yp - ys / 2);
-					int x_p2 = std::min(xp + y_r(xpos + (int)((float)xsize * scale)) * xs / DrawParts->m_DispXSize, xp + xs + xs / 2);
-					int y_p2 = std::min(yp + y_r(ypos + (int)((float)ysize * scale)) * ys / DrawParts->m_DispYSize, yp + ys + ys / 2);
+					int x_p1 = std::max(xp + y_r(this->m_xpos) * xs / DrawParts->m_DispXSize, xp - xs / 2);
+					int y_p1 = std::max(yp + y_r(this->m_ypos) * ys / DrawParts->m_DispYSize, yp - ys / 2);
+					int x_p2 = std::min(xp + y_r(this->m_xpos + (int)((float)this->m_xsize * this->m_scale)) * xs / DrawParts->m_DispXSize, xp + xs + xs / 2);
+					int y_p2 = std::min(yp + y_r(this->m_ypos + (int)((float)this->m_ysize * this->m_scale)) * ys / DrawParts->m_DispYSize, yp + ys + ys / 2);
 
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
 					DrawBox(x_p1, y_p1, x_p2, y_p2, GetColor(0, 0, 0), TRUE);
@@ -1411,24 +1403,27 @@ namespace FPS_n2 {
 				}
 				//ファイル名
 				{
-					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, y_r(12), y_r(12), LeftColor, backcolor, "[%s]", SavePath.c_str());
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, y_r(12), y_r(12), this->m_LeftColor, backcolor, "[%s]", this->m_SavePath.c_str());
 				}
 				//
-				if (SaveChangeTime > 0.f) {
+				if (this->m_SaveChangeTime > 0.f) {
+					auto prevmodet = GetDrawMode();
+					SetDrawMode(DX_DRAWMODE_BILINEAR);
+
 					int xp, yp, xs, ys;
 
 					xs = y_r(300);
-					ys = y_r(300)*ysize / xsize;
+					ys = y_r(300)*this->m_ysize / this->m_xsize;
 
 
 					xp = y_r(10);
 					yp = DrawParts->m_DispYSize / 2 - ys / 2;
 					{
-						auto Itr = NowSaveSelect;
+						auto Itr = this->m_NowSaveSelect;
 						if (Itr != m_SaveParams.begin()) {
 							for (int i = 1; i < 5; i++) {
 								Itr--;
-								(*Itr)->GetGraphHandle().DrawExtendGraph(xp, yp - (ys + y_r(5)) * i, xp + xs, yp + ys - (ys + y_r(5)) * i, true);
+								(*Itr)->GetGraphHandle().DrawExtendGraph(xp, yp - (ys + y_r(5)) * i, xp + xs, yp + ys - (ys + y_r(5)) * i, false);
 								DrawBox(xp, yp - (ys + y_r(5)) * i, xp + xs, yp + ys - (ys + y_r(5)) * i, Green, FALSE);
 								if (Itr == m_SaveParams.begin()) { break; }
 							}
@@ -1436,30 +1431,35 @@ namespace FPS_n2 {
 					}
 					xp = y_r(110);
 					{
-						auto Itr = NowSaveSelect;
+						auto Itr = this->m_NowSaveSelect;
 						for (int i = 0; i < 5; i++) {
-							if (Itr == m_SaveParams.end()) { break; }
-							(*Itr)->GetGraphHandle().DrawExtendGraph(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, true);
+							if (Itr == m_SaveParams.end()) {
+								DrawBox(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, Green, FALSE);
+								this->m_OutScreen_After.DrawExtendGraph(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, false);
+								Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp, yp + (ys + y_r(5)) * i, this->m_LeftColor, backcolor, "[NEW]");
+								break;
+							}
+							(*Itr)->GetGraphHandle().DrawExtendGraph(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, false);
 							DrawBox(xp, yp + (ys + y_r(5)) * i, xp + xs, yp + ys + (ys + y_r(5)) * i, Green, FALSE);
 							Itr++;
 							xp = y_r(10);
 						}
 					}
+					SetDrawMode(prevmodet);
 				}
-				
-				printfDx("左クリック　塗る\n");
-				printfDx("　何も押さない      ペン\n");
-				printfDx("　　左クリック中に右クリックでリセット\n");
-				printfDx("　LShift押しながら  バケツ\n");
-				printfDx("　Space押しながら   スポイト\n");
-				printfDx("左クリック　視点移動\n");
-				printfDx("何も押さずマウスホイール　ズーム\n");
-				printfDx("ホイールを押しながらマウスホイール　ペンの太さチェンジ\n");
 
-				printfDx("Lctrl ＋ O  ファイルを開く\n");
-				printfDx("Lctrl ＋ S  ファイルを保存\n");
-				printfDx("Lctrl ＋ Z  元に戻る\n");
-				printfDx("Lctrl ＋ Y  やり直す\n");
+				printfDx("\n");
+				printfDx("\n");
+				printfDx("\n");
+				printfDx("左クリック\n");
+				printfDx("　何も押さない               ペン\n");
+				printfDx("　　左クリック中に右クリック リセット\n");
+				printfDx("　LShift押しながら           バケツ\n");
+				printfDx("ホイールクリック             スポイト\n");
+				printfDx("右クリック                   視点移動\n");
+				printfDx("何も押さずマウスホイール     ズーム\n");
+				printfDx("Cを押しながらマウスホイール  ペンの太さチェンジ\n");
+				printfDx("LCtrl                        特殊メニュー\n");
 			}
 		};
 	};
@@ -1571,36 +1571,36 @@ namespace FPS_n2 {
 					yp += height + y_r(4);
 
 					for (auto& p : m_Canvas->GetFilterParam()) {
-						switch (p.Type) {
+						switch (p.m_Type) {
 						case DrawSystem::EnumFilterParamType::Num:
-							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Value:%4d", p.Param);
+							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Value:%4d", p.m_Param);
 							break;
 						case DrawSystem::EnumFilterParamType::Color:
-							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height * 3 / 4, FontHandle::FontXCenter::LEFT, "Color:%3d,%3d,%3d", p.Color[0], p.Color[1], p.Color[2]);
-							WindowSystem::SetBox(xp + y_r(190), yp, xp + y_r(230), yp + height, GetColor(p.Color[0], p.Color[1], p.Color[2]));
+							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height * 3 / 4, FontHandle::FontXCenter::LEFT, "Color:%3d,%3d,%3d", p.m_Color[0], p.m_Color[1], p.m_Color[2]);
+							WindowSystem::SetBox(xp + y_r(190), yp, xp + y_r(230), yp + height, GetColor(p.m_Color[0], p.m_Color[1], p.m_Color[2]));
 							break;
 						case DrawSystem::EnumFilterParamType::CmpType:
-							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Cmp  :%s", (p.Param == DX_CMP_LESS) ? "LESS" : "GREATER");
+							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Cmp  :%s", (p.m_Param == DX_CMP_LESS) ? "LESS" : "GREATER");
 							break;
 						case DrawSystem::EnumFilterParamType::GaussWidth:
-							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Gauss:%4d", p.Param);
+							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Gauss:%4d", p.m_Param);
 							break;
 						case DrawSystem::EnumFilterParamType::TrueFalse:
-							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Bool :%s", (p.Param == TRUE) ? "TRUE" : "FALSE");
+							WindowSystem::SetMsg(xp, yp, xp + xs, yp + height, height, FontHandle::FontXCenter::LEFT, "Bool :%s", (p.m_Param == TRUE) ? "TRUE" : "FALSE");
 							break;
 						default:
 							continue;
 						}
-						WindowSystem::SetMsg(xp, yp + height, xp + xs, yp + height + height, height * 3 / 4, FontHandle::FontXCenter::LEFT, "%s", p.Name.c_str());
+						WindowSystem::SetMsg(xp, yp + height, xp + xs, yp + height + height, height * 3 / 4, FontHandle::FontXCenter::LEFT, "%s", p.m_Name.c_str());
 						//ボタン
-						switch (p.Type) {
+						switch (p.m_Type) {
 						case DrawSystem::EnumFilterParamType::Color:
 							for (int i = 0; i < 3; i++) {
 								if (WindowSystem::ClickCheckBox(xp + y_r((384 - 20 - 4 - 20) - (2 - i) * 50), yp, xp + y_r((384 - 20 - 4) - (2 - i) * 50), yp + height, true, win->GetIsActive(), Gray25, "+")) {
-									++p.Color[i] %= 255;
+									++p.m_Color[i] %= 255;
 								}
 								if (WindowSystem::ClickCheckBox(xp + y_r((384 - 20) - (2 - i) * 50), yp, xp + y_r(384 - (2 - i) * 50), yp + height, true, win->GetIsActive(), Gray25, "-")) {
-									--p.Color[i]; if (p.Color[0] < 0) { p.Color[0] = 255; }
+									--p.m_Color[i]; if (p.m_Color[0] < 0) { p.m_Color[0] = 255; }
 								}
 							}
 							break;
