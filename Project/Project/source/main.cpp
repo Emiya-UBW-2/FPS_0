@@ -4,7 +4,7 @@
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	OPTION::Create();
-	SetValidMousePointerWindowOutClientAreaMoveFlag(FALSE);
+	//SetValidMousePointerWindowOutClientAreaMoveFlag(FALSE);
 	DXDraw::Create("FPS_n2");						//汎用
 	//MV1SetLoadModelUsePackDraw(TRUE);
 	PostPassEffect::Create();						//シェーダー
@@ -19,14 +19,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	//
 	auto* EffectUseControl = EffectResource::Instance();
 	//シーン
-	auto MAINLOOPloader = std::make_shared<FPS_n2::MAINLOOPLOADER>();
-	
-	auto MAINLOOPscene = std::make_shared<FPS_n2::MAINLOOP>();
+	auto MAINLOOPLOADERscene = std::make_shared<FPS_n2::Sceneclass::MAINLOOPLOADER>();
+	auto MAINLOOPscene = std::make_shared<FPS_n2::Sceneclass::MAINLOOP>();
 	//シーンコントロール
-	auto scene = std::make_unique<SceneControl>(MAINLOOPloader);
+	auto scene = std::make_unique<SceneControl>(MAINLOOPLOADERscene);
 	//遷移先指定
-	MAINLOOPloader->Set_Next(MAINLOOPscene);
-	MAINLOOPscene->Set_Next(MAINLOOPloader);
+	MAINLOOPLOADERscene->Set_Next(MAINLOOPscene);
+	MAINLOOPscene->Set_Next(MAINLOOPLOADERscene);
 
 	//繰り返し
 	while (true) {

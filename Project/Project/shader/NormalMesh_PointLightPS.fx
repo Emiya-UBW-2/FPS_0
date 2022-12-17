@@ -45,8 +45,8 @@ cbuffer cbMULTIPLYCOLOR_CBUFFER2 : register(b3)
 
 SamplerState g_DiffuseMapSampler            : register(s0) ;		// ディフューズマップテクスチャ
 Texture2D    g_DiffuseMapTexture            : register(t0) ;		// ディフューズマップテクスチャ
-SamplerState g_DepthMapSampler			    : register(s1) ;		// 深度
-Texture2D    g_DepthMapTexture	            : register(t1) ;		// 深度
+SamplerState g_DepthMapSampler			    : register(s2) ;		// 深度
+Texture2D    g_DepthMapTexture	            : register(t2) ;		// 深度
 
 
 
