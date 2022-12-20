@@ -69,10 +69,9 @@ namespace FPS_n2 {
 			this->m_ReadySwitch = (this->m_KeyActive != pReady);
 			this->m_KeyActive = pReady;
 			//ƒGƒCƒ€
+			auto y_mouse = std::atan2f(this->m_MouseVec.zvec().x(), this->m_MouseVec.zvec().z());
 			auto x_mouse = std::atan2f(-this->m_MouseVec.zvec().y(), std::hypotf(this->m_MouseVec.zvec().x(), this->m_MouseVec.zvec().z()));
-			auto prevx_mouse = x_mouse;
-			x_mouse = std::clamp(x_mouse + pInput.GetAddxRad(), -deg2rad(60.f), deg2rad(60.f));
-			this->m_MouseVec = MATRIX_ref::RotX(x_mouse - prevx_mouse) *this->m_MouseVec* MATRIX_ref::RotY(pInput.GetAddyRad());
+			this->m_MouseVec = MATRIX_ref::RotX(std::clamp(x_mouse + pInput.GetAddxRad(), -deg2rad(40.f), deg2rad(40.f))) * MATRIX_ref::RotY(y_mouse + pInput.GetAddyRad());
 			//
 			if (isOverrideView) {
 				this->m_view_override = true;
@@ -110,6 +109,17 @@ namespace FPS_n2 {
 				eyepos = Get_EyePos_Base() + this->m_MouseVec.zvec() * this->m_range_r*Scale_Rate;
 				eyetgt = eyepos + this->m_MouseVec.zvec() * -1.f * (this->m_range_r * Scale_Rate);
 				if (GetMapColNearest(eyepos, &eyetgt)) { eyepos = eyetgt; }
+				if (true) {
+					for (auto& bu : this->m_BackGround->GetBuildCol()) {
+						auto pos_p = (eyepos - bu.GetPosition().pos()); pos_p.y(0);
+						if (pos_p.size() < 20.f*Scale_Rate) {
+							auto col_p = bu.GetCol(eyepos, eyetgt);
+							if (col_p.HitFlag == TRUE) {
+								eyepos = col_p.HitPosition;
+							}
+						}
+					}
+				}
 
 				this->m_ratio = 2.0f;
 				this->m_range = std::clamp(this->m_range - float(GetMouseWheelRotVolWithCheck()) * this->m_range_change, 0.f, 9.f);
@@ -195,7 +205,7 @@ namespace FPS_n2 {
 					for (auto& mesh : this->m_VecData->Get_armer_mesh()) {
 						if (tt.GetHitMesh() == mesh.first) {
 							//’e‚ªƒ_ƒ[ƒW‘w‚É“Í‚¢‚½
-							if (pAmmo->PenetrationCheck(mesh.second, HitNormal)) {								//ƒ_ƒ[ƒW–Ê‚É“–‚½‚Á‚½Žž‚É‘•b’l‚ÉŸ‚Ä‚é‚©‚Ç‚¤‚©
+							if (pAmmo->PenetrationCheck(mesh.second, HitNormal) && this->Get_alive()) {						//ƒ_ƒ[ƒW–Ê‚É“–‚½‚Á‚½Žž‚É‘•b’l‚ÉŸ‚Ä‚é‚©‚Ç‚¤‚©
 								pAmmo->Penetrate();	//ŠÑ’Ê
 								SE->Get((int)SoundEnum::Tank_Damage).Play_3D(GetRand(1), HitPos, 100.f*Scale_Rate, 216);
 								//ƒ_ƒ[ƒWŒvŽZ
@@ -263,23 +273,29 @@ namespace FPS_n2 {
 						}
 						else {
 							//‘_‚¢
-							VECTOR_ref StartPos = GetGunMuzzlePos(i);
-							VECTOR_ref EndPos = StartPos + (this->m_MouseVec.zvec() * -1.f).Norm() * (500.f*Scale_Rate);
-							GetMapColNearest(StartPos, &EndPos);
+							VECTOR_ref MuzPos = GetGunMuzzlePos(i);
+							VECTOR_ref EndPos = MuzPos + (this->m_MouseVec.zvec() * -1.f).Norm() * (500.f*Scale_Rate);
+							GetMapColNearest(MuzPos, &EndPos);
 
-							StartPos = GetGunMuzzleBase(i);
+							VECTOR_ref BasePos = GetGunMuzzleBase(i);
 							//”½‰f
-							auto vec_a = (EndPos - StartPos).Norm();
-							auto vec_z = (GetGunMuzzlePos(i) - StartPos);
+							auto vec_a = (EndPos - BasePos).Norm();
+							auto vec_z = (MuzPos - BasePos).Norm();
+							float a_hyp = std::hypotf(vec_a.x(), vec_a.z());
 							float z_hyp = std::hypotf(vec_z.x(), vec_z.z());
-							float cost = vec_z.cross(vec_a).y() / z_hyp;
-
-							view_YradAdd = (atan2f(cost, sqrtf(std::abs(1.f - cost * cost)))) / 5.f;
-							view_XradAdd = (atan2f(vec_a.y(), 1.f) - atan2f(vec_z.y(), z_hyp)) / 5.f;
+							{
+								float cost = vec_z.cross(vec_a).y() / z_hyp;
+								float sint = sqrtf(std::abs(1.f - cost * cost));
+								view_YradAdd = (atan2f(cost, sint)) / 5.f;
+							}
+							view_XradAdd = (atan2f(vec_a.y(), a_hyp) - atan2f(vec_z.y(), z_hyp)) / 1.f;
+							if (i == 0) {
+								//printfDx("%.2f\n", rad2deg(view_XradAdd));
+							}
 						}
 					}
 					else {
-						view_XradAdd = 0.f;
+						view_XradAdd = 0.1f / FPS;
 						view_YradAdd = 0.f;
 					}
 
@@ -287,7 +303,7 @@ namespace FPS_n2 {
 					if (i > 0) {
 						limit *= 2.f;
 					}
-					this->m_view_rad[i].x(std::clamp(this->m_view_rad[i].x() + std::clamp(view_XradAdd, -limit, limit), deg2rad(-10), deg2rad(20)));
+					this->m_view_rad[i].x(std::clamp(this->m_view_rad[i].x() + std::clamp(view_XradAdd, -limit / 5.f, limit / 5.f), -deg2rad(10.f), deg2rad(40.f)));
 					this->m_view_rad[i].yadd(std::clamp(view_YradAdd, -limit, limit));
 				}
 			}
@@ -312,7 +328,22 @@ namespace FPS_n2 {
 					auto ID = &f - &this->m_VecData->Get_wheelframe().front();
 					GetObj().frame_Reset(f.GetFrameID());
 					auto startpos = GetObj().frame(f.GetFrameID());
-					auto ColResGround = this->m_BackGround->GetGroundCol().CollCheck_Line(startpos + y_vec * ((-f.GetFrameWorldPosition().y()) + 2.f*Scale_Rate), startpos + y_vec * ((-f.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
+					auto ColResGround = this->m_BackGround->GetGroundCol().CollCheck_Line(
+						startpos + y_vec * ((-f.GetFrameWorldPosition().y()) + 2.f*Scale_Rate),
+						startpos + y_vec * ((-f.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
+					if (this->m_MyID == 0) {//checkmore
+						for (auto& bu : this->m_BackGround->GetBuildCol()) {
+							auto pos_p = (startpos - bu.GetPosition().pos()); pos_p.y(0);
+							if (pos_p.size() < 5.f*Scale_Rate) {
+								auto col_p = bu.GetCol(
+									startpos + y_vec * ((-f.GetFrameWorldPosition().y()) + 2.f*Scale_Rate),
+									startpos + y_vec * ((-f.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
+								if (col_p.HitFlag == TRUE) {
+									ColResGround = col_p;
+								}
+							}
+						}
+					}
 					Easing(&this->m_wheel_frameYpos[ID], (ColResGround.HitFlag == TRUE) ? (ColResGround.HitPosition.y + y_vec.y() * f.GetFrameWorldPosition().y() - startpos.y()) : -0.3f*Scale_Rate, 0.9f, EasingType::OutExpo);
 					GetObj().SetFrameLocalMatrix(f.GetFrameID(),
 						MATRIX_ref::RotX((f.GetFrameWorldPosition().x() >= 0) ? this->m_wheel_Left : this->m_wheel_Right) *
@@ -358,7 +389,7 @@ namespace FPS_n2 {
 				int cnt_t = 0;
 				//—š‘Ñ
 				for (auto& f : this->m_b2Foot) {
-					f.FirstExecute(&GetObj(), &m_BackGround->GetGroundCol());
+					f.FirstExecute(&GetObj(), m_BackGround, this->m_MyID == 0);//checkmore
 					for (const auto& t : f.Getdownsideframe()) {
 						if (t.GetColResult_Y() != (std::numeric_limits<float>::max)()) {
 							hight_t += t.GetColResult_Y();
@@ -465,8 +496,10 @@ namespace FPS_n2 {
 				(M_GR / FPS / 2.f) * (this->m_move.mat.zvec().dot(VECTOR_ref::up())),
 				(M_GR / FPS / 2.f) * (this->m_move.mat.yvec().dot(VECTOR_ref::up())));
 			for (auto& f : this->m_b2Foot) {
-				f.LateExecute(&f == &this->m_b2Foot.front(), this->m_VecData, &GetObj(), Gravity2D, (&f == &this->m_b2Foot.front()) ? this->m_wheel_Left : this->m_wheel_Right,
-					(this->m_move.pos - this->m_move.repos).Length());
+				f.LateExecute(
+					&f == &this->m_b2Foot.front(), this->m_VecData, &GetObj(),
+					Gravity2D, (&f == &this->m_b2Foot.front()) ? this->m_wheel_Left : this->m_wheel_Right,
+					(this->m_move.pos - this->m_move.repos).Length() * 60.f / FPS);
 			}
 			UpdateMove();
 			this->m_add_vec_real = this->m_move.pos - OldPos;
@@ -476,16 +509,21 @@ namespace FPS_n2 {
 		//•`‰æ‹¤’Ê
 		void			VehicleClass::DrawCommon(void) noexcept {
 			if (!is_ADS()) {
-				MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
-				GetObj().DrawMesh(0);
-				MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
-				GetObj().DrawMesh(1);
-				MV1ResetFrameTextureAddressTransform(GetObj().get(), 0);
-				for (int i = 2; i < GetObj().mesh_num(); i++) {
-					GetObj().DrawMesh(i);
+				if (CheckCameraViewClip_Box(
+					(this->GetMove().pos + VECTOR_ref::vget(-10, -10, -10)*Scale_Rate).get(),
+					(this->GetMove().pos + VECTOR_ref::vget(10, 10, 10)*Scale_Rate).get()) == FALSE
+					) {
+					MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+					GetObj().DrawMesh(0);
+					MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+					GetObj().DrawMesh(1);
+					MV1ResetFrameTextureAddressTransform(GetObj().get(), 0);
+					for (int i = 2; i < GetObj().mesh_num(); i++) {
+						GetObj().DrawMesh(i);
+					}
+					//this->m_col.DrawModel();
+					this->m_Hit_active.Draw();
 				}
-				//this->m_col.DrawModel();
-				this->m_Hit_active.Draw();
 			}
 		}
 

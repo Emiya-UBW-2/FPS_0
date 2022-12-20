@@ -348,7 +348,7 @@ namespace FPS_n2 {
 				//Load
 				//BG
 				this->m_BackGround = std::make_shared<BackGroundClass>();
-				this->m_BackGround->Init();
+				this->m_BackGround->Load();
 				ObjMngr->Init(this->m_BackGround);
 				//
 				{
@@ -376,6 +376,7 @@ namespace FPS_n2 {
 
 			}
 			void			Set_Sub(void) noexcept override {
+				this->m_BackGround->Init();
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				SetAmbientShadow(
@@ -415,14 +416,36 @@ namespace FPS_n2 {
 					}
 				}
 				//登録
+				std::vector<Builds*> Select;
 				for (auto& v : this->vehicle_Pool) {
 					size_t index = &v - &this->vehicle_Pool.front();
-					VECTOR_ref pos_t = VECTOR_ref::vget(0.f + (float)(index)*10.f*Scale_Rate, 0.f, 0.f);
+					VECTOR_ref pos_t = VECTOR_ref::vget(
+						(float)(GetRand(30) - 15)*5.f*Scale_Rate,
+						0.f,
+						(float)(GetRand(30) - 15)*5.f*Scale_Rate);
+					float rad_t = deg2rad(90);
+					for (auto& bu : this->m_BackGround->GetBuildCol()) {
+						if (bu.GetFrameSel() == 0) {
+							bool Hit = (std::find_if(Select.begin(), Select.end(), [&](Builds* tmp) { return tmp == &bu; }) != Select.end());
+							if (!Hit) {
+								auto pos_p = (pos_t - bu.GetPosition().pos()); pos_p.y(0);
+								if (pos_p.size() < 20.f*Scale_Rate) {
+									pos_t = bu.GetPosition().pos();
+									rad_t = std::atan2f(bu.GetPosition().zvec().x(), bu.GetPosition().zvec().z());
+
+									Select.emplace_back((Builds*)&bu);
+									break;
+								}
+							}
+						}
+					}
+
 					auto HitResult = this->m_BackGround->GetGroundCol().CollCheck_Line(pos_t + VECTOR_ref::up() * -1250.f, pos_t + VECTOR_ref::up() * 1250.f);
 					if (HitResult.HitFlag == TRUE) { pos_t = HitResult.HitPosition; }
-					v->ValueInit(&vehc_data[index!=0 ? 1 : 0], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
-					v->ValueSet(deg2rad(0), deg2rad(90), pos_t);
+					v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
+					v->ValueSet(deg2rad(0), rad_t, pos_t);
 				}
+				Select.clear();
 				//player
 				PlayerMngr->Init(Player_num);
 				for (int i = 0; i < Player_num; i++) {
@@ -445,16 +468,6 @@ namespace FPS_n2 {
 				SetMainCamera().SetCamPos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
 				//サウンド
 				auto SE = SoundPool::Instance();
-				SE->Add((int)SoundEnum::Shot_Gun, 3, "data/Sound/SE/gun/shot.wav");
-				SE->Add((int)SoundEnum::Trigger, 1, "data/Sound/SE/gun/trigger.wav");
-				for (int i = 0; i < 4; i++) {
-					SE->Add((int)SoundEnum::Cocking0 + i, 3, "data/Sound/SE/gun/slide/bolt/" + std::to_string(i) + ".wav");
-				}
-				SE->Add((int)SoundEnum::RunFoot, 6, "data/Sound/SE/move/runfoot.wav");
-				SE->Add((int)SoundEnum::SlideFoot, 9, "data/Sound/SE/move/sliding.wav");
-				SE->Add((int)SoundEnum::StandupFoot, 3, "data/Sound/SE/move/standup.wav");
-				SE->Add((int)SoundEnum::Heart, 9, "data/Sound/SE/move/heart.wav");
-				//SE->Add((int)SoundEnum::GateOpen, 1, "data/Sound/SE/GateOpen.wav");
 				for (int i = 0; i < 9; i++) {
 					SE->Add((int)SoundEnum::Tank_Shot, 3, "data/Sound/SE/gun/fire/" + std::to_string(i) + ".wav");
 				}
@@ -471,15 +484,6 @@ namespace FPS_n2 {
 				for (int i = 0; i < 5; i++) {
 					SE->Add((int)SoundEnum::Tank_Reload, 3, "data/Sound/SE/gun/reload/hand/" + std::to_string(i) + ".wav", false);
 				}
-
-				SE->Get((int)SoundEnum::Shot_Gun).SetVol_Local(128);
-				SE->Get((int)SoundEnum::Trigger).SetVol_Local(128);
-				for (int i = 0; i < 4; i++) {
-					SE->Get((int)SoundEnum::Cocking0 + i).SetVol_Local(128);
-				}
-				SE->Get((int)SoundEnum::RunFoot).SetVol_Local(128);
-				SE->Get((int)SoundEnum::Heart).SetVol_Local(92);
-				//SE->Get((int)SoundEnum::GateOpen).SetVol_Local(128);
 
 				SE->Get((int)SoundEnum::Tank_Shot).SetVol(0.5f);
 				SE->Get((int)SoundEnum::Tank_engine).SetVol(0.25f);
@@ -615,7 +619,7 @@ namespace FPS_n2 {
 							(CheckHitKeyWithCheck(KEY_INPUT_LSHIFT) != 0),
 							(CheckHitKeyWithCheck(KEY_INPUT_Q) != 0), (CheckHitKeyWithCheck(KEY_INPUT_E) != 0),
 							(CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0), (CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0), (CheckHitKeyWithCheck(KEY_INPUT_UP) != 0), (CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0),
-							
+
 							(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0),
 							(CheckHitKeyWithCheck(KEY_INPUT_R) != 0),
 							(CheckHitKeyWithCheck(KEY_INPUT_X) != 0),
@@ -801,6 +805,12 @@ namespace FPS_n2 {
 							break;
 						}
 					}
+					for (auto&bc : this->m_BackGround->GetBuildCol()) {
+						auto colres = bc.GetCol(StartPos, EndPos);
+						if (colres.HitFlag == TRUE) {
+							EndPos = colres.HitPosition;
+						}
+					}
 					for (auto& v : this->vehicle_Pool) {
 						if (v->GetMyPlayerID() == GetMyPlayerID()) { continue; }
 						if (v->RefreshCol(StartPos, EndPos, 10.f*Scale_Rate)) {
@@ -836,6 +846,13 @@ namespace FPS_n2 {
 								VECTOR_ref pos_tmp = a->GetMove().pos;
 								VECTOR_ref norm_tmp;
 								bool hitwall = this->m_BackGround->GetWallCol(a->GetMove().repos, &pos_tmp, &norm_tmp, a->GetCaliberSize());//0.00762f
+								for (auto&bc : this->m_BackGround->GetBuildCol()) {
+									auto colres = bc.GetCol(a->GetMove().repos, pos_tmp);
+									if (colres.HitFlag == TRUE) {
+										ColResGround = colres;
+										pos_tmp = colres.HitPosition;
+									}
+								}
 								bool is_HitAll = false;
 								auto& c = *ObjMngr->GetObj(ObjType::Human, a->GetShootedID());//(std::shared_ptr<CharacterClass>&)
 								for (auto& tgt : this->character_Pool) {
@@ -876,6 +893,13 @@ namespace FPS_n2 {
 							break;
 						}
 						loop++;
+					}
+				}
+				//木の更新
+				{
+					for (auto& v : this->vehicle_Pool) {
+						this->m_BackGround->CheckTreetoSquare(v->GetSquarePos(0), v->GetSquarePos(2), v->GetSquarePos(3), v->GetSquarePos(1), v->GetMove().pos,
+							(v->GetMove().pos - v->GetMove().repos).Length() * 60.f / FPS);
 					}
 				}
 				this->m_BackGround->FirstExecute();
@@ -1055,6 +1079,10 @@ namespace FPS_n2 {
 			void			BG_Draw_Sub(void) noexcept override {
 				this->m_BackGround->BG_Draw();
 			}
+			void			ShadowDraw_Far_Sub(void) noexcept override {
+				this->m_BackGround->Shadow_Draw_Far();
+			}
+
 			void			ShadowDraw_NearFar_Sub(void) noexcept override {
 				this->m_BackGround->Shadow_Draw_NearFar();
 			}
@@ -1078,7 +1106,7 @@ namespace FPS_n2 {
 					Set_is_Blackout(true);
 					Set_Per_Blackout((1.f + sin(Chara->GetHeartRateRad()*4.f)*0.25f) * ((Chara->GetHeartRate() - 60.f) / (180.f - 60.f)));
 					//
-					Set_is_lens(Chara->GetIsADS() && Chara->GetReticleSize()>1.f);
+					Set_is_lens(Chara->GetIsADS() && Chara->GetReticleSize() > 1.f);
 					if (Chara->GetIsADS()) {
 						VECTOR_ref LensPos = ConvWorldPosToScreenPos(Chara->GetLensPos().get());
 						if (0.f < LensPos.z() && LensPos.z() < 1.f) {
@@ -1178,7 +1206,7 @@ namespace FPS_n2 {
 				if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 				}
 				else {
-					Vehicle->DrawModuleView(y_r(50+100), DrawParts->m_DispYSize - y_r(100 +100), y_r(200));
+					Vehicle->DrawModuleView(y_r(50 + 100), DrawParts->m_DispYSize - y_r(100 + 100), y_r(200));
 				}
 				//通信設定
 				if (!this->m_MouseActive.on()) {
@@ -1201,7 +1229,7 @@ namespace FPS_n2 {
 						aim_Graph.DrawRotaGraph(DrawParts->m_DispXSize / 2, DrawParts->m_DispYSize / 2, (float)(y_r(100)) / 100.f, 0.f, true);
 					}
 				}
-				else{
+				else {
 					if (Reticle_on) {
 						aim_Graph.DrawRotaGraph((int)Reticle_xpos, (int)Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);
 					}

@@ -180,7 +180,7 @@ namespace FPS_n2 {
 			//事前読み込み
 			void		Set_Pre(const char* name) noexcept {
 				this->m_name = name;
-				MV1::Load("data/tank/" + this->m_name + "/model_LOADCALC.mv1", &this->m_DataObj);
+				MV1::Load("data/tank/" + this->m_name + "/model_LOADCALC.mv1", &this->m_DataObj);//model.pmx//model_LOADCALC.mv1
 				MV1::Load("data/tank/" + this->m_name + "/col.mv1", &this->m_DataCol);
 			}
 			//メイン読み込み
@@ -391,7 +391,7 @@ namespace FPS_n2 {
 				for (auto& s : this->m_GunSpec->GetAmmoSpec()) {
 					this->m_AmmoSpec.emplace_back(&s);
 				}
-				this->m_ShotRadAdd.Set(0,0,0);
+				this->m_ShotRadAdd.Set(0, 0, 0);
 			}
 			bool		Execute(bool key, bool playSound) noexcept {
 				auto SE = SoundPool::Instance();
@@ -518,14 +518,27 @@ namespace FPS_n2 {
 						this->m_gndsmksize = 0.1f;
 					}
 					//
-					void			FrameExecute(MV1* pTargetObj, const MV1* pMapPtr) noexcept {
+					void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pMapPtr, bool checkmore) noexcept {
 						if (this->m_frame.GetFrameID() >= 0) {
 							auto y_vec = pTargetObj->GetMatrix().yvec();
 							pTargetObj->frame_Reset(this->m_frame.GetFrameID());
 							auto startpos = pTargetObj->frame(this->m_frame.GetFrameID());
-							auto colres = pMapPtr->CollCheck_Line(
+							auto colres = pMapPtr->GetGroundCol().CollCheck_Line(
 								startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) + 2.f*Scale_Rate),
 								startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
+							if (checkmore) {
+								for (auto& bu : pMapPtr->GetBuildCol()) {
+									auto pos_p = (startpos - bu.GetPosition().pos()); pos_p.y(0);
+									if (pos_p.size() < 5.f*Scale_Rate) {
+										auto col_p = bu.GetCol(
+											startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) + 2.f*Scale_Rate),
+											startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
+										if (col_p.HitFlag == TRUE) {
+											colres = col_p;
+										}
+									}
+								}
+							}
 							this->m_Res_y = (colres.HitFlag == TRUE) ? colres.HitPosition.y : (std::numeric_limits<float>::max)();
 							pTargetObj->SetFrameLocalMatrix(this->m_frame.GetFrameID(),
 								MATRIX_ref::Mtrans(VECTOR_ref::up() * ((colres.HitFlag == TRUE) ? (this->m_Res_y + y_vec.y() * this->m_frame.GetFrameWorldPosition().y() - startpos.y()) : -0.4f*Scale_Rate)) *
@@ -619,9 +632,9 @@ namespace FPS_n2 {
 					}
 				}
 				//
-				void			FirstExecute(MV1* pTargetObj, const MV1* pMapPtr) noexcept {
+				void			FirstExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pMapPtr, bool checkmore) noexcept {
 					for (auto& t : this->m_downsideframe) {
-						t.FrameExecute(pTargetObj, pMapPtr);
+						t.FrameExecute(pTargetObj, pMapPtr, checkmore);
 					}
 				}
 				void			LateExecute(bool IsLeft, const VhehicleData* pUseVeh, MV1* pTargetObj, const b2Vec2& pGravity, float pWheelRotate, float pSpd) noexcept {
@@ -769,7 +782,10 @@ namespace FPS_n2 {
 			const auto		GetGunMuzzleBase(int ID) const noexcept { return GetObj_const().frame(this->m_Gun[ID].GetGunTrunnionFrameID()); }
 			const auto		GetGunMuzzlePos(int ID) const noexcept { return GetObj_const().frame(this->m_Gun[ID].GetGunMuzzleFrameID()); }
 			const auto		GetGunMuzzleVec(int ID) const noexcept { return (GetGunMuzzlePos(ID) - GetGunMuzzleBase(ID)).Norm(); }
-			
+
+			const auto		GetSquarePos(int ID) const noexcept { return GetObj_const().frame(this->m_VecData->Get_square(ID)); }
+
+
 			const auto		Get_EyePos_Base(void) const noexcept { return (is_ADS()) ? GetGunMuzzleBase(0) : (this->m_move.pos + (this->m_move.mat.yvec() * 3.f * Scale_Rate)); }
 			const auto		Set_MidPos(void) noexcept { return (this->m_move.pos + (this->m_move.mat.yvec() * 1.5f * Scale_Rate)); }							//HPバーを表示する場所
 			//

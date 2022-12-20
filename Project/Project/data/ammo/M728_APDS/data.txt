@@ -1,4 +1,4 @@
-ammo_cal(mm)=100
-ammo_speed(m/s)=887
-ammo_pene(mm)=175
-ammo_damage=190
+ammo_cal(mm)=105
+ammo_speed(m/s)=1426
+ammo_pene(mm)=268
+ammo_damage=200

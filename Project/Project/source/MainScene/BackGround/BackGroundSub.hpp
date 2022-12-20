@@ -324,7 +324,7 @@ namespace FPS_n2 {
 			}
 		}
 	public:
-		void Init(const MV1* MapCol,int softimage) {
+		void Init(const MV1* MapCol, int softimage) {
 			float MAPX = 300.f*Scale_Rate;
 			float MAPZ = 300.f*Scale_Rate;
 			float PosX = 0.f;
@@ -466,7 +466,7 @@ namespace FPS_n2 {
 
 			for (int ID = 0; ID < grassDiv; ID++) {
 #ifdef DEBUG
-				DrawCube3D(grassPosMin[ID].get(), grassPosMax[ID].get(), GetColor(0, 0, 0), GetColor(0, 0, 0), FALSE);
+				//DrawCube3D(grassPosMin[ID].get(), grassPosMax[ID].get(), GetColor(0, 0, 0), GetColor(0, 0, 0), FALSE);
 #endif
 				if (grasss != 0) {
 					this->grass__[ID].Check_CameraViewClip(grassPosMin[ID], grassPosMax[ID]);
@@ -484,58 +484,53 @@ namespace FPS_n2 {
 	//Box2D壁
 	class Box2DWall {
 	private:
-		MV1							m_ObjGroundCol_Box2D;
 		std::shared_ptr<b2World>	m_b2world;
 		std::vector<std::pair<b2Pats, std::array<VECTOR_ref, 2>>>	m_b2wallParts;	//壁をセット
 	public://getter
 		auto&			GetBox2Dworld(void) { return this->m_b2world; }
 	public:
-		void			Init(void) {
-			MV1::Load("data/model/map_old/col_box2D.mv1", &this->m_ObjGroundCol_Box2D);
-			{
-				this->m_b2world = std::make_shared<b2World>(b2Vec2(0.0f, 0.0f)); // 剛体を保持およびシミュレートするワールドオブジェクトを構築
-				MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(this->m_ObjGroundCol_Box2D.get(), 0, FALSE);
-				for (int i = 0; i < p.PolygonNum; i++) {
-					this->m_b2wallParts.resize(this->m_b2wallParts.size() + 1);
-					this->m_b2wallParts.back().second[0] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
-					this->m_b2wallParts.back().second[1] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
-					if (b2DistanceSquared(b2Vec2(this->m_b2wallParts.back().second[0].x(), this->m_b2wallParts.back().second[0].z()), b2Vec2(this->m_b2wallParts.back().second[1].x(), this->m_b2wallParts.back().second[1].z())) <= 0.005f * 0.005f) {
-						this->m_b2wallParts.pop_back();
-					}
-					this->m_b2wallParts.resize(this->m_b2wallParts.size() + 1);
-					this->m_b2wallParts.back().second[0] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
-					this->m_b2wallParts.back().second[1] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
-					if (b2DistanceSquared(b2Vec2(this->m_b2wallParts.back().second[0].x(), this->m_b2wallParts.back().second[0].z()), b2Vec2(this->m_b2wallParts.back().second[1].x(), this->m_b2wallParts.back().second[1].z())) <= 0.005f * 0.005f) {
-						this->m_b2wallParts.pop_back();
-					}
-					this->m_b2wallParts.resize(this->m_b2wallParts.size() + 1);
-					this->m_b2wallParts.back().second[0] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
-					this->m_b2wallParts.back().second[1] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
-					if (b2DistanceSquared(b2Vec2(this->m_b2wallParts.back().second[0].x(), this->m_b2wallParts.back().second[0].z()), b2Vec2(this->m_b2wallParts.back().second[1].x(), this->m_b2wallParts.back().second[1].z())) <= 0.005f * 0.005f) {
-						this->m_b2wallParts.pop_back();
-					}
+		void			Add(const MV1_REF_POLYGONLIST &p) {
+			for (int i = 0; i < p.PolygonNum; i++) {
+				this->m_b2wallParts.resize(this->m_b2wallParts.size() + 1);
+				this->m_b2wallParts.back().second[0] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
+				this->m_b2wallParts.back().second[1] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
+				if (b2DistanceSquared(b2Vec2(this->m_b2wallParts.back().second[0].x(), this->m_b2wallParts.back().second[0].z()), b2Vec2(this->m_b2wallParts.back().second[1].x(), this->m_b2wallParts.back().second[1].z())) <= 0.005f * 0.005f) {
+					this->m_b2wallParts.pop_back();
 				}
-				MV1TerminateReferenceMesh(this->m_ObjGroundCol_Box2D.get(), 0, FALSE);
-				for (auto& w : this->m_b2wallParts) {
-					std::array<b2Vec2, 2> vs;								//
-					vs[0].Set(w.second[0].x(), w.second[0].z());			//
-					vs[1].Set(w.second[1].x(), w.second[1].z());			//
-					b2ChainShape chain;										// This a chain shape with isolated vertices
-					chain.CreateChain(&vs[0], 2);							//
-					b2FixtureDef fixtureDef;								//動的ボディフィクスチャを定義します
-					fixtureDef.shape = &chain;								//
-					fixtureDef.density = 1.0f;								//ボックス密度をゼロ以外に設定すると、動的になります
-					fixtureDef.friction = 0.3f;								//デフォルトの摩擦をオーバーライドします
-					b2BodyDef bodyDef;										//ダイナミックボディを定義します。その位置を設定し、ボディファクトリを呼び出します
-					bodyDef.type = b2_staticBody;							//
-					bodyDef.position.Set(0, 0);								//
-					bodyDef.angle = 0.f;									//
-					w.first.Set(this->m_b2world->CreateBody(&bodyDef), &chain);	//
+				this->m_b2wallParts.resize(this->m_b2wallParts.size() + 1);
+				this->m_b2wallParts.back().second[0] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
+				this->m_b2wallParts.back().second[1] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
+				if (b2DistanceSquared(b2Vec2(this->m_b2wallParts.back().second[0].x(), this->m_b2wallParts.back().second[0].z()), b2Vec2(this->m_b2wallParts.back().second[1].x(), this->m_b2wallParts.back().second[1].z())) <= 0.005f * 0.005f) {
+					this->m_b2wallParts.pop_back();
+				}
+				this->m_b2wallParts.resize(this->m_b2wallParts.size() + 1);
+				this->m_b2wallParts.back().second[0] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
+				this->m_b2wallParts.back().second[1] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
+				if (b2DistanceSquared(b2Vec2(this->m_b2wallParts.back().second[0].x(), this->m_b2wallParts.back().second[0].z()), b2Vec2(this->m_b2wallParts.back().second[1].x(), this->m_b2wallParts.back().second[1].z())) <= 0.005f * 0.005f) {
+					this->m_b2wallParts.pop_back();
 				}
 			}
 		}
+		void			Init(void) {
+			this->m_b2world = std::make_shared<b2World>(b2Vec2(0.0f, 0.0f)); // 剛体を保持およびシミュレートするワールドオブジェクトを構築
+			for (auto& w : this->m_b2wallParts) {
+				std::array<b2Vec2, 2> vs;								//
+				vs[0].Set(w.second[0].x(), w.second[0].z());			//
+				vs[1].Set(w.second[1].x(), w.second[1].z());			//
+				b2ChainShape chain;										// This a chain shape with isolated vertices
+				chain.CreateChain(&vs[0], 2);							//
+				b2FixtureDef fixtureDef;								//動的ボディフィクスチャを定義します
+				fixtureDef.shape = &chain;								//
+				fixtureDef.density = 1.0f;								//ボックス密度をゼロ以外に設定すると、動的になります
+				fixtureDef.friction = 0.3f;								//デフォルトの摩擦をオーバーライドします
+				b2BodyDef bodyDef;										//ダイナミックボディを定義します。その位置を設定し、ボディファクトリを呼び出します
+				bodyDef.type = b2_staticBody;							//
+				bodyDef.position.Set(0, 0);								//
+				bodyDef.angle = 0.f;									//
+				w.first.Set(this->m_b2world->CreateBody(&bodyDef), &chain);	//
+			}
+		}
 		void			Dispose(void) {
-			this->m_ObjGroundCol_Box2D.Dispose();
 			for (auto& w : this->m_b2wallParts) {
 				w.first.Dispose();
 				w.second[0].clear();
@@ -670,7 +665,7 @@ namespace FPS_n2 {
 							this->m_WallVertex[0].back().u = p.x() / Scale_Rate;
 							this->m_WallVertex[0].back().v = -p.y() / Scale_Rate / m_YScale;
 							this->m_WallVertex[0].back().su = p.x() / Scale_Rate;
-							this->m_WallVertex[0].back().sv = -p.y() / Scale_Rate/ m_YScale;
+							this->m_WallVertex[0].back().sv = -p.y() / Scale_Rate / m_YScale;
 
 							this->m_WallIndex[0].emplace_back((WORD)(this->m_WallVertex[0].size() - 1));
 						}
@@ -928,7 +923,7 @@ namespace FPS_n2 {
 										VECTOR_ref Pos2D = MATRIX_ref::Vtrans((Pos - this->m_BasePos), Mat) / Scale_Rate;
 										Pos2D.Set(Pos2D.x(), -Pos2D.z(), 0.f);
 
-										DrawCircle((int)(Pos2D.x()*512), (int)(Pos2D.y() * 512), (int)(512.f * radius*12.5f), GetColor(0, 0, 0));
+										DrawCircle((int)(Pos2D.x() * 512), (int)(Pos2D.y() * 512), (int)(512.f * radius*12.5f), GetColor(0, 0, 0));
 									}
 									break;
 								}
@@ -1137,6 +1132,223 @@ namespace FPS_n2 {
 		}
 		void			Dispose(void) {
 			this->m_Walls.clear();
+		}
+	};
+	//
+	class Builds {
+		int						m_frame{ -1 };
+		MV1						m_Obj;
+		MV1						m_Col;
+		MV1						m_ColBox2D;
+		float					m_rad{ 0.f };
+		VECTOR_ref				m_pos;
+	public:
+		const auto		GetPosition(void) const noexcept { return MATRIX_ref::RotY(m_rad) * MATRIX_ref::Mtrans(m_pos); }
+		const auto&		GetFrameSel(void) const noexcept { return m_frame; }
+		const auto&		GetColBox2D(void) const noexcept { return m_ColBox2D; }
+		const auto		GetCol(const VECTOR_ref& repos, const VECTOR_ref& pos) const noexcept { return this->m_Col.CollCheck_Line(repos, pos, m_frame); }
+	public:
+		void		Set(const MV1& baseModel, const MV1& ColModel, const MV1& Box2DModel, int frame) {
+			this->m_Obj = baseModel.Duplicate();
+			this->m_Col = ColModel.Duplicate();
+			this->m_ColBox2D = Box2DModel.Duplicate();
+			m_frame = frame;
+			this->m_Col.SetupCollInfo(1, 1, 1, m_frame);
+		}
+		void		ChangeSel(int frame) {
+			if (m_Obj.IsActive()) {
+				MV1TerminateCollInfo(this->m_Col.get(), m_frame);
+				m_frame = frame;
+				this->m_Col.SetupCollInfo(1, 1, 1, m_frame);
+			}
+		}
+		void		SetPosition(const MV1& colModel, const VECTOR_ref& pos, float rad, bool isTilt) {
+			VECTOR_ref pos_t = pos;
+			MATRIX_ref mat_t;
+			auto res = colModel.CollCheck_Line(pos_t + VECTOR_ref::vget(0.f, 10.f*Scale_Rate, 0.f), pos_t + VECTOR_ref::vget(0.f, -10.f*Scale_Rate, 0.f));
+			if (res.HitFlag == TRUE) {
+				pos_t = res.HitPosition;
+
+				pos_t += VECTOR_ref::up()*(0.1f*Scale_Rate);
+				if (isTilt) {
+					mat_t = MATRIX_ref::RotVec2(VECTOR_ref::up(), res.Normal);
+				}
+			}
+			m_rad = rad;
+			m_pos = pos_t;
+			m_Obj.SetMatrix(MATRIX_ref::RotY(rad)*mat_t*MATRIX_ref::Mtrans(pos_t));
+
+			this->m_Col.SetMatrix(MATRIX_ref::RotY(rad)*mat_t*MATRIX_ref::Mtrans(pos_t));
+			this->m_Col.RefreshCollInfo(m_frame);
+
+			this->m_ColBox2D.SetMatrix(MATRIX_ref::RotY(rad)*mat_t*MATRIX_ref::Mtrans(pos_t));
+		}
+		void		Draw(bool ischeckDraw) {
+			if (m_frame >= 0) {
+				if ((CheckCameraViewClip_Box(
+					(this->m_Obj.GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)*Scale_Rate).get(),
+					(this->m_Obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)*Scale_Rate).get()) == FALSE
+					) || !ischeckDraw) {
+					this->m_Obj.DrawFrame(m_frame);
+					//this->m_Col.DrawFrame(m_frame);
+				}
+			}
+		}
+	};
+
+	//
+	struct treePats {
+		MV1 obj, obj_far;
+		MATRIX_ref mat;
+		VECTOR_ref pos;
+		bool fall_flag = false;
+		VECTOR_ref fall_vec;
+		float fall_rad = 0.f;
+		float fall_speed = 0.f;
+
+		treePats() {
+			fall_flag = false;
+			fall_vec = VGet(0.f, 0.f, 1.f);
+			fall_rad = 0.f;
+			fall_speed = 0.f;
+		}
+	};
+	class TreeControl {
+		MV1 tree_model, tree_far;
+
+		std::vector<treePats>		tree;
+	public:
+		void			CheckTreetoSquare(
+			const VECTOR_ref& cornerLF, const VECTOR_ref& cornerRF, const VECTOR_ref& cornerRR, const VECTOR_ref& cornerLR
+			, const VECTOR_ref& center, float speed
+		) {
+			for (auto& l : tree) {
+				if (!l.fall_flag) {
+					auto p0 = cornerLF;
+					auto p1 = cornerRF;
+					auto p2 = cornerRR;
+					auto p3 = cornerLR;
+					p0.y(l.pos.y());
+					p1.y(l.pos.y());
+					p2.y(l.pos.y());
+					p3.y(l.pos.y());
+
+					size_t cnt = 0;
+					cnt += (((p0 - p1).cross(l.pos - p1)).y() >= 0);
+					cnt += (((p1 - p2).cross(l.pos - p2)).y() >= 0);
+					cnt += (((p2 - p3).cross(l.pos - p3)).y() >= 0);
+					cnt += (((p3 - p0).cross(l.pos - p0)).y() >= 0);
+					if (cnt == 4) {
+						l.fall_vec = VGet((l.pos - center).z(), 0.f, -(l.pos - center).x());
+						l.fall_flag = true;
+						l.fall_speed = std::clamp(speed*2.f, 0.1f, 6.f) * deg2rad(30.f / FPS);
+					}
+				}
+			}
+		}
+	public:
+		void	Load() noexcept {
+			MV1::Load("data/model/tree/model.mv1", &tree_model, true); //木
+			MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //木
+		}
+		void	Init(const MV1* MapCol, const std::vector<Builds>& BGBuild) noexcept {
+			tree.resize(300);
+			for (auto& t : tree) {
+				auto scale = 15.f / 10.f*Scale_Rate;
+				t.mat = MATRIX_ref::GetScale(VECTOR_ref::vget(scale, scale, scale));
+				while (true) {
+					t.pos = VECTOR_ref::vget(
+						(float)(GetRand(300) - 150)*1.f*Scale_Rate,
+						0.f,
+						(float)(GetRand(300) - 150)*1.f*Scale_Rate);
+					bool isnear = false;
+					for (const auto& bu : BGBuild) {
+						if (bu.GetFrameSel() >= 0) {
+							auto pos_p = (t.pos - bu.GetPosition().pos()); pos_p.y(0);
+							if (pos_p.size() < 20.f*Scale_Rate) {
+								isnear = true;
+								break;
+							}
+						}
+					}
+					if (!isnear) { break; }
+				}
+				auto res = MapCol->CollCheck_Line(t.pos + VECTOR_ref::vget(0.f, 10.f*Scale_Rate, 0.f), t.pos + VECTOR_ref::vget(0.f, -10.f*Scale_Rate, 0.f));
+				if (res.HitFlag == TRUE) {
+					t.pos = res.HitPosition;
+				}
+				t.obj = tree_model.Duplicate();
+				t.obj.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
+				t.obj_far = tree_far.Duplicate();
+				t.obj_far.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
+			}
+		}
+		void	Execute(void) noexcept {
+			//木セット
+			for (auto& l : tree) {
+				if (l.fall_flag) {
+					l.fall_rad = std::clamp(l.fall_rad + l.fall_speed, deg2rad(0.f), deg2rad(80.f));
+					if (l.fall_rad == deg2rad(80.f)) {
+						l.fall_speed = -l.fall_speed / 5.f;
+					}
+					l.fall_speed += deg2rad(1.f / FPS);
+				}
+				l.obj.SetMatrix(MATRIX_ref::RotAxis(l.fall_vec, l.fall_rad) * l.mat * MATRIX_ref::Mtrans(l.pos));
+			}
+		}
+		void	Dispose(void) noexcept {
+			tree_model.Dispose(); //木
+			tree_far.Dispose(); //木
+			for (auto&t : tree) {
+				t.obj.Dispose();
+				t.obj_far.Dispose();
+			}
+			tree.clear();
+		}
+
+		void	Draw(bool isSetFog) noexcept {
+			int fog_enable = 0;
+			int fog_mode = 0;
+			int fog_r = 0, fog_g = 0, fog_b = 0;
+			float fog_start = 0.f, fog_end = 0.f;
+			float fog_density = 0.f;
+			if (isSetFog) {
+				fog_enable = GetFogEnable();													// フォグが有効かどうかを取得する( TRUE:有効  FALSE:無効 )
+				fog_mode = GetFogMode();														// フォグモードを取得する
+				GetFogColor(&fog_r, &fog_g, &fog_b);											// フォグカラーを取得する
+				GetFogStartEnd(&fog_start, &fog_end);											// フォグが始まる距離と終了する距離を取得する( 0.0f ～ 1.0f )
+				fog_density = GetFogDensity();													// フォグの密度を取得する( 0.0f ～ 1.0f )
+
+				SetFogEnable(TRUE);
+				SetFogColor(0, 12, 0);
+				SetFogStartEnd(Scale_Rate*5.f, Scale_Rate*60.f);
+			}
+			for (auto& l : tree) {
+				auto LengthtoCam = (l.pos - GetCameraPosition());
+
+				if (CheckCameraViewClip_Box(
+					(l.pos + VECTOR_ref::vget(-20, 0, -20)*Scale_Rate).get(),
+					(l.pos + VECTOR_ref::vget(20, 20, 20)*Scale_Rate).get()) == FALSE
+					) {
+					if (LengthtoCam.Length() > 50.f*Scale_Rate) {
+						LengthtoCam.y(0.f); LengthtoCam = LengthtoCam.Norm();
+						float rad = std::atan2f(VECTOR_ref::front().cross(LengthtoCam).y(), VECTOR_ref::front().dot(LengthtoCam));
+						l.obj_far.SetMatrix(MATRIX_ref::RotY(rad) * l.mat * MATRIX_ref::Mtrans(l.pos));
+						l.obj_far.DrawModel();
+					}
+					else {
+						l.obj.DrawModel();
+					}
+				}
+
+			}
+			if (isSetFog) {
+				SetFogEnable(fog_enable);
+				SetFogMode(fog_mode);
+				SetFogColor(fog_r, fog_g, fog_b);
+				SetFogStartEnd(fog_start, fog_end);
+				SetFogDensity(fog_density);
+			}
 		}
 	};
 };
