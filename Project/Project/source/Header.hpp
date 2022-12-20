@@ -55,6 +55,7 @@ using namespace DXLib_ref;
 
 #include "ObjectManager.hpp"
 #include "MainScene/Player/Player.hpp"
+#include "MainScene/Player/CPU.hpp"
 
 #include "MainScene/UI/MainSceneUIControl.hpp"
 //

@@ -1278,7 +1278,6 @@ namespace FPS_n2 {
 					t.pos = res.HitPosition;
 				}
 				t.obj = tree_model.Duplicate();
-				t.obj.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 				t.obj_far = tree_far.Duplicate();
 				t.obj_far.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			}
@@ -1321,8 +1320,10 @@ namespace FPS_n2 {
 
 				SetFogEnable(TRUE);
 				SetFogColor(0, 12, 0);
-				SetFogStartEnd(Scale_Rate*5.f, Scale_Rate*60.f);
+				SetFogStartEnd(Scale_Rate*5.f, Scale_Rate*50.f);
 			}
+			auto Farlimit = 60.f*Scale_Rate;
+			auto Farlimit2 = 40.f*Scale_Rate;
 			for (auto& l : tree) {
 				auto LengthtoCam = (l.pos - GetCameraPosition());
 
@@ -1330,13 +1331,16 @@ namespace FPS_n2 {
 					(l.pos + VECTOR_ref::vget(-20, 0, -20)*Scale_Rate).get(),
 					(l.pos + VECTOR_ref::vget(20, 20, 20)*Scale_Rate).get()) == FALSE
 					) {
-					if (LengthtoCam.Length() > 50.f*Scale_Rate) {
+					if (LengthtoCam.Length() > Farlimit) {
+						SetUseLighting(FALSE);
 						LengthtoCam.y(0.f); LengthtoCam = LengthtoCam.Norm();
 						float rad = std::atan2f(VECTOR_ref::front().cross(LengthtoCam).y(), VECTOR_ref::front().dot(LengthtoCam));
 						l.obj_far.SetMatrix(MATRIX_ref::RotY(rad) * l.mat * MATRIX_ref::Mtrans(l.pos));
 						l.obj_far.DrawModel();
+						SetUseLighting(TRUE);
 					}
 					else {
+						l.obj.material_AlphaTestAll(true, DX_CMP_GREATER, (int)(128.f + 127.f*(Farlimit2 - LengthtoCam.Length())/ Farlimit2));
 						l.obj.DrawModel();
 					}
 				}

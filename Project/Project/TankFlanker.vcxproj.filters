@@ -105,6 +105,9 @@
     <ClInclude Include="source\Scene\MainSceneLoader.hpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="source\MainScene\Player\CPU.hpp">
+      <Filter>ソース ファイル\MainScene\Player</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">

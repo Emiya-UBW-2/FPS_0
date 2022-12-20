@@ -32,7 +32,7 @@ namespace FPS_n2 {
 			switchs					m_LeftClick;
 			float					m_LeftPressTimer{ 0.f };
 		public:
-			const auto& GetClient(void) const noexcept { return this->m_IsClient; }
+			const auto& GetIsClient(void) const noexcept { return this->m_IsClient; }
 			const auto& GetSequence(void) const noexcept { return this->m_Sequence; }
 		public:
 			const auto&		GetMyPlayerID(void) const noexcept { return (this->m_IsClient) ? this->m_ClientCtrl.GetMyPlayer().ID : this->m_ServerCtrl.GetMyPlayer().ID; }
@@ -298,6 +298,8 @@ namespace FPS_n2 {
 			//戦車データ
 			std::vector<VhehicleData>	vehc_data;
 			std::vector<std::shared_ptr<VehicleClass>> vehicle_Pool;	//ポインター別持ち
+
+			std::vector<std::shared_ptr<AIControl>> AICtrl;
 			//操作関連
 			float					m_EyePosPer_Prone = 0.f;
 			float					m_EyePosPer = 0.f;
@@ -448,11 +450,15 @@ namespace FPS_n2 {
 				Select.clear();
 				//player
 				PlayerMngr->Init(Player_num);
+				AICtrl.resize(Player_num);
 				for (int i = 0; i < Player_num; i++) {
 					//PlayerMngr->GetPlayer(i).SetChara((std::shared_ptr<CharacterClass>&)(*ObjMngr->GetObj(ObjType::Human, i)));
 					PlayerMngr->GetPlayer(i).SetChara(nullptr);
 					PlayerMngr->GetPlayer(i).SetVehicle((std::shared_ptr<VehicleClass>&)(*ObjMngr->GetObj(ObjType::Vehicle, i)));
 					//PlayerMngr->GetPlayer(i).SetVehicle(nullptr);
+
+					AICtrl[i] = std::make_shared<AIControl>();
+					AICtrl[i]->Init(&vehicle_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetVehicle());
 				}
 				if (!PlayerMngr->GetPlayer(0).IsRide()) {
 					this->m_HPBuf = (float)PlayerMngr->GetPlayer(0).GetChara()->GetHP();
@@ -654,7 +660,7 @@ namespace FPS_n2 {
 					//ネットワーク
 					m_NetWorkBrowser.FirstExecute(MyInput, PlayerMngr->GetPlayer(GetMyPlayerID()).GetNetSendMove());
 					//クライアント
-					if (m_NetWorkBrowser.GetClient()) {
+					if (m_NetWorkBrowser.GetIsClient()) {
 						for (auto& c : this->character_Pool) {
 							if (c->GetMyPlayerID() == GetMyPlayerID() && !PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 								c->SetUseRealTimePhysics(false);
@@ -697,6 +703,9 @@ namespace FPS_n2 {
 									c->SetInput(tmp.Input, isready);
 								}
 								else {
+									if (!m_NetWorkBrowser.GetIsClient()) {
+										AICtrl[i]->AI_move(&tmp.Input);
+									}
 									v->SetInput(tmp.Input, isready, true);
 								}
 								bool override_true = true;
@@ -747,6 +756,16 @@ namespace FPS_n2 {
 								}
 								else {
 									v->SetInput(MyInput, isready, false);
+								}
+							}
+							else {
+								InputControl OtherInput;
+								if (!PlayerMngr->GetPlayer(i).IsRide()) {
+									//c->SetInput(OtherInput, isready);
+								}
+								else {
+									AICtrl[i]->AI_move(&OtherInput);
+									v->SetInput(OtherInput, isready, false);
 								}
 							}
 							//ダメージイベント処理
@@ -1158,6 +1177,12 @@ namespace FPS_n2 {
 						v->SetCameraSize(std::max(80.f / ((pos - GetCameraPosition()).size() / 2.f), 0.2f));
 					}
 				}
+
+
+				for (int i = 0; i < Player_num; i++) {
+					AICtrl[i]->Draw();
+				}
+
 			}
 			void			MainDrawbyDepth_Sub(void) noexcept override {
 				auto* ObjMngr = ObjectManager::Instance();

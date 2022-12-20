@@ -43,6 +43,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			if (!scene->isPause()) {
 				EffectUseControl->Calc();			//エフェクシアのアプデを60FPS相当に変更
 			}
+#ifdef DEBUG
+			DebugParts->SetPoint();
+#endif // DEBUG
 			scene->Draw();							//描画
 			//デバッグ
 #ifdef DEBUG

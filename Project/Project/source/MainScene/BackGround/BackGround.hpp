@@ -16,6 +16,8 @@ namespace FPS_n2 {
 
 			std::vector<Builds>			m_ObjBuilds;
 
+			std::vector<VECTOR_ref>		m_WayPoint;
+
 			int softimage;
 
 			Grass						m_grass;
@@ -26,6 +28,8 @@ namespace FPS_n2 {
 			const auto&		GetGroundCol(void) noexcept { return this->m_ObjGroundCol; }
 
 			const auto&		GetBuildCol(void) noexcept { return this->m_ObjBuilds; }
+			const auto&		GetWayPoint(void) noexcept { return this->m_WayPoint; }
+			
 
 			const std::shared_ptr<b2World>&	GetBox2Dworld(void) noexcept {
 				return this->m_Box2DWall.GetBox2Dworld();
@@ -348,8 +352,15 @@ namespace FPS_n2 {
 						mini += adds;
 					}
 				}
-
 				CrossPoints.clear();
+				{
+					for (auto& bu : m_ObjBuilds) {
+						if (bu.GetFrameSel() == 3) {
+							this->m_WayPoint.emplace_back(bu.GetPosition().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
+						}
+					}
+
+				}
 				//‹ó
 				MV1SetDifColorScale(this->m_ObjSky.get(), GetColorF(0.9f, 0.9f, 0.9f, 1.0f));
 

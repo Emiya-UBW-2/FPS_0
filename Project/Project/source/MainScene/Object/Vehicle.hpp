@@ -768,7 +768,8 @@ namespace FPS_n2 {
 			const auto&		GetCharaType(void) const noexcept { return this->m_CharaType; }
 			const auto&		GetName(void) const noexcept { return this->m_VecData->GetName(); }
 			const auto&		GetLookVec(void) const noexcept { return this->m_MouseVec; }
-			const auto&		Get_pseed_per(void) const noexcept { return this->m_add_vec_real.size() / (this->m_VecData->GetMaxFrontSpeed() / 3.6f); }			//移動速度のパーセンテージ
+			const auto&		Getvec_real(void) const noexcept { return this->m_add_vec_real; }
+			const auto		Get_pseed_per(void) const noexcept { return this->m_add_vec_real.size() / (this->m_VecData->GetMaxFrontSpeed() / 3.6f); }			//移動速度のパーセンテージ
 			const auto&		Gunloadtime(size_t id_t) const noexcept { return this->m_Gun[id_t].Getloadtime(); }
 			const auto&		Gunround(size_t id_t) const noexcept { return this->m_Gun[id_t].Getrounds(); }
 			const auto&		Get_Gunsize(void) const noexcept { return this->m_Gun.size(); }
