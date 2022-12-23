@@ -32,16 +32,11 @@ namespace FPS_n2 {
 				}
 			}
 			void	CheckBullet(void) {
-				if (IsActive()) {
-					if ((this->m_move.pos - this->m_move.repos).y() <= 0.f) {
-						auto HitResult = this->m_BackGround->GetGroundCol().CollCheck_Line(this->m_move.repos + VECTOR_ref::up()*1.f, this->m_move.pos);
-						if (HitResult.HitFlag == TRUE) {
-							this->m_move.pos = HitResult.HitPosition;
-
-							VECTOR_ref Normal = HitResult.Normal;
-							this->m_move.vec = (this->m_move.vec + Normal * ((Normal*-1.f).dot(this->m_move.vec.Norm())*2.f))*0.1f;
-							this->m_yAdd = 0.f;
-						}
+				if (IsActive() && ((this->m_move.pos - this->m_move.repos).y() <= 0.f)) {
+					VECTOR_ref Normal;
+					if (this->m_BackGround->CheckLinetoMap(this->m_move.repos + VECTOR_ref::up()*1.f, &this->m_move.pos, true, &Normal)) {
+						this->m_move.vec = (this->m_move.vec + Normal * ((Normal*-1.f).dot(this->m_move.vec.Norm())*2.f))*0.1f;
+						this->m_yAdd = 0.f;
 					}
 				}
 			}

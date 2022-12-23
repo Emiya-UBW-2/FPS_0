@@ -207,7 +207,7 @@ namespace FPS_n2 {
 			Model_Instance	m_Inst;
 		public:
 			void Init(int total) {
-				this->m_Inst.Init("data/model/grass/grass.png", "data/model/grass/model.mv1");
+				this->m_Inst.Init("data/model/grass/grass.png", "data/model/grass/model.mv1",-1);
 				this->m_Inst.Reset();
 				this->m_Inst.Set_start(total);
 			}
@@ -1136,66 +1136,383 @@ namespace FPS_n2 {
 	};
 	//
 	class Builds {
-		int						m_frame{ -1 };
-		MV1						m_Obj;
+		int						m_mesh{ -1 };
 		MV1						m_Col;
 		MV1						m_ColBox2D;
-		float					m_rad{ 0.f };
-		VECTOR_ref				m_pos;
+		MATRIX_ref				m_mat;
 	public:
-		const auto		GetPosition(void) const noexcept { return MATRIX_ref::RotY(m_rad) * MATRIX_ref::Mtrans(m_pos); }
-		const auto&		GetFrameSel(void) const noexcept { return m_frame; }
+		const auto&		GetMeshSel(void) const noexcept { return m_mesh; }
 		const auto&		GetColBox2D(void) const noexcept { return m_ColBox2D; }
-		const auto		GetCol(const VECTOR_ref& repos, const VECTOR_ref& pos) const noexcept { return this->m_Col.CollCheck_Line(repos, pos, m_frame); }
+		const auto&		GetMatrix(void) const noexcept { return m_mat; }
+		const auto		GetCol(const VECTOR_ref& repos, const VECTOR_ref& pos) const noexcept { return this->m_Col.CollCheck_Line(repos, pos, m_mesh); }
 	public:
-		void		Set(const MV1& baseModel, const MV1& ColModel, const MV1& Box2DModel, int frame) {
-			this->m_Obj = baseModel.Duplicate();
+		void		Set(const MV1& ColModel, const MV1& Box2DModel, int frame) {
 			this->m_Col = ColModel.Duplicate();
 			this->m_ColBox2D = Box2DModel.Duplicate();
-			m_frame = frame;
-			this->m_Col.SetupCollInfo(1, 1, 1, m_frame);
+			m_mesh = frame;
+			this->m_Col.SetupCollInfo(1, 1, 1, m_mesh);
 		}
 		void		ChangeSel(int frame) {
-			if (m_Obj.IsActive()) {
-				MV1TerminateCollInfo(this->m_Col.get(), m_frame);
-				m_frame = frame;
-				this->m_Col.SetupCollInfo(1, 1, 1, m_frame);
+			if (this->m_Col.IsActive()) {
+				MV1TerminateCollInfo(this->m_Col.get(), m_mesh);
+				m_mesh = frame;
+				this->m_Col.SetupCollInfo(1, 1, 1, m_mesh);
 			}
 		}
-		void		SetPosition(const MV1& colModel, const VECTOR_ref& pos, float rad, bool isTilt) {
-			VECTOR_ref pos_t = pos;
-			MATRIX_ref mat_t;
-			auto res = colModel.CollCheck_Line(pos_t + VECTOR_ref::vget(0.f, 10.f*Scale_Rate, 0.f), pos_t + VECTOR_ref::vget(0.f, -10.f*Scale_Rate, 0.f));
+		void		SetPosition(const MV1& colModel, VECTOR_ref pos, float rad, bool isTilt) {
+			m_mat.clear();
+			auto res = colModel.CollCheck_Line(pos + VECTOR_ref::vget(0.f, 10.f*Scale_Rate, 0.f), pos + VECTOR_ref::vget(0.f, -10.f*Scale_Rate, 0.f));
 			if (res.HitFlag == TRUE) {
-				pos_t = res.HitPosition;
-
-				pos_t += VECTOR_ref::up()*(0.1f*Scale_Rate);
+				pos = res.HitPosition;
+				pos += VECTOR_ref::up()*(0.1f*Scale_Rate);
 				if (isTilt) {
-					mat_t = MATRIX_ref::RotVec2(VECTOR_ref::up(), res.Normal);
+					m_mat = MATRIX_ref::RotVec2(VECTOR_ref::up(), res.Normal);
 				}
 			}
-			m_rad = rad;
-			m_pos = pos_t;
-			m_Obj.SetMatrix(MATRIX_ref::RotY(rad)*mat_t*MATRIX_ref::Mtrans(pos_t));
-
-			this->m_Col.SetMatrix(MATRIX_ref::RotY(rad)*mat_t*MATRIX_ref::Mtrans(pos_t));
-			this->m_Col.RefreshCollInfo(m_frame);
-
-			this->m_ColBox2D.SetMatrix(MATRIX_ref::RotY(rad)*mat_t*MATRIX_ref::Mtrans(pos_t));
-		}
-		void		Draw(bool ischeckDraw) {
-			if (m_frame >= 0) {
-				if ((CheckCameraViewClip_Box(
-					(this->m_Obj.GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)*Scale_Rate).get(),
-					(this->m_Obj.GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)*Scale_Rate).get()) == FALSE
-					) || !ischeckDraw) {
-					this->m_Obj.DrawFrame(m_frame);
-					//this->m_Col.DrawFrame(m_frame);
-				}
-			}
+			m_mat = MATRIX_ref::RotY(rad)*m_mat*MATRIX_ref::Mtrans(pos);
+			this->m_Col.SetMatrix(m_mat);
+			this->m_Col.RefreshCollInfo(m_mesh);
+			this->m_ColBox2D.SetMatrix(m_mat);
 		}
 	};
+	class BuildControl {
+		MV1							m_ObjBuildBase;
+		MV1							m_ColBuildBase;
+		MV1							m_ColBox2DBuildBase;
 
+		std::vector<Builds>			m_ObjBuilds;
+
+		std::vector<Model_Instance>	m_Inst;
+	public:
+		const auto&		GetBuildCol(void) const noexcept { return this->m_ObjBuilds; }
+		const auto&		GetBuildCol(void) noexcept { return this->m_ObjBuilds; }
+	public:
+		void			Load(void) noexcept {
+			MV1::Load("data/model/build/model.mv1", &this->m_ObjBuildBase);
+			MV1::Load("data/model/build/col.mv1", &this->m_ColBuildBase);
+			MV1::Load("data/model/build/colBox2D.mv1", &this->m_ColBox2DBuildBase);
+		}
+		void			Init(const MV1* MapCol) noexcept {
+
+			m_ObjBuilds.resize((4 * 30 + 1) + (15 * 4) * 5 + 15 * (14 - 5 - 1) + 5);
+			m_Inst.resize(15);
+			{
+				std::vector<Builds*> CrossPoints;
+				auto FindCross = [&](float length) {
+					int total = 0;
+					for (auto& bu : m_ObjBuilds) {
+						if (bu.GetMeshSel() == 0) {
+							bool Hit = (std::find_if(CrossPoints.begin(), CrossPoints.end(), [&](Builds* tmp) { return tmp == &bu; }) != CrossPoints.end());
+							if (!Hit) {
+								total++;
+							}
+						}
+					}
+
+					float rad;
+					VECTOR_ref BasePos;
+					int count = 0;
+					while (true) {
+						//count++;
+						int rand = GetRand(total - 1) + 1;
+						int rbuf = rand;
+						Builds* Base{ nullptr };
+						for (auto& bu : m_ObjBuilds) {
+							if (bu.GetMeshSel() == 0) {
+								bool Hit = (std::find_if(CrossPoints.begin(), CrossPoints.end(), [&](Builds* tmp) { return tmp == &bu; }) != CrossPoints.end());
+								if (!Hit) {
+									rbuf--;
+									if (rbuf == 0) {
+										Base = &bu;
+										break;
+									}
+								}
+							}
+						}
+
+						rad = std::atan2f(Base->GetMatrix().zvec().x(), Base->GetMatrix().zvec().z()) + deg2rad(90.f)*(GetRand(2) > 1 ? 1.f : -1.f);
+						BasePos = Base->GetMatrix().pos();
+						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(8.f*Scale_Rate);
+
+						if (BasePos.Length() > 200.f*Scale_Rate) {
+							continue;
+						}
+
+						bool isnear = false;
+						for (auto& bu : CrossPoints) {
+							auto P2 = (bu->GetMatrix().pos() - BasePos).Length();
+							if (P2 < length) {
+								isnear = true;
+								break;
+							}
+						}
+						if (!isnear || count>100) {
+							CrossPoints.emplace_back(Base);
+							break;
+						}
+					}
+					return std::forward_as_tuple(BasePos, rad);
+				};
+				auto FindLoad = [&]() {
+					int total = 0;
+					for (auto& bu : m_ObjBuilds) { if (bu.GetMeshSel() == 0) { total++; } }
+
+					float rad;
+					VECTOR_ref BasePos;
+					int count = 0;
+					while (true) {
+						//count++;
+						int rand = GetRand(total - 1) + 1;
+						int rbuf = rand;
+						Builds* Base{ nullptr };
+						for (auto& bu : m_ObjBuilds) {
+							if (bu.GetMeshSel() == 0) {
+								rbuf--;
+								if (rbuf == 0) {
+									Base = &bu;
+									break;
+								}
+							}
+						}
+
+						rad = std::atan2f(Base->GetMatrix().zvec().x(), Base->GetMatrix().zvec().z()) + deg2rad(90.f)*(GetRand(2) > 1 ? 1.f : -1.f);
+						BasePos = Base->GetMatrix().pos();
+						BasePos += VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(8.f*Scale_Rate);
+
+						if (count > 100) {
+							break;
+						}
+
+						if (BasePos.Length() > 200.f*Scale_Rate) {
+							continue;
+						}
+
+						bool isnear = false;
+						for (auto& bu : m_ObjBuilds) {
+							if (Base == &bu) { continue; }
+							if (bu.GetMeshSel() >= 5) {
+								auto P2 = (bu.GetMatrix().pos() - BasePos).Length();
+								if (P2 < 14.f*Scale_Rate) {
+									isnear = true;
+									break;
+								}
+							}
+						}
+						if (!isnear) {
+							for (auto& bu : m_ObjBuilds) {
+								if (Base == &bu) { continue; }
+								if (bu.GetMeshSel() == 0) {
+									auto P2 = (bu.GetMatrix().pos() - BasePos).Length();
+									if (P2 < 4.f*Scale_Rate) {
+										isnear = true;
+										break;
+									}
+								}
+							}
+						}
+						if (!isnear) {
+							for (auto& bu : m_ObjBuilds) {
+								if (Base == &bu) { continue; }
+								if (bu.GetMeshSel() == 3) {
+									auto P2 = (bu.GetMatrix().pos() - BasePos).Length();
+									if (P2 < 14.f*Scale_Rate) {
+										isnear = true;
+										break;
+									}
+								}
+							}
+						}
+						if (!isnear) {
+							break;
+						}
+					}
+					return std::forward_as_tuple(BasePos, rad);
+				};
+				int mini = 0;
+				{
+					int adds = 30;
+					float radBase = deg2rad(GetRandf(180.f));
+					float rad = radBase;
+					VECTOR_ref BasePos;
+					rad = radBase + deg2rad(0.f);
+					{
+						BasePos.Set(0.f, 0.f, 0.f);
+						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						for (int i = mini; i < mini + adds; i++) {
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, true);
+
+							rad += deg2rad(GetRandf(5.f));
+							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						}
+						mini += adds;
+					}
+					rad = radBase + deg2rad(90.f);
+					{
+						BasePos.Set(0.f, 0.f, 0.f);
+						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						for (int i = mini; i < mini + adds; i++) {
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, true);
+
+							rad += deg2rad(GetRandf(5.f));
+							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						}
+						mini += adds;
+					}
+					rad = radBase + deg2rad(180.f);
+					{
+						BasePos.Set(0.f, 0.f, 0.f);
+						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						for (int i = mini; i < mini + adds; i++) {
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, true);
+
+							rad += deg2rad(GetRandf(5.f));
+							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						}
+						mini += adds;
+					}
+					rad = radBase + deg2rad(-90.f);
+					{
+						BasePos.Set(0.f, 0.f, 0.f);
+						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						for (int i = mini; i < mini + adds; i++) {
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, true);
+
+							rad += deg2rad(GetRandf(5.f));
+							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+						}
+						mini += adds;
+					}
+					rad = radBase + deg2rad(-90.f);
+					{
+						BasePos.Set(0.f, 0.f, 0.f);
+						int i = mini;
+						m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 3);
+						m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, true);
+						CrossPoints.emplace_back(&m_ObjBuilds[i]);
+						mini += 1;
+					}
+				}
+				for (int Z = 0; Z < 5; Z++) {
+					{
+						float rad = 0;
+						VECTOR_ref BasePos;
+						int adds = 15;
+						for (int i = 0; i < 4; i++) {
+							std::tie(BasePos, rad) = FindCross((60.f*Scale_Rate) / (float)(Z + 1));
+							{
+								for (int j = mini; j < mini + adds; j++) {
+									bool iscross = false;
+									for (auto& bu : m_ObjBuilds) {
+										if (bu.GetMeshSel() == 0) {
+											auto P2 = (bu.GetMatrix().pos() - BasePos).Length();
+											if (P2 < 4.f*Scale_Rate) {
+												iscross = true;
+												break;
+											}
+										}
+									}
+									if (!iscross) {
+										m_ObjBuilds[j].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
+										m_ObjBuilds[j].SetPosition(*MapCol, BasePos, rad, true);
+									}
+									rad += deg2rad(GetRandf(5.f));
+									BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
+								}
+							}
+							mini += adds;
+						}
+					}
+					for (auto& bu : CrossPoints) {
+						bu->ChangeSel(3);
+					}
+				}
+				{
+					VECTOR_ref BasePos;
+					float rad = 0.f;
+					int adds = 15;
+					for (int bu = 0; bu < 7 - 5; bu++) {
+						for (int i = mini; i < mini + adds; i++) {
+							std::tie(BasePos, rad) = FindLoad();
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 5 + bu);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, false);
+						}
+						mini += adds;
+					}
+				}
+				{
+					VECTOR_ref BasePos;
+					float rad = 0.f;
+					int adds = 5;
+					{
+						for (int i = mini; i < mini + adds; i++) {
+							std::tie(BasePos, rad) = FindLoad();
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 5 + 2);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, false);
+						}
+						mini += adds;
+					}
+				}
+				{
+					VECTOR_ref BasePos;
+					float rad = 0.f;
+					int adds = 15;
+					for (int bu = 8 - 5; bu < 14 - 5; bu++) {
+						for (int i = mini; i < mini + adds; i++) {
+							std::tie(BasePos, rad) = FindLoad();
+							m_ObjBuilds[i].Set(this->m_ColBuildBase, this->m_ColBox2DBuildBase, 5 + bu);
+							m_ObjBuilds[i].SetPosition(*MapCol, BasePos, rad, false);
+						}
+						mini += adds;
+					}
+				}
+				CrossPoints.clear();
+			}
+			for (int i = 0; i < 15; i++) {
+				int total = 0;
+				for (auto& b : m_ObjBuilds) {
+					if (b.GetMeshSel() == i) {
+						total++;
+					}
+				}
+				this->m_Inst[i].Init(this->m_ObjBuildBase, i);
+				this->m_Inst[i].Reset();
+				this->m_Inst[i].Set_start(total);
+				for (auto& b : m_ObjBuilds) {
+					if (b.GetMeshSel() == i) {
+						this->m_Inst[i].Set_one(b.GetMatrix());
+					}
+				}
+				this->m_Inst[i].Execute();
+			}
+
+			MATERIALPARAM							m_Material;
+			m_Material.Diffuse = GetLightDifColor();
+			m_Material.Specular = GetLightSpcColor();
+			m_Material.Ambient = GetLightAmbColor();
+			m_Material.Emissive = GetColorF(0.0f, 0.0f, 0.0f, 0.0f);
+			m_Material.Power = 20.0f;
+			SetMaterialParam(m_Material);
+		}
+		void			Draw() noexcept {
+			for (auto& b : this->m_Inst) {
+				b.Draw();
+			}
+		}
+		void			Dispose(void) noexcept {
+			this->m_ObjBuildBase.Dispose();
+			this->m_ColBuildBase.Dispose();
+			this->m_ColBox2DBuildBase.Dispose();
+			for (auto& b : this->m_Inst) {
+				b.Dispose();
+			}
+			this->m_Inst.clear();
+		}
+
+	};
 	//
 	struct treePats {
 		MV1 obj, obj_far;
@@ -1263,8 +1580,8 @@ namespace FPS_n2 {
 						(float)(GetRand(300) - 150)*1.f*Scale_Rate);
 					bool isnear = false;
 					for (const auto& bu : BGBuild) {
-						if (bu.GetFrameSel() >= 0) {
-							auto pos_p = (t.pos - bu.GetPosition().pos()); pos_p.y(0);
+						if (bu.GetMeshSel() >= 0) {
+							auto pos_p = (t.pos - bu.GetMatrix().pos()); pos_p.y(0);
 							if (pos_p.size() < 20.f*Scale_Rate) {
 								isnear = true;
 								break;

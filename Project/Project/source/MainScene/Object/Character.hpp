@@ -887,10 +887,11 @@ namespace FPS_n2 {
 					this->m_move.vec.z(vecBuf.z());
 				}
 				{
-					auto HitResult = this->m_BackGround->GetGroundCol().CollCheck_Line(this->m_PosBuf + VECTOR_ref::up() * -1.f, this->m_PosBuf + VECTOR_ref::up() * 20.f);
-					if (HitResult.HitFlag == TRUE) {
+					VECTOR_ref repos_tmp = this->m_PosBuf + VECTOR_ref::up() * 20.f;
+					VECTOR_ref pos_tmp = this->m_PosBuf + VECTOR_ref::up() * -1.f;
+					if (this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true)) {
 						auto yPos = this->m_PosBuf.y();
-						Easing(&yPos, HitResult.HitPosition.y, 0.8f, EasingType::OutExpo);
+						Easing(&yPos, pos_tmp.y(), 0.8f, EasingType::OutExpo);
 						this->m_PosBuf.y(yPos);
 						this->m_move.vec.y(0.f);
 					}
@@ -900,33 +901,15 @@ namespace FPS_n2 {
 				}
 				this->m_PosBuf += this->m_move.vec;
 
-
-				std::vector<MV1*> cols;
-				cols.emplace_back((MV1*)(&this->m_BackGround->GetGroundCol()));
-				for (int i = 0; i < this->m_BackGround->GetWallGroundColNum(); i++) {
-					cols.emplace_back((MV1*)(this->m_BackGround->GetWallGroundCol(i)));
-				}
-
-				bool ishit = false;
-				for (const auto& c : cols) {
-					auto HitDim = c->CollCheck_Capsule(GetEyePosition(), GetGunPtrNow()->GetFrameWorldMat(GunFrame::Muzzle).pos(), 0.5f);
-					if (HitDim.HitNum > 0) {
-						ishit = true;
-						break;
-					}
-				}
-				if (ishit) {
+				if (this->m_BackGround->CheckCapsuletoMap(GetEyePosition(), GetGunPtrNow()->GetFrameWorldMat(GunFrame::Muzzle).pos(), 0.5f)) {
 					m_IsStuckGun = true;
 				}
-				else {
-					if (m_IsStuckGun) {
-						this->m_ReadyTimer = 0.1f;
-					}
+				else if (m_IsStuckGun) {
+					this->m_ReadyTimer = 0.1f;
 					m_IsStuckGun = false;
 				}
 
-
-				col_wall(OLDpos, &this->m_PosBuf, cols);
+				col_wall(OLDpos, &this->m_PosBuf, this->m_BackGround->GetGroundCols());
 
 				if (this->m_PosBufOverRideFlag) {
 					this->m_PosBufOverRideFlag = false;

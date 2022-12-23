@@ -519,10 +519,11 @@ namespace FPS_n2 {
 		int						m_vnum{ -1 };			//
 		int						m_pnum{ -1 };			//
 		MV1_REF_POLYGONLIST		m_RefMesh{};			//
+		int						m_Mesh{ 0 };			//
 	private:
 		void			Init_one(void) noexcept {
-			MV1RefreshReferenceMesh(this->m_obj.get(), -1, TRUE);			//参照用メッシュの更新
-			this->m_RefMesh = MV1GetReferenceMesh(this->m_obj.get(), -1, TRUE);	//参照用メッシュの取得
+			MV1RefreshReferenceMesh(this->m_obj.get(), -1, TRUE, FALSE, m_Mesh);				//参照用メッシュの更新
+			this->m_RefMesh = MV1GetReferenceMesh(this->m_obj.get(), -1, TRUE, FALSE, m_Mesh);	//参照用メッシュの取得
 		}
 	public:
 		//リセット
@@ -576,10 +577,19 @@ namespace FPS_n2 {
 			this->m_pnum += this->m_RefMesh.PolygonNum * 3;
 		}
 	public:
-		void			Init(std::string pngpath, std::string mv1path) noexcept {
+		void			Init(MV1& mv1path, int MeshNum) noexcept {
 			SetUseASyncLoadFlag(FALSE);
+			m_Mesh = MeshNum;
+			auto path = MV1GetTextureGraphHandle(mv1path.get(), MV1GetMaterialDifMapTexture(mv1path.get(), MV1GetMeshMaterial(mv1path.get(), m_Mesh)));
+			this->m_pic = path;								 //grass
+			this->m_obj = mv1path.Duplicate();				//弾痕
+			Init_one();
+		}
+		void			Init(std::string pngpath, std::string mv1path, int MeshNum) noexcept {
+			SetUseASyncLoadFlag(FALSE);
+			m_Mesh = MeshNum;
 			this->m_pic = GraphHandle::Load(pngpath);		 //grass
-			MV1::Load(mv1path, &this->m_obj);					//弾痕
+			MV1::Load(mv1path, &this->m_obj);				//弾痕
 			Init_one();
 		}
 		void			Execute(void) noexcept {
@@ -608,7 +618,7 @@ namespace FPS_n2 {
 	public:
 		//初期化
 		void			Init(void) noexcept {
-			m_inst.Init("data/m_obj/hit/hit.png", "data/m_obj/hit/m_obj.mv1");
+			m_inst.Init("data/m_obj/hit/hit.png", "data/m_obj/hit/m_obj.mv1", -1);
 		}
 		//毎回のリセット
 		void			Clear(void) noexcept {

@@ -83,23 +83,6 @@ namespace FPS_n2 {
 					//this->m_col.RefreshCollInfo();
 				}
 			}
-
-			const auto		GetMapColNearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) {
-				bool ans = false;
-				while (true) {
-					auto colres = this->m_BackGround->GetGroundCol().CollCheck_Line(StartPos, *EndPos);
-					if (colres.HitFlag == TRUE) {
-						ans = true;
-						if (*EndPos == colres.HitPosition) { break; }
-						*EndPos = colres.HitPosition;
-					}
-					else {
-						break;
-					}
-				}
-				return ans;
-			}
-
 			//”»’è‹N“®
 			const auto		RefreshCol(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float pRange) {
 				if (this->m_ColActive) { return true; }				//‚·‚Å‚É‹N“®‚µ‚Ä‚¢‚é‚È‚ç–³Ž‹

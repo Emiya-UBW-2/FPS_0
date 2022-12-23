@@ -10,61 +10,93 @@ namespace FPS_n2 {
 			MV1							m_ObjGroundCol;
 			MV1							m_ObjGroundCol_Box2D;
 
-			MV1							m_ObjBuildBase;
-			MV1							m_ColBuildBase;
-			MV1							m_ColBox2DBuildBase;
-
-			std::vector<Builds>			m_ObjBuilds;
-
 			std::vector<VECTOR_ref>		m_WayPoint;
+			std::vector<MV1*>			m_MapCols;
 
 			int softimage;
 
+			BuildControl				m_BuildControl;
 			Grass						m_grass;
 			TreeControl					m_Tree;
 			Box2DWall					m_Box2DWall;
 			//BreakWall					m_BreakWall;
 		public://getter
-			const auto&		GetGroundCol(void) noexcept { return this->m_ObjGroundCol; }
-
-			const auto&		GetBuildCol(void) noexcept { return this->m_ObjBuilds; }
+			const auto&		GetGroundCols(void) noexcept { return this->m_MapCols; }
+			//const auto&		GetBuildCol(void) noexcept { return this->m_BuildControl.GetBuildCol(); }
 			const auto&		GetWayPoint(void) noexcept { return this->m_WayPoint; }
-			
-
 			const std::shared_ptr<b2World>&	GetBox2Dworld(void) noexcept {
 				return this->m_Box2DWall.GetBox2Dworld();
 				return nullptr;
 			}
 
-			const auto*		GetWallGroundCol(int id) noexcept {
-				//return &this->m_BreakWall.GetWallGroundCol(id);
-				id = 0;
-				return (MV1*)nullptr;
-			}
-			const auto		GetWallGroundColNum() const noexcept {
-				//return this->m_BreakWall.GetWallGroundColNum();
-				return 0;
-			}
-			const auto		GetWallCol(const VECTOR_ref&, VECTOR_ref*, VECTOR_ref*, float) noexcept {
+			const auto		GetWallCol(const VECTOR_ref&, VECTOR_ref*, VECTOR_ref*, float) noexcept {//const VECTOR_ref& repos, VECTOR_ref* pos, VECTOR_ref* norm, float radius
+				//return this->m_BreakWall.GetWallCol(repos, pos, norm, radius);
 				return false;
 			}
-			/*
-			const auto		GetWallCol(const VECTOR_ref& repos, VECTOR_ref* pos, VECTOR_ref* norm, float radius) noexcept {
-				return this->m_BreakWall.GetWallCol(repos, pos, norm, radius);
-			}
-			//*/
-			void			CheckTreetoSquare(
-				const VECTOR_ref& cornerLF, const VECTOR_ref& cornerRF, const VECTOR_ref& cornerRR, const VECTOR_ref& cornerLR
-				, const VECTOR_ref& center, float speed
-			) {
+			void			CheckTreetoSquare(const VECTOR_ref& cornerLF, const VECTOR_ref& cornerRF, const VECTOR_ref& cornerRR, const VECTOR_ref& cornerLR, const VECTOR_ref& center, float speed) {
 				m_Tree.CheckTreetoSquare(cornerLF, cornerRF, cornerRR, cornerLR, center, speed);
 			}
-		private:
-			void			DrawCommon(bool ischeckDraw) noexcept {
-				this->m_ObjGround.DrawModel();
-				for (auto& b : m_ObjBuilds) {
-					b.Draw(ischeckDraw);
+			const auto		CheckLinetoMap(const VECTOR_ref& StartPos, VECTOR_ref* EndPos, bool isNearest, VECTOR_ref* Normal = nullptr) {
+				bool isHit = false;
+				{
+					auto col_p = this->m_ObjGroundCol.CollCheck_Line(StartPos, *EndPos);
+					if (col_p.HitFlag == TRUE) {
+						isHit = true;
+						if (isNearest) {
+							*EndPos = col_p.HitPosition;
+							if (Normal) { *Normal = col_p.Normal; }
+						}
+						else {
+							return isHit;
+						}
+					}
 				}
+				for (auto& bu : this->m_BuildControl.GetBuildCol()) {
+					if (GetMinLenSegmentToPoint(StartPos, *EndPos, bu.GetMatrix().pos()) < 20.f*Scale_Rate) {
+						auto col_p = bu.GetCol(StartPos, *EndPos);
+						if (col_p.HitFlag == TRUE) {
+							isHit = true;
+							if (isNearest) {
+								*EndPos = col_p.HitPosition;
+								if (Normal) { *Normal = col_p.Normal; }
+							}
+							else {
+								return isHit;
+							}
+						}
+					}
+				}
+				return isHit;
+			}
+			const auto		CheckCapsuletoMap(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float radius) {
+				for (const auto& c : m_MapCols) {
+					if (c->CollCheck_Capsule(StartPos, EndPos, radius).HitNum > 0) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			const auto		GetRoadPointNum() const noexcept {
+				int count = 0;
+				for (const auto& bu : this->m_BuildControl.GetBuildCol()) {
+					if (bu.GetMeshSel() == 0) {
+						count++;
+					}
+				}
+				return count;
+			}
+			const MATRIX_ref*GetRoadPoint(int ID) const noexcept {
+				int count = 0;
+				for (const auto& bu : this->m_BuildControl.GetBuildCol()) {
+					if (bu.GetMeshSel() == 0) {
+						if (ID == count) {
+							return &bu.GetMatrix();
+						}
+						count++;
+					}
+				}
+				return nullptr;
 			}
 		public://
 			void			Load(void) noexcept {
@@ -72,310 +104,40 @@ namespace FPS_n2 {
 				MV1::Load("data/model/map_old/col.mv1", &this->m_ObjGroundCol);
 				MV1::Load("data/model/map_old/col_box2D.mv1", &this->m_ObjGroundCol_Box2D);
 
-				MV1::Load("data/model/build/model.mv1", &this->m_ObjBuildBase);
-				MV1::Load("data/model/build/col.mv1", &this->m_ColBuildBase);
-				MV1::Load("data/model/build/colBox2D.mv1", &this->m_ColBox2DBuildBase);
-
 				MV1::Load("data/model/sky/model.mv1", &this->m_ObjSky);
 
-				m_Tree.Load();
+				this->m_BuildControl.Load();
+				this->m_Tree.Load();
 			}
 			//
 			void			Init(void) noexcept {
 				//地形
 				this->m_ObjGroundCol.SetupCollInfo(64, 16, 64);
-
-
-				std::vector<Builds*> CrossPoints;
-				auto FindCross = [&](float length) {
-					int total = 0;
-					for (auto& bu : m_ObjBuilds) {
-						if (bu.GetFrameSel() == 0) {
-							bool Hit = (std::find_if(CrossPoints.begin(), CrossPoints.end(), [&](Builds* tmp) { return tmp == &bu; }) != CrossPoints.end());
-							if (!Hit) {
-								total++;
-							}
-						}
-					}
-
-					float rad;
-					VECTOR_ref BasePos;
-					while (true) {
-						int rand = GetRand(total - 1) + 1;
-						int rbuf = rand;
-						Builds* Base{ nullptr };
-						for (auto& bu : m_ObjBuilds) {
-							if (bu.GetFrameSel() == 0) {
-								bool Hit = (std::find_if(CrossPoints.begin(), CrossPoints.end(), [&](Builds* tmp) { return tmp == &bu; }) != CrossPoints.end());
-								if (!Hit) {
-									rbuf--;
-									if (rbuf == 0) {
-										Base = &bu;
-										break;
-									}
-								}
-							}
-						}
-
-						rad = std::atan2f(Base->GetPosition().zvec().x(), Base->GetPosition().zvec().z()) + deg2rad(90.f)*(GetRand(2) > 1 ? 1.f : -1.f);
-						BasePos = Base->GetPosition().pos();
-						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(8.f*Scale_Rate);
-
-						if (BasePos.Length() > 200.f*Scale_Rate) {
-							continue;
-						}
-
-						bool isnear = false;
-						for (auto& bu : CrossPoints) {
-							auto P2 = (bu->GetPosition().pos() - BasePos).Length();
-							if (P2 < length) {
-								isnear = true;
-								break;
-							}
-						}
-						if (!isnear) {
-							CrossPoints.emplace_back(Base);
-							break;
-						}
-					}
-					return std::forward_as_tuple(BasePos, rad);
-				};
-				auto FindLoad = [&]() {
-					int total = 0;
-					for (auto& bu : m_ObjBuilds) { if (bu.GetFrameSel() == 0) { total++; } }
-
-					float rad;
-					VECTOR_ref BasePos;
-					while (true) {
-						int rand = GetRand(total - 1) + 1;
-						int rbuf = rand;
-						Builds* Base{ nullptr };
-						for (auto& bu : m_ObjBuilds) {
-							if (bu.GetFrameSel() == 0) {
-								rbuf--;
-								if (rbuf == 0) {
-									Base = &bu;
-									break;
-								}
-							}
-						}
-
-						rad = std::atan2f(Base->GetPosition().zvec().x(), Base->GetPosition().zvec().z()) + deg2rad(90.f)*(GetRand(2) > 1 ? 1.f : -1.f);
-						BasePos = Base->GetPosition().pos();
-						BasePos += VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(8.f*Scale_Rate);
-
-						if (BasePos.Length() > 200.f*Scale_Rate) {
-							continue;
-						}
-
-						bool isnear = false;
-						for (auto& bu : m_ObjBuilds) {
-							if (Base == &bu) { continue; }
-							if (bu.GetFrameSel() >= 5) {
-								auto P2 = (bu.GetPosition().pos() - BasePos).Length();
-								if (P2 < 14.f*Scale_Rate) {
-									isnear = true;
-									break;
-								}
-							}
-						}
-						if (!isnear) {
-							for (auto& bu : m_ObjBuilds) {
-								if (Base == &bu) { continue; }
-								if (bu.GetFrameSel() == 0) {
-									auto P2 = (bu.GetPosition().pos() - BasePos).Length();
-									if (P2 < 4.f*Scale_Rate) {
-										isnear = true;
-										break;
-									}
-								}
-							}
-						}
-						if (!isnear) {
-							for (auto& bu : m_ObjBuilds) {
-								if (Base == &bu) { continue; }
-								if (bu.GetFrameSel() == 3) {
-									auto P2 = (bu.GetPosition().pos() - BasePos).Length();
-									if (P2 < 14.f*Scale_Rate) {
-										isnear = true;
-										break;
-									}
-								}
-							}
-						}
-						if (!isnear) {
-							break;
-						}
-					}
-					return std::forward_as_tuple(BasePos, rad);
-				};
-
-				m_ObjBuilds.resize((4 * 30 + 1) + (15 * 4) * 5 + 15 * (14 - 5 - 1) + 5);
-				int mini = 0;
+				this->m_BuildControl.Init(&this->m_ObjGroundCol);
 				{
-					int adds = 30;
-					float radBase = deg2rad(GetRandf(180.f));
-					float rad = radBase;
-					VECTOR_ref BasePos;
-					rad = radBase + deg2rad(0.f);
-					{
-						BasePos.Set(0.f, 0.f, 0.f);
-						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						for (int i = mini; i < mini + adds; i++) {
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, true);
-
-							rad += deg2rad(GetRandf(5.f));
-							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						}
-						mini += adds;
-					}
-					rad = radBase + deg2rad(90.f);
-					{
-						BasePos.Set(0.f, 0.f, 0.f);
-						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						for (int i = mini; i < mini + adds; i++) {
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, true);
-
-							rad += deg2rad(GetRandf(5.f));
-							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						}
-						mini += adds;
-					}
-					rad = radBase + deg2rad(180.f);
-					{
-						BasePos.Set(0.f, 0.f, 0.f);
-						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						for (int i = mini; i < mini + adds; i++) {
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, true);
-
-							rad += deg2rad(GetRandf(5.f));
-							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						}
-						mini += adds;
-					}
-					rad = radBase + deg2rad(-90.f);
-					{
-						BasePos.Set(0.f, 0.f, 0.f);
-						BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						for (int i = mini; i < mini + adds; i++) {
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, true);
-
-							rad += deg2rad(GetRandf(5.f));
-							BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-						}
-						mini += adds;
-					}
-					rad = radBase + deg2rad(-90.f);
-					{
-						BasePos.Set(0.f, 0.f, 0.f);
-						int i = mini;
-						m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 3);
-						m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, true);
-						CrossPoints.emplace_back(&m_ObjBuilds[i]);
-						mini += 1;
-					}
-				}
-				for (int Z = 0; Z < 5; Z++) {
-					{
-						float rad = 0;
-						VECTOR_ref BasePos;
-						int adds = 15;
-						for (int i = 0; i < 4; i++) {
-							std::tie(BasePos, rad) = FindCross((60.f*Scale_Rate) / (float)(Z + 1));
-							{
-								for (int j = mini; j < mini + adds; j++) {
-									bool iscross = false;
-									for (auto& bu : m_ObjBuilds) {
-										if (bu.GetFrameSel() == 0) {
-											auto P2 = (bu.GetPosition().pos() - BasePos).Length();
-											if (P2 < 4.f*Scale_Rate) {
-												iscross = true;
-												break;
-											}
-										}
-									}
-									if (!iscross) {
-										m_ObjBuilds[j].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 0);
-										m_ObjBuilds[j].SetPosition(this->m_ObjGroundCol, BasePos, rad, true);
-									}
-									rad += deg2rad(GetRandf(5.f));
-									BasePos -= VECTOR_ref::vget(sin(rad), 0.f, cos(rad))*(7.f*Scale_Rate);
-								}
-							}
-							mini += adds;
-						}
-					}
-					for (auto& bu : CrossPoints) {
-						bu->ChangeSel(3);
-					}
-				}
-				{
-					VECTOR_ref BasePos;
-					float rad = 0.f;
-					int adds = 15;
-					for (int bu = 0; bu < 7 - 5; bu++) {
-						for (int i = mini; i < mini + adds; i++) {
-							std::tie(BasePos, rad) = FindLoad();
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 5 + bu);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, false);
-						}
-						mini += adds;
-					}
-				}
-				{
-					VECTOR_ref BasePos;
-					float rad = 0.f;
-					int adds = 5;
-					{
-						for (int i = mini; i < mini + adds; i++) {
-							std::tie(BasePos, rad) = FindLoad();
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 5 + 2);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, false);
-						}
-						mini += adds;
-					}
-				}
-				{
-					VECTOR_ref BasePos;
-					float rad = 0.f;
-					int adds = 15;
-					for (int bu = 8 - 5; bu < 14 - 5; bu++) {
-						for (int i = mini; i < mini + adds; i++) {
-							std::tie(BasePos, rad) = FindLoad();
-							m_ObjBuilds[i].Set(this->m_ObjBuildBase, this->m_ColBuildBase, this->m_ColBox2DBuildBase, 5 + bu);
-							m_ObjBuilds[i].SetPosition(this->m_ObjGroundCol, BasePos, rad, false);
-						}
-						mini += adds;
-					}
-				}
-				CrossPoints.clear();
-				{
-					for (auto& bu : m_ObjBuilds) {
-						if (bu.GetFrameSel() == 3) {
-							this->m_WayPoint.emplace_back(bu.GetPosition().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
+					for (auto& bu : this->m_BuildControl.GetBuildCol()) {
+						if (bu.GetMeshSel() == 3) {
+							this->m_WayPoint.emplace_back(bu.GetMatrix().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
 						}
 					}
 
 				}
 				//空
 				MV1SetDifColorScale(this->m_ObjSky.get(), GetColorF(0.9f, 0.9f, 0.9f, 1.0f));
-
 				//Box2D壁
-				this->m_Box2DWall.Add(MV1GetReferenceMesh(this->m_ObjGroundCol_Box2D.get(), 0, FALSE));
-				MV1TerminateReferenceMesh(this->m_ObjGroundCol_Box2D.get(), 0, FALSE);
-				for (auto& bu : m_ObjBuilds) {
-					if (bu.GetFrameSel() >= 5) {
-						this->m_Box2DWall.Add(MV1GetReferenceMesh(bu.GetColBox2D().get(), bu.GetFrameSel(), TRUE));
-						MV1TerminateReferenceMesh(bu.GetColBox2D().get(), bu.GetFrameSel(), TRUE);
+				{
+					this->m_Box2DWall.Add(MV1GetReferenceMesh(this->m_ObjGroundCol_Box2D.get(), 0, FALSE));
+					MV1TerminateReferenceMesh(this->m_ObjGroundCol_Box2D.get(), 0, FALSE);
+					for (auto& bu : this->m_BuildControl.GetBuildCol()) {
+						if (bu.GetMeshSel() >= 5) {
+							this->m_Box2DWall.Add(MV1GetReferenceMesh(bu.GetColBox2D().get(), bu.GetMeshSel(), TRUE));
+							MV1TerminateReferenceMesh(bu.GetColBox2D().get(), bu.GetMeshSel(), TRUE);
+						}
 					}
+					this->m_Box2DWall.Init();
 				}
-				this->m_Box2DWall.Init();
 				//木
-				m_Tree.Init(&this->m_ObjGroundCol, m_ObjBuilds);
+				m_Tree.Init(&this->m_ObjGroundCol, this->m_BuildControl.GetBuildCol());
 				//草
 				{
 					float MAPX = 300.f*Scale_Rate;
@@ -395,14 +157,14 @@ namespace FPS_n2 {
 					BaseScreen.SetDraw_Screen(false);
 					{
 						BaseGrass.DrawGraph(0, 0, false);
-						for (auto& b : m_ObjBuilds) {
-							if (b.GetFrameSel() >= 0) {
-								auto pos = b.GetPosition().pos();
+						for (auto& b : this->m_BuildControl.GetBuildCol()) {
+							if (b.GetMeshSel() >= 0) {
+								auto pos = b.GetMatrix().pos();
 								BlackScreen.DrawRotaGraph(
 									(int)((float)x*(pos.x() + MAPX / 2.f) / MAPX),
 									(int)((float)y*(pos.z() + MAPZ / 2.f) / MAPZ),
 									1.f,
-									std::atan2f(b.GetPosition().zvec().x(), b.GetPosition().zvec().z()),
+									std::atan2f(b.GetMatrix().zvec().x(), b.GetMatrix().zvec().z()),
 									false
 								);
 							}
@@ -413,7 +175,16 @@ namespace FPS_n2 {
 					//DeleteSoftImage(softimage);
 				}
 				//壁
-				//this->m_BreakWall.Init();
+				{
+					//this->m_BreakWall.Init();
+				}
+				//コリジョンども
+				{
+					this->m_MapCols.emplace_back((MV1*)(&this->m_ObjGroundCol));
+					//for (int i = 0; i < this->m_BreakWall.GetWallGroundColNum(); i++) {
+					//	this->m_MapCols.emplace_back((MV1*)(this->m_BreakWall.GetWallGroundCol(i)));
+					//}
+				}
 			}
 			//
 			void			FirstExecute(void) noexcept {
@@ -422,7 +193,7 @@ namespace FPS_n2 {
 			//
 			void			Execute(void) noexcept {
 				//this->m_BreakWall.Execute();
-				m_Tree.Execute();
+				this->m_Tree.Execute();
 			}
 			//
 			void			BG_Draw(void) noexcept {
@@ -431,16 +202,18 @@ namespace FPS_n2 {
 				SetUseLighting(TRUE);
 			}
 			void			Shadow_Draw_Far(void) noexcept {
-				DrawCommon(false);
+				this->m_ObjGround.DrawModel();
+				this->m_BuildControl.Draw();
 			}
 			void			Shadow_Draw_NearFar(void) noexcept {
-				m_Tree.Draw(false);
+				this->m_Tree.Draw(false);
 			}
 			void			Shadow_Draw(void) noexcept {
 			}
 			void			Draw(void) noexcept {
-				DrawCommon(true);
-				m_Tree.Draw(true);
+				this->m_ObjGround.DrawModel();
+				this->m_BuildControl.Draw();
+				this->m_Tree.Draw(true);
 				this->m_grass.Draw();
 
 				//DrawSoftImage(0,0,softimage);
@@ -449,12 +222,13 @@ namespace FPS_n2 {
 			void			Dispose(void) noexcept {
 				this->m_ObjSky.Dispose();
 				this->m_ObjGround.Dispose();
-				this->m_ObjBuildBase.Dispose();
 				this->m_ObjGroundCol.Dispose();
+
+				this->m_BuildControl.Dispose();
 				this->m_grass.Dispose();
 				this->m_Box2DWall.Dispose();
 				//this->m_BreakWall.Dispose();
-				m_Tree.Dispose();
+				this->m_Tree.Dispose();
 			}
 		};
 	};

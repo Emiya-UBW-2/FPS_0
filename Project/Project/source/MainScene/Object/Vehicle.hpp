@@ -518,30 +518,17 @@ namespace FPS_n2 {
 						this->m_gndsmksize = 0.1f;
 					}
 					//
-					void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pMapPtr, bool checkmore) noexcept {
+					void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround) noexcept {
 						if (this->m_frame.GetFrameID() >= 0) {
 							auto y_vec = pTargetObj->GetMatrix().yvec();
 							pTargetObj->frame_Reset(this->m_frame.GetFrameID());
 							auto startpos = pTargetObj->frame(this->m_frame.GetFrameID());
-							auto colres = pMapPtr->GetGroundCol().CollCheck_Line(
-								startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) + 2.f*Scale_Rate),
-								startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
-							if (checkmore) {
-								for (auto& bu : pMapPtr->GetBuildCol()) {
-									auto pos_p = (startpos - bu.GetPosition().pos()); pos_p.y(0);
-									if (pos_p.size() < 5.f*Scale_Rate) {
-										auto col_p = bu.GetCol(
-											startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) + 2.f*Scale_Rate),
-											startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate));
-										if (col_p.HitFlag == TRUE) {
-											colres = col_p;
-										}
-									}
-								}
-							}
-							this->m_Res_y = (colres.HitFlag == TRUE) ? colres.HitPosition.y : (std::numeric_limits<float>::max)();
+							auto pos_t1 = startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) + 2.f*Scale_Rate);
+							auto pos_t2 = startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate);
+							auto ColRes = pBackGround->CheckLinetoMap(pos_t1, &pos_t2, true);
+							this->m_Res_y = (ColRes) ? pos_t2.y() : (std::numeric_limits<float>::max)();
 							pTargetObj->SetFrameLocalMatrix(this->m_frame.GetFrameID(),
-								MATRIX_ref::Mtrans(VECTOR_ref::up() * ((colres.HitFlag == TRUE) ? (this->m_Res_y + y_vec.y() * this->m_frame.GetFrameWorldPosition().y() - startpos.y()) : -0.4f*Scale_Rate)) *
+								MATRIX_ref::Mtrans(VECTOR_ref::up() * ((ColRes) ? (this->m_Res_y + y_vec.y() * this->m_frame.GetFrameWorldPosition().y() - startpos.y()) : -0.4f*Scale_Rate)) *
 								MATRIX_ref::Mtrans(this->m_frame.GetFrameWorldPosition())
 							);
 						}
@@ -632,9 +619,9 @@ namespace FPS_n2 {
 					}
 				}
 				//
-				void			FirstExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pMapPtr, bool checkmore) noexcept {
+				void			FirstExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround) noexcept {
 					for (auto& t : this->m_downsideframe) {
-						t.FrameExecute(pTargetObj, pMapPtr, checkmore);
+						t.FrameExecute(pTargetObj, pBackGround);
 					}
 				}
 				void			LateExecute(bool IsLeft, const VhehicleData* pUseVeh, MV1* pTargetObj, const b2Vec2& pGravity, float pWheelRotate, float pSpd) noexcept {

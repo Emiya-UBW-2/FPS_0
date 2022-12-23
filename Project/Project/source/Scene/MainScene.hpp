@@ -400,8 +400,11 @@ namespace FPS_n2 {
 				for (auto& c : this->character_Pool) {
 					size_t index = &c - &this->character_Pool.front();
 					VECTOR_ref pos_t = VECTOR_ref::vget(0.f + (float)(index)*20.f, 0.f, 0.f);
-					auto HitResult = this->m_BackGround->GetGroundCol().CollCheck_Line(pos_t + VECTOR_ref::up() * -125.f, pos_t + VECTOR_ref::up() * 125.f);
-					if (HitResult.HitFlag == TRUE) { pos_t = HitResult.HitPosition; }
+					auto pos_t1 = pos_t + VECTOR_ref::up() * 1250.f;
+					auto pos_t2 = pos_t + VECTOR_ref::up() * -1250.f;
+					if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true)) {
+						pos_t = pos_t2;
+					}
 					c->ValueSet(deg2rad(0.f), deg2rad(-90.f), false, pos_t, (PlayerID)index);
 					c->SetGunPtr(
 						(std::shared_ptr<GunClass>&)(*ObjMngr->GetObj(ObjType::Gun, (int)(index * 2 + 0))),
@@ -417,37 +420,39 @@ namespace FPS_n2 {
 						c->SetCharaType(CharaTypeID::Enemy);
 					}
 				}
-				//登録
-				std::vector<Builds*> Select;
-				for (auto& v : this->vehicle_Pool) {
-					size_t index = &v - &this->vehicle_Pool.front();
-					VECTOR_ref pos_t = VECTOR_ref::vget(
-						(float)(GetRand(30) - 15)*5.f*Scale_Rate,
-						0.f,
-						(float)(GetRand(30) - 15)*5.f*Scale_Rate);
-					float rad_t = deg2rad(90);
-					for (auto& bu : this->m_BackGround->GetBuildCol()) {
-						if (bu.GetFrameSel() == 0) {
-							bool Hit = (std::find_if(Select.begin(), Select.end(), [&](Builds* tmp) { return tmp == &bu; }) != Select.end());
+				//戦車
+				{
+					std::vector<int> OtherSelect;
+					for (auto& v : this->vehicle_Pool) {
+						size_t index = &v - &this->vehicle_Pool.front();
+						int ID = 0;
+						while (true) {
+							ID = GetRand(this->m_BackGround->GetRoadPointNum() - 1);
+							bool Hit = (std::find_if(OtherSelect.begin(), OtherSelect.end(), [&](int tmp) { return tmp == ID; }) != OtherSelect.end());
 							if (!Hit) {
-								auto pos_p = (pos_t - bu.GetPosition().pos()); pos_p.y(0);
-								if (pos_p.size() < 20.f*Scale_Rate) {
-									pos_t = bu.GetPosition().pos();
-									rad_t = std::atan2f(bu.GetPosition().zvec().x(), bu.GetPosition().zvec().z());
-
-									Select.emplace_back((Builds*)&bu);
+								auto Mat = *this->m_BackGround->GetRoadPoint(ID);
+								VECTOR_ref pos_t = Mat.pos();
+								if (
+									-300.f*Scale_Rate < pos_t.x() && pos_t.x() < 300.f*Scale_Rate
+									- 300.f*Scale_Rate < pos_t.z() && pos_t.z() < 300.f*Scale_Rate
+									) {
+									OtherSelect.emplace_back(ID);
 									break;
 								}
 							}
 						}
+						auto Mat = *this->m_BackGround->GetRoadPoint(ID);
+						VECTOR_ref pos_t = Mat.pos();
+						float rad_t = std::atan2f(Mat.zvec().x(), -Mat.zvec().z());
+						auto pos_t1 = pos_t + VECTOR_ref::up() * 1250.f;
+						auto pos_t2 = pos_t + VECTOR_ref::up() * -1250.f;
+						if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true)) {
+							pos_t = pos_t2;
+						}
+						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
+						v->ValueSet(deg2rad(0), rad_t, pos_t);
 					}
-
-					auto HitResult = this->m_BackGround->GetGroundCol().CollCheck_Line(pos_t + VECTOR_ref::up() * -1250.f, pos_t + VECTOR_ref::up() * 1250.f);
-					if (HitResult.HitFlag == TRUE) { pos_t = HitResult.HitPosition; }
-					v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
-					v->ValueSet(deg2rad(0), rad_t, pos_t);
 				}
-				Select.clear();
 				//player
 				PlayerMngr->Init(Player_num);
 				AICtrl.resize(Player_num);
@@ -512,7 +517,7 @@ namespace FPS_n2 {
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 #ifdef DEBUG
-				//auto* DebugParts = DebugClass::Instance();					//デバッグ
+				auto* DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
 				//FirstDoingv
 				if (GetIsFirstLoop()) {
@@ -682,10 +687,13 @@ namespace FPS_n2 {
 						}
 					}
 					//
+#ifdef DEBUG
+					DebugParts->SetPoint();//次ポイントまで3.0=0.3x10?
+#endif // DEBUG
 					bool isready = true;
 					for (int i = 0; i < Player_num; i++) {
-						auto& c = (std::shared_ptr<CharacterClass>&)(*ObjMngr->GetObj(ObjType::Human, i));
-						auto& v = (std::shared_ptr<VehicleClass>&)(*ObjMngr->GetObj(ObjType::Vehicle, i));
+						auto& c = PlayerMngr->GetPlayer(i).GetChara();
+						auto& v = PlayerMngr->GetPlayer(i).GetVehicle();
 						if (m_NetWorkBrowser.GetSequence() == SequenceEnum::MainGame) {
 							auto tmp = m_NetWorkBrowser.GetNowServerPlayerData(i, PlayerMngr->GetPlayer(i).IsRide());
 							if (i == GetMyPlayerID()) {
@@ -733,7 +741,7 @@ namespace FPS_n2 {
 							}
 							//ダメージイベント処理
 							if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
-								if (ObjMngr->GetObj(ObjType::Human, i) != nullptr) {
+								if (c.get() != nullptr) {
 									if (tmp.DamageSwitch != c->GetDamageSwitchRec()) {
 										this->m_DamageEvents.emplace_back(tmp.Damage);
 										c->SetDamageSwitchRec(tmp.DamageSwitch);
@@ -741,7 +749,7 @@ namespace FPS_n2 {
 								}
 							}
 							else {
-								if (ObjMngr->GetObj(ObjType::Vehicle, i) != nullptr) {
+								if (v.get() != nullptr) {
 									if (tmp.DamageSwitch != v->GetDamageSwitchRec()) {
 										this->m_DamageEvents.emplace_back(tmp.Damage);
 										v->SetDamageSwitchRec(tmp.DamageSwitch);
@@ -764,13 +772,13 @@ namespace FPS_n2 {
 									//c->SetInput(OtherInput, isready);
 								}
 								else {
-									AICtrl[i]->AI_move(&OtherInput);
+									AICtrl[i]->AI_move(&OtherInput);//めっちゃ重い
 									v->SetInput(OtherInput, isready, false);
 								}
 							}
 							//ダメージイベント処理
 							if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
-								if (ObjMngr->GetObj(ObjType::Human, i) != nullptr) {
+								if (c.get() != nullptr) {
 									if (c->GetDamageSwitch() != c->GetDamageSwitchRec()) {
 										this->m_DamageEvents.emplace_back(c->GetDamageEvent());
 										c->SetDamageSwitchRec(c->GetDamageSwitch());
@@ -778,7 +786,7 @@ namespace FPS_n2 {
 								}
 							}
 							else {
-								if (ObjMngr->GetObj(ObjType::Vehicle, i) != nullptr) {
+								if (v.get() != nullptr) {
 									if (v->GetDamageSwitch() != v->GetDamageSwitchRec()) {
 										this->m_DamageEvents.emplace_back(v->GetDamageEvent());
 										v->SetDamageSwitchRec(v->GetDamageSwitch());
@@ -787,6 +795,9 @@ namespace FPS_n2 {
 							}
 						}
 					}
+#ifdef DEBUG
+					DebugParts->SetPoint();//次ポイントまで2.2
+#endif // DEBUG
 					m_NetWorkBrowser.LateExecute();
 					//ダメージイベント
 					for (auto& c : this->character_Pool) {
@@ -813,23 +824,7 @@ namespace FPS_n2 {
 					auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
 					auto StartPos = Vehicle->GetGunMuzzlePos(0);
 					auto EndPos = StartPos + Vehicle->GetGunMuzzleVec(0) * 500.f*Scale_Rate;
-					Vehicle->GetMapColNearest(StartPos, &EndPos);
-					while (true) {
-						auto colres = this->m_BackGround->GetGroundCol().CollCheck_Line(StartPos, EndPos);
-						if (colres.HitFlag == TRUE) {
-							if (EndPos == colres.HitPosition) { break; }
-							EndPos = colres.HitPosition;
-						}
-						else {
-							break;
-						}
-					}
-					for (auto&bc : this->m_BackGround->GetBuildCol()) {
-						auto colres = bc.GetCol(StartPos, EndPos);
-						if (colres.HitFlag == TRUE) {
-							EndPos = colres.HitPosition;
-						}
-					}
+					this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, true);
 					for (auto& v : this->vehicle_Pool) {
 						if (v->GetMyPlayerID() == GetMyPlayerID()) { continue; }
 						if (v->RefreshCol(StartPos, EndPos, 10.f*Scale_Rate)) {
@@ -861,17 +856,11 @@ namespace FPS_n2 {
 							auto& a = (std::shared_ptr<AmmoClass>&)(*ammo);
 							if (a->IsActive()) {
 								//AmmoClass
-								MV1_COLL_RESULT_POLY ColResGround = a->ColCheckGround();
+								VECTOR_ref repos_tmp = a->GetMove().repos;
 								VECTOR_ref pos_tmp = a->GetMove().pos;
 								VECTOR_ref norm_tmp;
-								bool hitwall = this->m_BackGround->GetWallCol(a->GetMove().repos, &pos_tmp, &norm_tmp, a->GetCaliberSize());//0.00762f
-								for (auto&bc : this->m_BackGround->GetBuildCol()) {
-									auto colres = bc.GetCol(a->GetMove().repos, pos_tmp);
-									if (colres.HitFlag == TRUE) {
-										ColResGround = colres;
-										pos_tmp = colres.HitPosition;
-									}
-								}
+								bool ColRes = this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, &norm_tmp);
+								ColRes |= this->m_BackGround->GetWallCol(repos_tmp, &pos_tmp, &norm_tmp, a->GetCaliberSize());
 								bool is_HitAll = false;
 								auto& c = *ObjMngr->GetObj(ObjType::Human, a->GetShootedID());//(std::shared_ptr<CharacterClass>&)
 								for (auto& tgt : this->character_Pool) {
@@ -887,22 +876,12 @@ namespace FPS_n2 {
 									is_HitAll |= res.first;
 									if (res.second) { break; }
 								}
-								if ((ColResGround.HitFlag == TRUE || hitwall) && !is_HitAll) {
+								if (ColRes && !is_HitAll) {
 									a->HitGround(pos_tmp);
-
-									if (hitwall) {
-										EffectControl::SetOnce_Any(EffectResource::Effect::ef_gndsmoke, pos_tmp, norm_tmp, a->GetCaliberSize() / 0.1f * Scale_Rate);
-									}
-									else if (ColResGround.HitFlag == TRUE) {
-										EffectControl::SetOnce_Any(EffectResource::Effect::ef_gndsmoke, ColResGround.HitPosition, ColResGround.Normal, a->GetCaliberSize() / 0.1f * Scale_Rate);
-									}
+									EffectControl::SetOnce_Any(EffectResource::Effect::ef_gndsmoke, pos_tmp, norm_tmp, a->GetCaliberSize() / 0.1f * Scale_Rate);
 									/*
 									if (ObjMngr->GetObj(ObjType::Vehicle, a->GetShootedID())) {
-										if (ColResGround.HitFlag == TRUE) {
-										}
-										else if (hitwall) {
-											((std::shared_ptr<VehicleClass>&)v)->HitGround(pos_tmp, (pos_tmp - a->GetMove().repos).Norm(), a->GetMove().vec);
-										}
+										((std::shared_ptr<VehicleClass>&)v)->HitGround(pos_tmp, (pos_tmp - repos_tmp).Norm(), a->GetMove().vec);
 									}
 									//*/
 								}

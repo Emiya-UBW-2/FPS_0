@@ -49,7 +49,7 @@ namespace FPS_n2 {
 		public://getter
 			const auto&		GetShootedID(void) const noexcept { return this->m_ShootCheraID; }
 			const auto&		GetDamage(void) const noexcept { return this->m_AmmoData->GetDamage(); }
-			const auto&		GetCaliberSize(void) const noexcept { return this->m_AmmoData->GetCaliber(); }
+			const auto&		GetCaliberSize(void) const noexcept { return this->m_AmmoData->GetCaliber(); }//0.00762f
 			const auto		GetEffectSize(void) const noexcept { return ((this->m_AmmoData->GetCaliber() >= 0.020f) ? this->m_AmmoData->GetCaliber() : 0.025f) / 0.1f; }
 		public:
 			void			Put(const AmmoData* pAmmoData, const VECTOR_ref& pPos, const VECTOR_ref& pVec, int pMyID) {
@@ -78,15 +78,11 @@ namespace FPS_n2 {
 					}
 				}
 			}
-			const auto		ColCheckGround(void) {
-				MV1_COLL_RESULT_POLY ColResGround; ColResGround.HitFlag = FALSE;
+			const auto		ColCheckGround(VECTOR_ref* Normal = nullptr) {
 				if (IsActive()) {
-					ColResGround = this->m_BackGround->GetGroundCol().CollCheck_Line(this->m_move.repos, this->m_move.pos);
-					if (ColResGround.HitFlag == TRUE) {
-						this->m_move.pos = ColResGround.HitPosition;
-					}
+					return this->m_BackGround->CheckLinetoMap(this->m_move.repos, &this->m_move.pos, true, Normal);
 				}
-				return ColResGround;
+				return false;
 			}
 			const auto		PenetrationCheck(float pArmer, const VECTOR_ref& normal) const noexcept { return (this->m_penetration > (pArmer * (1.0f / std::abs(this->m_move.vec.Norm().dot(normal))))); }
 			void			Penetrate(void) {

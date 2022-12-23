@@ -83,23 +83,12 @@ namespace FPS_n2 {
 						if (tmp.size() >= (w - poss).size()) {
 							auto startpos = w + VECTOR_ref::vget(0, 0.5f*Scale_Rate, 0);
 							auto endpos = poss + VECTOR_ref::vget(0, 0.5f*Scale_Rate, 0);
-							auto colres = m_BackGround->GetGroundCol().CollCheck_Line(startpos, endpos);
-							if (colres.HitFlag == TRUE) {
-								endpos = colres.HitPosition;
-							}
-							for (auto& bu : m_BackGround->GetBuildCol()) {
-								auto length = GetMinLenSegmentToPoint(startpos, endpos, bu.GetPosition().pos());
-								if (length < 5.f*Scale_Rate) {
-									auto col_p = bu.GetCol(startpos, endpos);
-									if (col_p.HitFlag == TRUE) {
-										colres = col_p;
-										endpos = colres.HitPosition;
-									}
+
+							if (!m_BackGround->CheckLinetoMap(startpos, &endpos, true)) {
+								if (zvec == VECTOR_ref::zero() || zvec.Norm().dot((w - poss).Norm()) < 0.f) {
+									tmp = (w - poss);
+									now = int(id);
 								}
-							}
-							if (!(colres.HitFlag == TRUE) && (zvec == VECTOR_ref::zero() || zvec.Norm().dot((w - poss).Norm()) < 0.f)) {
-								tmp = (w - poss);
-								now = int(id);
 							}
 						}
 					}
@@ -132,35 +121,20 @@ namespace FPS_n2 {
 				{
 					bool ans = false;
 					VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
-					VECTOR_ref EndPos;
+					//*
 					for (auto& tgt : *vehicle_Pool) {
 						if (&MyVeh == &tgt) { continue; }
 						if (!tgt->Get_alive()) { continue; }
-						EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
-						if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//Šî€‚Ìì¬
-
-						if (m_BackGround->GetGroundCol().CollCheck_Line(StartPos, EndPos).HitFlag == TRUE) { continue; }
-
-						bool hit = false;
-						for (auto& bu : m_BackGround->GetBuildCol()) {
-							auto length = GetMinLenSegmentToPoint(StartPos, EndPos, bu.GetPosition().pos());
-							if (length < 5.f*Scale_Rate) {
-								auto col_p = bu.GetCol(StartPos, EndPos);
-								if (col_p.HitFlag == TRUE) {
-									hit = true;
-									break;
-								}
-							}
-						}
-						if (hit) { continue; }
-
-
-						EndPos = EndPos - StartPos;
-						if (vec_to.Length() >= EndPos.size()) {
-							vec_to = EndPos;
+						VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
+						//if (m_BackGround->CheckLinetoMap(StartPos, &EndPos, false)) { continue; }
+						VECTOR_ref vec_tmp = EndPos - StartPos;
+						if (vec_to == VECTOR_ref::zero()) { vec_to = vec_tmp; } //Šî€‚Ìì¬
+						if (vec_to.Length() >= vec_tmp.Length()) {
+							vec_to = vec_tmp;
 							ans = true;
 						}
 					}
+					//*/
 					if (!ans) {
 						this->cpu_do.ai_phase = 0;
 					}
