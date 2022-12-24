@@ -114,19 +114,17 @@ namespace FPS_n2 {
 				//’nŒ`
 				this->m_ObjGroundCol.SetupCollInfo(64, 16, 64);
 				this->m_BuildControl.Init(&this->m_ObjGroundCol);
-				{
-					for (auto& bu : this->m_BuildControl.GetBuildCol()) {
-						if (bu.GetMeshSel() == 3 || bu.GetMeshSel() == 0) {
-							VECTOR_ref pos_t = bu.GetMatrix().pos();
-							if (
-								(-300.f*Scale_Rate / 2.f < pos_t.x() && pos_t.x() < 300.f*Scale_Rate / 2.f) &&
-								(-300.f*Scale_Rate / 2.f < pos_t.z() && pos_t.z() < 300.f*Scale_Rate / 2.f)
-								) {
-								this->m_WayPoint.emplace_back(bu.GetMatrix().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
-							}
+				for (auto& bu : this->m_BuildControl.GetBuildCol()) {
+					if (bu.GetMeshSel() == 3 || bu.GetMeshSel() == 0) {
+						VECTOR_ref pos_t = bu.GetMatrix().pos();
+						float offset = 5.f*Scale_Rate;
+						if (
+							(-300.f*Scale_Rate / 2.f + offset < pos_t.x() && pos_t.x() < 300.f*Scale_Rate / 2.f - offset) &&
+							(-300.f*Scale_Rate / 2.f + offset < pos_t.z() && pos_t.z() < 300.f*Scale_Rate / 2.f - offset)
+							) {
+							this->m_WayPoint.emplace_back(bu.GetMatrix().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
 						}
 					}
-
 				}
 				//‹ó
 				MV1SetDifColorScale(this->m_ObjSky.get(), GetColorF(0.9f, 0.9f, 0.9f, 1.0f));

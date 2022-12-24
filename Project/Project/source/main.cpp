@@ -48,7 +48,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			scene->Draw();							//•`‰æ
 			//ƒfƒoƒbƒO
 #ifdef DEBUG
-			DebugParts->DebugWindow(1920 - 300, 50);
+			DebugParts->DebugWindow(50, 250);
 #endif // DEBUG
 			DrawParts->Screen_Flip();				//‰æ–Ê‚Ì”½‰f
 		}

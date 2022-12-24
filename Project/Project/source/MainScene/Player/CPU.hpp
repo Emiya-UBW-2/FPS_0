@@ -49,7 +49,7 @@ namespace FPS_n2 {
 				for (size_t i = (this->wayp_pre.size() - 1); i >= 1; i--) { this->wayp_pre[i] = this->wayp_pre[0]; }
 				this->wayp_pre[0] = ppp;
 			}
-
+#ifdef DEBUG
 			void Draw_Debug(const std::vector<VECTOR_ref>* way_point) {
 				for (size_t i = 0; i < this->wayp_pre.size() - 1; i++) {
 					VECTOR_ref startpos = (*way_point)[this->wayp_pre[i]];
@@ -59,6 +59,7 @@ namespace FPS_n2 {
 					DrawCapsule_3D(startpos, endpos, 1.f*Scale_Rate, GetColor(0, 255, 0), GetColor(0, 255, 0));
 				}
 			}
+#endif
 		};
 
 		class AIControl {
@@ -248,7 +249,9 @@ namespace FPS_n2 {
 
 			}
 			void Draw() noexcept {
-				cpu_do.Draw_Debug(&m_BackGround->GetWayPoint());
+#ifdef DEBUG
+	cpu_do.Draw_Debug(&m_BackGround->GetWayPoint());
+#endif
 			}
 		};
 	};
