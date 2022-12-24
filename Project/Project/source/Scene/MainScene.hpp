@@ -290,16 +290,15 @@ namespace FPS_n2 {
 			static const int		gun_num = Chara_num;
 		private:
 			//リソース関連
-			std::shared_ptr<BackGroundClass>			m_BackGround;				//BG
-			SoundHandle				m_Env;
-			MV1						hit_pic;					//弾痕  
-			//人
+			std::shared_ptr<BackGroundClass>			m_BackGround;		//BG
+			MV1						hit_pic;								//弾痕  
+			//いちいち探査しないよう別持ち
 			std::vector<std::shared_ptr<CharacterClass>> character_Pool;	//ポインター別持ち
+			std::vector<std::shared_ptr<VehicleClass>>	vehicle_Pool;		//ポインター別持ち
 			//戦車データ
-			std::vector<VhehicleData>	vehc_data;
-			std::vector<std::shared_ptr<VehicleClass>> vehicle_Pool;	//ポインター別持ち
+			std::shared_ptr<VehDataControl>				m_VehDataControl;
 
-			std::vector<std::shared_ptr<AIControl>> AICtrl;
+			std::vector<std::shared_ptr<AIControl>>		AICtrl;
 			//操作関連
 			float					m_EyePosPer_Prone = 0.f;
 			float					m_EyePosPer = 0.f;
@@ -343,56 +342,63 @@ namespace FPS_n2 {
 		private:
 			const auto&		GetMyPlayerID(void) const noexcept { return m_NetWorkBrowser.GetMyPlayerID(); }
 		public:
-			MAINLOOP(void) { }
-
+			MAINLOOP(void) {
+				this->m_BackGround = std::make_shared<BackGroundClass>();
+				this->m_VehDataControl = std::make_shared<VehDataControl>();
+				AICtrl.resize(Player_num);
+				for (int i = 0; i < Player_num; i++) {
+					AICtrl[i] = std::make_shared<AIControl>();
+				}
+			}
+			//Load
 			void			Load_Sub(void) noexcept override {
 				auto* ObjMngr = ObjectManager::Instance();
-				//Load
+				auto* SE = SoundPool::Instance();
 				//BG
-				this->m_BackGround = std::make_shared<BackGroundClass>();
 				this->m_BackGround->Load();
 				ObjMngr->Init(this->m_BackGround);
 				//
-				{
-					int i = 0;
-					auto data_t = GetFileNamesInDirectory("data/tank/");
-					for (auto& d : data_t) {
-						if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-							this->vehc_data.resize(this->vehc_data.size() + 1);
-						}
-					}
-					for (auto& d : data_t) {
-						if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-							this->vehc_data[i].Set_Pre(d.cFileName);
-							i++;
-						}
-					}
-				}
-				this->m_Env = SoundHandle::Load("data/Sound/SE/envi.wav");
-
-				MV1::Load("data/model/hit/model.mv1", &this->hit_pic);						//弾痕モデル
+				this->m_VehDataControl->Load();
+				MV1::Load("data/model/hit/model.mv1", &this->hit_pic);
 
 				hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
 				aim_Graph = GraphHandle::Load("data/UI/battle_aim.bmp");
 				scope_Graph = GraphHandle::Load("data/UI/battle_scope.png");
 
+				//サウンド
+				SE->Add((int)SoundEnum::Environment, 1, "data/Sound/SE/envi.wav");
+				for (int i = 0; i < 9; i++) {
+					SE->Add((int)SoundEnum::Tank_Shot, 3, "data/Sound/SE/gun/fire/" + std::to_string(i) + ".wav");
+				}
+				for (int i = 0; i < 17; i++) {
+					SE->Add((int)SoundEnum::Tank_Ricochet, 3, "data/Sound/SE/ricochet/" + std::to_string(i) + ".wav");
+				}
+				for (int i = 0; i < 2; i++) {
+					SE->Add((int)SoundEnum::Tank_Damage, 3, "data/Sound/SE/damage/" + std::to_string(i) + ".wav");
+				}
+				SE->Add((int)SoundEnum::Tank_engine, 10, "data/Sound/SE/engine.wav");
+				for (int i = 0; i < 7; i++) {
+					SE->Add((int)SoundEnum::Tank_Eject, 3, "data/Sound/SE/gun/reload/eject/" + std::to_string(i) + ".wav", false);
+				}
+				for (int i = 0; i < 5; i++) {
+					SE->Add((int)SoundEnum::Tank_Reload, 3, "data/Sound/SE/gun/reload/hand/" + std::to_string(i) + ".wav", false);
+				}
 			}
 			void			Set_Sub(void) noexcept override {
 				this->m_BackGround->Init();
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
+				auto* SE = SoundPool::Instance();
 				SetAmbientShadow(
 					VECTOR_ref::vget(Scale_Rate*-300.f, Scale_Rate*-10.f, Scale_Rate*-300.f),
 					VECTOR_ref::vget(Scale_Rate*300.f, Scale_Rate*50.f, Scale_Rate*300.f),
 					VECTOR_ref::vget(-0.8f, -0.5f, -0.1f),
 					GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
-				for (auto& t : this->vehc_data) { t.Set(); }										//戦車2
+				this->m_VehDataControl->Set();
 				//
 				for (int i = 0; i < Vehicle_num; i++) {
 					vehicle_Pool.emplace_back((std::shared_ptr<VehicleClass>&)(*ObjMngr->AddObject(ObjType::Vehicle)));
 				}
-				this->m_Env.vol(64);
-				//
 				//UI
 				this->m_UIclass.Set();
 				//Set
@@ -433,8 +439,8 @@ namespace FPS_n2 {
 								auto Mat = *this->m_BackGround->GetRoadPoint(ID);
 								VECTOR_ref pos_t = Mat.pos();
 								if (
-									-300.f*Scale_Rate < pos_t.x() && pos_t.x() < 300.f*Scale_Rate
-									- 300.f*Scale_Rate < pos_t.z() && pos_t.z() < 300.f*Scale_Rate
+									(-300.f*Scale_Rate / 2.f < pos_t.x() && pos_t.x() < 300.f*Scale_Rate / 2.f) &&
+									(-300.f*Scale_Rate / 2.f < pos_t.z() && pos_t.z() < 300.f*Scale_Rate / 2.f)
 									) {
 									OtherSelect.emplace_back(ID);
 									break;
@@ -449,20 +455,18 @@ namespace FPS_n2 {
 						if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true)) {
 							pos_t = pos_t2;
 						}
+						auto& vehc_data = this->m_VehDataControl->GetVehData();
 						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
 						v->ValueSet(deg2rad(0), rad_t, pos_t);
 					}
 				}
 				//player
 				PlayerMngr->Init(Player_num);
-				AICtrl.resize(Player_num);
 				for (int i = 0; i < Player_num; i++) {
 					//PlayerMngr->GetPlayer(i).SetChara((std::shared_ptr<CharacterClass>&)(*ObjMngr->GetObj(ObjType::Human, i)));
+					//PlayerMngr->GetPlayer(i).SetVehicle(nullptr);
 					PlayerMngr->GetPlayer(i).SetChara(nullptr);
 					PlayerMngr->GetPlayer(i).SetVehicle((std::shared_ptr<VehicleClass>&)(*ObjMngr->GetObj(ObjType::Vehicle, i)));
-					//PlayerMngr->GetPlayer(i).SetVehicle(nullptr);
-
-					AICtrl[i] = std::make_shared<AIControl>();
 					AICtrl[i]->Init(&vehicle_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetVehicle());
 				}
 				if (!PlayerMngr->GetPlayer(0).IsRide()) {
@@ -473,56 +477,35 @@ namespace FPS_n2 {
 					this->m_HPBuf = (float)PlayerMngr->GetPlayer(0).GetVehicle()->GetHP();
 					this->m_ScoreBuf = PlayerMngr->GetPlayer(0).GetScore();
 				}
-
 				//Cam
 				SetMainCamera().SetCamInfo(deg2rad(OPTION::Instance()->Get_Fov()), 1.f, 100.f);
 				SetMainCamera().SetCamPos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
 				//サウンド
-				auto SE = SoundPool::Instance();
-				for (int i = 0; i < 9; i++) {
-					SE->Add((int)SoundEnum::Tank_Shot, 3, "data/Sound/SE/gun/fire/" + std::to_string(i) + ".wav");
-				}
-				for (int i = 0; i < 17; i++) {
-					SE->Add((int)SoundEnum::Tank_Ricochet, 3, "data/Sound/SE/ricochet/" + std::to_string(i) + ".wav");
-				}
-				for (int i = 0; i < 2; i++) {
-					SE->Add((int)SoundEnum::Tank_Damage, 3, "data/Sound/SE/damage/" + std::to_string(i) + ".wav");
-				}
-				SE->Add((int)SoundEnum::Tank_engine, 10, "data/Sound/SE/engine.wav");
-				for (int i = 0; i < 7; i++) {
-					SE->Add((int)SoundEnum::Tank_Eject, 3, "data/Sound/SE/gun/reload/eject/" + std::to_string(i) + ".wav", false);
-				}
-				for (int i = 0; i < 5; i++) {
-					SE->Add((int)SoundEnum::Tank_Reload, 3, "data/Sound/SE/gun/reload/hand/" + std::to_string(i) + ".wav", false);
-				}
-
+				SE->Get((int)SoundEnum::Environment).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Shot).SetVol(0.5f);
 				SE->Get((int)SoundEnum::Tank_engine).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Ricochet).SetVol(0.65f);
 				SE->Get((int)SoundEnum::Tank_Damage).SetVol(0.65f);
 				SE->Get((int)SoundEnum::Tank_Eject).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Reload).SetVol(0.25f);
-
-
 				//入力
 				this->m_FPSActive.Set(true);
 				this->m_MouseActive.Set(true);
-
 				this->m_DamageEvents.clear();
-
-				m_NetWorkBrowser.Init();
+				this->m_NetWorkBrowser.Init();
 			}
 			//
 			bool			Update_Sub(void) noexcept override {
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
+				auto* SE = SoundPool::Instance();
 #ifdef DEBUG
 				auto* DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
 				//FirstDoingv
 				if (GetIsFirstLoop()) {
 					SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
-					this->m_Env.play(DX_PLAYTYPE_LOOP, TRUE);
+					SE->Get((int)SoundEnum::Environment).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 					if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 						auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();
 						Chara->LoadReticle();//プレイヤー変更時注意
@@ -555,7 +538,7 @@ namespace FPS_n2 {
 								pp_x = std::clamp(-(float)(-input.Rz) / 100.f*1.f, -9.f, 9.f) * cam_per;
 								pp_y = std::clamp((float)(input.Z) / 100.f*1.f, -9.f, 9.f) * cam_per;
 
-								float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
+								float deg = rad2deg(std::atan2f((float)input.X, -(float)input.Y));
 								bool w_key = false;
 								bool s_key = false;
 								bool a_key = false;
@@ -1065,6 +1048,7 @@ namespace FPS_n2 {
 				}
 				this->vehicle_Pool.clear();
 				this->m_BackGround->Dispose();
+				this->m_VehDataControl->Dispose();
 			}
 			//
 			void			Depth_Draw_Sub(void) noexcept override {

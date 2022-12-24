@@ -108,6 +108,24 @@
     <ClInclude Include="source\MainScene\Player\CPU.hpp">
       <Filter>ソース ファイル\MainScene\Player</Filter>
     </ClInclude>
+    <ClInclude Include="source\MainScene\Object\VehicleData.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\CharacterData.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\AmmoData.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\GunData.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\MagazineData.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Object\CartData.hpp">
+      <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">

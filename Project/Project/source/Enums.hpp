@@ -17,6 +17,8 @@ namespace FPS_n2 {
 			Cart,
 		};
 		enum class SoundEnum {
+			Environment,
+
 			Tank_Shot,
 			Tank_Ricochet,
 			Tank_Damage,

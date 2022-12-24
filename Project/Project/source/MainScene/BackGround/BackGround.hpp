@@ -116,8 +116,14 @@ namespace FPS_n2 {
 				this->m_BuildControl.Init(&this->m_ObjGroundCol);
 				{
 					for (auto& bu : this->m_BuildControl.GetBuildCol()) {
-						if (bu.GetMeshSel() == 3) {
-							this->m_WayPoint.emplace_back(bu.GetMatrix().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
+						if (bu.GetMeshSel() == 3 || bu.GetMeshSel() == 0) {
+							VECTOR_ref pos_t = bu.GetMatrix().pos();
+							if (
+								(-300.f*Scale_Rate / 2.f < pos_t.x() && pos_t.x() < 300.f*Scale_Rate / 2.f) &&
+								(-300.f*Scale_Rate / 2.f < pos_t.z() && pos_t.z() < 300.f*Scale_Rate / 2.f)
+								) {
+								this->m_WayPoint.emplace_back(bu.GetMatrix().pos() + VECTOR_ref::up()*(1.f*Scale_Rate));
+							}
 						}
 					}
 

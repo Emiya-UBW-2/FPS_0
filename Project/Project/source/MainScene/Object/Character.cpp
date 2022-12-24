@@ -15,7 +15,7 @@ namespace FPS_n2 {
 		}
 		//被弾処理
 		const auto		CharacterClass::CalcAmmoHited(AmmoClass* pAmmo, const VECTOR_ref& pShooterPos) noexcept {
-			//auto SE = SoundPool::Instance();
+			//auto* SE = SoundPool::Instance();
 			for (auto& h : m_HitBox) {
 				if (h.Colcheck(*pAmmo)) {
 					h.GetColType();
@@ -24,7 +24,7 @@ namespace FPS_n2 {
 					//ダメージ計算
 					auto v1 = GetEyeVector();
 					auto v2 = (pShooterPos - this->m_move.pos).Norm(); v2.y(0);
-					this->m_DamageEvent.SetEvent(this->m_MyID, this->m_objType, pAmmo->GetDamage(), atan2f(v1.cross(v2).y(), v1.dot(v2)));
+					this->m_DamageEvent.SetEvent(this->m_MyID, this->m_objType, pAmmo->GetDamage(), std::atan2f(v1.cross(v2).y(), v1.dot(v2)));
 					++this->m_DamageSwitch;// %= 255;//
 					//this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
 					//エフェクトセット

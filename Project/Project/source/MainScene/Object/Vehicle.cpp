@@ -8,7 +8,7 @@ namespace FPS_n2 {
 		//----------------------------------------------------------
 
 		//
-		void			VehicleClass::ValueInit(const VhehicleData* pVeh_data, const MV1& hit_pic, const std::shared_ptr<b2World>& pB2World, PlayerID pID) noexcept {
+		void			VehicleClass::ValueInit(const VehDataControl::VhehicleData* pVeh_data, const MV1& hit_pic, const std::shared_ptr<b2World>& pB2World, PlayerID pID) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
 
 			this->m_MyID = pID;
@@ -165,7 +165,7 @@ namespace FPS_n2 {
 		}
 		//被弾処理
 		const auto		VehicleClass::CalcAmmoHited(AmmoClass* pAmmo, const VECTOR_ref& pShooterPos) noexcept {
-			auto SE = SoundPool::Instance();
+			auto* SE = SoundPool::Instance();
 			std::sort(this->hitssort.begin(), this->hitssort.end(), [](const HitSortInfo& x, const HitSortInfo& y) { return x < y; });	//当たり判定を近い順にソート
 			bool isDamage = false;
 			//ダメージ面に届くまで判定
@@ -199,7 +199,7 @@ namespace FPS_n2 {
 								//ダメージ計算
 								auto v1 = MATRIX_ref::RotY(Get_body_yrad()).zvec();
 								auto v2 = (pShooterPos - this->m_move.pos).Norm(); v2.y(0);
-								this->m_DamageEvent.SetEvent(this->m_MyID, this->m_objType, pAmmo->GetDamage(), atan2f(v1.cross(v2).y(), v1.dot(v2)));
+								this->m_DamageEvent.SetEvent(this->m_MyID, this->m_objType, pAmmo->GetDamage(), std::atan2f(v1.cross(v2).y(), v1.dot(v2)));
 								++this->m_DamageSwitch;// %= 255;//
 								//this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
 								if (!this->Get_alive()) {
@@ -233,7 +233,7 @@ namespace FPS_n2 {
 		}
 		//その他
 		void			VehicleClass::ExecuteElse(void) noexcept {
-			auto SE = SoundPool::Instance();
+			auto* SE = SoundPool::Instance();
 			//エンジン音
 			{
 				if (this->m_engine_time == 0.f) {
@@ -274,9 +274,9 @@ namespace FPS_n2 {
 							{
 								float cost = vec_z.cross(vec_a).y() / z_hyp;
 								float sint = sqrtf(std::abs(1.f - cost * cost));
-								view_YradAdd = (atan2f(cost, sint)) / 5.f;
+								view_YradAdd = (std::atan2f(cost, sint)) / 5.f;
 							}
-							view_XradAdd = (atan2f(vec_a.y(), a_hyp) - atan2f(vec_z.y(), z_hyp)) / 1.f;
+							view_XradAdd = (std::atan2f(vec_a.y(), a_hyp) - std::atan2f(vec_z.y(), z_hyp)) / 1.f;
 							if (i == 0) {
 								//printfDx("%.2f\n", rad2deg(view_XradAdd));
 							}
@@ -348,7 +348,7 @@ namespace FPS_n2 {
 				}
 				else {
 					auto pp = (this->m_move.mat * MATRIX_ref::RotVec2(VECTOR_ref::up(), bNormal).Inverse()).zvec() * -1.f;
-					yradBody = atan2f(pp.x(), pp.z());
+					yradBody = std::atan2f(pp.x(), pp.z());
 				}
 				this->m_move.mat = MATRIX_ref::Axis1_YZ(bNormal, (MATRIX_ref::RotY(yradBody)*MATRIX_ref::RotVec2(VECTOR_ref::up(), bNormal)).zvec() * -1.f);
 				if (this->m_PosBufOverRideFlag) {
@@ -479,7 +479,7 @@ namespace FPS_n2 {
 					(this->m_move.pos - this->m_move.repos).Length() * 60.f / FPS);
 			}
 			UpdateMove();
-			this->m_add_vec_real = this->m_move.pos - OldPos;
+			this->m_add_vec_real = this->m_move.pos - this->m_move.repos;
 			this->m_Hit_active.Execute(GetObj());
 			this->m_move.repos = this->m_move.pos;
 		}

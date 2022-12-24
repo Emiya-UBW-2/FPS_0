@@ -128,7 +128,7 @@ namespace FPS_n2 {
 				//SetMagazine(nullptr);
 			}
 			void			FirstExecute(void) override {
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				if (this->m_IsFirstLoop) {
 				}
 
@@ -280,7 +280,7 @@ namespace FPS_n2 {
 					auto axisworldmat = GetFrameWorldMat(GunFrame::MoveAxis);
 
 					VECTOR_ref pp = baseworldmat.zvec()*-1.f;
-					auto yrad = atan2f(-pp.x(), -pp.z());
+					auto yrad = std::atan2f(-pp.x(), -pp.z());
 
 					auto vec = MATRIX_ref::Vtrans(baseworldmat.pos() - axisworldmat.pos(), MATRIX_ref::RotY(yrad).Inverse());
 

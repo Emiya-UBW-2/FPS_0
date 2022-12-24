@@ -1110,7 +1110,7 @@ namespace FPS_n2 {
 					auto pos = (this->m_WallParts[i][0] + this->m_WallParts[i][1]) / 2.f;
 					auto vec = (this->m_WallParts[i][0] - this->m_WallParts[i][1]); vec.y(0);
 
-					this->m_Walls[i].Init(this->m_objWall, this->m_objWallCol, pos, atan2f(vec.z(), vec.x()), 2.7f);
+					this->m_Walls[i].Init(this->m_objWall, this->m_objWallCol, pos, std::atan2f(vec.z(), vec.x()), 2.7f);
 				}
 				//this->m_Walls.clear();
 			}
@@ -1648,7 +1648,7 @@ namespace FPS_n2 {
 					(l.pos + VECTOR_ref::vget(-20, 0, -20)*Scale_Rate).get(),
 					(l.pos + VECTOR_ref::vget(20, 20, 20)*Scale_Rate).get()) == FALSE
 					) {
-					if (LengthtoCam.Length() > Farlimit) {
+					if (LengthtoCam.Length() > Farlimit && isSetFog) {
 						SetUseLighting(FALSE);
 						LengthtoCam.y(0.f); LengthtoCam = LengthtoCam.Norm();
 						float rad = std::atan2f(VECTOR_ref::front().cross(LengthtoCam).y(), VECTOR_ref::front().dot(LengthtoCam));
@@ -1657,7 +1657,12 @@ namespace FPS_n2 {
 						SetUseLighting(TRUE);
 					}
 					else {
-						l.obj.material_AlphaTestAll(true, DX_CMP_GREATER, (int)(128.f + 127.f*(Farlimit2 - LengthtoCam.Length())/ Farlimit2));
+						if (isSetFog) {
+							l.obj.material_AlphaTestAll(true, DX_CMP_GREATER, (int)(128.f + 127.f*(Farlimit2 - LengthtoCam.Length()) / Farlimit2));
+						}
+						else {
+							l.obj.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
+						}
 						l.obj.DrawModel();
 					}
 				}

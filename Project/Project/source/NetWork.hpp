@@ -218,7 +218,7 @@ namespace FPS_n2 {
 
 				if (isyradReset) {
 					auto radvec = Lerp(MATRIX_ref::RotY(this->m_PrevServerData.PlayerData[pPlayerID].radBuf.y()).zvec(), MATRIX_ref::RotY(this->m_ServerDataCommon.PlayerData[pPlayerID].radBuf.y()).zvec(), Per).Norm();
-					tmp.radBuf.y(-atan2f(radvec.x(), radvec.z()));
+					tmp.radBuf.y(-std::atan2f(radvec.x(), radvec.z()));
 				}
 				tmp.Frame = this->m_ServerDataCommon.PlayerData[pPlayerID].Frame;
 				tmp.Damage = this->m_ServerDataCommon.PlayerData[pPlayerID].Damage;

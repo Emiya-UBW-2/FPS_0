@@ -54,8 +54,8 @@ namespace FPS_n2 {
 				for (size_t i = 0; i < this->wayp_pre.size() - 1; i++) {
 					VECTOR_ref startpos = (*way_point)[this->wayp_pre[i]];
 					VECTOR_ref endpos = (*way_point)[this->wayp_pre[i + 1]];
-					startpos.y(3.f);
-					endpos.y(3.f);
+					startpos.yadd(0.5f*Scale_Rate);
+					endpos.yadd(0.5f*Scale_Rate);
 					DrawCapsule_3D(startpos, endpos, 1.f*Scale_Rate, GetColor(0, 255, 0), GetColor(0, 255, 0));
 				}
 			}
@@ -70,7 +70,7 @@ namespace FPS_n2 {
 		private:
 			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss, VECTOR_ref zvec = VECTOR_ref::zero()) {
 				int now = -1;
-				auto tmp = VECTOR_ref::vget(0, 100.f, 0);
+				auto tmp = VECTOR_ref::vget(0, 100.f*Scale_Rate, 0);
 				for (auto& w : m_BackGround->GetWayPoint()) {
 					auto id = &w - &m_BackGround->GetWayPoint().front();
 					bool tt = true;
@@ -114,8 +114,9 @@ namespace FPS_n2 {
 				VECTOR_ref vec_to = VECTOR_ref::zero();
 				//
 				auto vec_mat = MyVeh->GetMove().mat;
-				auto vec_x = vec_mat.xvec();
-				auto vec_y = vec_mat.yvec();
+				auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(0);
+				auto vec_x = vec_gunmat.xvec();
+				auto vec_y = vec_gunmat.yvec();
 				auto vec_z = vec_mat.zvec() * -1.f;
 				//狙うキャラを探索+AIのフェーズ選択
 				{
@@ -126,7 +127,7 @@ namespace FPS_n2 {
 						if (&MyVeh == &tgt) { continue; }
 						if (!tgt->Get_alive()) { continue; }
 						VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
-						//if (m_BackGround->CheckLinetoMap(StartPos, &EndPos, false)) { continue; }
+						if (m_BackGround->CheckLinetoMap(StartPos, &EndPos, false)) { continue; }
 						VECTOR_ref vec_tmp = EndPos - StartPos;
 						if (vec_to == VECTOR_ref::zero()) { vec_to = vec_tmp; } //基準の作成
 						if (vec_to.Length() >= vec_tmp.Length()) {
@@ -167,14 +168,14 @@ namespace FPS_n2 {
 						SetNextWaypoint(vec_z*-1.f);
 					}
 
+					VECTOR_ref vec_z2 = vec_z; vec_z2.y(0); vec_z2 = vec_z2.Norm();
+					VECTOR_ref vec_to2 = vec_to; vec_to2.y(0); vec_to2 = vec_to2.Norm();
 
-					float z_hyp = std::hypotf(vec_z.x(), vec_z.z());
-					float a_hyp = std::hypotf(vec_to.x(), vec_to.z());
-					float cost = (vec_to.z() * vec_z.x() - vec_to.x() * vec_z.z()) / (a_hyp * z_hyp);
+					float cost = vec_to2.cross(vec_z2).y();
+					float sint = sqrtf(std::abs(1.f - cost * cost));
+					auto view_yrad = std::atan2f(cost, sint); //cos取得2D
 
-					auto view_yrad = (atan2f(cost, sqrtf(std::abs(1.f - cost * cost)))) / 5.f; //cos取得2D
-
-					if (this->cpu_do.ai_time_tankback_ing > 0.f) {
+					if (this->cpu_do.ai_time_tankback_ing > 0.f && true) {//無効化x
 						this->cpu_do.ai_time_tankback_ing -= 1.f / FPS;
 						W_key = false;
 						S_key = true;
@@ -183,13 +184,13 @@ namespace FPS_n2 {
 					}
 					else {
 						this->cpu_do.ai_time_tankback_ing = 0.f;
-						if (std::abs(view_yrad) > 0.2f) {
+						if (std::abs(view_yrad) > deg2rad(30)) {
 							W_key = false;
 							if (x_m < 0) {
 								//this->S_key = true;
 							}
 						}
-						if (MyVeh->Getvec_real().Length() <= MyVeh->GetMove().vec.size() * 0.8f) {
+						if (MyVeh->Getvec_real().Length() <= MyVeh->GetMove().vec.size() *(0.5f)) {
 							this->cpu_do.ai_time_tankback += 1.f / FPS;
 						}
 						else {
@@ -223,11 +224,9 @@ namespace FPS_n2 {
 				}
 				x_m = std::clamp(x_m, -40, 40);
 				y_m = std::clamp(y_m, -40, 40);
-				//x_t = float(x_m);
-				//y_t = float(y_m);
 				MyInput->SetInput(
-					float(x_m),
-					float(y_m),
+					(float)x_m,
+					(float)y_m,
 					W_key, S_key, A_key, D_key,
 					false, false, false, false, false, false, false,
 					false,

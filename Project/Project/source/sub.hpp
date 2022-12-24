@@ -231,8 +231,8 @@ namespace FPS_n2 {
 		const auto		GetRunPer(void) const noexcept { return  this->m_RunPer; }
 		const auto		GetVec(void) const noexcept { return VECTOR_ref::vget(GetVecLeft() - GetVecRight(), 0, GetVecRear() - GetVecFront()); }
 		const auto		GetFrontP(void) const noexcept {
-			auto FrontP = ((GetPressFront() && !GetPressRear())) ? (atan2f(GetVec().x(), -GetVec().z()) * GetVecFront()) : 0.f;
-			FrontP += (!GetPressFront() && GetPressRear()) ? (atan2f(-GetVec().x(), GetVec().z()) * GetVecRear()) : 0.f;
+			auto FrontP = ((GetPressFront() && !GetPressRear())) ? (std::atan2f(GetVec().x(), -GetVec().z()) * GetVecFront()) : 0.f;
+			FrontP += (!GetPressFront() && GetPressRear()) ? (std::atan2f(-GetVec().x(), GetVec().z()) * GetVecRear()) : 0.f;
 			return FrontP;
 		}
 
@@ -424,7 +424,7 @@ namespace FPS_n2 {
 				auto& h_d = HitDim.Dim[i];
 				//壁ポリゴンと判断された場合でも、プレイヤーのＹ座標＋PLAYER_ENUM_MIN_SIZEより高いポリゴンのみ当たり判定を行う
 				if (
-					(abs(atan2f(h_d.Normal.y, std::hypotf(h_d.Normal.x, h_d.Normal.z))) <= deg2rad(30))
+					(abs(std::atan2f(h_d.Normal.y, std::hypotf(h_d.Normal.x, h_d.Normal.z))) <= deg2rad(30))
 					&& (h_d.Position[0].y > OldPos.y() + PLAYER_ENUM_MIN_SIZE || h_d.Position[1].y > OldPos.y() + PLAYER_ENUM_MIN_SIZE || h_d.Position[2].y > OldPos.y() + PLAYER_ENUM_MIN_SIZE)
 					&& (h_d.Position[0].y < OldPos.y() + PLAYER_ENUM_DEFAULT_SIZE || h_d.Position[1].y < OldPos.y() + PLAYER_ENUM_DEFAULT_SIZE || h_d.Position[2].y < OldPos.y() + PLAYER_ENUM_DEFAULT_SIZE)
 					) {
