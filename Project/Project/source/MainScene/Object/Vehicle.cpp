@@ -34,9 +34,9 @@ namespace FPS_n2 {
 			}
 		}
 		//
-		void			VehicleClass::ValueSet(float pxRad, float pyRad, const VECTOR_ref& pPos) noexcept {
+		void			VehicleClass::ValueSet(float pxRad, float pyRad, const VECTOR_ref& pos_t) noexcept {
 			this->m_move.mat = MATRIX_ref::RotX(pxRad) * MATRIX_ref::RotY(pyRad);
-			this->m_move.pos = pPos;
+			this->m_move.pos = pos_t;
 			this->m_move.vec.clear();
 			for (auto& w : this->m_wheel_frameYpos) { w = 0.f; }
 			//ñC
@@ -87,10 +87,10 @@ namespace FPS_n2 {
 			this->m_key[6] = pInput.GetAction6() && pReady && this->Get_alive();			//ç∂
 		}
 		//ÉJÉÅÉâê›íËèoóÕ
-		void			VehicleClass::Setcamera(Camera3DInfo& m_MainCamera, const float fov_base) noexcept {
-			auto fov_t = m_MainCamera.GetCamFov();
-			auto near_t = m_MainCamera.GetCamNear();
-			auto far_t = m_MainCamera.GetCamFar();
+		void			VehicleClass::Setcamera(Camera3DInfo& MainCamera_t, const float fov_base) noexcept {
+			auto fov_t = MainCamera_t.GetCamFov();
+			auto near_t = MainCamera_t.GetCamNear();
+			auto far_t = MainCamera_t.GetCamFar();
 
 			VECTOR_ref eyepos = Get_EyePos_Base();
 			auto OLD = this->m_range;
@@ -118,11 +118,11 @@ namespace FPS_n2 {
 			VECTOR_ref eyetgt = Get_EyePos_Base() + this->m_MouseVec.zvec() * -1.f * std::max(this->m_range_r*Scale_Rate, 1.f);
 
 			this->m_changeview = ((this->m_range != OLD) && (this->m_range == 0.f || OLD == 0.f));
-			m_MainCamera.SetCamPos(eyepos, eyetgt, this->m_move.mat.yvec());
+			MainCamera_t.SetCamPos(eyepos, eyetgt, this->m_move.mat.yvec());
 
 			Easing(&near_t, 1.f + 2.f*((is_ADS()) ? this->m_ratio : 0.f), 0.9f, EasingType::OutExpo);
 			Easing(&far_t, std::max(this->m_AimingDistance, Scale_Rate * 20.f) + Scale_Rate * 20.f, 0.9f, EasingType::OutExpo);
-			m_MainCamera.SetCamInfo(fov_t, near_t, far_t);
+			MainCamera_t.SetCamInfo(fov_t, near_t, far_t);
 		}
 
 		//----------------------------------------------------------
@@ -524,9 +524,9 @@ namespace FPS_n2 {
 			return isDamaged;
 		}
 		//
-		void			VehicleClass::HitGround(const VECTOR_ref& pPos, const VECTOR_ref& pNorm, const VECTOR_ref& /*pVec*/) noexcept {
-			EffectControl::SetOnce_Any(EffectResource::Effect::ef_gndsmoke, pPos, pNorm, 0.05f / 0.1f * Scale_Rate);
-			//hit_obj_p.Set(a.GetCaliberSize() * Scale_Rate, pPos, pNorm, pVec);	//íeç≠
+		void			VehicleClass::HitGround(const VECTOR_ref& pos_t, const VECTOR_ref& pNorm, const VECTOR_ref& /*pVec*/) noexcept {
+			EffectControl::SetOnce_Any(EffectResource::Effect::ef_gndsmoke, pos_t, pNorm, 0.05f / 0.1f * Scale_Rate);
+			//hit_obj_p.Set(a.GetCaliberSize() * Scale_Rate, pos_t, pNorm, pVec);	//íeç≠
 		}
 		//
 		void			VehicleClass::DrawModuleView(int xp, int yp, int size) noexcept {

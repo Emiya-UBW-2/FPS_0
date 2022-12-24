@@ -25,13 +25,13 @@ namespace FPS_n2 {
 			const auto&		GetCaliberSize(void) const noexcept { return this->m_AmmoData->GetCaliber(); }//0.00762f
 			const auto		GetEffectSize(void) const noexcept { return ((this->m_AmmoData->GetCaliber() >= 0.020f) ? this->m_AmmoData->GetCaliber() : 0.025f) / 0.1f; }
 		public:
-			void			Put(const AmmoData* pAmmoData, const VECTOR_ref& pPos, const VECTOR_ref& pVec, int pMyID) {
+			void			Put(const AmmoData* pAmmoData, const VECTOR_ref& pos_t, const VECTOR_ref& pVec, int pMyID) {
 				SetActive(true);
 				this->m_RicochetCnt = 0;
 				this->m_IsHit = false;
 				this->m_IsDrawHitUI = false;
 				this->m_HitTimer = 0.f;
-				this->m_move.pos = pPos;
+				this->m_move.pos = pos_t;
 				this->m_move.repos = this->m_move.pos;
 				this->m_move.vec = pVec;
 				this->m_AmmoData = pAmmoData;
@@ -58,7 +58,7 @@ namespace FPS_n2 {
 				return false;
 			}
 			const auto		PenetrationCheck(float pArmer, const VECTOR_ref& normal) const noexcept { return (this->m_penetration > (pArmer * (1.0f / std::abs(this->m_move.vec.Norm().dot(normal))))); }
-			void			Penetrate(void) {
+			void			Penetrate(void) noexcept {
 				SetActive(false);
 				this->m_IsHit = true;
 				this->m_IsDrawHitUI = true;
@@ -79,16 +79,16 @@ namespace FPS_n2 {
 				this->m_IsDrawHitUI = false;
 			}
 		public: //コンストラクタ、デストラクタ
-			AmmoClass(void) { this->m_objType = ObjType::Ammo; }
-			~AmmoClass(void) {}
+			AmmoClass(void) noexcept { this->m_objType = ObjType::Ammo; }
+			~AmmoClass(void) noexcept {}
 		public: //継承
-			void			Init() override {
+			void			Init() noexcept override {
 				ObjectBaseClass::Init();
 				SetUseRealTimePhysics(false);
 				SetActive(false);
 			}
 			//
-			void			FirstExecute(void) override {
+			void			FirstExecute(void) noexcept override {
 				if (this->m_IsHit) {
 					this->m_IsHit = false;
 					this->m_HitTimer = 0.25f;
@@ -120,46 +120,38 @@ namespace FPS_n2 {
 				this->m_Timer += 1.f / FPS;
 			}
 			//
-			void			DrawShadow(void)  override {}
-			void			CheckDraw(void)  override {
+			void			DrawShadow(void) noexcept override {}
+			void			CheckDraw(void) noexcept override {
 				auto tmp = ConvWorldPosToScreenPos(this->m_move.pos.get());
 				if (tmp.z >= 0.f && tmp.z <= 1.f) {
 					this->m_Hit_DispPos = tmp;
 				}
 			}
-			void			Draw(void)  override {
-				{
-					SetUseLighting(FALSE);
+			void			Draw(void) noexcept override {
+				SetUseLighting(FALSE);
 
-					float per = 0.5f;
-					if (!IsActive()) {
-						per = std::clamp(this->m_Hit_alpha, 0.f, 0.5f);
-					}
-
-					int max = (int)(this->m_Line.size());
-					for (int i = 1; i < max; i++) {
-						int LS = (i + this->m_LineSel);
-						auto p1 = (LS - 1) % max;
-						auto p2 = LS % max;
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*per*((float)(i) / max)), 0, 255));
-						if (CheckCameraViewClip_Box(
-							this->m_Line[p1].get(),
-							this->m_Line[p2].get()) == FALSE
-							) {
-							DrawCapsule3D(this->m_Line[p1].get(), this->m_Line[p2].get(), this->m_AmmoData->GetCaliber()*Scale_Rate*2.f*((float)(i) / max), 3, GetColor(192, 192, 192), GetColor(192, 192, 192), TRUE);
-						}
-					}
-					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-					if (IsActive()) {
-						if (CheckCameraViewClip_Box(
-							this->m_move.repos.get(),
-							this->m_move.pos.get()) == FALSE
-							) {
-							DrawCapsule_3D(this->m_move.pos, this->m_move.repos, ((this->m_AmmoData->GetCaliber() - 0.00762f) * 0.1f + 0.00762f)*Scale_Rate, GetColor(255, 255, 172), GetColor(255, 255, 255));
-						}
-					}
-					SetUseLighting(TRUE);
+				float per = 0.5f;
+				if (!IsActive()) {
+					per = std::clamp(this->m_Hit_alpha, 0.f, 0.5f);
 				}
+
+				int max = (int)this->m_Line.size();
+				for (int i = 1; i < max; i++) {
+					int LS = (i + this->m_LineSel);
+					auto p1 = (LS - 1) % max;
+					auto p2 = LS % max;
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*per*((float)(i) / max)), 0, 255));
+					if (CheckCameraViewClip_Box(this->m_Line[p1].get(), this->m_Line[p2].get()) == FALSE) {
+						DrawCapsule3D(this->m_Line[p1].get(), this->m_Line[p2].get(), this->m_AmmoData->GetCaliber()*Scale_Rate*2.f*((float)(i) / max), 3, GetColor(192, 192, 192), GetColor(192, 192, 192), TRUE);
+					}
+				}
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+				if (IsActive()) {
+					if (CheckCameraViewClip_Box(this->m_move.repos.get(), this->m_move.pos.get()) == FALSE) {
+						DrawCapsule_3D(this->m_move.pos, this->m_move.repos, ((this->m_AmmoData->GetCaliber() - 0.00762f) * 0.1f + 0.00762f)*Scale_Rate, GetColor(255, 255, 172), GetColor(255, 255, 255));
+					}
+				}
+				SetUseLighting(TRUE);
 			}
 		};
 	};

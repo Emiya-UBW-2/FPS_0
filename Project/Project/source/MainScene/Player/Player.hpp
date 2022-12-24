@@ -9,10 +9,10 @@ namespace FPS_n2 {
 			std::shared_ptr<VehicleClass>	m_Vehicle{ nullptr };
 			float							m_Score{ 0.f };							//スコア
 		public:
-			PlayerControl(void) {
+			PlayerControl(void) noexcept {
 				this->m_Score = 0.f;
 			}
-			~PlayerControl(void) {
+			~PlayerControl(void) noexcept {
 				this->Dispose();
 			}
 		public:
@@ -21,8 +21,8 @@ namespace FPS_n2 {
 			void		AddScore(float value) { this->m_Score += value; }
 			void		SubScore(float value) { this->m_Score -= value; }
 			void		SetScore(float value) { this->m_Score = value; }
-			auto&		GetChara(void) { return m_Chara; }
-			auto&		GetVehicle(void) { return m_Vehicle; }
+			auto&		GetChara(void) noexcept { return m_Chara; }
+			auto&		GetVehicle(void) noexcept { return m_Vehicle; }
 			const auto&	GetScore(void) const noexcept { return this->m_Score; }
 			const auto	IsRide(void) const noexcept { return (bool)m_Vehicle; }
 
@@ -39,9 +39,9 @@ namespace FPS_n2 {
 				else {
 					ans.m_Pos = m_Vehicle->GetMove().pos;
 					ans.m_Vec = m_Vehicle->GetMove().vec;
-					ans.m_rad.y(m_Vehicle->Get_body_yrad());
+					ans.m_rad.y(this->m_Vehicle->Get_body_yrad());
 					ans.m_Damage = &m_Vehicle->GetDamageEvent();
-					ans.m_DamageSwitch = (m_Vehicle->GetDamageSwitch() ? 1 : 0);
+					ans.m_DamageSwitch = (this->m_Vehicle->GetDamageSwitch() ? 1 : 0);
 				}
 				return ans;
 			}
@@ -50,48 +50,30 @@ namespace FPS_n2 {
 			const auto		GetAim(void) const noexcept { return ((!IsRide()) ? m_Chara->GetCharaDir().zvec()*-1.f : m_Vehicle->GetLookVec().zvec()*-1.f); }
 			const auto		GetRadBuf(void) const noexcept { return ((!IsRide()) ? m_Chara->GetRadBuf() : m_Vehicle->GetViewRad()); }
 		public:
-			void Init(void) {
-				m_Chara = nullptr;
-				m_Vehicle = nullptr;
+			void Init(void) noexcept {
+				this->m_Chara = nullptr;
+				this->m_Vehicle = nullptr;
 			}
 
-			void Dispose(void) {
-				m_Chara = nullptr;
-				m_Vehicle = nullptr;
+			void Dispose(void) noexcept {
+				this->m_Chara = nullptr;
+				this->m_Vehicle = nullptr;
 			}
 		};
 
-		class PlayerManager {
+		class PlayerManager :public SingletonBase<PlayerManager> {
+		private:
+			friend class SingletonBase<PlayerManager>;
+		private:
 			std::vector<PlayerControl> m_Player;
-		private:
-			//シングルトン化
-#if true
-
-		private:
-			static inline  PlayerManager*	m_Singleton = nullptr;
-		public:
-			static void Create(void) {
-				if (m_Singleton == nullptr) {
-					m_Singleton = new PlayerManager();
-				}
-			}
-			static PlayerManager* Instance(void) {
-				if (m_Singleton == nullptr) {
-					m_Singleton = new PlayerManager();
-				}
-				return m_Singleton;
-			}
-		private:
-
-#endif
 		public:
 			auto&		GetPlayer(int ID) { return m_Player[ID]; }
 		public:
 			void Init(int playerNum) {
-				m_Player.resize(playerNum);
+				this->m_Player.resize(playerNum);
 			}
-			void Dispose(void) {
-				m_Player.clear();
+			void Dispose(void) noexcept {
+				this->m_Player.clear();
 			}
 		};
 

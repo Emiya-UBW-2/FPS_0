@@ -44,9 +44,9 @@ namespace FPS_n2 {
 				printfDx("ping %lf \n", this->m_Ping);
 			}
 		public:
-			void Init(void) {
-				m_NewWorkSetting.Load();
-				m_NewWorkSelect = 0;
+			void Init(void) noexcept {
+				this->m_NewWorkSetting.Load();
+				this->m_NewWorkSelect = 0;
 			}
 			void FirstExecute(const InputControl& MyInput, const SendInfo& SendMove) {
 				this->m_LeftClick.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0);
@@ -55,9 +55,9 @@ namespace FPS_n2 {
 				}
 
 				if (this->m_IsClient) {
-					m_ClientCtrl.SetMyPlayer(MyInput, SendMove.m_Pos, SendMove.m_Vec, SendMove.m_rad, this->m_ClientFrame, SendMove.m_Damage, SendMove.m_DamageSwitch);
+					this->m_ClientCtrl.SetMyPlayer(MyInput, SendMove.m_Pos, SendMove.m_Vec, SendMove.m_rad, this->m_ClientFrame, SendMove.m_Damage, SendMove.m_DamageSwitch);
 					if ((this->m_Sequence == SequenceEnum::Matching) && m_SeqFirst) {
-						m_ClientCtrl.Init(this->m_NewSetting.UsePort, this->m_Tick, this->m_NewSetting.IP);
+						this->m_ClientCtrl.Init(this->m_NewSetting.UsePort, this->m_Tick, this->m_NewSetting.IP);
 					}
 					if ((this->m_Sequence >= SequenceEnum::Matching) && this->m_ClientCtrl.Execute()) {
 						this->m_Sequence = SequenceEnum::MainGame;
@@ -65,16 +65,16 @@ namespace FPS_n2 {
 				}
 				//サーバー
 				else {
-					m_ServerCtrl.SetMyPlayer(MyInput, SendMove.m_Pos, SendMove.m_Vec, SendMove.m_rad, this->m_ClientFrame, SendMove.m_Damage, SendMove.m_DamageSwitch);
+					this->m_ServerCtrl.SetMyPlayer(MyInput, SendMove.m_Pos, SendMove.m_Vec, SendMove.m_rad, this->m_ClientFrame, SendMove.m_Damage, SendMove.m_DamageSwitch);
 					if ((this->m_Sequence == SequenceEnum::Matching) && m_SeqFirst) {
-						m_ServerCtrl.Init(this->m_NewSetting.UsePort, this->m_Tick, IPDATA());
+						this->m_ServerCtrl.Init(this->m_NewSetting.UsePort, this->m_Tick, IPDATA());
 					}
 					if ((this->m_Sequence >= SequenceEnum::Matching) && this->m_ServerCtrl.Execute()) {
 						this->m_Sequence = SequenceEnum::MainGame;
 					}
 				}
 			}
-			void LateExecute(void) {
+			void LateExecute(void) noexcept {
 				if (this->m_Sequence == SequenceEnum::MainGame) {
 					this->m_ClientFrame += 1.0 / (double)FPS;
 				}
@@ -82,7 +82,7 @@ namespace FPS_n2 {
 					this->m_ClientFrame = 0.0;
 				}
 			}
-			void Draw(void) {
+			void Draw(void) noexcept {
 				//auto* ObjMngr = ObjectManager::Instance();
 				//auto* PlayerMngr = PlayerManager::Instance();
 				//auto* DrawParts = DXDraw::Instance();
@@ -133,7 +133,7 @@ namespace FPS_n2 {
 								UpFunc();
 							}
 							if (this->m_LeftClick.press()) {
-								m_LeftPressTimer += 1.f / FPS;
+								this->m_LeftPressTimer += 1.f / FPS;
 								if (this->m_LeftPressTimer > 0.5f) {
 									UpFunc();
 								}
@@ -152,7 +152,7 @@ namespace FPS_n2 {
 								DownFunc();
 							}
 							if (this->m_LeftClick.press()) {
-								m_LeftPressTimer += 1.f / FPS;
+								this->m_LeftPressTimer += 1.f / FPS;
 								if (this->m_LeftPressTimer > 0.5f) {
 									DownFunc();
 								}
@@ -205,15 +205,15 @@ namespace FPS_n2 {
 							this->m_NewSetting.UsePort = n.UsePort;
 							this->m_NewSetting.IP = n.IP;
 							this->m_Sequence = SequenceEnum::SetTick;
-							m_NewWorkSelect = i;
+							this->m_NewWorkSelect = i;
 							break;
 						}
 					}
 					{
 						int i = this->m_NewWorkSetting.GetSize();
 						if (ClickBox(xp, yp + y_r(50)*(i + 2), xp + xs, yp + y_r(50)*(i + 2) + y_h, "設定を追加する")) {
-							m_NewWorkSetting.Add();
-							m_NewWorkSelect = i;
+							this->m_NewWorkSetting.Add();
+							this->m_NewWorkSelect = i;
 							this->m_Sequence = SequenceEnum::Set_Port;
 						}
 					}
@@ -246,8 +246,8 @@ namespace FPS_n2 {
 					}
 					if (ClickBox(y_r(380), yp + y_r(100), y_r(380) + y_r(120), yp + y_r(100) + y_h, "Set")) {
 						this->m_Sequence = SequenceEnum::SetTick;
-						m_NewWorkSetting.Set(this->m_NewWorkSelect, this->m_NewSetting);
-						m_NewWorkSetting.Save();
+						this->m_NewWorkSetting.Set(this->m_NewWorkSelect, this->m_NewSetting);
+						this->m_NewWorkSetting.Save();
 					}
 					break;
 				case SequenceEnum::SetTick:
@@ -274,11 +274,11 @@ namespace FPS_n2 {
 				default:
 					break;
 				}
-				m_SeqFirst = (Prev != this->m_Sequence);
+				this->m_SeqFirst = (Prev != this->m_Sequence);
 			}
-			void Dispose(void) {
-				m_ServerCtrl.Dispose();
-				m_ClientCtrl.Dispose();
+			void Dispose(void) noexcept {
+				this->m_ServerCtrl.Dispose();
+				this->m_ClientCtrl.Dispose();
 			}
 		};
 
@@ -342,7 +342,7 @@ namespace FPS_n2 {
 		private:
 			const auto&		GetMyPlayerID(void) const noexcept { return m_NetWorkBrowser.GetMyPlayerID(); }
 		public:
-			MAINLOOP(void) {
+			MAINLOOP(void) noexcept {
 				this->m_BackGround = std::make_shared<BackGroundClass>();
 				this->m_VehDataControl = std::make_shared<VehDataControl>();
 				AICtrl.resize(Player_num);
@@ -646,9 +646,9 @@ namespace FPS_n2 {
 					this->m_TPS_YradR += (sin(this->m_TPS_Yrad)*cos(this->m_TPS_YradR) - cos(this->m_TPS_Yrad) * sin(this->m_TPS_YradR))*20.f / FPS;
 					MyInput.SetRadBuf(PlayerMngr->GetPlayer(GetMyPlayerID()).GetRadBuf());
 					//ネットワーク
-					m_NetWorkBrowser.FirstExecute(MyInput, PlayerMngr->GetPlayer(GetMyPlayerID()).GetNetSendMove());
+					this->m_NetWorkBrowser.FirstExecute(MyInput, PlayerMngr->GetPlayer(GetMyPlayerID()).GetNetSendMove());
 					//クライアント
-					if (m_NetWorkBrowser.GetIsClient()) {
+					if (this->m_NetWorkBrowser.GetIsClient()) {
 						for (auto& c : this->character_Pool) {
 							if (c->GetMyPlayerID() == GetMyPlayerID() && !PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 								c->SetUseRealTimePhysics(false);
@@ -677,7 +677,7 @@ namespace FPS_n2 {
 					for (int i = 0; i < Player_num; i++) {
 						auto& c = PlayerMngr->GetPlayer(i).GetChara();
 						auto& v = PlayerMngr->GetPlayer(i).GetVehicle();
-						if (m_NetWorkBrowser.GetSequence() == SequenceEnum::MainGame) {
+						if (this->m_NetWorkBrowser.GetSequence() == SequenceEnum::MainGame) {
 							auto tmp = m_NetWorkBrowser.GetNowServerPlayerData(i, PlayerMngr->GetPlayer(i).IsRide());
 							if (i == GetMyPlayerID()) {
 								MyInput.SetKeyInput(tmp.Input.GetKeyInput());//キーフレームだけサーバーに合わせる
@@ -687,7 +687,7 @@ namespace FPS_n2 {
 								else {
 									v->SetInput(MyInput, isready, false);
 								}
-								m_NetWorkBrowser.GetRecvData(i, tmp.Frame);
+								this->m_NetWorkBrowser.GetRecvData(i, tmp.Frame);
 							}
 							else {
 								if (!PlayerMngr->GetPlayer(i).IsRide()) {
@@ -781,7 +781,7 @@ namespace FPS_n2 {
 #ifdef DEBUG
 					DebugParts->SetPoint();//次ポイントまで2.2
 #endif // DEBUG
-					m_NetWorkBrowser.LateExecute();
+					this->m_NetWorkBrowser.LateExecute();
 					//ダメージイベント
 					for (auto& c : this->character_Pool) {
 						for (int j = 0; j < this->m_DamageEvents.size(); j++) {
@@ -1021,8 +1021,9 @@ namespace FPS_n2 {
 					}
 					if (!PlayerMngr->GetPlayer(0).IsRide()) {
 						auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();
-						this->m_UIclass.SetStrParam(2, Chara->GetGunPtr((Chara->GetGunPtrNowID() + 1) % Chara->GetGunPtrNum())->GetName().c_str());
-						this->m_UIclass.SetItemGraph(1, &Chara->GetGunPtr((Chara->GetGunPtrNowID() + 1) % Chara->GetGunPtrNum())->GetGunPic());
+						int GunID = (int)((Chara->GetGunPtrNowID() + 1) % Chara->GetGunPtrNum());
+						this->m_UIclass.SetStrParam(2, Chara->GetGunPtr(GunID)->GetName().c_str());
+						this->m_UIclass.SetItemGraph(1, &Chara->GetGunPtr(GunID)->GetGunPic());
 					}
 					/*
 					if (!PlayerMngr->GetPlayer(0).IsRide()) {
@@ -1039,7 +1040,7 @@ namespace FPS_n2 {
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 
-				m_NetWorkBrowser.Dispose();
+				this->m_NetWorkBrowser.Dispose();
 				EffectControl::Dispose();
 				PlayerMngr->Dispose();
 				ObjMngr->DisposeObject();
@@ -1198,7 +1199,7 @@ namespace FPS_n2 {
 				}
 				//通信設定
 				if (!this->m_MouseActive.on()) {
-					m_NetWorkBrowser.Draw();
+					this->m_NetWorkBrowser.Draw();
 				}
 				//
 			}

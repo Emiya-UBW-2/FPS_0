@@ -313,9 +313,9 @@ namespace FPS_n2 {
 			if (this->m_IsRun) { this->m_Squat.Set(false); }
 
 			{
-				m_QKey.Execute(pQPress && !pIsNotActive);
-				m_EKey.Execute(pEPress && !pIsNotActive);
-				if (m_EKey.trigger()) {
+				this->m_QKey.Execute(pQPress && !pIsNotActive);
+				this->m_EKey.Execute(pEPress && !pIsNotActive);
+				if (this->m_EKey.trigger()) {
 					if (this->m_LeanRate == 1) {
 						this->m_LeanRate = -1;
 					}
@@ -335,7 +335,7 @@ namespace FPS_n2 {
 						this->m_TurnRate++;
 					}
 				}
-				if (m_QKey.trigger()) {
+				if (this->m_QKey.trigger()) {
 					if (this->m_LeanRate == -1) {
 						this->m_LeanRate = 1;
 					}
@@ -579,7 +579,7 @@ namespace FPS_n2 {
 	public:
 		void			Init(MV1& mv1path, int MeshNum) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			m_Mesh = MeshNum;
+			this->m_Mesh = MeshNum;
 			auto path = MV1GetTextureGraphHandle(mv1path.get(), MV1GetMaterialDifMapTexture(mv1path.get(), MV1GetMeshMaterial(mv1path.get(), m_Mesh)));
 			this->m_pic = path;								 //grass
 			this->m_obj = mv1path.Duplicate();				//’e­
@@ -587,7 +587,7 @@ namespace FPS_n2 {
 		}
 		void			Init(std::string pngpath, std::string mv1path, int MeshNum) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			m_Mesh = MeshNum;
+			this->m_Mesh = MeshNum;
 			this->m_pic = GraphHandle::Load(pngpath);		 //grass
 			MV1::Load(mv1path, &this->m_obj);				//’e­
 			Init_one();
@@ -618,25 +618,25 @@ namespace FPS_n2 {
 	public:
 		//‰Šú‰»
 		void			Init(void) noexcept {
-			m_inst.Init("data/m_obj/hit/hit.png", "data/m_obj/hit/m_obj.mv1", -1);
+			this->m_inst.Init("data/m_obj/hit/hit.png", "data/m_obj/hit/m_obj.mv1", -1);
 		}
 		//–ˆ‰ñ‚ÌƒŠƒZƒbƒg
 		void			Clear(void) noexcept {
-			m_inst.Reset();
+			this->m_inst.Reset();
 		}
 
 		void			Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
-			m_inst.Set(caliber, Position, Normal, Zvec);
-			m_IsUpdate = true;
+			this->m_inst.Set(caliber, Position, Normal, Zvec);
+			this->m_IsUpdate = true;
 		}
 		void			Execute(void) noexcept {
-			if (m_IsUpdate) {
-				m_IsUpdate = false;
-				m_inst.Execute();
+			if (this->m_IsUpdate) {
+				this->m_IsUpdate = false;
+				this->m_inst.Execute();
 			}
 		}
 		void			Draw(void) noexcept {
-			m_inst.Draw();
+			this->m_inst.Draw();
 		}
 	};
 };

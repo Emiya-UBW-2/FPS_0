@@ -3,30 +3,13 @@
 
 namespace FPS_n2 {
 	namespace Sceneclass {
-		class ObjectManager {
+		class ObjectManager :public SingletonBase<ObjectManager> {
+		private:
+			friend class SingletonBase<ObjectManager>;
+		private:
 			std::vector<std::shared_ptr<ObjectBaseClass>>	m_Object;
 			switchs											m_ResetP;
-			std::shared_ptr<BackGroundClass>			m_BackGround;				//BGコピー
-			//シングルトン化
-#if true
-
-		private:
-			static inline  ObjectManager*	m_Singleton = nullptr;
-		public:
-			static void Create() {
-				if (m_Singleton == nullptr) {
-					m_Singleton = new ObjectManager();
-				}
-			}
-			static ObjectManager* Instance(void) {
-				if (m_Singleton == nullptr) {
-					m_Singleton = new ObjectManager();
-				}
-				return m_Singleton;
-			}
-		private:
-
-#endif
+			std::shared_ptr<BackGroundClass>				m_BackGround;				//BGコピー
 		public:
 			void	LoadModel(ObjectBaseClass* pObj, const char* filepath, const char* objfilename = "model", const char* colfilename = "col") const noexcept {
 				bool iscopy = false;
@@ -143,7 +126,7 @@ namespace FPS_n2 {
 				}
 			}
 			//オブジェクトの排除チェック
-			void			DeleteCheck(void) {
+			void			DeleteCheck(void) noexcept {
 				for (int i = 0; i < this->m_Object.size(); i++) {
 					auto& o = this->m_Object[i];
 					if (o->GetIsDelete()) {
@@ -158,7 +141,7 @@ namespace FPS_n2 {
 			void			Init(const std::shared_ptr<BackGroundClass>& backGround) {
 				this->m_BackGround = backGround;
 			}
-			void			ExecuteObject(void) {
+			void			ExecuteObject(void) noexcept {
 				for (int i = 0; i < this->m_Object.size(); i++) {
 					auto& o = this->m_Object[i];
 					o->FirstExecute();
@@ -172,29 +155,29 @@ namespace FPS_n2 {
 					o->ExecuteCommon();
 				}
 			}
-			void			LateExecuteObject(void) {
+			void			LateExecuteObject(void) noexcept {
 				for (int i = 0; i < this->m_Object.size(); i++) {
 					auto& o = this->m_Object[i];
 					o->LateExecute();
 				}
 			}
-			void			DrawDepthObject(void) {
+			void			DrawDepthObject(void) noexcept {
 				for (auto& o : this->m_Object) {
 					o->Depth_Draw();
 				}
 			}
-			void			DrawObject(void) {
+			void			DrawObject(void) noexcept {
 				for (auto& o : this->m_Object) {
 					o->CheckDraw();
 					o->Draw();
 				}
 			}
-			void			DrawObject_Shadow(void) {
+			void			DrawObject_Shadow(void) noexcept {
 				for (auto& o : this->m_Object) {
 					o->DrawShadow();
 				}
 			}
-			void			DisposeObject(void) {
+			void			DisposeObject(void) noexcept {
 				for (auto& o : this->m_Object) {
 					o->Dispose();
 				}

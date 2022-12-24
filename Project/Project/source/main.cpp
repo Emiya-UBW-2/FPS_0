@@ -13,10 +13,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	FontPool::Create();								//フォント
 #ifdef DEBUG
 	DebugClass::Create();
-	auto* DebugParts = DebugClass::Instance();		//デバッグ
+	auto* DebugParts = DebugClass::Instance();
 #endif // DEBUG
 	auto* DrawParts = DXDraw::Instance();
-	//
 	auto* EffectUseControl = EffectResource::Instance();
 	//シーン
 	auto MAINLOOPLOADERscene = std::make_shared<FPS_n2::Sceneclass::MAINLOOPLOADER>();

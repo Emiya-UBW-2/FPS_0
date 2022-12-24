@@ -3,7 +3,7 @@
 
 namespace FPS_n2 {
 	namespace Sceneclass {
-		void GunClass::SetMagazine(const char* MagName) {
+		void GunClass::SetMagazine(const char* MagName) noexcept {
 			if (MagName != nullptr) {
 				std::string magName = MagName;
 				auto* ObjMngr = ObjectManager::Instance();
@@ -15,7 +15,7 @@ namespace FPS_n2 {
 				this->m_Mag_Ptr.reset();
 			}
 		}
-		void GunClass::ExecuteCartInChamber(void) {
+		void GunClass::ExecuteCartInChamber(void) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
 
 			const auto& RetMat = GetFrameWorldMat(GunFrame::Cart).GetRot();
@@ -69,7 +69,7 @@ namespace FPS_n2 {
 				this->m_CartPtr->SetMove(RetMat, Lerp(PosInMag, Pos, this->m_ChamberMovePer));
 			}
 		}
-		void GunClass::SetBullet(void) {
+		void GunClass::SetBullet(void) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
 			auto* SE = SoundPool::Instance();
 
@@ -81,7 +81,7 @@ namespace FPS_n2 {
 			this->m_IsShot = true;
 			//
 			auto& LastAmmo = (std::shared_ptr<AmmoClass>&)(*ObjMngr->AddObject(ObjType::Ammo));
-				LastAmmo->Put(this->m_NowAmmo, GetMuzzleMatrix().pos(), GetMuzzleMatrix().GetRot().zvec() * -1.f, this->m_MyID);
+			LastAmmo->Put(this->m_NowAmmo, GetMuzzleMatrix().pos(), GetMuzzleMatrix().GetRot().zvec() * -1.f, this->m_MyID);
 			this->m_NowAmmo = nullptr;
 			//
 			this->m_CartPtr->SetIsEmpty(true);//’e“ª‚ð‚È‚­‚·

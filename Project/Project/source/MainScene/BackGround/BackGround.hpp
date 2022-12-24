@@ -13,7 +13,7 @@ namespace FPS_n2 {
 			std::vector<VECTOR_ref>		m_WayPoint;
 			std::vector<MV1*>			m_MapCols;
 
-			int softimage;
+			int							m_softimage{ -1 };
 
 			BuildControl				m_BuildControl;
 			Grass						m_grass;
@@ -34,7 +34,7 @@ namespace FPS_n2 {
 				return false;
 			}
 			void			CheckTreetoSquare(const VECTOR_ref& cornerLF, const VECTOR_ref& cornerRF, const VECTOR_ref& cornerRR, const VECTOR_ref& cornerLR, const VECTOR_ref& center, float speed) {
-				m_Tree.CheckTreetoSquare(cornerLF, cornerRF, cornerRR, cornerLR, center, speed);
+				this->m_Tree.CheckTreetoSquare(cornerLF, cornerRF, cornerRR, cornerLR, center, speed);
 			}
 			const auto		CheckLinetoMap(const VECTOR_ref& StartPos, VECTOR_ref* EndPos, bool isNearest, VECTOR_ref* Normal = nullptr) {
 				bool isHit = false;
@@ -143,7 +143,7 @@ namespace FPS_n2 {
 					this->m_Box2DWall.Init();
 				}
 				//–Ø
-				m_Tree.Init(&this->m_ObjGroundCol, this->m_BuildControl.GetBuildCol());
+				this->m_Tree.Init(&this->m_ObjGroundCol, this->m_BuildControl.GetBuildCol());
 				//‘
 				{
 					float MAPX = 300.f*Scale_Rate;
@@ -153,7 +153,7 @@ namespace FPS_n2 {
 					int x, y;
 					GraphHandle BaseGrass = GraphHandle::Load("data/grass.png");
 					BaseGrass.GetSize(&x, &y);
-					softimage = MakeSoftImage(x, y);
+					m_softimage = MakeSoftImage(x, y);
 					GraphHandle BlackScreen = GraphHandle::Make((int)((float)x*SIZX / MAPX), (int)((float)y*SIZZ / MAPZ));
 					BlackScreen.SetDraw_Screen(false);
 					{
@@ -175,10 +175,10 @@ namespace FPS_n2 {
 								);
 							}
 						}
-						GetDrawScreenSoftImage(0, 0, x, y, softimage);
+						GetDrawScreenSoftImage(0, 0, x, y, m_softimage);
 					}
-					this->m_grass.Init(&this->m_ObjGroundCol, softimage);
-					//DeleteSoftImage(softimage);
+					this->m_grass.Init(&this->m_ObjGroundCol, m_softimage);
+					//DeleteSoftImage(m_softimage);
 				}
 				//•Ç
 				{
@@ -222,7 +222,7 @@ namespace FPS_n2 {
 				this->m_Tree.Draw(true);
 				this->m_grass.Draw();
 
-				//DrawSoftImage(0,0,softimage);
+				//DrawSoftImage(0,0,m_softimage);
 			}
 			//
 			void			Dispose(void) noexcept {

@@ -44,7 +44,7 @@ namespace FPS_n2 {
 			void			SetCameraPosition(const VECTOR_ref& value) { this->m_CameraPosition = value; }
 			void			SetCameraSize(float value) { this->m_CameraSize = value; }
 
-			auto&			GetObj(void) { return this->m_Use_RealTimePhysics ? this->m_obj_REALTIME : this->m_obj_LOADCALC; }
+			auto&			GetObj(void) noexcept { return this->m_Use_RealTimePhysics ? this->m_obj_REALTIME : this->m_obj_LOADCALC; }
 			const auto&		GetObj_const(void) const noexcept { return this->m_Use_RealTimePhysics ? this->m_obj_REALTIME : this->m_obj_LOADCALC; }
 			const auto		GetMatrix(void) const noexcept { return this->GetObj_const().GetMatrix(); }
 			const auto		GetIsBaseModel(const char* filepath, const char* objfilename, const char* colfilename) const noexcept {
@@ -75,7 +75,7 @@ namespace FPS_n2 {
 				this->m_move.pos = pos;
 				UpdateMove();
 			}
-			void			UpdateMove(void) {
+			void			UpdateMove(void) noexcept {
 				this->m_PrevMat = this->GetObj().GetMatrix();
 				this->GetObj().SetMatrix(this->m_move.MatIn());
 				if (this->m_col.IsActive()) {
@@ -183,14 +183,14 @@ namespace FPS_n2 {
 				this->m_objActive = true;
 			}
 			//
-			virtual void	Init(void) {
+			virtual void	Init(void) noexcept {
 				this->m_IsActive = true;
 				this->m_IsResetPhysics = true;
 				this->m_IsFirstLoop = true;
 				this->m_IsDraw = false;
 			}
 			//
-			void			SetFrameNum(void) {
+			void			SetFrameNum(void) noexcept {
 				if (this->m_objActive) {
 					int i = 0;
 					bool isEnd = false;
@@ -283,8 +283,8 @@ namespace FPS_n2 {
 				}
 			}
 			//
-			virtual void	FirstExecute(void) { }
-			void			ExecuteCommon(void) {
+			virtual void	FirstExecute(void) noexcept { }
+			void			ExecuteCommon(void) noexcept {
 				if (this->m_IsFirstLoop) {
 					this->m_PrevMat = this->GetObj().GetMatrix();
 				}
@@ -320,15 +320,15 @@ namespace FPS_n2 {
 				//Å‰‚Ìƒ‹[ƒvI‚í‚è
 				this->m_IsFirstLoop = false;
 			}
-			virtual void	LateExecute(void) { }
+			virtual void	LateExecute(void) noexcept { }
 			//
-			virtual void	Depth_Draw(void) { }
-			virtual void	DrawShadow(void) {
+			virtual void	Depth_Draw(void) noexcept { }
+			virtual void	DrawShadow(void) noexcept {
 				if (this->m_IsActive && this->m_IsDraw) {
 					this->GetObj().DrawModel();
 				}
 			}
-			virtual void	CheckDraw(void) {
+			virtual void	CheckDraw(void) noexcept {
 				this->m_IsDraw = false;
 				this->m_DistanceToCam = (this->GetObj().GetMatrix().pos() - GetCameraPosition()).size();
 				if (CheckCameraViewClip_Box(
@@ -338,7 +338,7 @@ namespace FPS_n2 {
 					this->m_IsDraw |= true;
 				}
 			}
-			virtual void	Draw(void) {
+			virtual void	Draw(void) noexcept {
 				if (this->m_IsActive && this->m_IsDraw) {
 					if (CheckCameraViewClip_Box(
 						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
@@ -349,7 +349,7 @@ namespace FPS_n2 {
 				}
 			}
 			//
-			virtual void	Dispose(void) {
+			virtual void	Dispose(void) noexcept {
 				this->m_BackGround.reset();
 				this->GetObj().Dispose();
 				this->m_col.Dispose();

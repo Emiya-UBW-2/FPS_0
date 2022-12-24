@@ -6,7 +6,7 @@ namespace FPS_n2 {
 		class MAINLOOPLOADER : public TEMPSCENE {
 		private:
 		public:
-			MAINLOOPLOADER(void) {}
+			MAINLOOPLOADER(void) noexcept {}
 		public:
 			void Set_Sub(void) noexcept override {
 				SetUseASyncLoadFlag(TRUE);

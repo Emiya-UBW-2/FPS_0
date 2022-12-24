@@ -39,12 +39,12 @@ namespace FPS_n2 {
 				DrawBox(xp1 + 2 + length * ParamBuf / ParamMax, yp1 + 2, xp1 + 2 + length * Param1 / ParamMax, yp2 - 2, (ParamBuf > Param1) ? ColorSub : ColorAdd, TRUE);
 			}
 		public:
-			void			Set(void) {
+			void			Set(void) noexcept {
 				for (int i = 0; i < 3; i++) {
 					ItemGraphPtr[i] = nullptr;
 				}
 			}
-			void			Draw(void) {
+			void			Draw(void) noexcept {
 				auto* Fonts = FontPool::Instance();
 				auto* DrawParts = DXDraw::Instance();
 				auto Red = GetColor(255, 0, 0);
@@ -123,15 +123,16 @@ namespace FPS_n2 {
 						}
 						yp1 += y_r(64);
 						for (int i = 1; i <= 2; i++) {
-							if (strParam[1 + i].length() > 0) {
-								if (ItemGraphPtr[0 + i] != nullptr) {
+							auto& str = strParam.at(1 + i);
+							if (str.length() > 0) {
+								if (ItemGraphPtr[i] != nullptr) {
 									SetDrawBright(192, 192, 192);
 									int x, y;
-									ItemGraphPtr[0 + i]->GetSize(&x, &y);
-									ItemGraphPtr[0 + i]->DrawRotaGraph(xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.25f), yp1 - (int)((float)(y_r(y / 2))*0.25f), (float)(y_r(100)) / 100.f*0.25f, 0.f, true);
+									ItemGraphPtr[i]->GetSize(&x, &y);
+									ItemGraphPtr[i]->DrawRotaGraph(xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.25f), yp1 - (int)((float)(y_r(y / 2))*0.25f), (float)(y_r(100)) / 100.f*0.25f, 0.f, true);
 
 									Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(12), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
-										xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.5f), yp1 - (int)((float)(y_r(y / 2))*0.5f), White, Black, "%s", strParam[1 + i].c_str());
+										xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.5f), yp1 - (int)((float)(y_r(y / 2))*0.5f), White, Black, "%s", str.c_str());
 									SetDrawBright(255, 255, 255);
 								}
 							}
@@ -162,7 +163,7 @@ namespace FPS_n2 {
 						yp1 = DrawParts->m_DispYSize / 20;
 						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(28), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, xp1, yp1, color, White, "<%s>", Mes.c_str());
 
-						
+
 
 						int picx = std::max(DrawParts->m_DispXSize / 8, Fonts->Get(FontPool::FontType::HUD_Edge).GetStringWidth(y_r(28), "<%s>", Mes.c_str()) / 2 + y_r(20));
 

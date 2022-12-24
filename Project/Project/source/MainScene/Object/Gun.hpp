@@ -24,16 +24,16 @@ namespace FPS_n2 {
 			bool							m_UseMoveParts{ false };
 		public://ƒQƒbƒ^[
 			const auto GetIsFrameActive(GunFrame frame) const noexcept { return m_Frames[(int)frame].first >= 0; }
-			const auto GetFrameLocalMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalMatrix(m_Frames[(int)frame].first); }
-			const auto GetParentFrameLocalMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalMatrix((int)GetObj_const().frame_parent(m_Frames[(int)frame].first)); }
-			const auto GetFrameWorldMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalWorldMatrix(m_Frames[(int)frame].first); }
-			const auto GetParentFrameWorldMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalWorldMatrix((int)GetObj_const().frame_parent(m_Frames[(int)frame].first)); }
-			void ResetFrameLocalMat(GunFrame frame) { GetObj().frame_Reset(m_Frames[(int)frame].first); }
-			void SetFrameLocalMat(GunFrame frame, const MATRIX_ref&value) { GetObj().SetFrameLocalMatrix(m_Frames[(int)frame].first, value * m_Frames[(int)frame].second); }
+			const auto GetFrameLocalMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalMatrix(this->m_Frames[(int)frame].first); }
+			const auto GetParentFrameLocalMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalMatrix((int)GetObj_const().frame_parent(this->m_Frames[(int)frame].first)); }
+			const auto GetFrameWorldMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalWorldMatrix(this->m_Frames[(int)frame].first); }
+			const auto GetParentFrameWorldMat(GunFrame frame) const noexcept { return GetObj_const().GetFrameLocalWorldMatrix((int)GetObj_const().frame_parent(this->m_Frames[(int)frame].first)); }
+			void ResetFrameLocalMat(GunFrame frame) { GetObj().frame_Reset(this->m_Frames[(int)frame].first); }
+			void SetFrameLocalMat(GunFrame frame, const MATRIX_ref&value) { GetObj().SetFrameLocalMatrix(this->m_Frames[(int)frame].first, value * m_Frames[(int)frame].second); }
 			const auto& GetShotType(void) const noexcept { return this->m_ShotType[0]; }
 			const auto& GetReloadType(void) const noexcept { return this->m_ReloadType[0]; }
 			const auto& GetAnime(GunAnimeID anim) { return GetObj().get_anime((int)anim); }
-			const auto& GetNowAnime(void) {
+			const auto& GetNowAnime(void) noexcept {
 				size_t animsel = (size_t)(this->m_ShotPhase) - 2;
 				switch (GetShotType()) {
 				case SHOTTYPE::FULL:
@@ -71,22 +71,22 @@ namespace FPS_n2 {
 			const auto& GetGunPic(void) const noexcept { return this->m_GunPic; }
 			const auto& GetHumanAnimType(void) const noexcept { return this->m_HumanAnimType; }
 			const auto& GetIsShot(void) const noexcept { return this->m_IsShot; }
-			void SetGunMatrix(const MATRIX_ref& value, int pShotPhase) {
+			void SetGunMatrix(const MATRIX_ref& value, int pShotPhase) noexcept {
 				SetMove(value.GetRot(), value.pos());
 				this->m_Mag_Ptr->SetMove(GetFrameWorldMat(GunFrame::Magpos).GetRot(), GetFrameWorldMat(GunFrame::Magpos).pos());
 				this->m_ShotPhase = pShotPhase;
 			}
-			void SetMagazine(const char*);//ƒ}ƒKƒWƒ“‚Ì’…’E
-			void ExecuteCartInChamber(void);//ƒ`ƒƒƒ“ƒo[‚Ö‚Ì‘•’eA”ro
-			void SetBullet(void);//”­–C
-			void SetAmmoHandMatrix(const MATRIX_ref& value, float pPer) {
+			void SetMagazine(const char*) noexcept;//ƒ}ƒKƒWƒ“‚Ì’…’E
+			void ExecuteCartInChamber(void) noexcept;//ƒ`ƒƒƒ“ƒo[‚Ö‚Ì‘•’eA”ro
+			void SetBullet(void) noexcept;//”­–C
+			void SetAmmoHandMatrix(const MATRIX_ref& value, float pPer) noexcept {
 				this->m_Mag_Ptr->SetHandMatrix(value, pPer, GetReloadType());
 			}
 		public:
-			GunClass(void) { this->m_objType = ObjType::Gun; }
-			~GunClass(void) {}
+			GunClass(void) noexcept { this->m_objType = ObjType::Gun; }
+			~GunClass(void) noexcept {}
 		public:
-			void			Init(void) override {
+			void			Init(void) noexcept override {
 				ObjectBaseClass::Init();
 				{
 					int mdata = FileRead_open((this->m_FilePath + "data.txt").c_str(), FALSE);
@@ -127,7 +127,7 @@ namespace FPS_n2 {
 				SetMagazine(this->m_MagName[0].c_str());
 				//SetMagazine(nullptr);
 			}
-			void			FirstExecute(void) override {
+			void			FirstExecute(void) noexcept override {
 				auto* SE = SoundPool::Instance();
 				if (this->m_IsFirstLoop) {
 				}
@@ -175,26 +175,26 @@ namespace FPS_n2 {
 				//0
 				{
 					if ((5.f < GetAnime(GunAnimeID::Cocking).time && GetAnime(GunAnimeID::Cocking).time < 6.f)) {
-						if (m_boltSoundSequence != 1) {
-							m_boltSoundSequence = 1;
+						if (this->m_boltSoundSequence != 1) {
+							this->m_boltSoundSequence = 1;
 							SE->Get((int)SoundEnum::Cocking0).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((11.f < GetAnime(GunAnimeID::Cocking).time && GetAnime(GunAnimeID::Cocking).time < 12.f)) {
-						if (m_boltSoundSequence != 2) {
-							m_boltSoundSequence = 2;
+						if (this->m_boltSoundSequence != 2) {
+							this->m_boltSoundSequence = 2;
 							SE->Get((int)SoundEnum::Cocking1).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((28.f < GetAnime(GunAnimeID::Cocking).time && GetAnime(GunAnimeID::Cocking).time < 29.f)) {
-						if (m_boltSoundSequence != 3) {
-							m_boltSoundSequence = 3;
+						if (this->m_boltSoundSequence != 3) {
+							this->m_boltSoundSequence = 3;
 							SE->Get((int)SoundEnum::Cocking2).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((36.f < GetAnime(GunAnimeID::Cocking).time && GetAnime(GunAnimeID::Cocking).time < 37.f)) {
-						if (m_boltSoundSequence != 4) {
-							m_boltSoundSequence = 4;
+						if (this->m_boltSoundSequence != 4) {
+							this->m_boltSoundSequence = 4;
 							SE->Get((int)SoundEnum::Cocking3).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
@@ -202,14 +202,14 @@ namespace FPS_n2 {
 				//1
 				{
 					if ((5.f < GetAnime(GunAnimeID::ReloadStart).time && GetAnime(GunAnimeID::ReloadStart).time < 6.f)) {
-						if (m_boltSoundSequence != 5) {
-							m_boltSoundSequence = 5;
+						if (this->m_boltSoundSequence != 5) {
+							this->m_boltSoundSequence = 5;
 							SE->Get((int)SoundEnum::Cocking0).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((11.f < GetAnime(GunAnimeID::ReloadStart).time && GetAnime(GunAnimeID::ReloadStart).time < 12.f)) {
-						if (m_boltSoundSequence != 6) {
-							m_boltSoundSequence = 6;
+						if (this->m_boltSoundSequence != 6) {
+							this->m_boltSoundSequence = 6;
 							SE->Get((int)SoundEnum::Cocking1).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
@@ -217,26 +217,26 @@ namespace FPS_n2 {
 				//2
 				{
 					if ((10.f < GetAnime(GunAnimeID::ReloadOne).time && GetAnime(GunAnimeID::ReloadOne).time < 11.f)) {
-						if (m_boltSoundSequence != 7) {
-							m_boltSoundSequence = 7;
+						if (this->m_boltSoundSequence != 7) {
+							this->m_boltSoundSequence = 7;
 							SE->Get((int)SoundEnum::Cocking2).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					else if (GetAnime(GunAnimeID::ReloadOne).per != 0.f) {
-						m_boltSoundSequence = -1;
+						this->m_boltSoundSequence = -1;
 					}
 				}
 				//3
 				{
 					if ((8.f < GetAnime(GunAnimeID::ReloadEnd).time && GetAnime(GunAnimeID::ReloadEnd).time < 9.f)) {
-						if (m_boltSoundSequence != 8) {
-							m_boltSoundSequence = 8;
+						if (this->m_boltSoundSequence != 8) {
+							this->m_boltSoundSequence = 8;
 							SE->Get((int)SoundEnum::Cocking2).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((16.f < GetAnime(GunAnimeID::ReloadEnd).time && GetAnime(GunAnimeID::ReloadEnd).time < 17.f)) {
-						if (m_boltSoundSequence != 9) {
-							m_boltSoundSequence = 9;
+						if (this->m_boltSoundSequence != 9) {
+							this->m_boltSoundSequence = 9;
 							SE->Get((int)SoundEnum::Cocking3).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
@@ -244,26 +244,26 @@ namespace FPS_n2 {
 				//0
 				{
 					if ((0.5f < GetAnime(GunAnimeID::Shot).time && GetAnime(GunAnimeID::Shot).time < 1.f)) {
-						if (m_boltSoundSequence != 1) {
-							m_boltSoundSequence = 1;
+						if (this->m_boltSoundSequence != 1) {
+							this->m_boltSoundSequence = 1;
 							SE->Get((int)SoundEnum::Cocking0).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((2.f < GetAnime(GunAnimeID::Shot).time && GetAnime(GunAnimeID::Shot).time < 3.f)) {
-						if (m_boltSoundSequence != 2) {
-							m_boltSoundSequence = 2;
+						if (this->m_boltSoundSequence != 2) {
+							this->m_boltSoundSequence = 2;
 							SE->Get((int)SoundEnum::Cocking1).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((5.f < GetAnime(GunAnimeID::Shot).time && GetAnime(GunAnimeID::Shot).time < 6.f)) {
-						if (m_boltSoundSequence != 3) {
-							m_boltSoundSequence = 3;
+						if (this->m_boltSoundSequence != 3) {
+							this->m_boltSoundSequence = 3;
 							SE->Get((int)SoundEnum::Cocking2).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
 					if ((7.5f < GetAnime(GunAnimeID::Shot).time && GetAnime(GunAnimeID::Shot).time < 8.5f)) {
-						if (m_boltSoundSequence != 4) {
-							m_boltSoundSequence = 4;
+						if (this->m_boltSoundSequence != 4) {
+							this->m_boltSoundSequence = 4;
 							SE->Get((int)SoundEnum::Cocking3).Play_3D(0, GetMatrix().pos(), Scale_Rate*50.f);
 						}
 					}
@@ -273,7 +273,7 @@ namespace FPS_n2 {
 					GetObj().work_anime();
 					SetFrameLocalMat(GunFrame::Center, GetFrameLocalMat(GunFrame::Center).GetRot());//1‚ÌƒtƒŒ[ƒ€ˆÚ“®—Ê‚ð–³Ž‹‚·‚é
 				}
-				if(this->m_UseMoveParts){
+				if (this->m_UseMoveParts) {
 					ResetFrameLocalMat(GunFrame::MovePoint);
 					auto baselocalmat = GetFrameLocalMat(GunFrame::MovePoint);
 					auto baseworldmat = GetFrameWorldMat(GunFrame::MovePoint);
@@ -305,7 +305,7 @@ namespace FPS_n2 {
 				//’e–ò‚Ì‰‰ŽZ
 				ExecuteCartInChamber();
 			}
-			void			Draw(void) override {
+			void			Draw(void) noexcept override {
 				if (this->m_IsActive && this->m_IsDraw) {
 					if (CheckCameraViewClip_Box(
 						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
@@ -318,11 +318,11 @@ namespace FPS_n2 {
 					}
 				}
 			}
-			void			Dispose(void) override {
+			void			Dispose(void) noexcept override {
 				this->m_MagName.clear();
 			}
 		public:
-			void			LoadReticle(void) {
+			void			LoadReticle(void) noexcept {
 				SetUseASyncLoadFlag(TRUE);
 				this->m_reticlePic = GraphHandle::Load(this->m_FilePath + "reticle.png");
 				this->m_GunPic = GraphHandle::Load(this->m_FilePath + "pic.bmp");

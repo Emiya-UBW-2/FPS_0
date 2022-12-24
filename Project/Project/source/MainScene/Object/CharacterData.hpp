@@ -24,15 +24,15 @@ namespace FPS_n2 {
 			float m_vel = 0.f;
 		public:
 			void Init(float Length, float N, float rad) {
-				m_PendulumLength = Length;
-				m_PendulumMass = N;
-				m_rad = rad;
-				m_vel = 0.f;
+				this->m_PendulumLength = Length;
+				this->m_PendulumMass = N;
+				this->m_rad = rad;
+				this->m_vel = 0.f;
 			}
 
 			void Execute() {
-				m_vel += (-9.8f / m_PendulumLength * std::sin(m_rad) - m_drag_coeff / m_PendulumMass * m_vel) / 60.f;
-				m_rad += m_vel / 60.f;
+				this->m_vel += (-9.8f / m_PendulumLength * std::sin(this->m_rad) - m_drag_coeff / m_PendulumMass * m_vel) / 60.f;
+				this->m_rad += m_vel / 60.f;
 			}
 
 			const auto GetRad() const noexcept { return m_rad; }
@@ -50,13 +50,13 @@ namespace FPS_n2 {
 			HitType		m_HitType{ HitType::Body };
 		public:
 			void	Execute(const VECTOR_ref&pos, float radius, HitType pHitType) {
-				m_pos = pos;
-				m_radius = radius;
-				m_HitType = pHitType;
+				this->m_pos = pos;
+				this->m_radius = radius;
+				this->m_HitType = pHitType;
 			}
 			void	Draw() {
 				unsigned int color;
-				switch (m_HitType) {
+				switch (this->m_HitType) {
 				case FPS_n2::Sceneclass::HitType::Head:
 					color = GetColor(255, 0, 0);
 					break;
@@ -69,12 +69,12 @@ namespace FPS_n2 {
 				default:
 					break;
 				}
-				DrawSphere_3D(m_pos, m_radius, color, color);
+				DrawSphere_3D(this->m_pos, m_radius, color, color);
 			}
 
 			bool	Colcheck(const AmmoClass& pAmmo) {
 				return (HitCheck_Sphere_Capsule(
-					m_pos.get(), m_radius,
+					this->m_pos.get(), m_radius,
 					pAmmo.GetMove().repos.get(), pAmmo.GetMove().pos.get(), pAmmo.GetCaliberSize()*Scale_Rate
 				) == TRUE);
 			}

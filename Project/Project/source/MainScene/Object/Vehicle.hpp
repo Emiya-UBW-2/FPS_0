@@ -102,19 +102,19 @@ namespace FPS_n2 {
 			const auto		Set_MidPos(void) noexcept { return (this->m_move.pos + (this->m_move.mat.yvec() * 1.5f * Scale_Rate)); }							//HPバーを表示する場所
 			//
 			void			ReSet_range(void) noexcept { this->m_range = 6.f; }
-			void			SetPosBufOverRide(const VECTOR_ref& pPos, const VECTOR_ref& pVec, const VECTOR_ref& rad) noexcept {
+			void			SetPosBufOverRide(const VECTOR_ref& pos_t, const VECTOR_ref& pVec, const VECTOR_ref& rad) noexcept {
 				this->m_PosBufOverRideFlag = true;
-				this->m_PosBufOverRide = pPos;
+				this->m_PosBufOverRide = pos_t;
 				this->m_VecBufOverRide = pVec;
 				this->m_RadOverRide = rad;
 			}
 		public:
 			void			ValueInit(const VehDataControl::VhehicleData* pVeh_data, const MV1& hit_pic, const std::shared_ptr<b2World>& pB2World, PlayerID pID) noexcept;
-			void			ValueSet(float pxRad, float pyRad, const VECTOR_ref& pPos) noexcept;
+			void			ValueSet(float pxRad, float pyRad, const VECTOR_ref& pos_t) noexcept;
 			void			SetInput(const InputControl& pInput, bool pReady, bool isOverrideView) noexcept;													//
 			void			Setcamera(Camera3DInfo& m_MainCamera, const float fov_base) noexcept;																	//カメラ設定出力
 			const std::pair<bool, bool>		CheckAmmoHit(AmmoClass* pAmmo, const VECTOR_ref& pShooterPos) noexcept;
-			void			HitGround(const VECTOR_ref& pPos, const VECTOR_ref& pNorm, const VECTOR_ref& pVec) noexcept;
+			void			HitGround(const VECTOR_ref& pos_t, const VECTOR_ref& pNorm, const VECTOR_ref& pVec) noexcept;
 			void			DrawModuleView(int xp, int yp, int size) noexcept;																					//被弾チェック
 		private://更新関連
 			const auto		CheckAmmoHited(const AmmoClass& pAmmo) noexcept;																					//被弾チェック

@@ -88,7 +88,7 @@ namespace FPS_n2 {
 			int													m_CharaSound{ -1 };
 			SoundHandle											m_Breath;
 			bool												m_HeartSoundFlag{ false };
-			std::array<std::shared_ptr<GunClass>,2>				m_Gun_Ptr{ nullptr };			//銃
+			std::array<std::shared_ptr<GunClass>, 2>				m_Gun_Ptr{ nullptr };			//銃
 			std::array<float, 2>								m_SlingPer;
 			int													m_GunSelect{ 0 };
 			//
@@ -96,23 +96,23 @@ namespace FPS_n2 {
 		public://ゲッター
 			void			SetAnimOnce(CharaAnimeID ID, float speed) { ObjectBaseClass::SetAnimOnce((int)ID, speed); }
 			void			SetAnimLoop(CharaAnimeID ID, float speed) { ObjectBaseClass::SetAnimLoop((int)ID, speed); }
-			void			ResetFrameLocalMat(CharaFrame frame) noexcept { GetObj().frame_Reset(m_Frames[(int)frame].first); }
-			void			SetFrameLocalMat(CharaFrame frame, const MATRIX_ref&value) noexcept { GetObj().SetFrameLocalMatrix(m_Frames[(int)frame].first, value * m_Frames[(int)frame].second); }
+			void			ResetFrameLocalMat(CharaFrame frame) noexcept { GetObj().frame_Reset(this->m_Frames[(int)frame].first); }
+			void			SetFrameLocalMat(CharaFrame frame, const MATRIX_ref&value) noexcept { GetObj().SetFrameLocalMatrix(this->m_Frames[(int)frame].first, value * m_Frames[(int)frame].second); }
 			void			SetShapePer(CharaShape pShape, float Per) noexcept { m_Shapes[(int)pShape].second = Per; }
 			void			SetCharaType(CharaTypeID value) noexcept { this->m_CharaType = value; }
-			void			SetPosBufOverRide(const VECTOR_ref& pPos, const VECTOR_ref& pVec, const VECTOR_ref& rad) noexcept {
+			void			SetPosBufOverRide(const VECTOR_ref& pos_t, const VECTOR_ref& pVec, const VECTOR_ref& rad) noexcept {
 				this->m_PosBufOverRideFlag = true;
-				this->m_PosBufOverRide = pPos;
+				this->m_PosBufOverRide = pos_t;
 				this->m_VecBufOverRide = pVec;
 				this->m_RadOverRide = rad;
 			}
 
 			auto&			GetAnimeBuf(CharaAnimeID anim) noexcept { return this->m_AnimPerBuf[(int)anim]; }
 			auto&			GetAnime(CharaAnimeID anim) noexcept { return this->GetObj().get_anime((int)anim); }
-			const auto		GetFrameLocalMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalMatrix(m_Frames[(int)frame].first); }
-			const auto		GetParentFrameLocalMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalMatrix((int)this->GetObj_const().frame_parent(m_Frames[(int)frame].first)); }
-			const auto		GetFrameWorldMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalWorldMatrix(m_Frames[(int)frame].first); }
-			const auto		GetParentFrameWorldMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalWorldMatrix((int)this->GetObj_const().frame_parent(m_Frames[(int)frame].first)); }
+			const auto		GetFrameLocalMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalMatrix(this->m_Frames[(int)frame].first); }
+			const auto		GetParentFrameLocalMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalMatrix((int)this->GetObj_const().frame_parent(this->m_Frames[(int)frame].first)); }
+			const auto		GetFrameWorldMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalWorldMatrix(this->m_Frames[(int)frame].first); }
+			const auto		GetParentFrameWorldMat(CharaFrame frame) const noexcept { return this->GetObj_const().GetFrameLocalWorldMatrix((int)this->GetObj_const().frame_parent(this->m_Frames[(int)frame].first)); }
 			const auto		GetRadBuf(void) const noexcept { return this->m_InputGround.GetRadBuf(); }
 			//
 			const auto		GetPressFrontGround(void) const noexcept { return this->m_InputGround.GetPressFront(); }
@@ -144,7 +144,7 @@ namespace FPS_n2 {
 			const auto&		GetGunPtrNow_Const(void) const noexcept { return this->m_Gun_Ptr[this->m_GunSelect]; }
 
 			auto&			GetGunPtr(int ID) noexcept { return this->m_Gun_Ptr[ID]; }
-			const auto		GetGunPtrNum() const noexcept { return this->m_Gun_Ptr.size(); }
+			const auto		GetGunPtrNum() const noexcept { return (int)this->m_Gun_Ptr.size(); }
 			const auto&		GetGunPtrNowID() const noexcept { return this->m_GunSelect; }
 
 			const auto		GetCharaDir(void) const noexcept { return this->m_UpperMatrix * this->m_move.mat; }
@@ -168,7 +168,7 @@ namespace FPS_n2 {
 			const auto&		GetHeartRate(void) const noexcept { return this->m_HeartRate; }
 			const auto&		GetHeartRateRad(void) const noexcept { return this->m_HeartRateRad; }
 			const auto&		GetRecoilRadAdd(void) const noexcept { return this->m_RecoilRadAdd; }
-			
+
 			const auto		GetHeartRandVec(void) const noexcept {
 				auto tmp2 = 0.2f * GetRandf(deg2rad(1.f));
 				auto tmp3 = Lerp(0.5f, 0.35f, this->m_InputGround.GetSquatPer());
@@ -226,7 +226,7 @@ namespace FPS_n2 {
 			const auto&		GetDamageSwitchRec(void) const noexcept { return this->m_DamageSwitchRec; }
 		public:
 			//
-			void			ValueSet(float pxRad, float pyRad, bool SquatOn, const VECTOR_ref& pPos, PlayerID pID) noexcept {
+			void			ValueSet(float pxRad, float pyRad, bool SquatOn, const VECTOR_ref& pos_t, PlayerID pID) noexcept {
 				this->m_MyID = pID;
 				//
 				this->m_KeyActive = false;
@@ -270,9 +270,9 @@ namespace FPS_n2 {
 				this->m_CharaSound = -1;
 				//動作にかかわる操作
 				this->m_InputGround.ValueSet(pxRad, pyRad, SquatOn);
-				this->m_PosBuf = pPos;
+				this->m_PosBuf = pos_t;
 				this->m_PosBufOverRideFlag = false;
-				this->m_PosBufOverRide = pPos;
+				this->m_PosBufOverRide = pos_t;
 				this->m_VecBufOverRide.clear();
 				//上記を反映するもの
 				this->m_yrad_Upper = this->m_InputGround.GetRad().y();
@@ -286,8 +286,8 @@ namespace FPS_n2 {
 				this->m_move.vec.clear();
 				SetMove(MATRIX_ref::RotY(this->m_yrad_Bottom), this->m_PosBuf);
 
-				m_SlingZrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(90));
-				m_SlingYrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(30));
+				this->m_SlingZrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(90));
+				this->m_SlingYrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(30));
 
 				this->m_DamageSwitch = 0;
 				this->m_DamageSwitchRec = this->m_DamageSwitch;
@@ -297,7 +297,7 @@ namespace FPS_n2 {
 				this->m_KeyActive = pReady;
 
 				//地
-				m_InputGround.SetInput(
+				this->m_InputGround.SetInput(
 					pInput.GetAddxRad(), pInput.GetAddyRad(),
 					GetHeartRandVec(),
 					pInput.GetGoFrontPress(),
@@ -312,10 +312,10 @@ namespace FPS_n2 {
 					this->m_CannotRun
 				);
 				//銃切替
-				m_GunChange.Execute(pInput.GetAction1());
-				if (m_GunChange.trigger() && GetCanshot()) {
-					m_SlingZrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(90));
-					m_SlingYrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(30));
+				this->m_GunChange.Execute(pInput.GetAction1());
+				if (this->m_GunChange.trigger() && GetCanshot()) {
+					this->m_SlingZrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(90));
+					this->m_SlingYrad.Init(0.05f*Scale_Rate, 3.f, deg2rad(30));
 					++this->m_GunSelect %= 2;
 				}
 				//AIM
@@ -350,10 +350,10 @@ namespace FPS_n2 {
 				}
 				this->m_Press_Aim = pInput.GetAction6() && this->m_KeyActive;
 				//
-				m_Rightkey.Execute(pInput.GetRightPress());
-				m_Leftkey.Execute(pInput.GetLeftPress());
-				m_Upkey.Execute(pInput.GetUpPress());
-				m_Downkey.Execute(pInput.GetDownPress());
+				this->m_Rightkey.Execute(pInput.GetRightPress());
+				this->m_Leftkey.Execute(pInput.GetLeftPress());
+				this->m_Upkey.Execute(pInput.GetUpPress());
+				this->m_Downkey.Execute(pInput.GetDownPress());
 				//
 				{
 					auto TmpReady = !(!GetIsRun() || (this->m_ShotPhase >= 2));
@@ -432,13 +432,13 @@ namespace FPS_n2 {
 						this->m_ReadyTimer = UpperTimerLimit;
 					}
 				}
-				if (m_IsStuckGun) {
+				if (this->m_IsStuckGun) {
 					this->m_ReadyTimer = UpperTimerLimit;
 				}
 
 
 				if (this->m_RecoilRadAdd.y() < 0.f) {
-					Easing(&this->m_RecoilRadAdd, VECTOR_ref::vget(0.f,0.09f,0.f), 0.9f, EasingType::OutExpo);
+					Easing(&this->m_RecoilRadAdd, VECTOR_ref::vget(0.f, 0.09f, 0.f), 0.9f, EasingType::OutExpo);
 				}
 				else {
 					Easing(&this->m_RecoilRadAdd, VECTOR_ref::zero(), 0.7f, EasingType::OutExpo);
@@ -482,7 +482,7 @@ namespace FPS_n2 {
 				GetObj().frame_Reset(this->m_Frames[(int)CharaFrame::Upper].first);
 				SetFrameLocalMat(CharaFrame::Upper, GetFrameLocalMat(CharaFrame::Upper).GetRot() * tmpUpperMatrix);
 				GetObj().frame_Reset(this->m_Frames[(int)CharaFrame::Upper2].first);
-				SetFrameLocalMat(CharaFrame::Upper2, GetFrameLocalMat(CharaFrame::Upper2).GetRot() * MATRIX_ref::RotX(this->m_InputGround.GetRad().x()/2.f));
+				SetFrameLocalMat(CharaFrame::Upper2, GetFrameLocalMat(CharaFrame::Upper2).GetRot() * MATRIX_ref::RotX(this->m_InputGround.GetRad().x() / 2.f));
 			}
 			//SetMat指示															//0.03ms
 			void			ExecuteAnim(void) noexcept {
@@ -502,10 +502,10 @@ namespace FPS_n2 {
 						}
 						this->m_Running = this->m_RunReady;
 						if (this->m_ReadyTimer < UpperTimerLimit) {
-							m_UpperAnimSelect = GetAimAnimSel();
+							this->m_UpperAnimSelect = GetAimAnimSel();
 						}
 						if (this->m_ShotPhase == 1) {
-							m_UpperAnimSelect = GetAimAnimSel();
+							this->m_UpperAnimSelect = GetAimAnimSel();
 							bool ischeck = true;
 							switch (GetGunPtrNow()->GetShotType()) {
 							case SHOTTYPE::FULL:
@@ -539,26 +539,26 @@ namespace FPS_n2 {
 						}
 						//コッキング
 						if (this->m_ShotPhase == 2) {
-							m_UpperAnimSelect = GetCockingAnimSel();
-							SetAnimLoop(m_UpperAnimSelect, 1.5f);
-							if (GetAnime(m_UpperAnimSelect).time == 0.f) {
+							this->m_UpperAnimSelect = GetCockingAnimSel();
+							SetAnimLoop(this->m_UpperAnimSelect, 1.5f);
+							if (GetAnime(this->m_UpperAnimSelect).time == 0.f) {
 								this->m_ShotPhase = 0;
 								this->m_ReadyTimer = 0.1f;
 							}
 						}
 						//リロード開始
 						if (this->m_ShotPhase == 3) {
-							m_UpperAnimSelect = GetReloadStartAnimSel();
-							SetAnimLoop(m_UpperAnimSelect, 1.5f);
-							if (GetAnime(m_UpperAnimSelect).time == 0.f) {
+							this->m_UpperAnimSelect = GetReloadStartAnimSel();
+							SetAnimLoop(this->m_UpperAnimSelect, 1.5f);
+							if (GetAnime(this->m_UpperAnimSelect).time == 0.f) {
 								this->m_ShotPhase++;
 								this->m_ReadyTimer = 0.1f;
 							}
 						}
 						if (this->m_ShotPhase == 4) {
-							m_UpperAnimSelect = GetReloadOneAnimSel();
-							SetAnimLoop(m_UpperAnimSelect, 1.5f);
-							if (GetAnime(m_UpperAnimSelect).time == 0.f) {
+							this->m_UpperAnimSelect = GetReloadOneAnimSel();
+							SetAnimLoop(this->m_UpperAnimSelect, 1.5f);
+							if (GetAnime(this->m_UpperAnimSelect).time == 0.f) {
 								switch (GetGunPtrNow()->GetReloadType()) {
 								case RELOADTYPE::MAG:
 									this->m_ShotPhase++;
@@ -575,9 +575,9 @@ namespace FPS_n2 {
 							}
 						}
 						if (this->m_ShotPhase == 5) {
-							m_UpperAnimSelect = GetReloadEndAnimSel();
-							SetAnimLoop(m_UpperAnimSelect, 1.5f);
-							if (GetAnime(m_UpperAnimSelect).time == 0.f) {
+							this->m_UpperAnimSelect = GetReloadEndAnimSel();
+							SetAnimLoop(this->m_UpperAnimSelect, 1.5f);
+							if (GetAnime(this->m_UpperAnimSelect).time == 0.f) {
 								if (GetGunPtrNow()->GetCanShot()) {
 									this->m_ShotPhase = 0;
 								}
@@ -616,7 +616,7 @@ namespace FPS_n2 {
 								this->m_LoadAmmoPer = 0.f;
 								break;
 							case 4:
-								if (GetAnime(m_UpperAnimSelect).time <= 35.f) {
+								if (GetAnime(this->m_UpperAnimSelect).time <= 35.f) {
 									Easing(&this->m_LoadAmmoPer, 1.f, 0.7f, EasingType::OutExpo);
 								}
 								else {
@@ -636,12 +636,12 @@ namespace FPS_n2 {
 						{
 							switch (this->m_ShotPhase) {
 							case 3:
-								if (GetAnime(m_UpperAnimSelect).time >= 37.f) {
+								if (GetAnime(this->m_UpperAnimSelect).time >= 37.f) {
 									this->m_LoadAmmoPer = 1.f;
 								}
 								break;
 							case 4:
-								if (GetAnime(m_UpperAnimSelect).time <= 18.f) {
+								if (GetAnime(this->m_UpperAnimSelect).time <= 18.f) {
 									this->m_LoadAmmoPer = 1.f;
 								}
 								else {
@@ -662,7 +662,7 @@ namespace FPS_n2 {
 						}
 
 						//首
-						Easing(&m_NeckPer, (m_UpperAnimSelect == GetDownAnimSel()) ? 0.f : 1.f, 0.9f, EasingType::OutExpo);
+						Easing(&m_NeckPer, (this->m_UpperAnimSelect == GetDownAnimSel()) ? 0.f : 1.f, 0.9f, EasingType::OutExpo);
 					}
 					//下半身
 					{
@@ -687,11 +687,11 @@ namespace FPS_n2 {
 					//下半身
 					Easing(&GetAnimeBuf(GetBottomTurnAnimSel()), (this->m_TurnBody) ? abs(this->m_InputGround.GetRad().y() - this->m_yrad_Upper) / deg2rad(50.f) : 0.f, 0.8f, EasingType::OutExpo);
 					//銃操作
-					if ((m_PrevUpperAnimSel == GetCockingAnimSel() || m_PrevUpperAnimSel == GetReloadEndAnimSel()) && 
+					if ((this->m_PrevUpperAnimSel == GetCockingAnimSel() || m_PrevUpperAnimSel == GetReloadEndAnimSel()) &&
 						((!GetIsRun() && m_UpperAnimSelect == GetAimAnimSel()) || (GetIsRun() && m_UpperAnimSelect == GetDownAnimSel()))
 						) {
-						GetAnimeBuf(m_PrevUpperAnimSel) = 0.f;
-						GetAnimeBuf(m_UpperAnimSelect) = 0.f;
+						GetAnimeBuf(this->m_PrevUpperAnimSel) = 0.f;
+						GetAnimeBuf(this->m_UpperAnimSelect) = 0.f;
 						GetAnimeBuf(GetAimAnimSel()) = 1.f;
 					}
 					GetAnimeBuf(GetCockingAnimSel()) = ((GetCockingAnimSel() == m_UpperAnimSelect) ? 1.f : 0.f);
@@ -823,11 +823,11 @@ namespace FPS_n2 {
 				this->m_PosBuf += this->m_move.vec;
 
 				if (this->m_BackGround->CheckCapsuletoMap(GetEyePosition(), GetGunPtrNow()->GetFrameWorldMat(GunFrame::Muzzle).pos(), 0.5f)) {
-					m_IsStuckGun = true;
+					this->m_IsStuckGun = true;
 				}
-				else if (m_IsStuckGun) {
+				else if (this->m_IsStuckGun) {
 					this->m_ReadyTimer = 0.1f;
-					m_IsStuckGun = false;
+					this->m_IsStuckGun = false;
 				}
 
 				col_wall(OLDpos, &this->m_PosBuf, this->m_BackGround->GetGroundCols());
@@ -870,7 +870,7 @@ namespace FPS_n2 {
 							zVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(-1, -1, 0).Norm(), mat);
 							yVec1 = MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, -1).Norm(), mat);
 
-							if (m_ShotPhase <= 1) {
+							if (this->m_ShotPhase <= 1) {
 								zVec1 = Lerp(zVec1, VECTOR_ref::front()*-1.f, m_ReadyPer);;
 								yVec1 = Lerp(yVec1, VECTOR_ref::up(), m_ReadyPer);
 							}
@@ -888,16 +888,16 @@ namespace FPS_n2 {
 							GetObj().work_anime(i);
 						}
 						//スリング場所探索
-						m_SlingZrad.Execute();
-						m_SlingYrad.Execute();
+						this->m_SlingZrad.Execute();
+						this->m_SlingYrad.Execute();
 						{
-							//printfDx("%6.2f", rad2deg(m_SlingZrad.GetRad()));
-							//printfDx("%6.2f", rad2deg(m_SlingYrad.GetRad()));
+							//printfDx("%6.2f", rad2deg(this->m_SlingZrad.GetRad()));
+							//printfDx("%6.2f", rad2deg(this->m_SlingYrad.GetRad()));
 							auto mat = ((MATRIX_ref::RotZ(deg2rad(130) + m_SlingZrad.GetRad()) * MATRIX_ref::RotY(this->m_InputGround.GetRad().y() + deg2rad(180) + m_SlingYrad.GetRad()))*GetCharaDir().Inverse());
 							yVec2 = mat.xvec();
 							zVec2 = mat.yvec();
 							Pos2 = GetFrameWorldMat(CharaFrame::Head).pos() + GetFrameWorldMat(CharaFrame::Head).GetRot().zvec() * -2.75f +
-								(this->m_move.mat.xvec() * sin(m_SlingZrad.GetRad()) + this->m_move.mat.yvec() * cos(m_SlingZrad.GetRad())) * -6.25f;
+								(this->m_move.mat.xvec() * sin(this->m_SlingZrad.GetRad()) + this->m_move.mat.yvec() * cos(this->m_SlingZrad.GetRad())) * -6.25f;
 						}
 					}
 					for (auto& p : this->m_Gun_Ptr) {
@@ -941,35 +941,35 @@ namespace FPS_n2 {
 				//ヒットボックス
 				{
 					auto headpos = (GetFrameWorldMat(CharaFrame::LeftEye).pos() + GetFrameWorldMat(CharaFrame::RightEye).pos()) / 2.f;
-					m_HitBox[0].Execute(headpos, 0.1f*Scale_Rate, HitType::Head);
-					m_HitBox[1].Execute((headpos + GetFrameWorldMat(CharaFrame::Upper).pos()) / 2.f, 0.15f*Scale_Rate, HitType::Body);
-					m_HitBox[2].Execute(GetFrameWorldMat(CharaFrame::Upper).pos(), 0.1f*Scale_Rate, HitType::Body);
+					this->m_HitBox[0].Execute(headpos, 0.1f*Scale_Rate, HitType::Head);
+					this->m_HitBox[1].Execute((headpos + GetFrameWorldMat(CharaFrame::Upper).pos()) / 2.f, 0.15f*Scale_Rate, HitType::Body);
+					this->m_HitBox[2].Execute(GetFrameWorldMat(CharaFrame::Upper).pos(), 0.1f*Scale_Rate, HitType::Body);
 
-					m_HitBox[3].Execute((GetFrameWorldMat(CharaFrame::RightArm).pos() + GetFrameWorldMat(CharaFrame::RightArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
-					m_HitBox[4].Execute(GetFrameWorldMat(CharaFrame::RightArm2).pos(), 0.05f*Scale_Rate, HitType::Leg);
-					m_HitBox[5].Execute((GetFrameWorldMat(CharaFrame::RightWrist).pos() + GetFrameWorldMat(CharaFrame::RightArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
-					m_HitBox[6].Execute(GetFrameWorldMat(CharaFrame::RightWrist).pos(), 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[3].Execute((GetFrameWorldMat(CharaFrame::RightArm).pos() + GetFrameWorldMat(CharaFrame::RightArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[4].Execute(GetFrameWorldMat(CharaFrame::RightArm2).pos(), 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[5].Execute((GetFrameWorldMat(CharaFrame::RightWrist).pos() + GetFrameWorldMat(CharaFrame::RightArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[6].Execute(GetFrameWorldMat(CharaFrame::RightWrist).pos(), 0.05f*Scale_Rate, HitType::Leg);
 
-					m_HitBox[7].Execute((GetFrameWorldMat(CharaFrame::LeftArm).pos() + GetFrameWorldMat(CharaFrame::LeftArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
-					m_HitBox[8].Execute(GetFrameWorldMat(CharaFrame::LeftArm2).pos(), 0.05f*Scale_Rate, HitType::Leg);
-					m_HitBox[9].Execute((GetFrameWorldMat(CharaFrame::LeftWrist).pos() + GetFrameWorldMat(CharaFrame::LeftArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
-					m_HitBox[10].Execute(GetFrameWorldMat(CharaFrame::LeftWrist).pos(), 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[7].Execute((GetFrameWorldMat(CharaFrame::LeftArm).pos() + GetFrameWorldMat(CharaFrame::LeftArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[8].Execute(GetFrameWorldMat(CharaFrame::LeftArm2).pos(), 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[9].Execute((GetFrameWorldMat(CharaFrame::LeftWrist).pos() + GetFrameWorldMat(CharaFrame::LeftArm2).pos()) / 2.f, 0.05f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[10].Execute(GetFrameWorldMat(CharaFrame::LeftWrist).pos(), 0.05f*Scale_Rate, HitType::Leg);
 
-					m_HitBox[11].Execute(GetFrameWorldMat(CharaFrame::RightFoot1).pos(), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[12].Execute((GetFrameWorldMat(CharaFrame::RightFoot1).pos() + GetFrameWorldMat(CharaFrame::RightFoot2).pos()) / 2.f, 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[13].Execute(GetFrameWorldMat(CharaFrame::RightFoot2).pos(), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[14].Execute((GetFrameWorldMat(CharaFrame::RightFoot).pos()*0.25f + GetFrameWorldMat(CharaFrame::RightFoot2).pos()*0.75f), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[15].Execute((GetFrameWorldMat(CharaFrame::RightFoot).pos()*0.5f + GetFrameWorldMat(CharaFrame::RightFoot2).pos()*0.5f), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[16].Execute((GetFrameWorldMat(CharaFrame::RightFoot).pos()*0.75f + GetFrameWorldMat(CharaFrame::RightFoot2).pos()*0.25f), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[17].Execute(GetFrameWorldMat(CharaFrame::RightFoot).pos(), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[11].Execute(GetFrameWorldMat(CharaFrame::RightFoot1).pos(), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[12].Execute((GetFrameWorldMat(CharaFrame::RightFoot1).pos() + GetFrameWorldMat(CharaFrame::RightFoot2).pos()) / 2.f, 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[13].Execute(GetFrameWorldMat(CharaFrame::RightFoot2).pos(), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[14].Execute((GetFrameWorldMat(CharaFrame::RightFoot).pos()*0.25f + GetFrameWorldMat(CharaFrame::RightFoot2).pos()*0.75f), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[15].Execute((GetFrameWorldMat(CharaFrame::RightFoot).pos()*0.5f + GetFrameWorldMat(CharaFrame::RightFoot2).pos()*0.5f), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[16].Execute((GetFrameWorldMat(CharaFrame::RightFoot).pos()*0.75f + GetFrameWorldMat(CharaFrame::RightFoot2).pos()*0.25f), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[17].Execute(GetFrameWorldMat(CharaFrame::RightFoot).pos(), 0.085f*Scale_Rate, HitType::Leg);
 
-					m_HitBox[18].Execute(GetFrameWorldMat(CharaFrame::LeftFoot1).pos(), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[19].Execute((GetFrameWorldMat(CharaFrame::LeftFoot1).pos() + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()) / 2.f, 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[20].Execute(GetFrameWorldMat(CharaFrame::LeftFoot2).pos(), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[21].Execute((GetFrameWorldMat(CharaFrame::LeftFoot).pos()*0.25f + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()*0.75f), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[22].Execute((GetFrameWorldMat(CharaFrame::LeftFoot).pos()*0.5f + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()*0.5f), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[23].Execute((GetFrameWorldMat(CharaFrame::LeftFoot).pos()*0.75f + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()*0.25f), 0.085f*Scale_Rate, HitType::Leg);
-					m_HitBox[24].Execute(GetFrameWorldMat(CharaFrame::LeftFoot).pos(), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[18].Execute(GetFrameWorldMat(CharaFrame::LeftFoot1).pos(), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[19].Execute((GetFrameWorldMat(CharaFrame::LeftFoot1).pos() + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()) / 2.f, 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[20].Execute(GetFrameWorldMat(CharaFrame::LeftFoot2).pos(), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[21].Execute((GetFrameWorldMat(CharaFrame::LeftFoot).pos()*0.25f + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()*0.75f), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[22].Execute((GetFrameWorldMat(CharaFrame::LeftFoot).pos()*0.5f + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()*0.5f), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[23].Execute((GetFrameWorldMat(CharaFrame::LeftFoot).pos()*0.75f + GetFrameWorldMat(CharaFrame::LeftFoot2).pos()*0.25f), 0.085f*Scale_Rate, HitType::Leg);
+					this->m_HitBox[24].Execute(GetFrameWorldMat(CharaFrame::LeftFoot).pos(), 0.085f*Scale_Rate, HitType::Leg);
 				}
 			}
 			//顔																	//0.01ms
@@ -1132,37 +1132,37 @@ namespace FPS_n2 {
 				SetCreate3DSoundFlag(FALSE);
 				this->m_Breath.vol(128);
 				Set3DPresetReverbParamSoundMem(DX_REVERB_PRESET_MOUNTAINS, this->m_Breath.get());
-				m_CharaAnimeSet.clear();
+				this->m_CharaAnimeSet.clear();
 				//M4
-				m_CharaAnimeSet.resize(m_CharaAnimeSet.size() + 1);
-				m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down1;
-				m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready1;
-				m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS1;
-				m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking1;
-				m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload1Start;
+				this->m_CharaAnimeSet.resize(this->m_CharaAnimeSet.size() + 1);
+				this->m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down1;
+				this->m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready1;
+				this->m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS1;
+				this->m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking1;
+				this->m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload1Start;
 				//ポンプ
-				m_CharaAnimeSet.resize(m_CharaAnimeSet.size() + 1);
-				m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down1;
-				m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready1;
-				m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS1;
-				m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking1;
-				m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload1Start;
+				this->m_CharaAnimeSet.resize(this->m_CharaAnimeSet.size() + 1);
+				this->m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down1;
+				this->m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready1;
+				this->m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS1;
+				this->m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking1;
+				this->m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload1Start;
 				//AK
-				m_CharaAnimeSet.resize(m_CharaAnimeSet.size() + 1);
-				m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down3;
-				m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready3;
-				m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS3;
-				m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking3;
-				m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload3Start;
+				this->m_CharaAnimeSet.resize(this->m_CharaAnimeSet.size() + 1);
+				this->m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down3;
+				this->m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready3;
+				this->m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS3;
+				this->m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking3;
+				this->m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload3Start;
 				//ハンドガン
-				m_CharaAnimeSet.resize(m_CharaAnimeSet.size() + 1);
-				m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down2;
-				m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready2;
-				m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS2;
-				m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking2;
-				m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload2Start;
+				this->m_CharaAnimeSet.resize(this->m_CharaAnimeSet.size() + 1);
+				this->m_CharaAnimeSet.back().m_Down = CharaAnimeID::Upper_Down2;
+				this->m_CharaAnimeSet.back().m_Ready = CharaAnimeID::Upper_Ready2;
+				this->m_CharaAnimeSet.back().m_ADS = CharaAnimeID::Upper_ADS2;
+				this->m_CharaAnimeSet.back().m_Cocking = CharaAnimeID::Upper_Cocking2;
+				this->m_CharaAnimeSet.back().m_Reload = CharaAnimeID::Upper_Reload2Start;
 
-				m_HitBox.resize(25);
+				this->m_HitBox.resize(25);
 			}
 			void			FirstExecute(void) noexcept override {
 				//初回のみ更新する内容
@@ -1229,7 +1229,7 @@ namespace FPS_n2 {
 					}
 				}
 				//hitbox描画
-				if(false){
+				if (false) {
 					//this->GetObj().SetOpacityRate(0.5f);
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);

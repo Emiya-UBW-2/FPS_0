@@ -75,12 +75,12 @@ namespace FPS_n2 {
 				SetOutApplicationLogValidFlag(FALSE);
 				int mdata = FileRead_open("data/NetWorkSetting.txt", FALSE);
 				while (true) {
-					m_NewWorkSetting.resize(this->m_NewWorkSetting.size() + 1);
-					m_NewWorkSetting.back().UsePort = std::clamp<int>(getparams::_int(mdata), 0, 50000);
-					m_NewWorkSetting.back().IP.d1 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
-					m_NewWorkSetting.back().IP.d2 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
-					m_NewWorkSetting.back().IP.d3 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
-					m_NewWorkSetting.back().IP.d4 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
+					this->m_NewWorkSetting.resize(this->m_NewWorkSetting.size() + 1);
+					this->m_NewWorkSetting.back().UsePort = std::clamp<int>(getparams::_int(mdata), 0, 50000);
+					this->m_NewWorkSetting.back().IP.d1 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
+					this->m_NewWorkSetting.back().IP.d2 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
+					this->m_NewWorkSetting.back().IP.d3 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
+					this->m_NewWorkSetting.back().IP.d4 = (unsigned char)std::clamp((int)getparams::_int(mdata), 0, 255);
 					if (FileRead_eof(mdata) != 0) {
 						break;
 					}
@@ -104,12 +104,12 @@ namespace FPS_n2 {
 			const auto		GetSize(void) const noexcept { return (int)m_NewWorkSetting.size(); }
 			const auto&		Get(int ID) const noexcept { return this->m_NewWorkSetting[ID]; }
 			const auto		Add(void) noexcept {
-				m_NewWorkSetting.resize(this->m_NewWorkSetting.size() + 1);
-				m_NewWorkSetting.back().UsePort = 10850;
-				m_NewWorkSetting.back().IP.d1 = 127;
-				m_NewWorkSetting.back().IP.d2 = 0;
-				m_NewWorkSetting.back().IP.d3 = 0;
-				m_NewWorkSetting.back().IP.d4 = 1;
+				this->m_NewWorkSetting.resize(this->m_NewWorkSetting.size() + 1);
+				this->m_NewWorkSetting.back().UsePort = 10850;
+				this->m_NewWorkSetting.back().IP.d1 = 127;
+				this->m_NewWorkSetting.back().IP.d2 = 0;
+				this->m_NewWorkSetting.back().IP.d3 = 0;
+				this->m_NewWorkSetting.back().IP.d4 = 1;
 				return (int)m_NewWorkSetting.size() - 1;;
 			}
 			void Set(int ID, const NewSetting& per)noexcept { this->m_NewWorkSetting[ID] = per; }
@@ -197,9 +197,9 @@ namespace FPS_n2 {
 			const auto		GetRecvData(int pPlayerID) const noexcept { return this->m_LeapFrame[pPlayerID] <= 1; }
 			const auto&		GetServerDataCommon(void) const noexcept { return this->m_ServerDataCommon; }
 			const auto&		GetMyPlayer(void) const noexcept { return this->m_PlayerData; }
-			void			SetMyPlayer(const InputControl& pInput, const VECTOR_ref& pPos, const VECTOR_ref& pVec, const VECTOR_ref& prad, double pFrame, const DamageEvent* pDamage, unsigned long long pDamageSwitch) noexcept {
+			void			SetMyPlayer(const InputControl& pInput, const VECTOR_ref& pos_t, const VECTOR_ref& pVec, const VECTOR_ref& prad, double pFrame, const DamageEvent* pDamage, unsigned long long pDamageSwitch) noexcept {
 				this->m_PlayerData.Input = pInput;
-				this->m_PlayerData.PosBuf = pPos;
+				this->m_PlayerData.PosBuf = pos_t;
 				this->m_PlayerData.VecBuf = pVec;
 				this->m_PlayerData.radBuf = prad;
 				this->m_PlayerData.Frame = pFrame;
@@ -226,8 +226,8 @@ namespace FPS_n2 {
 				this->m_LeapFrame[pPlayerID] = std::clamp<int>(this->m_LeapFrame[pPlayerID] + 1, 0, Total);
 				return tmp;
 			}
-			virtual void	SetParam(int pPlayerID, const VECTOR_ref& pPos) noexcept {
-				this->m_ServerDataCommon.PlayerData[pPlayerID].PosBuf = pPos;
+			virtual void	SetParam(int pPlayerID, const VECTOR_ref& pos_t) noexcept {
+				this->m_ServerDataCommon.PlayerData[pPlayerID].PosBuf = pos_t;
 				this->m_ServerDataCommon.ServerFrame = 0;
 				this->m_PrevServerData.PlayerData[pPlayerID].PosBuf = this->m_ServerDataCommon.PlayerData[pPlayerID].PosBuf;	// サーバーデータ
 				this->m_PrevServerData.ServerFrame = 0;
@@ -257,8 +257,8 @@ namespace FPS_n2 {
 			std::array<std::pair<NewWorkControl, int>, Player_num - 1>		m_NetWork;
 		public:
 			const auto&		GetServerData(void) const noexcept { return this->m_ServerData; }
-			void			SetParam(int pPlayerID, const VECTOR_ref& pPos) noexcept override {
-				NetWorkControl::SetParam(pPlayerID, pPos);
+			void			SetParam(int pPlayerID, const VECTOR_ref& pos_t) noexcept override {
+				NetWorkControl::SetParam(pPlayerID, pos_t);
 				this->m_ServerData.PlayerData[pPlayerID].PosBuf = this->m_ServerDataCommon.PlayerData[pPlayerID].PosBuf;
 				this->m_ServerData.PlayerData[pPlayerID].IsActive = 0;
 			}
@@ -397,16 +397,16 @@ namespace FPS_n2 {
 					//サーバーからの自分のIDを受信
 					if (this->m_NetWork.first.Recv(&tmpData)) {
 						NetCommonExecute(tmpData);								//更新
-						m_CannotConnectTimer = 0.f;
+						this->m_CannotConnectTimer = 0.f;
 						if (tmpData.Tmp1 > 0) {
 							this->m_PlayerData.ID = (PlayerID)tmpData.Tmp1;
 							this->m_NetWork.second++;
 						}
 					}
 					else {
-						m_CannotConnectTimer += 1.f / FPS;
+						this->m_CannotConnectTimer += 1.f / FPS;
 						if (this->m_CannotConnectTimer > 1.f) {
-							m_CannotConnectTimer = 0.f;
+							this->m_CannotConnectTimer = 0.f;
 							this->m_NetWork.first.Dispose();
 							this->m_NetWorkSel++;
 							this->m_NetWork.first.Set_Port(this->m_Port + this->m_NetWorkSel);

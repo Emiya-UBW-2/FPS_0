@@ -65,7 +65,7 @@ namespace FPS_n2 {
 			AI									cpu_do;								//AI用
 			std::shared_ptr<VehicleClass>		MyVeh;
 
-			std::vector<std::shared_ptr<VehicleClass>>* vehicle_Pool;
+			std::vector<std::shared_ptr<VehicleClass>>* vehicle_Pool{ nullptr };
 			std::shared_ptr<BackGroundClass>			m_BackGround;				//BG
 		private:
 			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss, VECTOR_ref zvec = VECTOR_ref::zero()) {
@@ -127,7 +127,7 @@ namespace FPS_n2 {
 						if (&MyVeh == &tgt) { continue; }
 						if (!tgt->Get_alive()) { continue; }
 						VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
-						if (m_BackGround->CheckLinetoMap(StartPos, &EndPos, false)) { continue; }
+						if (this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, false)) { continue; }
 						VECTOR_ref vec_tmp = EndPos - StartPos;
 						if (vec_to == VECTOR_ref::zero()) { vec_to = vec_tmp; } //基準の作成
 						if (vec_to.Length() >= vec_tmp.Length()) {
@@ -238,7 +238,7 @@ namespace FPS_n2 {
 			void Init(std::vector<std::shared_ptr<VehicleClass>>* vehiclePool_t, std::shared_ptr<BackGroundClass>& BackBround_t, const std::shared_ptr<VehicleClass>& MyVeh_t) noexcept {
 				vehicle_Pool = vehiclePool_t;
 				MyVeh = MyVeh_t;
-				m_BackGround = BackBround_t;
+				this->m_BackGround = BackBround_t;
 
 				//AIの選択をリセット
 				int now = Get_next_waypoint(this->cpu_do.wayp_pre, this->MyVeh->GetMove().pos);

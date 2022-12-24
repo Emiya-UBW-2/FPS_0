@@ -13,27 +13,27 @@ namespace FPS_n2 {
 			std::vector<AmmoData>						m_AmmoSpec;
 			RELOADTYPE									m_ReloadTypeBuf{ RELOADTYPE::MAG };
 		public://ƒQƒbƒ^[
-			void			SetHandMatrix(const MATRIX_ref& value, float pPer, RELOADTYPE ReloadType) {
+			void			SetHandMatrix(const MATRIX_ref& value, float pPer, RELOADTYPE ReloadType) noexcept {
 				this->HandMatrix = value;
 				this->HandPer = pPer;
 				this->m_ReloadTypeBuf = ReloadType;
 			}
 
-			void			SetAmmo(int value) { this->m_Capacity = std::clamp(value, 0, this->m_CapacityMax); }
-			void			SubAmmo(void) { SetAmmo(this->m_Capacity - 1); }
-			void			AddAmmo(void) { SetAmmo(this->m_Capacity + 1); }
+			void			SetAmmo(int value) noexcept { this->m_Capacity = std::clamp(value, 0, this->m_CapacityMax); }
+			void			SubAmmo(void) noexcept { SetAmmo(this->m_Capacity - 1); }
+			void			AddAmmo(void) noexcept { SetAmmo(this->m_Capacity + 1); }
 			const auto		IsEmpty(void) const noexcept { return this->m_Capacity == 0; }
 			const auto		IsFull(void) const noexcept { return this->m_Capacity == this->m_CapacityMax; }
 			const auto*		GetAmmoSpec(void) const noexcept { return &(this->m_AmmoSpec[0]); }
 			const auto&		GetAmmoNum(void) const noexcept { return this->m_Capacity; }
 			const auto&		GetAmmoAll(void) const noexcept { return  this->m_CapacityMax; }
 
-			void			SetCartPtr(void);
+			void			SetCartPtr(void) noexcept;
 		public:
-			MagazineClass(void) { this->m_objType = ObjType::Magazine; }
-			~MagazineClass(void) { }
+			MagazineClass(void) noexcept { this->m_objType = ObjType::Magazine; }
+			~MagazineClass(void) noexcept { }
 		public:
-			void			Init(void) override {
+			void			Init(void) noexcept override {
 				ObjectBaseClass::Init();
 				{
 					int mdata = FileRead_open((this->m_FilePath + "data.txt").c_str(), FALSE);
@@ -52,9 +52,9 @@ namespace FPS_n2 {
 				this->m_Capacity = this->m_CapacityMax;
 				SetCartPtr();
 			}
-			void			FirstExecute(void) override {
+			void			FirstExecute(void) noexcept override {
 				{
-					switch (m_ReloadTypeBuf) {
+					switch (this->m_ReloadTypeBuf) {
 					case RELOADTYPE::MAG:
 					{
 						{
@@ -97,7 +97,7 @@ namespace FPS_n2 {
 							);
 						}
 					}
-						break;
+					break;
 					default:
 						break;
 					}
@@ -105,7 +105,7 @@ namespace FPS_n2 {
 				//‹¤’Ê
 				ObjectBaseClass::FirstExecute();
 			}
-			void			Dispose(void) override {
+			void			Dispose(void) noexcept override {
 				this->m_AmmoSpec.clear();
 			}
 		public:

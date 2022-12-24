@@ -15,8 +15,8 @@ namespace FPS_n2 {
 			std::array<VECTOR_ref, 10> m_Line;
 			int			m_LineSel = 0;
 		public:
-			CartClass(void) { this->m_objType = ObjType::Cart; }
-			~CartClass(void) { }
+			CartClass(void) noexcept { this->m_objType = ObjType::Cart; }
+			~CartClass(void) noexcept { }
 		public:
 			void	SetIsEmpty(bool value) { this->m_IsEmpty = value; }
 			void	SetEject(const VECTOR_ref& pos, const MATRIX_ref& mat, const VECTOR_ref& vec) {
@@ -31,7 +31,7 @@ namespace FPS_n2 {
 					l = this->m_move.pos;
 				}
 			}
-			void	CheckBullet(void) {
+			void	CheckBullet(void) noexcept {
 				if (IsActive() && ((this->m_move.pos - this->m_move.repos).y() <= 0.f)) {
 					VECTOR_ref Normal;
 					if (this->m_BackGround->CheckLinetoMap(this->m_move.repos + VECTOR_ref::up()*1.f, &this->m_move.pos, true, &Normal)) {
@@ -41,13 +41,13 @@ namespace FPS_n2 {
 				}
 			}
 		public:
-			void	Init(void) override {
+			void	Init(void) noexcept override {
 				ObjectBaseClass::Init();
 				this->m_IsInMag = true;//チェンバー内にあり
 				this->m_IsEmpty = false;//弾頭付き
 			}
 
-			void	FirstExecute(void) override {
+			void	FirstExecute(void) noexcept override {
 				if (!this->m_IsInMag) {
 					if (IsActive()) {
 						GetObj().SetMatrix(this->m_move.MatIn());
@@ -73,7 +73,7 @@ namespace FPS_n2 {
 				CheckBullet();
 			}
 
-			void	DrawShadow(void) override {
+			void	DrawShadow(void) noexcept override {
 				if (IsActive() && this->m_IsDraw) {
 					if (this->m_IsEmpty) {
 						this->GetObj().DrawMesh(0);
@@ -83,7 +83,7 @@ namespace FPS_n2 {
 					}
 				}
 			}
-			void	Draw(void) override {
+			void	Draw(void) noexcept override {
 				if (IsActive() && this->m_IsDraw) {
 					if (CheckCameraViewClip_Box(
 						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
