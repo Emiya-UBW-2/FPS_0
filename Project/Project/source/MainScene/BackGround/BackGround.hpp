@@ -36,7 +36,7 @@ namespace FPS_n2 {
 			void			CheckTreetoSquare(const VECTOR_ref& cornerLF, const VECTOR_ref& cornerRF, const VECTOR_ref& cornerRR, const VECTOR_ref& cornerLR, const VECTOR_ref& center, float speed) {
 				this->m_Tree.CheckTreetoSquare(cornerLF, cornerRF, cornerRR, cornerLR, center, speed);
 			}
-			const auto		CheckLinetoMap(const VECTOR_ref& StartPos, VECTOR_ref* EndPos, bool isNearest, VECTOR_ref* Normal = nullptr) {
+			const auto		CheckLinetoMap(const VECTOR_ref& StartPos, VECTOR_ref* EndPos, bool isNearest, bool isOnlyGround, VECTOR_ref* Normal = nullptr) {
 				bool isHit = false;
 				{
 					auto col_p = this->m_ObjGroundCol.CollCheck_Line(StartPos, *EndPos);
@@ -51,18 +51,21 @@ namespace FPS_n2 {
 						}
 					}
 				}
+				if (isOnlyGround) {
+					return isHit;
+				}
 				for (auto& bu : this->m_BuildControl.GetBuildCol()) {
-					if (GetMinLenSegmentToPoint(StartPos, *EndPos, bu.GetMatrix().pos()) < 20.f*Scale_Rate) {
-						auto col_p = bu.GetCol(StartPos, *EndPos);
-						if (col_p.HitFlag == TRUE) {
-							isHit = true;
-							if (isNearest) {
-								*EndPos = col_p.HitPosition;
-								if (Normal) { *Normal = col_p.Normal; }
-							}
-							else {
-								return isHit;
-							}
+					if (bu.GetMeshSel() < 0) { continue; }
+					if (GetMinLenSegmentToPoint(StartPos, *EndPos, bu.GetMatrix().pos()) >= 20.f*Scale_Rate) { continue; }
+					auto col_p = bu.GetCol(StartPos, *EndPos);
+					if (col_p.HitFlag == TRUE) {
+						isHit = true;
+						if (isNearest) {
+							*EndPos = col_p.HitPosition;
+							if (Normal) { *Normal = col_p.Normal; }
+						}
+						else {
+							return isHit;
 						}
 					}
 				}

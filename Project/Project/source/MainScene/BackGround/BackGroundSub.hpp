@@ -561,9 +561,14 @@ namespace FPS_n2 {
 		MV1						m_Col;
 		MV1						m_ColBox2D;
 		MATRIX_ref				m_mat;
+		VECTOR_ref				m_MinPos;
+		VECTOR_ref				m_MaxPos;
 	public:
 		const auto&		GetMeshSel(void) const noexcept { return m_mesh; }
+		const auto&		GetCol(void) const noexcept { return this->m_Col; }
 		const auto&		GetColBox2D(void) const noexcept { return m_ColBox2D; }
+		const auto&		GetMinPos(void) const noexcept { return m_MinPos; }
+		const auto&		GetMaxPos(void) const noexcept { return m_MaxPos; }
 		const auto&		GetMatrix(void) const noexcept { return m_mat; }
 		const auto		GetCol(const VECTOR_ref& repos, const VECTOR_ref& pos) const noexcept { return this->m_Col.CollCheck_Line(repos, pos, m_mesh); }
 	public:
@@ -582,7 +587,7 @@ namespace FPS_n2 {
 		}
 		void		SetPosition(const MV1& colModel, VECTOR_ref pos, float rad, bool isTilt) {
 			this->m_mat.clear();
-			auto res = colModel.CollCheck_Line(pos + VECTOR_ref::vget(0.f, 10.f*Scale_Rate, 0.f), pos + VECTOR_ref::vget(0.f, -10.f*Scale_Rate, 0.f));
+			auto res = colModel.CollCheck_Line(pos + VECTOR_ref::vget(0.f, 100.f*Scale_Rate, 0.f), pos + VECTOR_ref::vget(0.f, -100.f*Scale_Rate, 0.f));
 			if (res.HitFlag == TRUE) {
 				pos = res.HitPosition;
 				pos += VECTOR_ref::up()*(0.1f*Scale_Rate);
@@ -593,6 +598,12 @@ namespace FPS_n2 {
 			this->m_mat = MATRIX_ref::RotY(rad)*m_mat*MATRIX_ref::Mtrans(pos);
 			this->m_Col.SetMatrix(this->m_mat);
 			this->m_Col.RefreshCollInfo(this->m_mesh);
+			this->m_MinPos = this->m_mat.pos() + this->m_Col.mesh_minpos(this->m_mesh) + VECTOR_ref::up()*(-1.f*Scale_Rate);
+			this->m_MaxPos = this->m_mat.pos() + this->m_Col.mesh_maxpos(this->m_mesh) + VECTOR_ref::up()*(1.f*Scale_Rate);
+
+			//this->m_MinPos = this->m_mat.pos() + VECTOR_ref::vget(-30.f*Scale_Rate, -10.f*Scale_Rate, -30.f*Scale_Rate);
+			//this->m_MaxPos = this->m_mat.pos() + VECTOR_ref::vget(30.f*Scale_Rate, 30.f*Scale_Rate, 30.f*Scale_Rate);
+
 			this->m_ColBox2D.SetMatrix(this->m_mat);
 		}
 	};
@@ -992,7 +1003,7 @@ namespace FPS_n2 {
 			MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //–Ø
 		}
 		void	Init(const MV1* MapCol, const std::vector<Builds>& BGBuild) noexcept {
-			tree.resize(300);
+			tree.resize(150);
 			for (auto& t : tree) {
 				auto scale = 15.f / 10.f*Scale_Rate;
 				t.mat = MATRIX_ref::GetScale(VECTOR_ref::vget(scale, scale, scale));

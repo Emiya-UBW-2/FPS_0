@@ -545,14 +545,14 @@ namespace FPS_n2 {
 					this->m_gndsmksize = 0.1f;
 				}
 				//
-				void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround) noexcept {
+				void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround,bool isCheckOnlyGround) noexcept {
 					if (this->m_frame.GetFrameID() >= 0) {
 						auto y_vec = pTargetObj->GetMatrix().yvec();
 						pTargetObj->frame_Reset(this->m_frame.GetFrameID());
 						auto startpos = pTargetObj->frame(this->m_frame.GetFrameID());
 						auto pos_t1 = startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) + 2.f*Scale_Rate);
 						auto pos_t2 = startpos + y_vec * ((-this->m_frame.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate);
-						auto ColRes = pBackGround->CheckLinetoMap(pos_t1, &pos_t2, true);
+						auto ColRes = pBackGround->CheckLinetoMap(pos_t1, &pos_t2, true, isCheckOnlyGround);
 						this->m_Res_y = (ColRes) ? pos_t2.y() : (std::numeric_limits<float>::max)();
 						pTargetObj->SetFrameLocalMatrix(this->m_frame.GetFrameID(),
 							MATRIX_ref::Mtrans(VECTOR_ref::up() * ((ColRes) ? (this->m_Res_y + y_vec.y() * this->m_frame.GetFrameWorldPosition().y() - startpos.y()) : -0.4f*Scale_Rate)) *
@@ -646,9 +646,9 @@ namespace FPS_n2 {
 				}
 			}
 			//
-			void			FirstExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround) noexcept {
+			void			FirstExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround, bool isCheckOnlyGround) noexcept {
 				for (auto& t : this->m_downsideframe) {
-					t.FrameExecute(pTargetObj, pBackGround);
+					t.FrameExecute(pTargetObj, pBackGround, isCheckOnlyGround);
 				}
 			}
 			void			LateExecute(bool IsLeft, const VehDataControl::VhehicleData* pUseVeh, MV1* pTargetObj, const b2Vec2& pGravity, float pWheelRotate, float pSpd) noexcept {

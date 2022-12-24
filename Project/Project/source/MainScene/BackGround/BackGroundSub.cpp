@@ -509,7 +509,7 @@ namespace FPS_n2 {
 				VECTOR_ref TriPos2 = m_WallBase[0][2];
 				VECTOR_ref TriNorm = ((TriPos1 - TriPos0).cross(TriPos2 - TriPos0)).Norm();
 
-				VECTOR_ref PosN = Plane_Point_MinLength_Position(TriPos0.get(), TriNorm.get(), m_GonPoint[0][gon].get());
+				VECTOR_ref PosN = GetMinPosSegmentToPoint(TriPos0, TriNorm, m_GonPoint[0][gon]);
 				float pAN = std::abs((this->m_GonPoint[0][gon] - PosN).dot(TriNorm));
 				float pBN = std::abs(((this->m_GonPoint[0][gon] + vec) - PosN).dot(TriNorm));
 				this->m_GonPoint[1][gon] = m_GonPoint[0][gon] + vec * (pAN / (pAN + pBN));
@@ -567,7 +567,7 @@ namespace FPS_n2 {
 								VECTOR_ref Zvec = VECTOR_ref::up();// (Side[1]->Pos - this->m_BasePos).Norm();
 								MATRIX_ref Mat = MATRIX_ref::Axis1_YZ(TriNorm, Zvec).Inverse();
 
-								VECTOR_ref PosN = Plane_Point_MinLength_Position(TriPos0.get(), TriNorm.get(), RePos.get());
+								VECTOR_ref PosN = GetMinPosSegmentToPoint(TriPos0, TriNorm, RePos);
 								float pAN = std::abs((RePos - PosN).dot(TriNorm));
 								float pBN = std::abs(((RePos + vec) - PosN).dot(TriNorm));
 								VECTOR_ref Pos = RePos + vec * (pAN / (pAN + pBN));

@@ -810,7 +810,7 @@ namespace FPS_n2 {
 				{
 					VECTOR_ref repos_tmp = this->m_PosBuf + VECTOR_ref::up() * 20.f;
 					VECTOR_ref pos_tmp = this->m_PosBuf + VECTOR_ref::up() * -1.f;
-					if (this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true)) {
+					if (this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, false)) {
 						auto yPos = this->m_PosBuf.y();
 						Easing(&yPos, pos_tmp.y(), 0.8f, EasingType::OutExpo);
 						this->m_PosBuf.y(yPos);

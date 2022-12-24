@@ -85,7 +85,7 @@ namespace FPS_n2 {
 							auto startpos = w + VECTOR_ref::vget(0, 0.5f*Scale_Rate, 0);
 							auto endpos = poss + VECTOR_ref::vget(0, 0.5f*Scale_Rate, 0);
 
-							if (!m_BackGround->CheckLinetoMap(startpos, &endpos, true)) {
+							if (!m_BackGround->CheckLinetoMap(startpos, &endpos, true, false)) {
 								if (zvec == VECTOR_ref::zero() || zvec.Norm().dot((w - poss).Norm()) < 0.f) {
 									tmp = (w - poss);
 									now = int(id);
@@ -118,6 +118,7 @@ namespace FPS_n2 {
 				auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(0);
 				auto vec_x = vec_gunmat.xvec();
 				auto vec_y = vec_gunmat.yvec();
+				auto vec_zp = vec_gunmat.yvec() * -1.f;
 				auto vec_z = vec_mat.zvec() * -1.f;
 				//狙うキャラを探索+AIのフェーズ選択
 				{
@@ -128,7 +129,7 @@ namespace FPS_n2 {
 						if (&MyVeh == &tgt) { continue; }
 						if (!tgt->Get_alive()) { continue; }
 						VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
-						if (this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, false)) { continue; }
+						if (this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, false, false)) { continue; }
 						VECTOR_ref vec_tmp = EndPos - StartPos;
 						if (vec_to == VECTOR_ref::zero()) { vec_to = vec_tmp; } //基準の作成
 						if (vec_to.Length() >= vec_tmp.Length()) {
@@ -161,8 +162,8 @@ namespace FPS_n2 {
 						SetNextWaypoint(vec_z);
 					}
 
-					x_m = -int(vec_x.dot(vec_to.Norm()) * 40);
-					y_m = -int(vec_y.dot(vec_to.Norm()) * 40);
+					x_m = int(vec_y.dot(vec_to.Norm()) * 40);
+					y_m = -int(vec_x.dot(vec_to.Norm()) * 40);
 
 					if (this->cpu_do.ai_tankback_cnt >= 2) {
 						this->cpu_do.ai_tankback_cnt = 0;

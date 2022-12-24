@@ -107,7 +107,7 @@ namespace FPS_n2 {
 			else {
 				eyepos += this->m_MouseVec.zvec() * this->m_range_r*Scale_Rate;
 				VECTOR_ref eyepos2 = eyepos + this->m_MouseVec.zvec() * -1.f * (this->m_range_r * Scale_Rate);
-				if (this->m_BackGround->CheckLinetoMap(eyepos, &eyepos2, true)) { eyepos = eyepos2; }
+				if (this->m_BackGround->CheckLinetoMap(eyepos, &eyepos2, true, false)) { eyepos = eyepos2; }
 
 				this->m_ratio = 2.0f;
 				this->m_range = std::clamp(this->m_range - float(GetMouseWheelRotVolWithCheck()) * this->m_range_change, 0.f, 9.f);
@@ -202,10 +202,6 @@ namespace FPS_n2 {
 								this->m_DamageEvent.SetEvent(this->m_MyID, this->m_objType, pAmmo->GetDamage(), std::atan2f(v1.cross(v2).y(), v1.dot(v2)));
 								++this->m_DamageSwitch;// %= 255;//
 								//this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
-								if (!this->Get_alive()) {
-									//Œ‚”j
-									EffectControl::SetOnce(EffectResource::Effect::ef_greexp2, this->m_move.pos, this->m_move.mat.zvec(), Scale_Rate*2.f);
-								}
 								isDamage = true;
 							}
 							else {
@@ -263,7 +259,7 @@ namespace FPS_n2 {
 							//‘_‚¢
 							VECTOR_ref MuzPos = GetGunMuzzlePos(i);
 							VECTOR_ref EndPos = MuzPos + (this->m_MouseVec.zvec() * -1.f).Norm() * (500.f*Scale_Rate);
-							this->m_BackGround->CheckLinetoMap(MuzPos, &EndPos, true);
+							this->m_BackGround->CheckLinetoMap(MuzPos, &EndPos, true, false);
 
 							VECTOR_ref BasePos = GetGunMuzzleBase(i);
 							//”½‰f
@@ -319,7 +315,7 @@ namespace FPS_n2 {
 					auto startpos = GetObj().frame(f.GetFrameID());
 					auto pos_t1 = startpos + y_vec * ((-f.GetFrameWorldPosition().y()) + 2.f*Scale_Rate);
 					auto pos_t2 = startpos + y_vec * ((-f.GetFrameWorldPosition().y()) - 0.3f*Scale_Rate);
-					auto ColRes = this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true);
+					auto ColRes = this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true, !(this->m_MyID == 0));//CheckOnlyGround
 					Easing(&this->m_wheel_frameYpos[ID], (ColRes) ? (pos_t2.y() + y_vec.y() * f.GetFrameWorldPosition().y() - startpos.y()) : -0.3f*Scale_Rate, 0.9f, EasingType::OutExpo);
 					GetObj().SetFrameLocalMatrix(f.GetFrameID(),
 						MATRIX_ref::RotX((f.GetFrameWorldPosition().x() >= 0) ? this->m_wheel_Left : this->m_wheel_Right) *
@@ -365,7 +361,7 @@ namespace FPS_n2 {
 				int cnt_t = 0;
 				//—š‘Ñ
 				for (auto& f : this->m_b2Foot) {
-					f.FirstExecute(&GetObj(), m_BackGround);
+					f.FirstExecute(&GetObj(), m_BackGround, !(this->m_MyID == 0));//CheckOnlyGround
 					for (const auto& t : f.Getdownsideframe()) {
 						if (t.GetColResult_Y() != (std::numeric_limits<float>::max)()) {
 							hight_t += t.GetColResult_Y();
@@ -378,7 +374,7 @@ namespace FPS_n2 {
 					auto p_t = GetObj().frame(s);
 					auto pos_t1 = p_t + (VECTOR_ref::up() * 3.f*Scale_Rate);
 					auto pos_t2 = p_t + (VECTOR_ref::up() * -0.5f*Scale_Rate);
-					if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true)) {
+					if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true, false)) {
 						hight_t += pos_t2.y();
 						cnt_t++;
 					}

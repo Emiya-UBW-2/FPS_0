@@ -60,6 +60,9 @@ namespace FPS_n2 {
 			const auto		SetDamageEvent(const DamageEvent& value) noexcept {
 				if (this->m_MyID == value.ID && this->m_objType == value.CharaType) {
 					SubHP(value.Damage, value.rad);
+					if (this->m_HP == 0) {
+						EffectControl::SetOnce(EffectResource::Effect::ef_greexp2, this->m_move.pos, this->m_move.mat.zvec(), Scale_Rate*2.f);
+					}
 					return true;
 				}
 				return false;

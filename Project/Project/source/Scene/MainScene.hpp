@@ -408,7 +408,7 @@ namespace FPS_n2 {
 					VECTOR_ref pos_t = VECTOR_ref::vget(0.f + (float)(index)*20.f, 0.f, 0.f);
 					auto pos_t1 = pos_t + VECTOR_ref::up() * 1250.f;
 					auto pos_t2 = pos_t + VECTOR_ref::up() * -1250.f;
-					if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true)) {
+					if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true, false)) {
 						pos_t = pos_t2;
 					}
 					c->ValueSet(deg2rad(0.f), deg2rad(-90.f), false, pos_t, (PlayerID)index);
@@ -452,7 +452,7 @@ namespace FPS_n2 {
 						float rad_t = std::atan2f(Mat.zvec().x(), -Mat.zvec().z());
 						auto pos_t1 = pos_t + VECTOR_ref::up() * 1250.f;
 						auto pos_t2 = pos_t + VECTOR_ref::up() * -1250.f;
-						if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true)) {
+						if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true, false)) {
 							pos_t = pos_t2;
 						}
 						auto& vehc_data = this->m_VehDataControl->GetVehData();
@@ -807,7 +807,7 @@ namespace FPS_n2 {
 					auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
 					auto StartPos = Vehicle->GetGunMuzzlePos(0);
 					auto EndPos = StartPos + Vehicle->GetGunMuzzleVec(0) * 500.f*Scale_Rate;
-					this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, true);
+					this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, true, false);
 					for (auto& v : this->vehicle_Pool) {
 						if (v->GetMyPlayerID() == GetMyPlayerID()) { continue; }
 						if (v->RefreshCol(StartPos, EndPos, 10.f*Scale_Rate)) {
@@ -842,7 +842,7 @@ namespace FPS_n2 {
 								VECTOR_ref repos_tmp = a->GetMove().repos;
 								VECTOR_ref pos_tmp = a->GetMove().pos;
 								VECTOR_ref norm_tmp;
-								bool ColRes = this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, &norm_tmp);
+								bool ColRes = this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, false, &norm_tmp);
 								ColRes |= this->m_BackGround->GetWallCol(repos_tmp, &pos_tmp, &norm_tmp, a->GetCaliberSize());
 								bool is_HitAll = false;
 								auto& c = *ObjMngr->GetObj(ObjType::Human, a->GetShootedID());//(std::shared_ptr<CharacterClass>&)
