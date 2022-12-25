@@ -13,11 +13,13 @@ namespace FPS_n2 {
 			float ai_time_shoot{ 0.f };
 			float ai_time_tankback{ 0.f };
 			float ai_time_tankback_ing{ 0.f };
+			float ai_time_find{ 0.f };
 			int ai_tankback_cnt = 0;
 			float ai_time_walk{ 0.f };
 			bool ai_reload{ false };
 			int ai_phase{ 0 };
 			std::vector<int> wayp_pre{ 0 };
+			int ai_AimTarget{ 0 };
 
 			AI(void) noexcept {
 				wayp_pre.resize(6);
@@ -28,12 +30,14 @@ namespace FPS_n2 {
 
 			void Spawn(int now) {
 				this->ai_phase = 0;
+				this->ai_AimTarget = -1;
 				this->ai_time_shoot = 0.f;
 				this->ai_time_a = 0.f;
 				this->ai_time_d = 0.f;
 				this->ai_time_e = 0.f;
 				this->ai_time_tankback = 0.f;
 				this->ai_time_tankback_ing = 0.f;
+				this->ai_time_find = 0.f;
 				this->ai_tankback_cnt = 0;
 				this->fill_wayp_pre(now);
 			}
@@ -56,7 +60,7 @@ namespace FPS_n2 {
 					VECTOR_ref endpos = (*way_point)[this->wayp_pre[i + 1]];
 					startpos.yadd(0.5f*Scale_Rate);
 					endpos.yadd(0.5f*Scale_Rate);
-					DrawCapsule_3D(startpos, endpos, 1.f*Scale_Rate, GetColor(0, 255, 0), GetColor(0, 255, 0));
+					DrawCapsule_3D(startpos, endpos, 0.25f*Scale_Rate, GetColor(0, 255, 0), GetColor(0, 255, 0));
 				}
 			}
 #endif
@@ -118,33 +122,67 @@ namespace FPS_n2 {
 				auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(0);
 				auto vec_x = vec_gunmat.xvec();
 				auto vec_y = vec_gunmat.yvec();
-				auto vec_zp = vec_gunmat.yvec() * -1.f;
+				auto vec_zp = vec_gunmat.zvec() * -1.f;
 				auto vec_z = vec_mat.zvec() * -1.f;
 				//狙うキャラを探索+AIのフェーズ選択
 				{
-					bool ans = false;
-					VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
-					//*
-					for (auto& tgt : *vehicle_Pool) {
-						if (&MyVeh == &tgt) { continue; }
-						if (!tgt->Get_alive()) { continue; }
+					auto CheckCanLookTarget = [&](const std::shared_ptr<VehicleClass>& tgt, VECTOR_ref* Res) {
+						if (!tgt->Get_alive()) { return false; }
+						VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
 						VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
-						if (this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, false, false)) { continue; }
 						VECTOR_ref vec_tmp = EndPos - StartPos;
-						if (vec_to == VECTOR_ref::zero()) { vec_to = vec_tmp; } //基準の作成
-						if (vec_to.Length() >= vec_tmp.Length()) {
-							vec_to = vec_tmp;
-							ans = true;
+						if (vec_tmp.size() > 150.f*Scale_Rate) { return false; }
+						if (
+							!((std::abs(vec_zp.dot(vec_tmp.Norm())) > std::cos(deg2rad(45))) ||
+							(std::abs(vec_z.dot(vec_tmp.Norm())) > std::cos(deg2rad(45))))
+							) {
+							return false;
+						}
+						if (this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, false, false)) { return false; }
+						if (Res) { *Res = vec_tmp; }
+						return true;
+					};
+
+					bool ans = false;
+					if (this->cpu_do.ai_phase != 1) {
+						for (auto& tgt : *vehicle_Pool) {
+							if (MyVeh == tgt) { continue; }
+							VECTOR_ref vec_tmp;
+							if (CheckCanLookTarget(tgt, &vec_tmp)) {
+								if (vec_to == VECTOR_ref::zero()) { vec_to = vec_tmp; } //基準の作成
+								if (vec_to.Length() >= vec_tmp.Length()) {
+									vec_to = vec_tmp;
+									this->cpu_do.ai_AimTarget = (int)(&tgt - &vehicle_Pool->front());
+									ans = true;
+								}
+							}
 						}
 					}
-					//*/
-					if (!ans) {
-						this->cpu_do.ai_phase = 0;
+					else {
+						auto& tgt = vehicle_Pool->at(this->cpu_do.ai_AimTarget);
+						VECTOR_ref vec_tmp;
+						if (CheckCanLookTarget(tgt, &vec_tmp)) {
+							ans = true;
+						}
+						else {
+							VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
+							VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
+							vec_tmp = EndPos - StartPos;
+						}
+						vec_to = vec_tmp;
 					}
-					else if (vec_z.dot(vec_to.Norm()) >= 0 && vec_to.size() <= 300.f) {
+					if (!ans) {
+						this->cpu_do.ai_time_find = std::max(this->cpu_do.ai_time_find - 1.f / FPS, 0.f);
+						if (this->cpu_do.ai_time_find == 0.f) {
+							this->cpu_do.ai_AimTarget=-1;
+							this->cpu_do.ai_phase = 0;
+						}
+					}
+					else {
+						this->cpu_do.ai_time_find = 10.f;
 						this->cpu_do.ai_phase = 1;
 					}
-					this->cpu_do.ai_phase = 0;
+					//this->cpu_do.ai_phase = 0;
 				}
 				//
 				switch (this->cpu_do.ai_phase) {
@@ -216,9 +254,12 @@ namespace FPS_n2 {
 				break;
 				case 1://戦車乗車中戦闘フェイズ
 				{
-					A_key = (GetRand(100) > 50);
-					D_key = !A_key;
-					S_key = true;
+					x_m = int(vec_y.dot(vec_to.Norm()) * 40);
+					y_m = -int(vec_x.dot(vec_to.Norm()) * 40);
+
+					//A_key = (GetRand(100) > 50);
+					//D_key = !A_key;
+					//S_key = true;
 				}
 				break;
 				default:
@@ -251,7 +292,16 @@ namespace FPS_n2 {
 			}
 			void Draw() noexcept {
 #ifdef DEBUG
-	cpu_do.Draw_Debug(&m_BackGround->GetWayPoint());
+				if (MyVeh == vehicle_Pool->at(0)) { return; }
+				cpu_do.Draw_Debug(&m_BackGround->GetWayPoint());
+				if (this->cpu_do.ai_phase == 1) {
+					auto& tgt = vehicle_Pool->at(this->cpu_do.ai_AimTarget);
+					VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
+					VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
+
+					DrawCapsule_3D(StartPos, EndPos, 0.1f*Scale_Rate, GetColor(255, 0, 0), GetColor(255, 0, 0));
+				}
+
 #endif
 			}
 		};

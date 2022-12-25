@@ -364,25 +364,6 @@ namespace FPS_n2 {
 				hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
 				aim_Graph = GraphHandle::Load("data/UI/battle_aim.bmp");
 				scope_Graph = GraphHandle::Load("data/UI/battle_scope.png");
-
-				//サウンド
-				SE->Add((int)SoundEnum::Environment, 1, "data/Sound/SE/envi.wav");
-				for (int i = 0; i < 9; i++) {
-					SE->Add((int)SoundEnum::Tank_Shot, 3, "data/Sound/SE/gun/fire/" + std::to_string(i) + ".wav");
-				}
-				for (int i = 0; i < 17; i++) {
-					SE->Add((int)SoundEnum::Tank_Ricochet, 3, "data/Sound/SE/ricochet/" + std::to_string(i) + ".wav");
-				}
-				for (int i = 0; i < 2; i++) {
-					SE->Add((int)SoundEnum::Tank_Damage, 3, "data/Sound/SE/damage/" + std::to_string(i) + ".wav");
-				}
-				SE->Add((int)SoundEnum::Tank_engine, 10, "data/Sound/SE/engine.wav");
-				for (int i = 0; i < 7; i++) {
-					SE->Add((int)SoundEnum::Tank_Eject, 3, "data/Sound/SE/gun/reload/eject/" + std::to_string(i) + ".wav", false);
-				}
-				for (int i = 0; i < 5; i++) {
-					SE->Add((int)SoundEnum::Tank_Reload, 3, "data/Sound/SE/gun/reload/hand/" + std::to_string(i) + ".wav", false);
-				}
 			}
 			void			Set_Sub(void) noexcept override {
 				this->m_BackGround->Init();
@@ -481,6 +462,23 @@ namespace FPS_n2 {
 				SetMainCamera().SetCamInfo(deg2rad(OPTION::Instance()->Get_Fov()), 1.f, 100.f);
 				SetMainCamera().SetCamPos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
 				//サウンド
+				SE->Add((int)SoundEnum::Environment, 1, "data/Sound/SE/envi.wav");
+				for (int i = 0; i < 9; i++) {
+					SE->Add((int)SoundEnum::Tank_Shot, 3, "data/Sound/SE/gun/fire/" + std::to_string(i) + ".wav");
+				}
+				for (int i = 0; i < 17; i++) {
+					SE->Add((int)SoundEnum::Tank_Ricochet, 3, "data/Sound/SE/ricochet/" + std::to_string(i) + ".wav");
+				}
+				for (int i = 0; i < 2; i++) {
+					SE->Add((int)SoundEnum::Tank_Damage, 3, "data/Sound/SE/damage/" + std::to_string(i) + ".wav");
+				}
+				SE->Add((int)SoundEnum::Tank_engine, 10, "data/Sound/SE/engine.wav");
+				for (int i = 0; i < 7; i++) {
+					SE->Add((int)SoundEnum::Tank_Eject, 3, "data/Sound/SE/gun/reload/eject/" + std::to_string(i) + ".wav", false);
+				}
+				for (int i = 0; i < 5; i++) {
+					SE->Add((int)SoundEnum::Tank_Reload, 3, "data/Sound/SE/gun/reload/hand/" + std::to_string(i) + ".wav", false);
+				}
 				SE->Get((int)SoundEnum::Environment).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Shot).SetVol(0.5f);
 				SE->Get((int)SoundEnum::Tank_engine).SetVol(0.25f);
