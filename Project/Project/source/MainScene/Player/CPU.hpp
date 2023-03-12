@@ -182,7 +182,7 @@ namespace FPS_n2 {
 						this->cpu_do.ai_time_find = 10.f;
 						this->cpu_do.ai_phase = 1;
 					}
-					//this->cpu_do.ai_phase = 0;
+					this->cpu_do.ai_phase = 0;
 				}
 				//
 				switch (this->cpu_do.ai_phase) {
