@@ -84,6 +84,7 @@ namespace FPS_n2 {
 			const auto&		Getvec_real(void) const noexcept { return this->m_add_vec_real; }
 			const auto		Get_pseed_per(void) const noexcept { return this->m_add_vec_real.size() / (this->m_VecData->GetMaxFrontSpeed() / 3.6f); }			//移動速度のパーセンテージ
 			const auto&		Gunloadtime(size_t id_t) const noexcept { return this->m_Gun[id_t].Getloadtime(); }
+			const auto&		GetTotalloadtime(size_t id_t) const noexcept { return this->m_Gun[id_t].GetTotalloadtime(); }
 			const auto&		Gunround(size_t id_t) const noexcept { return this->m_Gun[id_t].Getrounds(); }
 			const auto&		Get_Gunsize(void) const noexcept { return this->m_Gun.size(); }
 			const auto&		Get_changeview(void) const noexcept { return this->m_changeview; }																	//照準変更時

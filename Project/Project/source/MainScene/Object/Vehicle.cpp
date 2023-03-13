@@ -80,10 +80,10 @@ namespace FPS_n2 {
 			}
 			this->m_key[0] = pInput.GetAction5() && pReady && this->Get_alive();			//射撃
 			this->m_key[1] = pInput.GetAction1() && pReady && this->Get_alive();			//マシンガン
-			this->m_key[2] = pInput.GetGoFrontPress() && pReady && this->Get_alive();		//前進
-			this->m_key[3] = pInput.GetGoBackPress() && pReady && this->Get_alive();		//後退
-			this->m_key[4] = pInput.GetGoRightPress() && pReady && this->Get_alive();		//右
-			this->m_key[5] = pInput.GetGoLeftPress() && pReady && this->Get_alive();		//左
+			this->m_key[2] = pInput.GetGoFrontPress() && pReady && this->Get_alive() && (this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) && (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0);		//前進
+			this->m_key[3] = pInput.GetGoBackPress() && pReady && this->Get_alive() && (this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) && (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0);		//後退
+			this->m_key[4] = pInput.GetGoRightPress() && pReady && this->Get_alive() && ((this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) || (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0));		//右
+			this->m_key[5] = pInput.GetGoLeftPress() && pReady && this->Get_alive() && ((this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) || (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0));		//左
 			this->m_key[6] = pInput.GetAction6() && pReady && this->Get_alive();			//左
 		}
 		//カメラ設定出力
@@ -118,10 +118,13 @@ namespace FPS_n2 {
 			VECTOR_ref eyetgt = Get_EyePos_Base() + this->m_MouseVec.zvec() * -1.f * std::max(this->m_range_r*Scale_Rate, 1.f);
 
 			this->m_changeview = ((this->m_range != OLD) && (this->m_range == 0.f || OLD == 0.f));
-			MainCamera_t.SetCamPos(eyepos, eyetgt, this->m_move.mat.yvec());
+
+			MainCamera_t.SetCamPos(eyepos, eyetgt,
+				Lerp(this->m_move.mat.yvec(), VECTOR_ref::up(), std::clamp(this->m_range_r / 3.f, 0.f, 1.f))
+			);
 
 			Easing(&near_t, 1.f + 2.f*((is_ADS()) ? this->m_ratio : 0.f), 0.9f, EasingType::OutExpo);
-			Easing(&far_t, std::max(this->m_AimingDistance, Scale_Rate * 20.f) + Scale_Rate * 20.f, 0.9f, EasingType::OutExpo);
+			Easing(&far_t, std::max(this->m_AimingDistance, Scale_Rate * 100.f) + Scale_Rate * 20.f, 0.9f, EasingType::OutExpo);
 			MainCamera_t.SetCamInfo(fov_t, near_t, far_t);
 		}
 
@@ -143,8 +146,6 @@ namespace FPS_n2 {
 				}
 			};
 			bool is_Hit = false;
-			for (auto& m : this->m_VecData->Get_module_mesh()) { is_Hit |= HitCheck_Tank(m, pAmmo.GetMove().repos, GetColLine(pAmmo.GetMove().repos, pAmmo.GetMove().pos, m)); }//モジュール
-			for (auto& m : this->m_VecData->Get_space_mesh()) { is_Hit |= HitCheck_Tank(m, pAmmo.GetMove().repos, GetColLine(pAmmo.GetMove().repos, pAmmo.GetMove().pos, m)); }				//空間装甲
 			//装甲(一番近い位置のものに限定する)
 			int t = -1;
 			MV1_COLL_RESULT_POLY colres; colres.HitFlag = FALSE;
@@ -158,6 +159,14 @@ namespace FPS_n2 {
 					EndPos = colres_t.HitPosition;
 				}
 			}
+			//
+			for (auto& m : this->m_VecData->Get_module_mesh()) {//モジュール
+				is_Hit |= HitCheck_Tank(m, pAmmo.GetMove().repos, GetColLine(pAmmo.GetMove().repos, EndPos, m));
+			}
+			for (auto& m : this->m_VecData->Get_space_mesh()) {//空間装甲
+				is_Hit |= HitCheck_Tank(m, pAmmo.GetMove().repos, GetColLine(pAmmo.GetMove().repos, EndPos, m));
+			}				
+			//
 			if (t != -1) {
 				is_Hit |= HitCheck_Tank(t, pAmmo.GetMove().repos, colres);
 			}
@@ -171,6 +180,7 @@ namespace FPS_n2 {
 			//ダメージ面に届くまで判定
 			for (const auto& tt : this->hitssort) {
 				if (tt.IsHit()) {
+					if (tt.GetHitMesh() == (std::numeric_limits<float>::max)()) { continue; }
 					VECTOR_ref HitPos = this->hitres[tt.GetHitMesh()].HitPosition;
 					VECTOR_ref HitNormal = this->hitres[tt.GetHitMesh()].Normal;
 					HitNormal = HitNormal.Norm();
@@ -179,14 +189,14 @@ namespace FPS_n2 {
 						if (tt.GetHitMesh() == mesh) {
 							//空間装甲に当たったのでモジュールに30ダメ
 							EffectControl::SetOnce(EffectResource::Effect::ef_reco, HitPos, HitNormal, pAmmo->GetEffectSize()*Scale_Rate);
-							//this->SubHP_Parts(30, (HitPoint)tt.GetHitMesh());
+							this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
 						}
 					}
 					for (auto& mesh : this->m_VecData->Get_module_mesh()) {
 						if (tt.GetHitMesh() == mesh) {
 							//モジュールに当たったのでモジュールに30ダメ
 							EffectControl::SetOnce(EffectResource::Effect::ef_reco, HitPos, HitNormal, pAmmo->GetEffectSize()*Scale_Rate);
-							//this->SubHP_Parts(30, (HitPoint)tt.GetHitMesh());
+							this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
 						}
 					}
 					//ダメージ面に当たった
@@ -487,10 +497,14 @@ namespace FPS_n2 {
 					(this->GetMove().pos + VECTOR_ref::vget(5, 5, 5)*Scale_Rate).get()) == FALSE
 					) {
 					if (true) {
-						MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
-						GetObj().DrawMesh(0);
-						MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
-						GetObj().DrawMesh(1);
+						if (this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) {
+							MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+							GetObj().DrawMesh(0);
+						}
+						if (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0) {
+							MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+							GetObj().DrawMesh(1);
+						}
 						MV1ResetFrameTextureAddressTransform(GetObj().get(), 0);
 						GetObj().DrawMesh(2);
 						for (int i = 2; i < GetObj().mesh_num(); i++) {
@@ -535,11 +549,33 @@ namespace FPS_n2 {
 
 
 			for (auto&m : this->m_VecData->Get_module_view()[0]) {
-				SetDrawBright(0, 255, 0);
+				if (0 <= m.second && m.second < this->m_HP_parts.size()) {
+					if (this->m_HP_parts[this->m_VecData->Get_module_mesh()[m.second]] > 0) {
+						auto radp = deg2rad(90)*(float)this->m_HP_parts[this->m_VecData->Get_module_mesh()[m.second]] / (float)(this->m_VecData->GetMaxHP());
+						SetDrawBright(std::clamp((int)(255.f*cos(radp)*2.f), 0, 255), std::clamp((int)(255.f*sin(radp)*2.f), 0, 255), 0);
+					}
+					else {
+						SetDrawBright(0, 0, 0);
+					}
+				}
+				else {
+					SetDrawBright(0, 255, 0);
+				}
 				m.first->DrawRotaGraph(xp, yp, (float)size / 200, rad + this->Get_body_yrad(), true);
 			}
 			for (auto&m : this->m_VecData->Get_module_view()[1]) {
-				SetDrawBright(0, 255, 0);
+				if (0 <= m.second && m.second < this->m_HP_parts.size()) {
+					if (this->m_HP_parts[this->m_VecData->Get_module_mesh()[m.second]] > 0) {
+						auto radp = deg2rad(90)*(float)this->m_HP_parts[this->m_VecData->Get_module_mesh()[m.second]] / (float)(this->m_VecData->GetMaxHP());
+						SetDrawBright(std::clamp((int)(255.f*cos(radp)*2.f), 0, 255), std::clamp((int)(255.f*sin(radp)*2.f), 0, 255), 0);
+					}
+					else {
+						SetDrawBright(0, 0, 0);
+					}
+				}
+				else {
+					SetDrawBright(0, 255, 0);
+				}
 				m.first->DrawRotaGraph(xp, yp, (float)size / 200, rad + this->Get_body_yrad() + this->m_view_rad[0].y(), true);
 			}
 			SetDrawBright(255, 255, 255);

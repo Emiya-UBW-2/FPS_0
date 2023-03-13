@@ -294,7 +294,7 @@ namespace FPS_n2 {
 							ammo_body_num++;
 						}
 					}
-					this->m_TankViewPic[0].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_look_body.bmp")), 0));
+					this->m_TankViewPic[0].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_look_body.bmp")), -1));
 					//–C“ƒƒ‚ƒWƒ…[ƒ‹
 					this->m_TankViewPic[1].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_turret.png")), -1));
 					int human_turret_num = 0;
@@ -316,7 +316,7 @@ namespace FPS_n2 {
 							ammo_turret_num++;
 						}
 					}
-					this->m_TankViewPic[1].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_look_turret.bmp")), 0));
+					this->m_TankViewPic[1].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_look_turret.bmp")),-1));
 					//data
 					{
 						int mdata = FileRead_open(("data/tank/" + this->m_name + "/data.txt").c_str(), FALSE);
@@ -376,6 +376,8 @@ namespace FPS_n2 {
 		public:			//getter
 			const auto&	Getrounds(void) const noexcept { return m_rounds; }
 			const auto&	Getloadtime(void) const noexcept { return m_loadtimer; }
+			const auto&	GetTotalloadtime(void) const noexcept { return this->m_GunSpec->GetLoadTime(); }
+
 			const auto&	GetAmmoSpec(void) const noexcept { return this->m_AmmoSpec[0]; }
 			const auto&	GetCaliberSize(void) const noexcept { return GetAmmoSpec()->GetCaliber(); }
 			const auto&	GetGunTrunnionFrameID(void) const noexcept { return this->m_GunSpec->Get_frame(1).GetFrameID(); }

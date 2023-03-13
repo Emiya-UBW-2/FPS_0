@@ -14,6 +14,8 @@ namespace FPS_n2 {
 			float ai_time_tankback{ 0.f };
 			float ai_time_tankback_ing{ 0.f };
 			float ai_time_find{ 0.f };
+			VECTOR_ref LastFindPoint;
+			float ai_time_turn{ 0.f };
 			int ai_tankback_cnt = 0;
 			float ai_time_walk{ 0.f };
 			bool ai_reload{ false };
@@ -38,6 +40,7 @@ namespace FPS_n2 {
 				this->ai_time_tankback = 0.f;
 				this->ai_time_tankback_ing = 0.f;
 				this->ai_time_find = 0.f;
+				this->ai_time_turn = 0.f;
 				this->ai_tankback_cnt = 0;
 				this->fill_wayp_pre(now);
 			}
@@ -58,8 +61,8 @@ namespace FPS_n2 {
 				for (size_t i = 0; i < this->wayp_pre.size() - 1; i++) {
 					VECTOR_ref startpos = (*way_point)[this->wayp_pre[i]];
 					VECTOR_ref endpos = (*way_point)[this->wayp_pre[i + 1]];
-					startpos.yadd(0.5f*Scale_Rate);
-					endpos.yadd(0.5f*Scale_Rate);
+					startpos.yadd(5.5f*Scale_Rate);
+					endpos.yadd(5.5f*Scale_Rate);
 					DrawCapsule_3D(startpos, endpos, 0.25f*Scale_Rate, GetColor(0, 255, 0), GetColor(0, 255, 0));
 				}
 			}
@@ -113,13 +116,16 @@ namespace FPS_n2 {
 				bool A_key{ false };
 				bool S_key{ false };
 				bool D_key{ false };
+
+				bool shotMain_Key{ false };
+				bool shotSub_Key{ false };
 				int32_t x_m, y_m;
 				//AI
 				//操作
 				VECTOR_ref vec_to = VECTOR_ref::zero();
 				//
 				auto vec_mat = MyVeh->GetMove().mat;
-				auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(0);
+				auto vec_gunmat = MyVeh->GetLookVec();
 				auto vec_x = vec_gunmat.xvec();
 				auto vec_y = vec_gunmat.yvec();
 				auto vec_zp = vec_gunmat.zvec() * -1.f;
@@ -127,16 +133,22 @@ namespace FPS_n2 {
 				//狙うキャラを探索+AIのフェーズ選択
 				{
 					auto CheckCanLookTarget = [&](const std::shared_ptr<VehicleClass>& tgt, VECTOR_ref* Res) {
+
+
 						if (!tgt->Get_alive()) { return false; }
 						VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
 						VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
 						VECTOR_ref vec_tmp = EndPos - StartPos;
 						if (vec_tmp.size() > 150.f*Scale_Rate) { return false; }
-						if (
-							!((std::abs(vec_zp.dot(vec_tmp.Norm())) > std::cos(deg2rad(45))) ||
-							(std::abs(vec_z.dot(vec_tmp.Norm())) > std::cos(deg2rad(45))))
-							) {
-							return false;
+						if (vec_tmp.size() > 30.f*Scale_Rate) {
+							auto vec_gunmat2 = MyVeh->GetGunMuzzleMatrix(0);
+							auto vec_zp2 = vec_gunmat2.zvec() * -1.f;
+							if (!(
+								(vec_zp2.dot(vec_tmp.Norm()) > std::cos(deg2rad(45))) ||
+								(vec_z.dot(vec_tmp.Norm()) > std::cos(deg2rad(45)))
+								)) {
+								return false;
+							}
 						}
 						if (this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, false, false)) { return false; }
 						if (Res) { *Res = vec_tmp; }
@@ -153,23 +165,52 @@ namespace FPS_n2 {
 								if (vec_to.Length() >= vec_tmp.Length()) {
 									vec_to = vec_tmp;
 									this->cpu_do.ai_AimTarget = (int)(&tgt - &vehicle_Pool->front());
+									this->cpu_do.LastFindPoint = tgt->GetMove().pos;
 									ans = true;
 								}
 							}
 						}
 					}
 					else {
+						{
+							auto& tgt = vehicle_Pool->at(this->cpu_do.ai_AimTarget);
+							VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
+							VECTOR_ref vec_to2 = tgt->GetMove().pos - StartPos;
+							for (auto& tgt2 : *vehicle_Pool) {
+								if (MyVeh == tgt2) { continue; }
+								auto Index = (int)(&tgt2 - &vehicle_Pool->front());
+								if (Index == this->cpu_do.ai_AimTarget) { continue; }
+								VECTOR_ref vec_tmp;
+								if (CheckCanLookTarget(tgt2, &vec_tmp)) {
+									if (vec_to2 == VECTOR_ref::zero()) { vec_to2 = vec_tmp; } //基準の作成
+									if (vec_to2.Length() > vec_tmp.Length()) {
+										vec_to2 = vec_tmp;
+										this->cpu_do.ai_AimTarget = Index;
+										this->cpu_do.LastFindPoint = tgt2->GetMove().pos;
+										ans = true;
+									}
+								}
+							}
+						}
+
+
 						auto& tgt = vehicle_Pool->at(this->cpu_do.ai_AimTarget);
 						VECTOR_ref vec_tmp;
 						if (CheckCanLookTarget(tgt, &vec_tmp)) {
+							this->cpu_do.LastFindPoint = tgt->GetMove().pos;
 							ans = true;
 						}
 						else {
 							VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
-							VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
+							VECTOR_ref EndPos = this->cpu_do.LastFindPoint + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate,0.f);
 							vec_tmp = EndPos - StartPos;
 						}
-						vec_to = vec_tmp;
+						vec_to = vec_tmp + VECTOR_ref::vget(GetRandf(2.f*Scale_Rate), GetRandf(2.f*Scale_Rate), GetRandf(2.f*Scale_Rate));
+
+
+						if (!tgt->Get_alive()) {
+							this->cpu_do.ai_time_find = 0.f;
+						}
 					}
 					if (!ans) {
 						this->cpu_do.ai_time_find = std::max(this->cpu_do.ai_time_find - 1.f / FPS, 0.f);
@@ -179,10 +220,13 @@ namespace FPS_n2 {
 						}
 					}
 					else {
+						if (this->cpu_do.ai_time_find != 10.f) {
+							this->cpu_do.ai_time_turn = 18.f;
+						}
 						this->cpu_do.ai_time_find = 10.f;
 						this->cpu_do.ai_phase = 1;
 					}
-					this->cpu_do.ai_phase = 0;
+					this->cpu_do.ai_time_turn = std::max(this->cpu_do.ai_time_turn - 1.f / FPS, 0.f);
 				}
 				//
 				switch (this->cpu_do.ai_phase) {
@@ -200,8 +244,20 @@ namespace FPS_n2 {
 						SetNextWaypoint(vec_z);
 					}
 
-					x_m = int(vec_y.dot(vec_to.Norm()) * 40);
-					y_m = -int(vec_x.dot(vec_to.Norm()) * 40);
+					{
+						auto Zbuf = vec_zp.Norm();
+						Zbuf.z(std::hypotf(Zbuf.x(), Zbuf.z()));
+						auto Tobuf = vec_to.Norm();
+						Tobuf.z(std::hypotf(Tobuf.x(), Tobuf.z()));
+						x_m = -int(Zbuf.Norm().cross(Tobuf.Norm()).x() * 40);
+					}
+					{
+						auto Zbuf = vec_zp;
+						Zbuf.y(0.f);
+						auto Tobuf = vec_to;
+						Tobuf.y(0.f);
+						y_m = int(Zbuf.Norm().cross(Tobuf.Norm()).y() * 40);
+					}
 
 					if (this->cpu_do.ai_tankback_cnt >= 2) {
 						this->cpu_do.ai_tankback_cnt = 0;
@@ -254,27 +310,160 @@ namespace FPS_n2 {
 				break;
 				case 1://戦車乗車中戦闘フェイズ
 				{
-					x_m = int(vec_y.dot(vec_to.Norm()) * 40);
-					y_m = -int(vec_x.dot(vec_to.Norm()) * 40);
+					{
+						auto Zbuf = vec_zp.Norm();
+						Zbuf.z(std::hypotf(Zbuf.x(), Zbuf.z()));
+						auto Tobuf = vec_to.Norm();
+						Tobuf.z(std::hypotf(Tobuf.x(), Tobuf.z()));
+						x_m = -int(Zbuf.Norm().cross(Tobuf.Norm()).x() * 40);
+					}
+					{
+						auto Zbuf = vec_zp;
+						Zbuf.y(0.f);
+						auto Tobuf = vec_to;
+						Tobuf.y(0.f);
+						y_m = int(Zbuf.Norm().cross(Tobuf.Norm()).y() * 40);
+					}
+					{
+						shotMain_Key = true;
 
-					//A_key = (GetRand(100) > 50);
-					//D_key = !A_key;
-					//S_key = true;
+						shotMain_Key &= (this->cpu_do.ai_time_find == 10.f);
+
+						auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(0);
+						auto vec_zp2 = vec_gunmat.zvec() * -1.f;
+						{
+							auto Zbuf = vec_zp2.Norm();
+							Zbuf.z(std::hypotf(Zbuf.x(), Zbuf.z()));
+							auto Tobuf = vec_to.Norm();
+							Tobuf.z(std::hypotf(Tobuf.x(), Tobuf.z()));
+							shotMain_Key &= (std::abs(Zbuf.Norm().cross(Tobuf.Norm()).x()) < 0.1f);
+						}
+						{
+							auto Zbuf = vec_zp2;
+							Zbuf.y(0.f);
+							auto Tobuf = vec_to;
+							Tobuf.y(0.f);
+							shotMain_Key &= (std::abs(Zbuf.Norm().cross(Tobuf.Norm()).y()) < 0.1f);
+						}
+					}
+					if (MyVeh->Get_Gunsize() >= 2) {
+						shotSub_Key = (GetRand(100) <= 5);
+
+						shotSub_Key &= (this->cpu_do.ai_time_find == 10.f);
+
+						auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(1);
+						auto vec_zp2 = vec_gunmat.zvec() * -1.f;
+						{
+							auto Zbuf = vec_zp2.Norm();
+							Zbuf.z(std::hypotf(Zbuf.x(), Zbuf.z()));
+							auto Tobuf = vec_to.Norm();
+							Tobuf.z(std::hypotf(Tobuf.x(), Tobuf.z()));
+							shotSub_Key &= (std::abs(Zbuf.Norm().cross(Tobuf.Norm()).x()) < std::sin(deg2rad(2)));
+						}
+						{
+							auto Zbuf = vec_zp2;
+							Zbuf.y(0.f);
+							auto Tobuf = vec_to;
+							Tobuf.y(0.f);
+							shotSub_Key &= (std::abs(Zbuf.Norm().cross(Tobuf.Norm()).y()) < std::sin(deg2rad(2)));
+						}
+					}
+					if (this->cpu_do.ai_time_turn <= 18.f - 3.f) {
+						auto Zbuf = vec_z;
+						Zbuf.y(0.f);
+						auto Tobuf = vec_to;
+						Tobuf.y(0.f);
+						auto SinBuf = -Zbuf.Norm().cross(Tobuf.Norm()).y();
+						if (std::abs(SinBuf) > 0.2f) {
+							A_key = (SinBuf > 0);
+							D_key = !A_key;
+						}
+						else {
+							auto cosBuf = Zbuf.Norm().dot(Tobuf.Norm());
+							if (cosBuf < 0.f) {
+								A_key = true;
+								D_key = !A_key;
+							}
+						}
+					}
+					if (18.f - 12.f <= this->cpu_do.ai_time_turn && this->cpu_do.ai_time_turn <= 18.f - 6.f) {
+						W_key = false;
+						S_key = !W_key;
+					}
+					else {
+						W_key = true;
+						S_key = !W_key;
+					}
+					if (this->cpu_do.ai_time_turn < 0.f) {
+						this->cpu_do.ai_time_turn = 18.f;
+					}
+
+
+					if (this->cpu_do.ai_time_find <= 5.f) {
+						W_key = true;
+						S_key = !W_key;
+					}
+					//
+					{
+						auto& tgt = vehicle_Pool->at(this->cpu_do.ai_AimTarget);
+						VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
+						VECTOR_ref vec_to2 = tgt->GetMove().pos - StartPos;
+						if (vec_to2.Length() <= 8.f*Scale_Rate) {
+							W_key = false;
+							S_key = false;
+						}
+					}
+
+					//スタック回避
+					if (this->cpu_do.ai_time_tankback_ing > 0.f && true) {//無効化x
+						this->cpu_do.ai_time_tankback_ing -= 1.f / FPS;
+						W_key = !W_key;
+						S_key = !W_key;
+						A_key = (GetRand(100) > 50);
+						D_key = !A_key;
+					}
+					else {
+						this->cpu_do.ai_time_tankback_ing = 0.f;
+						if (MyVeh->Getvec_real().Length() <= MyVeh->GetMove().vec.size() *(0.5f)) {
+							this->cpu_do.ai_time_tankback += 1.f / FPS;
+						}
+						else {
+							this->cpu_do.ai_time_tankback = 0.f;
+						}
+						if (this->cpu_do.ai_time_tankback > 3.f) {
+							this->cpu_do.ai_time_tankback = 0.f;
+							this->cpu_do.ai_time_tankback_ing = 5.f;
+							this->cpu_do.ai_tankback_cnt++;
+						}
+					}
 				}
 				break;
 				default:
 					break;
 				}
-				x_m = std::clamp(x_m, -40, 40);
-				y_m = std::clamp(y_m, -40, 40);
+
+
+				//W_key = false;
+				//A_key = false;
+				//S_key = false;
+				//D_key = false;
+
+				//shotMain_Key = false;
+				//shotSub_Key = false;
+
 				MyInput->SetInput(
-					(float)x_m,
-					(float)y_m,
+					(float)x_m / 100.f,
+					(float)y_m / 100.f,
 					W_key, S_key, A_key, D_key,
-					false, false, false, false, false, false, false,
 					false,
-					false, false, false,
-					false, false
+					false, false,
+					false, false, false, false,
+					shotSub_Key,//
+					false,
+					false,
+					false,
+					shotMain_Key,
+					false
 				);
 			}
 		public:
@@ -292,16 +481,30 @@ namespace FPS_n2 {
 			}
 			void Draw() noexcept {
 #ifdef DEBUG
+				if (!MyVeh->Get_alive()) { return; }
 				if (MyVeh == vehicle_Pool->at(0)) { return; }
 				cpu_do.Draw_Debug(&m_BackGround->GetWayPoint());
 				if (this->cpu_do.ai_phase == 1) {
 					auto& tgt = vehicle_Pool->at(this->cpu_do.ai_AimTarget);
-					VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
-					VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
+					VECTOR_ref StartPos = MyVeh->Get_EyePos_Base() + VECTOR_ref::vget(0.f, 5.f*Scale_Rate, 0.f);
+					VECTOR_ref EndPos = tgt->GetMove().pos + VECTOR_ref::vget(0.f, 5.f*Scale_Rate, 0.f);
 
 					DrawCapsule_3D(StartPos, EndPos, 0.1f*Scale_Rate, GetColor(255, 0, 0), GetColor(255, 0, 0));
 				}
+				//*
+				{
+					auto vec_gunmat = MyVeh->GetGunMuzzleMatrix(0);
+					auto vec_x = vec_gunmat.xvec();
+					auto vec_y = vec_gunmat.yvec();
+					auto vec_zp = vec_gunmat.zvec() * -1.f;
 
+					VECTOR_ref StartPos = MyVeh->Get_EyePos_Base() + VECTOR_ref::vget(0.f, 5.f*Scale_Rate, 0.f);
+
+					DrawCapsule_3D(StartPos, StartPos + vec_x * Scale_Rate*5.f, 0.1f*Scale_Rate, GetColor(255, 0, 0), GetColor(255, 0, 0));
+					DrawCapsule_3D(StartPos, StartPos + vec_y * Scale_Rate*5.f, 0.1f*Scale_Rate, GetColor(0, 255, 0), GetColor(255, 0, 0));
+					DrawCapsule_3D(StartPos, StartPos + vec_zp * Scale_Rate*5.f, 0.1f*Scale_Rate, GetColor(0, 0, 255), GetColor(255, 0, 0));
+				}
+				//*/
 #endif
 			}
 		};

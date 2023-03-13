@@ -409,6 +409,8 @@ namespace FPS_n2 {
 				}
 				//戦車
 				{
+					VECTOR_ref BasePos;
+
 					std::vector<int> OtherSelect;
 					for (auto& v : this->vehicle_Pool) {
 						size_t index = &v - &this->vehicle_Pool.front();
@@ -416,18 +418,26 @@ namespace FPS_n2 {
 						while (true) {
 							ID = GetRand(this->m_BackGround->GetRoadPointNum() - 1);
 							bool Hit = (std::find_if(OtherSelect.begin(), OtherSelect.end(), [&](int tmp) { return tmp == ID; }) != OtherSelect.end());
+
+							if (index != 0) {
+								auto LEN = (BasePos - this->m_BackGround->GetRoadPoint(ID)->pos()); LEN.y(0.f);
+								if (LEN.Length() <= 100.f*Scale_Rate) {
+									Hit = true;
+								}
+							}
 							if (!Hit) {
 								auto Mat = *this->m_BackGround->GetRoadPoint(ID);
 								VECTOR_ref pos_t = Mat.pos();
 								if (
-									(-300.f*Scale_Rate / 2.f < pos_t.x() && pos_t.x() < 300.f*Scale_Rate / 2.f) &&
-									(-300.f*Scale_Rate / 2.f < pos_t.z() && pos_t.z() < 300.f*Scale_Rate / 2.f)
+									(-280.f*Scale_Rate / 2.f < pos_t.x() && pos_t.x() < 290.f*Scale_Rate / 2.f) &&
+									(-280.f*Scale_Rate / 2.f < pos_t.z() && pos_t.z() < 280.f*Scale_Rate / 2.f)
 									) {
 									OtherSelect.emplace_back(ID);
 									break;
 								}
 							}
 						}
+
 						auto Mat = *this->m_BackGround->GetRoadPoint(ID);
 						VECTOR_ref pos_t = Mat.pos();
 						float rad_t = std::atan2f(Mat.zvec().x(), -Mat.zvec().z());
@@ -436,6 +446,10 @@ namespace FPS_n2 {
 						if (this->m_BackGround->CheckLinetoMap(pos_t1, &pos_t2, true, false)) {
 							pos_t = pos_t2;
 						}
+						if (index == 0) {
+							BasePos = pos_t;
+						}
+
 						auto& vehc_data = this->m_VehDataControl->GetVehData();
 						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
 						v->ValueSet(deg2rad(0), rad_t, pos_t);
@@ -604,6 +618,7 @@ namespace FPS_n2 {
 							auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();
 							ReCoil = Chara->GetRecoilRadAdd();
 						}
+
 						MyInput.SetInput(
 							pp_x*(1.f - this->m_TPS_Per) - ReCoil.y(),
 							pp_y*(1.f - this->m_TPS_Per) - ReCoil.x(),
@@ -993,14 +1008,14 @@ namespace FPS_n2 {
 						this->m_UIclass.SetIntParam(3, (int)Chara->GetHP());
 						this->m_UIclass.SetIntParam(4, (int)Chara->GetHPMax());
 						this->m_UIclass.SetIntParam(5, (int)(this->m_HPBuf + 0.5f));
-						this->m_HPBuf += std::clamp((Chara->GetHP() - this->m_HPBuf)*100.f, -5.f, 5.f) / FPS;
+						this->m_HPBuf += std::clamp((Chara->GetHP() - this->m_HPBuf)*100.f, -15.f, 15.f) / FPS;
 					}
 					else {
 						auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
 						this->m_UIclass.SetIntParam(3, (int)Vehicle->GetHP());
 						this->m_UIclass.SetIntParam(4, (int)Vehicle->GetHPMax());
 						this->m_UIclass.SetIntParam(5, (int)(this->m_HPBuf + 0.5f));
-						this->m_HPBuf += std::clamp((Vehicle->GetHP() - this->m_HPBuf)*100.f, -5.f, 5.f) / FPS;
+						this->m_HPBuf += std::clamp((Vehicle->GetHP() - this->m_HPBuf)*100.f, -500.f, 500.f) / FPS;
 					}
 
 					this->m_UIclass.SetIntParam(6, (int)1.f);
@@ -1173,7 +1188,9 @@ namespace FPS_n2 {
 						auto ammo = ObjMngr->GetObj(ObjType::Ammo, loop);
 						if (ammo != nullptr) {
 							auto& a = (std::shared_ptr<AmmoClass>&)(*ammo);
-							a->Draw_Hit_UI(hit_Graph);
+							if (GetMyPlayerID() == a->GetMyPlayerID()) {
+								a->Draw_Hit_UI(hit_Graph);
+							}
 						}
 						else {
 							break;
@@ -1205,6 +1222,7 @@ namespace FPS_n2 {
 				auto* DrawParts = DXDraw::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();
+				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
 				if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 					//レティクル表示
 					if (Reticle_on) {
@@ -1219,6 +1237,15 @@ namespace FPS_n2 {
 				else {
 					if (Reticle_on) {
 						aim_Graph.DrawRotaGraph((int)Reticle_xpos, (int)Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);
+						auto* Fonts = FontPool::Instance();
+
+						unsigned int color = GetColor(0, 255, 0);
+						auto Time = Vehicle->GetTotalloadtime(0);
+						if (Vehicle->Gunloadtime(0) != 0.f) {
+							color = GetColor(255, 0, 0);
+							Time = Vehicle->Gunloadtime(0);
+						}
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, (int)Reticle_xpos + y_r(50), (int)Reticle_ypos, color, GetColor(0, 0, 0), "%05.2f s", Time);
 					}
 				}
 			}
