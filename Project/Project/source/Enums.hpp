@@ -9,12 +9,11 @@ namespace FPS_n2 {
 
 	namespace Sceneclass {
 		enum class ObjType {
-			Human,
 			Vehicle,
 			Ammo,
 			Gun,
-			Magazine,
-			Cart,
+			HindD,
+			Item,
 		};
 		enum class SoundEnum {
 			Environment,

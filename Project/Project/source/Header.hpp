@@ -32,12 +32,10 @@ using namespace DXLib_ref;
 
 #include "Enums.hpp"
 #include "MainScene/Object/ObjectBaseEnum.hpp"
-#include "MainScene/Object/CartEnum.hpp"
 #include "MainScene/Object/AmmoEnum.hpp"
-#include "MainScene/Object/MagazineEnum.hpp"
-#include "MainScene/Object/GunEnum.hpp"
-#include "MainScene/Object/CharacterEnum.hpp"
 #include "MainScene/Object/VehicleEnum.hpp"
+#include "MainScene/Object/HindDEnum.hpp"
+#include "MainScene/Object/ItemEnum.hpp"
 //
 #include "sub.hpp"
 #include "NetWork.hpp"
@@ -47,23 +45,17 @@ using namespace DXLib_ref;
 
 #include "MainScene/Object/ObjectBase.hpp"
 //
-#include "MainScene/Object/CartData.hpp"
-#include "MainScene/Object/Cart.hpp"
-//
 #include "MainScene/Object/AmmoData.hpp"
 #include "MainScene/Object/Ammo.hpp"
 //
-#include "MainScene/Object/MagazineData.hpp"
-#include "MainScene/Object/Magazine.hpp"
-//
-#include "MainScene/Object/GunData.hpp"
-#include "MainScene/Object/Gun.hpp"
-//
-#include "MainScene/Object/CharacterData.hpp"
-#include "MainScene/Object/Character.hpp"
+#include "MainScene/Object/HindDData.hpp"
+#include "MainScene/Object/HindD.hpp"
 //
 #include "MainScene/Object/VehicleData.hpp"
 #include "MainScene/Object/Vehicle.hpp"
+//
+#include "MainScene/Object/ItemData.hpp"
+#include "MainScene/Object/Item.hpp"
 
 #include "ObjectManager.hpp"
 #include "MainScene/Player/Player.hpp"
@@ -71,5 +63,8 @@ using namespace DXLib_ref;
 
 #include "MainScene/UI/MainSceneUIControl.hpp"
 //
+#include "MainScene/NetWorks.hpp"
+#include "MainScene/Inventory.hpp"
+
 #include "Scene/MainScene.hpp"
 #include "Scene/MainSceneLoader.hpp"

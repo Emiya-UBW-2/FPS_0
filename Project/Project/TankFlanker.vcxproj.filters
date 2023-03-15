@@ -75,27 +75,6 @@
     <ClInclude Include="source\MainScene\Object\Ammo.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
-    <ClInclude Include="source\MainScene\Object\CharacterEnum.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Character.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Gun.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Magazine.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\CartEnum.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\Cart.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="source\MainScene\Object\GunEnum.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
     <ClInclude Include="source\MainScene\Player\Player.hpp">
       <Filter>ソース ファイル\MainScene\Player</Filter>
     </ClInclude>
@@ -111,20 +90,23 @@
     <ClInclude Include="source\MainScene\Object\VehicleData.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
-    <ClInclude Include="source\MainScene\Object\CharacterData.hpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClInclude>
     <ClInclude Include="source\MainScene\Object\AmmoData.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
-    <ClInclude Include="source\MainScene\Object\GunData.hpp">
+    <ClInclude Include="source\MainScene\Object\ItemData.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
-    <ClInclude Include="source\MainScene\Object\MagazineData.hpp">
+    <ClInclude Include="source\MainScene\Object\ItemEnum.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClInclude>
-    <ClInclude Include="source\MainScene\Object\CartData.hpp">
+    <ClInclude Include="source\MainScene\Object\Item.hpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\NetWorks.hpp">
+      <Filter>ソース ファイル\MainScene</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MainScene\Inventory.hpp">
+      <Filter>ソース ファイル\MainScene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -134,17 +116,8 @@
     <ClCompile Include="source\MainScene\Object\Vehicle.cpp">
       <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClCompile>
-    <ClCompile Include="source\MainScene\Object\Gun.cpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClCompile>
-    <ClCompile Include="source\MainScene\Object\Magazine.cpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
-    </ClCompile>
     <ClCompile Include="source\MainScene\BackGround\BackGround.cpp">
       <Filter>ソース ファイル\MainScene\BackGround</Filter>
-    </ClCompile>
-    <ClCompile Include="source\MainScene\Object\Character.cpp">
-      <Filter>ソース ファイル\MainScene\Object</Filter>
     </ClCompile>
     <ClCompile Include="source\MainScene\BackGround\BackGroundSub.cpp">
       <Filter>ソース ファイル\MainScene\BackGround</Filter>

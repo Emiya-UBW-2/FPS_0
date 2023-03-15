@@ -11,7 +11,6 @@ namespace FPS_n2 {
 			MV1							m_ObjGroundCol_Box2D;
 
 			std::vector<VECTOR_ref>		m_WayPoint;
-			std::vector<MV1*>			m_MapCols;
 
 			int							m_softimage{ -1 };
 
@@ -21,7 +20,6 @@ namespace FPS_n2 {
 			Box2DWall					m_Box2DWall;
 			//BreakWall					m_BreakWall;
 		public://getter
-			const auto&		GetGroundCols(void) noexcept { return this->m_MapCols; }
 			//const auto&		GetBuildCol(void) noexcept { return this->m_BuildControl.GetBuildCol(); }
 			const auto&		GetWayPoint(void) noexcept { return this->m_WayPoint; }
 			const std::shared_ptr<b2World>&	GetBox2Dworld(void) noexcept {
@@ -70,14 +68,6 @@ namespace FPS_n2 {
 					}
 				}
 				return isHit;
-			}
-			const auto		CheckCapsuletoMap(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float radius) {
-				for (const auto& c : m_MapCols) {
-					if (c->CollCheck_Capsule(StartPos, EndPos, radius).HitNum > 0) {
-						return true;
-					}
-				}
-				return false;
 			}
 
 			const auto		GetRoadPointNum() const noexcept {
@@ -184,13 +174,6 @@ namespace FPS_n2 {
 				//•Ç
 				{
 					//this->m_BreakWall.Init();
-				}
-				//ƒRƒŠƒWƒ‡ƒ“‚Ç‚à
-				{
-					this->m_MapCols.emplace_back((MV1*)(&this->m_ObjGroundCol));
-					//for (int i = 0; i < this->m_BreakWall.GetWallGroundColNum(); i++) {
-					//	this->m_MapCols.emplace_back((MV1*)(this->m_BreakWall.GetWallGroundCol(i)));
-					//}
 				}
 			}
 			//

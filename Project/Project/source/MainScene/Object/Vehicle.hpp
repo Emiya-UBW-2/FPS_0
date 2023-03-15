@@ -57,16 +57,7 @@ namespace FPS_n2 {
 			float												m_spd_buf{ 0.f };								//BOX2D
 			std::array<FootWorld, 2>							m_b2Foot;										//履帯BOX2D
 		public:			//setter,getter
-			const auto		SetDamageEvent(const DamageEvent& value) noexcept {
-				if (this->m_MyID == value.ID && this->m_objType == value.CharaType) {
-					SubHP(value.Damage, value.rad);
-					if (this->m_HP == 0) {
-						EffectControl::SetOnce(EffectResource::Effect::ef_greexp2, this->m_move.pos, this->m_move.mat.zvec(), Scale_Rate*2.f);
-					}
-					return true;
-				}
-				return false;
-			}
+			const bool		SetDamageEvent(const DamageEvent& value) noexcept;
 			void			SetCharaType(CharaTypeID value) noexcept { this->m_CharaType = value; }
 			void			SetDamageSwitchRec(unsigned long long value) noexcept { this->m_DamageSwitchRec = value; }
 			void			SetAimingDistance(float value) noexcept { this->m_AimingDistance = value; }
@@ -86,7 +77,7 @@ namespace FPS_n2 {
 			const auto&		Gunloadtime(size_t id_t) const noexcept { return this->m_Gun[id_t].Getloadtime(); }
 			const auto&		GetTotalloadtime(size_t id_t) const noexcept { return this->m_Gun[id_t].GetTotalloadtime(); }
 			const auto&		Gunround(size_t id_t) const noexcept { return this->m_Gun[id_t].Getrounds(); }
-			const auto&		Get_Gunsize(void) const noexcept { return this->m_Gun.size(); }
+			const auto		Get_Gunsize(void) const noexcept { return this->m_Gun.size(); }
 			const auto&		Get_changeview(void) const noexcept { return this->m_changeview; }																	//照準変更時
 			const auto&		GetViewRad(void) const noexcept { return this->m_view_rad[0]; }
 			const auto&		Get_ratio(void) const noexcept { return this->m_ratio; }																			//UI用
@@ -120,6 +111,9 @@ namespace FPS_n2 {
 			const std::pair<bool, bool>		CheckAmmoHit(AmmoClass* pAmmo, const VECTOR_ref& pShooterPos) noexcept;
 			void			HitGround(const VECTOR_ref& pos_t, const VECTOR_ref& pNorm, const VECTOR_ref& pVec) noexcept;
 			void			DrawModuleView(int xp, int yp, int size) noexcept;																					//被弾チェック
+
+			const bool		CheckLine(const VECTOR_ref& StartPos, VECTOR_ref* EndPos, VECTOR_ref* Normal = nullptr) noexcept;
+
 		private://更新関連
 			const auto		CheckAmmoHited(const AmmoClass& pAmmo) noexcept;																					//被弾チェック
 			const auto		CalcAmmoHited(AmmoClass* pAmmo, const VECTOR_ref& pShooterPos) noexcept;															//被弾処理

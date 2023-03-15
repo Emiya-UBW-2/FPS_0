@@ -75,6 +75,12 @@ namespace FPS_n2 {
 				this->m_move.pos = pos;
 				UpdateMove();
 			}
+			void			SetMove(const MATRIX_ref& mat, const VECTOR_ref& pos, const VECTOR_ref& vec) {
+				this->m_move.mat = mat;
+				this->m_move.pos = pos;
+				this->m_move.vec = vec;
+				UpdateMove();
+			}
 			void			UpdateMove(void) noexcept {
 				this->m_PrevMat = this->GetObj().GetMatrix();
 				this->GetObj().SetMatrix(this->m_move.MatIn());
@@ -97,6 +103,7 @@ namespace FPS_n2 {
 				return false;
 			}
 			//判定取得
+			const auto		GetColCapsule(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float range, const int sel = 0) const noexcept { return this->m_col.CollCheck_Capsule(StartPos, EndPos, range, -1, sel); }
 			const auto		GetColLine(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel = 0) const noexcept { return this->m_col.CollCheck_Line(StartPos, EndPos, -1, sel); }
 			void			GetColNearestInAllMesh(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) const noexcept {
 				MV1_COLL_RESULT_POLY colres;
@@ -199,18 +206,6 @@ namespace FPS_n2 {
 						std::string FName = this->GetObj().frame_name(f);
 						bool compare = false;
 						switch (this->m_objType) {
-						case ObjType::Human:
-							compare = (FName == CharaFrameName[i]);
-							if (!compare) {
-								//compare = (FName.find(CharaFrameName[i]) != std::string::npos);
-							}
-							break;
-						case ObjType::Gun:
-							compare = (FName == GunFrameName[i]);
-							if (!compare) {
-								compare = (FName.find(GunFrameName[i]) != std::string::npos);
-							}
-							break;
 						case ObjType::Vehicle:
 							break;
 						default:
@@ -225,12 +220,6 @@ namespace FPS_n2 {
 							f = 0;
 						}
 						switch (this->m_objType) {
-						case ObjType::Human:
-							if (i >= (int)CharaFrame::Max) { isEnd = true; }
-							break;
-						case ObjType::Gun:
-							if (i >= (int)GunFrame::Max) { isEnd = true; }
-							break;
 						case ObjType::Vehicle:
 							isEnd = true;
 							break;
@@ -247,12 +236,6 @@ namespace FPS_n2 {
 							}
 						}
 						switch (this->m_objType) {
-						case ObjType::Human:
-							if (i >= (int)CharaFrame::Max) { isEnd = true; }
-							break;
-						case ObjType::Gun:
-							if (i >= (int)GunFrame::Max) { isEnd = true; }
-							break;
 						case ObjType::Vehicle:
 							isEnd = true;
 							break;
@@ -265,16 +248,6 @@ namespace FPS_n2 {
 						}
 					}
 					switch (this->m_objType) {
-					case ObjType::Human:
-						this->m_Shapes.resize((int)CharaShape::Max);
-						for (int j = 1; j < (int)CharaShape::Max; j++) {
-							auto s = MV1SearchShape(this->GetObj().get(), CharaShapeName[j]);
-							if (s >= 0) {
-								this->m_Shapes[j].first = s;
-								this->m_Shapes[j].second = 0.f;
-							}
-						}
-						break;
 					case ObjType::Vehicle:
 						break;
 					default:
@@ -290,11 +263,6 @@ namespace FPS_n2 {
 				}
 				//シェイプ更新
 				switch (this->m_objType) {
-				case ObjType::Human:
-					for (int j = 1; j < (int)CharaShape::Max; j++) {
-						MV1SetShapeRate(this->GetObj().get(), this->m_Shapes[j].first, (1.f - this->m_Shapes[0].second)*this->m_Shapes[j].second);
-					}
-					break;
 				case ObjType::Vehicle:
 					break;
 				default:

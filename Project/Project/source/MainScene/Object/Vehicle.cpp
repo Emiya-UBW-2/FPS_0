@@ -6,7 +6,25 @@ namespace FPS_n2 {
 		//----------------------------------------------------------
 		//‰Šú‰»ŠÖ˜A
 		//----------------------------------------------------------
-
+		const bool		VehicleClass::SetDamageEvent(const DamageEvent& value) noexcept {
+			if (this->m_MyID == value.ID && this->m_objType == value.CharaType) {
+				SubHP(value.Damage, value.rad);
+				if (this->m_HP == 0) {
+					EffectControl::SetOnce(EffectResource::Effect::ef_greexp2, this->m_move.pos, this->m_move.mat.zvec(), Scale_Rate*2.f);
+					auto* ObjMngr = ObjectManager::Instance();
+					for (int i = 0; i < 10; i++) {
+						auto& ip = *ObjMngr->AddObject(ObjType::Item, "data/model/item/");
+						auto Vec = (MATRIX_ref::RotY(GetRandf(deg2rad(360)))*MATRIX_ref::RotX(GetRandf(deg2rad(90)))).yvec()*Scale_Rate;
+						ip->SetMove(
+							MATRIX_ref::RotVec2(VECTOR_ref::up(), Vec.Norm()),
+							this->m_move.pos + Vec * 6.f,
+							Vec*25.f / FPS * (1.0f*GetRandf(0.5f)));
+					}
+				}
+				return true;
+			}
+			return false;
+		}
 		//
 		void			VehicleClass::ValueInit(const VehDataControl::VhehicleData* pVeh_data, const MV1& hit_pic, const std::shared_ptr<b2World>& pB2World, PlayerID pID) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
@@ -123,7 +141,7 @@ namespace FPS_n2 {
 				Lerp(this->m_move.mat.yvec(), VECTOR_ref::up(), std::clamp(this->m_range_r / 3.f, 0.f, 1.f))
 			);
 
-			Easing(&near_t, 1.f + 2.f*((is_ADS()) ? this->m_ratio : 0.f), 0.9f, EasingType::OutExpo);
+			Easing(&near_t, 1.f + 2.f*((is_ADS()) ? this->m_ratio : 2.f), 0.9f, EasingType::OutExpo);
 			Easing(&far_t, std::max(this->m_AimingDistance, Scale_Rate * 100.f) + Scale_Rate * 20.f, 0.9f, EasingType::OutExpo);
 			MainCamera_t.SetCamInfo(fov_t, near_t, far_t);
 		}
@@ -211,7 +229,7 @@ namespace FPS_n2 {
 								auto v2 = (pShooterPos - this->m_move.pos).Norm(); v2.y(0);
 								this->m_DamageEvent.SetEvent(this->m_MyID, this->m_objType, pAmmo->GetDamage(), std::atan2f(v1.cross(v2).y(), v1.dot(v2)));
 								++this->m_DamageSwitch;// %= 255;//
-								//this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
+								this->SubHP_Parts(pAmmo->GetDamage(), (HitPoint)tt.GetHitMesh());
 								isDamage = true;
 							}
 							else {
@@ -519,7 +537,24 @@ namespace FPS_n2 {
 				}
 			}
 		}
-
+		//
+		const bool		VehicleClass::CheckLine(const VECTOR_ref& StartPos, VECTOR_ref* EndPos, VECTOR_ref* Normal) noexcept {
+			bool IsHit = false;
+			if (this->RefreshCol(StartPos, *EndPos, 10.0f*Scale_Rate)) {
+				//‘•b(ˆê”Ô‹ß‚¢ˆÊ’u‚Ì‚à‚Ì‚ÉŒÀ’è‚·‚é)
+				for (const auto& m : this->m_VecData->Get_armer_mesh()) {
+					auto Res = GetColLine(StartPos, *EndPos, m.first);
+					if (Res.HitFlag) {
+						IsHit = true;
+						*EndPos = Res.HitPosition;
+						if (Normal) {
+							*Normal = Res.Normal;
+						}
+					}
+				}
+			}
+			return IsHit;
+		}
 		//
 		const std::pair<bool, bool>		VehicleClass::CheckAmmoHit(AmmoClass* pAmmo, const VECTOR_ref& pShooterPos) noexcept {
 			std::pair<bool, bool> isDamaged{ false,false };

@@ -28,10 +28,6 @@ namespace FPS_n2 {
 
 			std::shared_ptr<ObjectBaseClass>* AddObject(ObjType ModelType, const char* filepath, const char* objfilename = "model", const char* colfilename = "col") {
 				switch (ModelType) {
-				case ObjType::Human:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<CharacterClass>();
-					break;
 				case ObjType::Vehicle:
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<VehicleClass>();
@@ -40,17 +36,13 @@ namespace FPS_n2 {
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<AmmoClass>();
 					break;
-				case ObjType::Magazine:
+				case ObjType::HindD:
 					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<MagazineClass>();
+					this->m_Object.back() = std::make_shared<HindDClass>();
 					break;
-				case ObjType::Gun:
+				case ObjType::Item:
 					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<GunClass>();
-					break;
-				case ObjType::Cart:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<CartClass>();
+					this->m_Object.back() = std::make_shared<ItemClass>();
 					break;
 				default:
 					break;
@@ -65,10 +57,6 @@ namespace FPS_n2 {
 			}
 			std::shared_ptr<ObjectBaseClass>* AddObject(ObjType ModelType) {
 				switch (ModelType) {
-				case ObjType::Human:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<CharacterClass>();
-					break;
 				case ObjType::Vehicle:
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<VehicleClass>();
@@ -77,17 +65,13 @@ namespace FPS_n2 {
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<AmmoClass>();
 					break;
-				case ObjType::Magazine:
+				case ObjType::HindD:
 					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<MagazineClass>();
+					this->m_Object.back() = std::make_shared<HindDClass>();
 					break;
-				case ObjType::Gun:
+				case ObjType::Item:
 					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<GunClass>();
-					break;
-				case ObjType::Cart:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<CartClass>();
+					this->m_Object.back() = std::make_shared<ItemClass>();
 					break;
 				default:
 					break;
