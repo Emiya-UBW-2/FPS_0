@@ -96,15 +96,15 @@ namespace FPS_n2 {
 								break;
 							case 1:
 								xp = y_r(24 + 150 + 10);
-								yp = y_r(432);
+								yp = y_r(442);
 								break;
 							case 2:
 								xp = y_r(24 + 24);
-								yp = y_r(400);
+								yp = y_r(424);
 								break;
 							case 3:
 								xp = y_r(24 + 640 - 24 - 128);
-								yp = y_r(400);
+								yp = y_r(424);
 								break;
 							case 4:
 								xp = y_r(24 + 640 + 24);

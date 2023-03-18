@@ -121,7 +121,7 @@ namespace FPS_n2 {
 			void Init(void) noexcept {
 				this->m_Vehicle = nullptr;
 				this->m_Inventorys.resize(5);
-				SetInventory(0, 10, 5);
+				SetInventory(0, 10, 6);
 				SetInventory(1, 5, 9);
 				SetInventory(2, 2, 10);
 				SetInventory(3, 2, 10);

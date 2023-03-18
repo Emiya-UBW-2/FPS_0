@@ -53,7 +53,7 @@ namespace FPS_n2 {
 					this->m_frame[2].Set(child2_num, obj);
 				}
 			}
-			void			Set(int mdata, const std::string& stt) noexcept {
+			void			Set(int mdata, const std::string& stt, const std::vector<std::shared_ptr<ItemData>>& ItemData) noexcept {
 				this->m_name = getparams::getright(stt);
 				this->m_loadTime = getparams::_float(mdata);
 				this->m_Shot_Sound = getparams::_int(mdata);//サウンド
@@ -66,8 +66,13 @@ namespace FPS_n2 {
 					if (stp.find("useammo" + std::to_string(this->m_AmmoSpec.size())) == std::string::npos) {
 						break;
 					}
-					this->m_AmmoSpec.emplace_back(std::make_shared<AmmoData>());
-					this->m_AmmoSpec.back()->Set("data/ammo/" + getparams::getright(stp)+"/");
+					auto RIGHT = getparams::getright(stp);
+					for (const auto& d : ItemData) {
+						if (d->GetPath().find(RIGHT) != std::string::npos) {
+							this->m_AmmoSpec.emplace_back((const std::shared_ptr<AmmoData>&)d);
+							break;
+						}
+					}
 				}
 			}
 		};
@@ -183,7 +188,7 @@ namespace FPS_n2 {
 					MV1::Load("data/tank/" + this->m_name + "/col.mv1", &this->m_DataCol);
 				}
 				//メイン読み込み
-				void			Set(void) noexcept {
+				void			Set(const std::vector<std::shared_ptr<ItemData>>& ItemDatas) noexcept {
 					//固有
 					this->m_DownInWater = 0.f;
 					for (int i = 0; i < this->m_DataObj.mesh_num(); i++) {
@@ -324,7 +329,7 @@ namespace FPS_n2 {
 						this->m_MaxBodyRad = getparams::_float(mdata);
 						this->m_MaxTurretRad = deg2rad(getparams::_float(mdata));
 						auto stt = getparams::_str(mdata);
-						for (auto& g : this->m_GunFrameData) { g.Set(mdata, stt); }
+						for (auto& g : this->m_GunFrameData) { g.Set(mdata, stt, ItemDatas); }
 						FileRead_close(mdata);
 					}
 					this->m_DataObj.Dispose();
@@ -350,9 +355,9 @@ namespace FPS_n2 {
 				}
 				DirNames.clear();
 			}
-			void	Set() noexcept {
+			void	Set(const std::vector<std::shared_ptr<ItemData>>& ItemDatas) noexcept {
 				for (auto& t : this->vehc_data) {
-					t.Set();
+					t.Set(ItemDatas);
 				}
 			}
 			void	Dispose() noexcept {

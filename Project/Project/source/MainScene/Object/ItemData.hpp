@@ -20,7 +20,7 @@ namespace FPS_n2 {
 			virtual void	Set_Sub(const std::string&, const std::string&) noexcept {}
 		public:
 			void			Set(std::string path_) {
-						this->m_path = path_;
+				this->m_path = path_;
 				m_SlotPic = GraphHandle::Load(this->m_path + "pic.png");
 				int mdata = FileRead_open((this->m_path + "data.txt").c_str(), FALSE);
 				while (true) {
