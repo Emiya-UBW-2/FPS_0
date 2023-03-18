@@ -168,6 +168,12 @@ namespace FPS_n2 {
 				for (int i = 0; i < Player_num; i++) {
 					//PlayerMngr->GetPlayer(i).SetVehicle(nullptr);
 					PlayerMngr->GetPlayer(i).SetVehicle((std::shared_ptr<VehicleClass>&)(*ObjMngr->GetObj(ObjType::Vehicle, i)));
+					for (int y = 0; y < 10; y++) {
+						PlayerMngr->GetPlayer(i).PutInventory(2, 0, y, m_ItemData[0]);
+					}
+					for (int y = 0; y < 10; y++) {
+						PlayerMngr->GetPlayer(i).PutInventory(3, 0, y, m_ItemData[0]);
+					}
 					AICtrl[i]->Init(&vehicle_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetVehicle());
 				}
 				if (PlayerMngr->GetPlayer(0).IsRide()) {
@@ -577,6 +583,13 @@ namespace FPS_n2 {
 							CamPos + CamVec * 100.f,
 							GetMainCamera().GetCamUp());
 					}
+					/*
+					SetMainCamera().SetCamPos(
+						VECTOR_ref::vget(0, 600.f*Scale_Rate, 1.f),
+						VECTOR_ref::zero(),
+						VECTOR_ref::up());
+					SetMainCamera().SetCamInfo(100.f, 1000.f*Scale_Rate, deg2rad(45));
+					//*/
 				}
 				this->m_BackGround->Execute();
 
@@ -688,6 +701,7 @@ namespace FPS_n2 {
 			}
 			//UI•\Ž¦
 			void			DrawUI_Base_Sub(void) noexcept override {
+				//return;
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
@@ -718,17 +732,13 @@ namespace FPS_n2 {
 					}
 				}
 				//UI
-				if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
-				}
-				else {
+				if (PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 					if (Vehicle->is_ADS()) {
 						scope_Graph.DrawExtendGraph(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, true);
 					}
 				}
 				this->m_UIclass.Draw();
-				if (!PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
-				}
-				else {
+				if (PlayerMngr->GetPlayer(GetMyPlayerID()).IsRide()) {
 					Vehicle->DrawModuleView(y_r(50 + 100), DrawParts->m_DispYSize - y_r(100 + 100), y_r(200));
 				}
 				//’ÊMÝ’è
@@ -739,6 +749,7 @@ namespace FPS_n2 {
 				this->m_InventoryClass.Draw(!this->m_MouseActive.on(), Vehicle->GetMove().pos);
 			}
 			void			DrawUI_In_Sub(void) noexcept override {
+				//return;
 				//auto* DrawParts = DXDraw::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();

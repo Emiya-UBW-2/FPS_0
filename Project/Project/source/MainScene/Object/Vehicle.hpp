@@ -11,6 +11,8 @@ namespace FPS_n2 {
 			bool												m_KeyActive{ true };							//
 			std::array<bool, 7>									m_key{ false };									//キー
 			MATRIX_ref											m_MouseVec;										//マウスエイム用変数確保
+			float												m_ShakePer{ 0.f };								//
+			VECTOR_ref											m_ShakePos;
 			float												m_AimingDistance{ 500.f*Scale_Rate };			//
 			bool												m_view_override{ false };						//
 			std::vector<VECTOR_ref>								m_view_rad;										//

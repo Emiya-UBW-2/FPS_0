@@ -9,7 +9,7 @@ namespace FPS_n2 {
 			bool			m_IsDrawHitUI{ false };
 			float			m_HitTimer{ 0.f };
 			int				m_RicochetCnt{ 0 };
-			const AmmoData*	m_AmmoData{ nullptr };
+			std::shared_ptr<AmmoData>	m_AmmoData{ nullptr };
 			float			m_speed{ 0.f };
 			float			m_penetration{ 0.f };
 			float			m_Hit_alpha{ 0.f };
@@ -25,7 +25,7 @@ namespace FPS_n2 {
 			const auto&		GetCaliberSize(void) const noexcept { return this->m_AmmoData->GetCaliber(); }//0.00762f
 			const auto		GetEffectSize(void) const noexcept { return ((this->m_AmmoData->GetCaliber() >= 0.020f) ? this->m_AmmoData->GetCaliber() : 0.025f) / 0.1f; }
 		public:
-			void			Put(const AmmoData* pAmmoData, const VECTOR_ref& pos_t, const VECTOR_ref& pVec, int pMyID) {
+			void			Put(std::shared_ptr<AmmoData> pAmmoData, const VECTOR_ref& pos_t, const VECTOR_ref& pVec, int pMyID) {
 				SetActive(true);
 				this->m_RicochetCnt = 0;
 				this->m_IsHit = false;
@@ -80,7 +80,7 @@ namespace FPS_n2 {
 			}
 		public: //コンストラクタ、デストラクタ
 			AmmoClass(void) noexcept { this->m_objType = ObjType::Ammo; }
-			~AmmoClass(void) noexcept {}
+			~AmmoClass(void) noexcept { m_AmmoData.reset(); }
 		public: //継承
 			void			Init() noexcept override {
 				ObjectBaseClass::Init();

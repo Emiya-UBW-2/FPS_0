@@ -1,3 +1,6 @@
+Name=7N14
+ItemType=Ammo
+ItemInfo=BMP3e“ƒ—p‚Ì“Ob’eB
 ammo_cal(mm)=7.62
 ammo_speed(m/s)=887
 ammo_pene(mm)=10

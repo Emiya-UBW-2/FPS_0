@@ -32,10 +32,11 @@ using namespace DXLib_ref;
 
 #include "Enums.hpp"
 #include "MainScene/Object/ObjectBaseEnum.hpp"
+#include "MainScene/Object/ItemEnum.hpp"
 #include "MainScene/Object/AmmoEnum.hpp"
+
 #include "MainScene/Object/VehicleEnum.hpp"
 #include "MainScene/Object/HindDEnum.hpp"
-#include "MainScene/Object/ItemEnum.hpp"
 //
 #include "sub.hpp"
 #include "NetWork.hpp"
@@ -43,18 +44,15 @@ using namespace DXLib_ref;
 #include "MainScene/BackGround/BackGroundSub.hpp"
 #include "MainScene/BackGround/BackGround.hpp"
 
-#include "MainScene/Object/ObjectBase.hpp"
-//
-#include "MainScene/Object/AmmoData.hpp"
-#include "MainScene/Object/Ammo.hpp"
-//
-#include "MainScene/Object/HindDData.hpp"
-#include "MainScene/Object/HindD.hpp"
-//
-#include "MainScene/Object/VehicleData.hpp"
-#include "MainScene/Object/Vehicle.hpp"
-//
 #include "MainScene/Object/ItemData.hpp"
+#include "MainScene/Object/AmmoData.hpp"
+#include "MainScene/Object/HindDData.hpp"
+#include "MainScene/Object/VehicleData.hpp"
+
+#include "MainScene/Object/ObjectBase.hpp"
+#include "MainScene/Object/Ammo.hpp"
+#include "MainScene/Object/HindD.hpp"
+#include "MainScene/Object/Vehicle.hpp"
 #include "MainScene/Object/Item.hpp"
 
 #include "ObjectManager.hpp"

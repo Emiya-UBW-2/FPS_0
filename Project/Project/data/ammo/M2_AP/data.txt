@@ -1,0 +1,7 @@
+Name=M2 AP
+ItemType=Ammo
+ItemInfo=M60e“ƒ—p‚Ì“Ob’eB
+ammo_cal(mm)=12.7
+ammo_speed(m/s)=880
+ammo_pene(mm)=30
+ammo_damage=15

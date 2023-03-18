@@ -21,6 +21,7 @@ namespace FPS_n2 {
 							Vec*25.f / FPS * (1.0f*GetRandf(0.5f)));
 					}
 				}
+				m_ShakePer = 1.f;
 				return true;
 			}
 			return false;
@@ -89,7 +90,12 @@ namespace FPS_n2 {
 			//エイム
 			auto y_mouse = std::atan2f(this->m_MouseVec.zvec().x(), this->m_MouseVec.zvec().z());
 			auto x_mouse = std::atan2f(-this->m_MouseVec.zvec().y(), std::hypotf(this->m_MouseVec.zvec().x(), this->m_MouseVec.zvec().z()));
+
+			//y_mouse += 0.01f;
 			this->m_MouseVec = MATRIX_ref::RotX(std::clamp(x_mouse + pInput.GetAddxRad(), -deg2rad(40.f), deg2rad(40.f))) * MATRIX_ref::RotY(y_mouse + pInput.GetAddyRad());
+
+			Easing(&this->m_ShakePos, VECTOR_ref::vget(GetRandf(10.f*Scale_Rate*m_ShakePer), GetRandf(10.f*Scale_Rate*m_ShakePer), GetRandf(10.f*Scale_Rate*m_ShakePer)), 0.9f, EasingType::OutExpo);
+			Easing(&this->m_ShakePer, 0.f, 0.9f, EasingType::OutExpo);
 			//
 			if (isOverrideView) {
 				this->m_view_override = true;
@@ -103,6 +109,8 @@ namespace FPS_n2 {
 			this->m_key[4] = pInput.GetGoRightPress() && pReady && this->Get_alive() && ((this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) || (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0));		//右
 			this->m_key[5] = pInput.GetGoLeftPress() && pReady && this->Get_alive() && ((this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) || (this->m_HP_parts[this->m_VecData->Get_module_mesh()[1]] > 0));		//左
 			this->m_key[6] = pInput.GetAction6() && pReady && this->Get_alive();			//左
+
+			//this->m_key[6] = true;
 		}
 		//カメラ設定出力
 		void			VehicleClass::Setcamera(Camera3DInfo& MainCamera_t, const float fov_base) noexcept {
@@ -137,7 +145,9 @@ namespace FPS_n2 {
 
 			this->m_changeview = ((this->m_range != OLD) && (this->m_range == 0.f || OLD == 0.f));
 
-			MainCamera_t.SetCamPos(eyepos, eyetgt,
+			MainCamera_t.SetCamPos(
+				eyepos + m_ShakePos,
+				eyetgt + m_ShakePos * (is_ADS() ? 0.f : 2.f),
 				Lerp(this->m_move.mat.yvec(), VECTOR_ref::up(), std::clamp(this->m_range_r / 3.f, 0.f, 1.f))
 			);
 
@@ -198,7 +208,7 @@ namespace FPS_n2 {
 			//ダメージ面に届くまで判定
 			for (const auto& tt : this->hitssort) {
 				if (tt.IsHit()) {
-					if (tt.GetHitMesh() == (std::numeric_limits<float>::max)()) { continue; }
+					if (tt.GetHitMesh() >= this->hitres.size()) { continue; }
 					VECTOR_ref HitPos = this->hitres[tt.GetHitMesh()].HitPosition;
 					VECTOR_ref HitNormal = this->hitres[tt.GetHitMesh()].Normal;
 					HitNormal = HitNormal.Norm();
@@ -235,6 +245,7 @@ namespace FPS_n2 {
 							else {
 								pAmmo->Ricochet(HitPos, HitNormal);	//跳弾
 								SE->Get((int)SoundEnum::Tank_Ricochet).Play_3D(GetRand(16), HitPos, 100.f*Scale_Rate, 216);
+								m_ShakePer = 0.1f*pAmmo->GetCaliberSize()/ 0.10f;
 							}
 							//エフェクトセット
 							EffectControl::SetOnce(EffectResource::Effect::ef_reco, HitPos, HitNormal, pAmmo->GetEffectSize()*Scale_Rate*10.f);

@@ -10,18 +10,16 @@ namespace FPS_n2 {
 		private:
 			std::string							m_name;
 			float								m_loadTime{ 0.f };
-			int									m_AmmoCapacity = 0;
 			int									m_Shot_Sound = -1;
 			int									m_Eject_Sound = -1;
 			int									m_Reload_Sound = -1;
 			float								m_UpRadLimit{ 0.f };
 			float								m_DownRadLimit{ 0.f };
-			std::vector<AmmoData>				m_AmmoSpec;
+			std::vector<std::shared_ptr<AmmoData>>m_AmmoSpec;
 			std::array<frames, 3>				m_frame;
 		public:
 			const auto&		GetName(void) const noexcept { return this->m_name; }
 			const auto&		GetLoadTime(void) const noexcept { return this->m_loadTime; }
-			const auto&		GetAmmoCapacity(void) const noexcept { return this->m_AmmoCapacity; }
 			const auto&		GetShotSound(void) const noexcept { return this->m_Shot_Sound; }
 			const auto&		GetEjectSound(void) const noexcept { return this->m_Eject_Sound; }
 			const auto&		GetReloadSound(void) const noexcept { return this->m_Reload_Sound; }
@@ -58,7 +56,6 @@ namespace FPS_n2 {
 			void			Set(int mdata, const std::string& stt) noexcept {
 				this->m_name = getparams::getright(stt);
 				this->m_loadTime = getparams::_float(mdata);
-				this->m_AmmoCapacity = getparams::_int(mdata);
 				this->m_Shot_Sound = getparams::_int(mdata);//サウンド
 				this->m_Eject_Sound = getparams::_int(mdata);//サウンド
 				this->m_Reload_Sound = getparams::_int(mdata);//サウンド
@@ -69,8 +66,8 @@ namespace FPS_n2 {
 					if (stp.find("useammo" + std::to_string(this->m_AmmoSpec.size())) == std::string::npos) {
 						break;
 					}
-					this->m_AmmoSpec.resize(this->m_AmmoSpec.size() + 1);
-					this->m_AmmoSpec.back().Set("data/ammo/", getparams::getright(stp));
+					this->m_AmmoSpec.emplace_back(std::make_shared<AmmoData>());
+					this->m_AmmoSpec.back()->Set("data/ammo/" + getparams::getright(stp)+"/");
 				}
 			}
 		};
@@ -371,7 +368,7 @@ namespace FPS_n2 {
 			float							m_React{ 0.f };				//反動
 			int								m_rounds{ 0 };				//弾数
 			const GunData*					m_GunSpec{ nullptr };		//
-			std::vector<const AmmoData*>	m_AmmoSpec{ nullptr };		//
+			std::vector<std::shared_ptr<AmmoData>>	m_AmmoSpec{ nullptr };		//
 			VECTOR_ref						m_ShotRadAdd;				//
 		public:			//getter
 			const auto&	Getrounds(void) const noexcept { return m_rounds; }
@@ -418,10 +415,10 @@ namespace FPS_n2 {
 		public:
 			void		Init(const GunData* pResorce) noexcept {
 				this->m_GunSpec = pResorce;
-				this->m_rounds = this->m_GunSpec->GetAmmoCapacity();
+				this->m_rounds = 1000;//
 				this->m_AmmoSpec.clear();
 				for (auto& s : this->m_GunSpec->GetAmmoSpec()) {
-					this->m_AmmoSpec.emplace_back(&s);
+					this->m_AmmoSpec.emplace_back(s);
 				}
 				this->m_ShotRadAdd.Set(0, 0, 0);
 			}
@@ -453,6 +450,9 @@ namespace FPS_n2 {
 				this->m_React = 0.f;
 				this->m_rounds = 0;
 				this->m_GunSpec = nullptr;
+				for (auto& s : this->m_AmmoSpec) {
+					s.reset();
+				}
 				this->m_AmmoSpec.clear();
 				this->m_ShotRadAdd.clear();
 			}

@@ -6,7 +6,6 @@ body_rad=45
 turret_rad=60
 gun_0_name=D-10TG
 gun_0_loadcnt=6.0
-gun_0_round=43
 gun_0_fire_sound=0
 gun_0_eject_sound=0
 gun_0_reload_sound=0
