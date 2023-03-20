@@ -107,9 +107,16 @@ namespace FPS_n2 {
 					Hind->GetObj().get_anime(0).per = 1.f;
 				}
 				{
-					m_ItemData.emplace_back(std::make_shared<ItemData>());
-					m_ItemData.back()->Set("data/item/T142/");
-
+					std::string Path = "data/item/";
+					auto data_t = GetFileNamesInDirectory(Path.c_str());
+					for (auto& d : data_t) {
+						if (d.cFileName[0] != '.') {
+							m_ItemData.emplace_back(std::make_shared<ItemData>());
+							m_ItemData.back()->Set(Path + d.cFileName + "/");
+						}
+					}
+				}
+				{
 					std::string Path = "data/ammo/";
 					auto data_t = GetFileNamesInDirectory(Path.c_str());
 					for (auto& d : data_t) {
@@ -167,7 +174,7 @@ namespace FPS_n2 {
 						}
 
 						auto& vehc_data = this->m_VehDataControl->GetVehData();
-						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
+						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 1], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
 						v->ValueSet(deg2rad(0), rad_t, pos_t);
 					}
 				}
@@ -176,22 +183,51 @@ namespace FPS_n2 {
 				for (int i = 0; i < Player_num; i++) {
 					//PlayerMngr->GetPlayer(i).SetVehicle(nullptr);
 					PlayerMngr->GetPlayer(i).SetVehicle((std::shared_ptr<VehicleClass>&)(*ObjMngr->GetObj(ObjType::Vehicle, i)));
-					auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d->GetName().find("M728") != std::string::npos); });
-					if (Select != m_ItemData.end()) {
-						for (int x = 0; x < 5; x++) {
-							PlayerMngr->GetPlayer(i).PutInventory(0, x, 0, *Select);
-							PlayerMngr->GetPlayer(i).PutInventory(0, x, 3, *Select);
-						}
-						for (int x = 0; x < 5; x++) {
-							PlayerMngr->GetPlayer(i).PutInventory(1, x, 0, *Select);
-							PlayerMngr->GetPlayer(i).PutInventory(1, x, 3, *Select);
+					auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
+					{
+						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d == Vehicle->GetGun()[0].GetAmmoSpec(0)); });
+						if (Select != m_ItemData.end()) {
+							for (int x = 0; x < 5; x++) {
+								PlayerMngr->GetPlayer(i).PutInventory(0, x, 0, *Select, false);
+								PlayerMngr->GetPlayer(i).PutInventory(0, x, 3, *Select, false);
+							}
+							for (int x = 0; x < 5; x++) {
+								PlayerMngr->GetPlayer(i).PutInventory(1, x, 0, *Select, false);
+								PlayerMngr->GetPlayer(i).PutInventory(1, x, 3, *Select, false);
+							}
 						}
 					}
-					for (int y = 0; y < 10; y++) {
-						PlayerMngr->GetPlayer(i).PutInventory(2, 0, y, m_ItemData[0]);
+					if (Vehicle->Get_Gunsize() >= 2) {
+						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d == Vehicle->GetGun()[1].GetAmmoSpec(0)); });
+						if (Select != m_ItemData.end()) {
+							for (int x = 5; x < 10; x++) {
+								PlayerMngr->GetPlayer(i).PutInventory(0, x, 0, *Select, false);
+								PlayerMngr->GetPlayer(i).PutInventory(0, x, 2, *Select, false);
+								PlayerMngr->GetPlayer(i).PutInventory(0, x, 4, *Select, false);
+							}
+							for (int x = 0; x < 5; x++) {
+								PlayerMngr->GetPlayer(i).PutInventory(1, x, 6, *Select, false);
+							}
+						}
 					}
-					for (int y = 0; y < 10; y++) {
-						PlayerMngr->GetPlayer(i).PutInventory(3, 0, y, m_ItemData[0]);
+					{
+						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d->GetPath().find("T142") != std::string::npos); });
+						if (Select != m_ItemData.end()) {
+							for (int y = 0; y < 10; y++) {
+								PlayerMngr->GetPlayer(i).PutInventory(2, 0, y, *Select, false);
+							}
+							for (int y = 0; y < 10; y++) {
+								PlayerMngr->GetPlayer(i).PutInventory(3, 0, y, *Select, false);
+							}
+						}
+					}
+					{
+						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d->GetPath().find("DieselMiniTank") != std::string::npos); });
+						if (Select != m_ItemData.end()) {
+							for (int x = 0; x < 5; x++) {
+								PlayerMngr->GetPlayer(i).PutInventory(4, x*2, 0, *Select, false);
+							}
+						}
 					}
 					AICtrl[i]->Init(&vehicle_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetVehicle());
 				}
@@ -514,7 +550,6 @@ namespace FPS_n2 {
 							auto& ip = (std::shared_ptr<ItemClass>&)(*item);
 							if (!ip->IsActive()) {
 								ip->SetVehPool(&vehicle_Pool);
-								ip->SetData(m_ItemData[0]);
 								ip->SetActive(true);
 							}
 						}

@@ -14,13 +14,15 @@ namespace FPS_n2 {
 			int						m_mousex{ 0 };
 			int						m_mousey{ 0 };
 			switchs					m_LeftClick;
-			float					m_LeftPressTimer{ 0.f };
+			switchs					m_Rkey;
+			switchs					m_Deletekey;
 
 			float					m_Alpha{ 0.f };
 
 			const std::shared_ptr<CellItem>* m_DragIn{ nullptr };
 			const std::shared_ptr<ItemClass>* m_DragOut{ nullptr };
 			const std::shared_ptr<ItemData>* m_Drag{ nullptr };
+			bool Is90{ false };
 		public:
 			//const auto& GetIsClient(void) const noexcept { return this->m_IsClient; }
 		public:
@@ -30,6 +32,8 @@ namespace FPS_n2 {
 			}
 			void FirstExecute(void) {
 				this->m_LeftClick.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0);
+				this->m_Rkey.Execute(CheckHitKeyWithCheck(KEY_INPUT_R) != 0);
+				this->m_Deletekey.Execute(CheckHitKeyWithCheck(KEY_INPUT_DELETE) != 0);
 			}
 			void LateExecute(void) noexcept {
 			}
@@ -50,8 +54,8 @@ namespace FPS_n2 {
 					auto Green = GetColor(0, 255, 0);
 					auto White = GetColor(255, 255, 255);
 					auto Gray = GetColor(128, 128, 128);
+					auto Yellow = GetColor(255, 255, 0);
 					auto Black = GetColor(0, 0, 0);
-					//unsigned int color = Red;
 
 					int xp{ 0 }, yp{ 0 }, xs{ 0 }, ys{ 0 };
 
@@ -84,9 +88,9 @@ namespace FPS_n2 {
 						GetMousePoint(&m_mousex, &m_mousey);
 					}
 					//インベントリ
+					int size = y_r(64);
 					{
 						bool isHit = false;
-						int size = y_r(64);
 						for (auto& I : PlayerMngr->GetPlayer(0).GetInventorys()) {
 							int loop = (int)(&I - &PlayerMngr->GetPlayer(0).GetInventorys().front());
 							switch (loop) {
@@ -119,6 +123,21 @@ namespace FPS_n2 {
 								int x = (int)(&xo - &I.front());
 								for (auto& yo : xo) {
 									int y = (int)(&yo - &xo.front());
+									if (yo.get()) {
+										if (m_DragIn && (*m_DragIn).get()) {
+											if (yo == (*m_DragIn)) {
+												auto xsize = this->Is90 ? (*m_Drag)->GetYsize() : (*m_Drag)->GetXsize();
+												auto ysize = this->Is90 ? (*m_Drag)->GetXsize() : (*m_Drag)->GetYsize();
+												DrawBox(xp + x * size, yp + y * size, xp + (x + xsize) * size, yp + (y + ysize) * size, Yellow, TRUE);
+											}
+										}
+									}
+								}
+							}
+							for (auto& xo : I) {
+								int x = (int)(&xo - &I.front());
+								for (auto& yo : xo) {
+									int y = (int)(&yo - &xo.front());
 									DrawBox(xp + x * size, yp + y * size, xp + (x + 1) * size, yp + (y + 1) * size, Gray, FALSE);
 								}
 							}
@@ -128,7 +147,9 @@ namespace FPS_n2 {
 									int y = (int)(&yo - &xo.front());
 									if (yo.get()) {
 										if (m_DragIn && (*m_DragIn).get()) {
-											if (yo == (*m_DragIn)) { continue; }
+											if (yo == (*m_DragIn)) {
+												continue;
+											}
 										}
 										yo->Draw(xp + x * size, yp + y * size);
 									}
@@ -141,34 +162,49 @@ namespace FPS_n2 {
 									for (auto& yo : xo) {
 										int y = (int)(&yo - &xo.front());
 										if (in2_(m_mousex, m_mousey, xp + x * size, yp + y * size, xp + (x + 1) * size, yp + (y + 1) * size)) {
-											if (yo.get()) {
-												if (!m_Drag) {
-													if (this->m_LeftClick.trigger()) {
-														m_Drag = &yo->GetItemData();
-														m_DragIn = &yo;
+											{
+												const auto* Ptr = PlayerMngr->GetPlayer(0).GetInventory(loop, x, y);
+												if (Ptr) {
+													if (!m_Drag) {
+														if (this->m_Deletekey.trigger()) {
+															//アイテム放出
+															auto& item = *ObjMngr->AddObject(ObjType::Item, "data/model/item/");
+															auto Vec = (MATRIX_ref::RotX(GetRandf(deg2rad(90)))*MATRIX_ref::RotY(GetRandf(deg2rad(360)))).yvec()*Scale_Rate;
+															item->SetMove(
+																MATRIX_ref::RotVec2(VECTOR_ref::up(), Vec.Norm()),
+																PlayerMngr->GetPlayer(0).GetPos() + Vec * 6.f,
+																Vec*25.f / FPS * (1.0f*GetRandf(0.5f)));
+
+															auto& ip = (std::shared_ptr<ItemClass>&)(item);
+															ip->SetData((*Ptr)->GetItemData());
+															PlayerMngr->GetPlayer(0).DeleteInventory(*Ptr);
+														}
+														else if (this->m_LeftClick.trigger()) {
+															m_Drag = &(*Ptr)->GetItemData();
+															m_DragIn = Ptr;
+															Is90 = (*m_DragIn)->GetIs90();
+														}
+														HCURSOR hCursor = LoadCursor(NULL, IDC_HAND);
+														SetCursor(hCursor);
 													}
 												}
 											}
 											if (m_Drag) {
-												if (PlayerMngr->GetPlayer(0).CanPutInventory(loop, x, y, *m_Drag)) {
+												auto xsize = this->Is90 ? (*m_Drag)->GetYsize() : (*m_Drag)->GetXsize();
+												auto ysize = this->Is90 ? (*m_Drag)->GetXsize() : (*m_Drag)->GetYsize();
+												if (PlayerMngr->GetPlayer(0).CanPutInventory(loop, x, y, xsize, ysize, m_DragIn)) {
 													isHit = true;
-
-													int xsize{ 1 };
-													int ysize{ 1 };
-													(*m_Drag)->GetSlotPic().GetSize(&xsize, &ysize);
-													xsize /= 64;
-													ysize /= 64;
-
-													DrawBox(xp + x * size, yp + y * size, xp + (x + xsize) * size, yp + (y + ysize) * size, Green, FALSE);
+													DrawBox(xp + x * size, yp + y * size, xp + (x + xsize) * size, yp + (y + ysize) * size, Green, TRUE);
 													if (!this->m_LeftClick.press()) {
-														PlayerMngr->GetPlayer(0).PutInventory(loop, x, y, *m_Drag);
-														if (m_DragIn && (*m_DragIn).get()) {
+														PlayerMngr->GetPlayer(0).PutInventory(loop, x, y, *m_Drag, Is90);
+														if (m_DragIn && (*m_DragIn).get() && (yo != (*m_DragIn))) {
 															PlayerMngr->GetPlayer(0).DeleteInventory(*m_DragIn);
 														}
 														if (m_DragOut && (*m_DragOut).get()) { (*m_DragOut)->SetIsDelete(true); }
 														m_DragIn = nullptr;
 														m_DragOut = nullptr;
 														m_Drag = nullptr;
+														Is90 = false;
 													}
 												}
 											}
@@ -181,6 +217,7 @@ namespace FPS_n2 {
 							m_DragIn = nullptr;
 							m_DragOut = nullptr;
 							m_Drag = nullptr;
+							Is90 = false;
 						}
 					}
 					//アイテム
@@ -229,12 +266,15 @@ namespace FPS_n2 {
 						}
 
 						if (m_Drag) {
-							int xsize{ 1 };
-							int ysize{ 1 };
-							(*m_Drag)->GetSlotPic().GetSize(&xsize, &ysize);
-							xsize /= 64;
-							ysize /= 64;
-							(*m_Drag)->GetSlotPic().DrawRotaGraph(m_mousex + xsize * y_r(64) / 2- y_r(64) / 2, m_mousey, (float)y_r(64) / 64.f, deg2rad(0.f), false);
+							auto xsize = this->Is90 ? (*m_Drag)->GetYsize() : (*m_Drag)->GetXsize();
+							auto ysize = this->Is90 ? (*m_Drag)->GetXsize() : (*m_Drag)->GetYsize();
+
+							(*m_Drag)->GetSlotPic().DrawRotaGraph(m_mousex + (xsize - 1) * size / 2, m_mousey + (ysize - 1) * size / 2, (float)size / 64.f, deg2rad(Is90 ? 90.f : 0.f), false);
+							HCURSOR hCursor = LoadCursor(NULL, IDC_HAND);
+							SetCursor(hCursor);
+							if (this->m_Rkey.trigger()) {
+								Is90 ^= 1;
+							}
 						}
 					}
 				}

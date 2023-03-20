@@ -6,11 +6,13 @@ namespace FPS_n2 {
 		enum class ItemType :int {
 			Track,
 			Ammo,
+			Fuel,
 			Max,
 		};
 		static const char* ItemtypeName[(int)ItemType::Max] = {
 			"Ammo",
 			"Track",
+			"Fuel",
 		};
 	};
 };

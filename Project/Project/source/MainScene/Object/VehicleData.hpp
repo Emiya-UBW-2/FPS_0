@@ -371,17 +371,16 @@ namespace FPS_n2 {
 			bool							m_reloadSEFlag{ true };		//
 			float							m_Recoil{ 0.f };			//駐退
 			float							m_React{ 0.f };				//反動
-			int								m_rounds{ 0 };				//弾数
 			const GunData*					m_GunSpec{ nullptr };		//
 			std::vector<std::shared_ptr<AmmoData>>	m_AmmoSpec{ nullptr };		//
 			VECTOR_ref						m_ShotRadAdd;				//
 		public:			//getter
-			const auto&	Getrounds(void) const noexcept { return m_rounds; }
 			const auto&	Getloadtime(void) const noexcept { return m_loadtimer; }
 			const auto&	GetTotalloadtime(void) const noexcept { return this->m_GunSpec->GetLoadTime(); }
 
-			const auto&	GetAmmoSpec(void) const noexcept { return this->m_AmmoSpec[0]; }
-			const auto&	GetCaliberSize(void) const noexcept { return GetAmmoSpec()->GetCaliber(); }
+			const int	GetAmmoSpecNum() const noexcept { return (int)this->m_AmmoSpec.size(); }
+			const auto&	GetAmmoSpec(int select) const noexcept { return this->m_AmmoSpec[select]; }
+			const auto&	GetCaliberSize(void) const noexcept { return GetAmmoSpec(0)->GetCaliber(); }
 			const auto&	GetGunTrunnionFrameID(void) const noexcept { return this->m_GunSpec->Get_frame(1).GetFrameID(); }
 			const auto&	GetGunMuzzleFrameID(void) const noexcept { return this->m_GunSpec->Get_frame(2).GetFrameID(); }
 			const auto&	GetShotSound(void) const noexcept { return this->m_GunSpec->GetShotSound(); }
@@ -412,7 +411,7 @@ namespace FPS_n2 {
 					obj_body_t->SetFrameLocalMatrix(id.GetFrameID(), MATRIX_ref::Mtrans(VECTOR_ref::front() * (this->m_Recoil * 0.5f * Scale_Rate)) * MATRIX_ref::Mtrans(id.GetFrameLocalPosition()));
 					col_body_t->SetFrameLocalMatrix(id.GetFrameID(), MATRIX_ref::Mtrans(VECTOR_ref::front() * (this->m_Recoil * 0.5f * Scale_Rate)) * MATRIX_ref::Mtrans(id.GetFrameLocalPosition()));
 				}
-				Easing(&this->m_ShotRadAdd, MATRIX_ref::RotY(yrad).xvec() * -1.f * deg2rad(-this->m_React * GetAmmoSpec()->GetCaliber() * 50.f), 0.85f, EasingType::OutExpo);
+				Easing(&this->m_ShotRadAdd, MATRIX_ref::RotY(yrad).xvec() * -1.f * deg2rad(-this->m_React * GetCaliberSize() * 50.f), 0.85f, EasingType::OutExpo);
 			}
 		public: //コンストラクタ、デストラクタ
 			Guns(void) noexcept { }
@@ -420,22 +419,20 @@ namespace FPS_n2 {
 		public:
 			void		Init(const GunData* pResorce) noexcept {
 				this->m_GunSpec = pResorce;
-				this->m_rounds = 1000;//
 				this->m_AmmoSpec.clear();
 				for (auto& s : this->m_GunSpec->GetAmmoSpec()) {
 					this->m_AmmoSpec.emplace_back(s);
 				}
 				this->m_ShotRadAdd.Set(0, 0, 0);
 			}
-			bool		Execute(bool key, bool playSound) noexcept {
+			bool		Execute(bool key, bool ammoIn, bool playSound) noexcept {
 				auto* SE = SoundPool::Instance();
-				bool isshot = (key && this->m_loadtimer == 0 && this->m_rounds > 0);
+				bool isshot = (key && ammoIn && this->m_loadtimer == 0);
 				//射撃
 				if (isshot) {
 					this->m_loadtimer = this->m_GunSpec->GetLoadTime();
-					this->m_rounds = std::max<int>(this->m_rounds - 1, 0);
 					this->m_Recoil = 1.f;
-					this->m_React = std::clamp(this->m_React + GetAmmoSpec()->GetCaliber() * 10.f, 0.f, 3.f);
+					this->m_React = std::clamp(this->m_React + GetCaliberSize() * 10.f, 0.f, 3.f);
 					this->m_reloadSEFlag = true;
 					if (playSound) { SE->Get((int)SoundEnum::Tank_Eject).Play(GetEjectSound()); }
 				}
@@ -443,7 +440,12 @@ namespace FPS_n2 {
 					this->m_reloadSEFlag = false;
 					if (playSound) { SE->Get((int)SoundEnum::Tank_Reload).Play(GetReloadSound()); }
 				}
-				this->m_loadtimer = std::max(this->m_loadtimer - 1.f / FPS, 0.f);
+				if (ammoIn) {
+					this->m_loadtimer = std::max(this->m_loadtimer - 1.f / FPS, 0.f);
+				}
+				else {
+					this->m_loadtimer = this->m_GunSpec->GetLoadTime();
+				}
 				this->m_Recoil = std::max(this->m_Recoil - 1.f / FPS, 0.f);
 				this->m_React = std::max(this->m_React - 1.f / FPS, 0.f);
 				return isshot;
@@ -453,7 +455,6 @@ namespace FPS_n2 {
 				this->m_reloadSEFlag = true;
 				this->m_Recoil = 0.f;
 				this->m_React = 0.f;
-				this->m_rounds = 0;
 				this->m_GunSpec = nullptr;
 				for (auto& s : this->m_AmmoSpec) {
 					s.reset();

@@ -47,60 +47,45 @@ namespace FPS_n2 {
 				for (auto& xp : this->m_Inventorys[ID]) { xp.resize(y); }
 			}
 		public:
-			bool CanPutInventory(int ID, int xp, int yp, const std::shared_ptr<ItemData>& data) noexcept {
-				if (this->m_Inventorys[ID][xp][yp].get() == nullptr) {
-					for (int x = -3; x <= -1; x++) {
-						if (0 <= (xp + x)) {
-							if (this->m_Inventorys[ID][xp + x][yp].get() != nullptr) {
-								if (this->m_Inventorys[ID][xp + x][yp]->GetXsize() + x > 0) {
-									return false;
-								}
+			bool CanPutInventory(int ID, int xp, int yp, int xsize, int ysize, const std::shared_ptr<CellItem>* DragIn = nullptr) noexcept {
+				//
+				if (DragIn && *DragIn == this->m_Inventorys[ID][xp][yp]) {}//該当部分がInで埋まっている
+				else if (!this->m_Inventorys[ID][xp][yp].get()) {}//該当部分が空
+				else { return false; }//該当部分が何かで埋まってる
+				//該当部の1マスが空だとして、その上にアイテムがないか
+				for (int x = 0; x <= xp; x++) {
+					for (int y = 0; y <= yp; y++) {
+						auto& yo = this->m_Inventorys[ID][x][y];
+						if (yo.get() && (&yo != DragIn) && !(xp == x && yp == y)) {
+							if (yo->GetXsize() > (xp - x) && yo->GetYsize() > (yp - y)) {
+								return false;
 							}
 						}
-					}
-					for (int y = -3; y <= -1; y++) {
-						if (0 <= (yp + y)) {
-							if (this->m_Inventorys[ID][xp][yp + y].get() != nullptr) {
-								if (this->m_Inventorys[ID][xp][yp + y]->GetXsize() + y - 1 > 0) {
-									return false;
-								}
-							}
-						}
-					}
-					//置けるかチェック
-					{
-						int xsize{ 1 };
-						int ysize{ 1 };
-						data->GetSlotPic().GetSize(&xsize, &ysize);
-						xsize /= 64;
-						ysize /= 64;
-						if ((xp + xsize - 1 < this->m_Inventorys[ID].size()) && (yp + ysize - 1 < this->m_Inventorys[ID][xp].size())) {
-							for (int x = 1; x <= xsize - 1; x++) {
-								if ((xp + x) < this->m_Inventorys[ID].size()) {
-									if (this->m_Inventorys[ID][xp + x][yp].get() != nullptr) {
-										return false;
-									}
-								}
-							}
-							for (int y = 1; y <= ysize - 1; y++) {
-								if ((yp + y) < this->m_Inventorys[ID][xp].size()) {
-									if (this->m_Inventorys[ID][xp][yp + y].get() != nullptr) {
-										return false;
-									}
-								}
-							}
-							return true;
-						}
-						return false;
 					}
 				}
-				else {
-					return false;
+				//指示サイズのものが置けるかチェック
+				if (xsize > 1 || ysize > 1) {
+					auto xLimit = (int)this->m_Inventorys[ID].size();
+					auto yLimit = (int)this->m_Inventorys[ID][xp].size();
+					if (xp + xsize > xLimit || yp + ysize > yLimit) {
+						return false;//マス越え
+					}
+					for (int x = xp; x < xp + xsize; x++) {
+						for (int y = yp; y < yp + ysize; y++) {
+							if (!CanPutInventory(ID, x, y, 1, 1, DragIn)) {
+								return false;
+							}
+						}
+					}
 				}
+				return true;
 			}
-			void PutInventory(int ID, int x, int y, const std::shared_ptr<ItemData>& data) noexcept {
+			void PutInventory(int ID, int x, int y, const std::shared_ptr<ItemData>& data, bool Is90) noexcept {
 				this->m_Inventorys[ID][x][y] = std::make_shared<CellItem>();
 				this->m_Inventorys[ID][x][y]->Set(data);
+				if (Is90) {
+					this->m_Inventorys[ID][x][y]->Rotate();
+				}
 			}
 			void DeleteInventory(int ID, int x, int y) noexcept {
 				this->m_Inventorys[ID][x][y].reset();
@@ -116,6 +101,36 @@ namespace FPS_n2 {
 						}
 					}
 				}
+			}
+			const std::shared_ptr<CellItem>* GetInventory(int ID, int xp, int yp) const noexcept {
+				if (this->m_Inventorys[ID][xp][yp].get() == nullptr) {
+					for (int x = 0; x <= xp; x++) {
+						for (int y = 0; y <= yp; y++) {
+							auto& yo = this->m_Inventorys[ID][x][y];
+							if (yo.get() && !(xp == x && yp == y)) {
+								if (yo->GetXsize() > (xp - x) && yo->GetYsize() > (yp - y)) {
+									return &this->m_Inventorys[ID][x][y];
+								}
+							}
+						}
+					}
+					return nullptr;
+				}
+				else {
+					return &this->m_Inventorys[ID][xp][yp];
+				}
+			}
+			const std::shared_ptr<CellItem>* GetInventory(int ID, std::function<bool(const std::shared_ptr<CellItem>&)> Check) const noexcept {
+				for (auto& xo : this->m_Inventorys[ID]) {
+					for (auto& yo : xo) {
+						if (yo.get()) {
+							if (Check(yo)) {
+								return &yo;
+							}
+						}
+					}
+				}
+				return nullptr;
 			}
 		public:
 			void Init(void) noexcept {
