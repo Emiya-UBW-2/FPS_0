@@ -39,14 +39,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			DebugParts->SetStartPoint();
 #endif // DEBUG
 			if (scene->Execute()) { break; }		//更新
+#ifdef DEBUG
+			DebugParts->SetPoint("ExecuteTotal=5.5ms");
+#endif // DEBUG
 			if (!scene->isPause()) {
 				EffectUseControl->Calc();			//エフェクシアのアプデを60FPS相当に変更
 			}
-#ifdef DEBUG
-			DebugParts->SetPoint();
-#endif // DEBUG
 			scene->Draw();							//描画
-			//デバッグ
+#ifdef DEBUG
+			DebugParts->SetPoint("DrawTotal=5.5ms");//次まで5.5
+#endif // DEBUG
+
+											//デバッグ
 #ifdef DEBUG
 			DebugParts->DebugWindow(50, 250);
 #endif // DEBUG

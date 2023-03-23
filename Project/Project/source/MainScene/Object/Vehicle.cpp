@@ -6,6 +6,36 @@ namespace FPS_n2 {
 		//----------------------------------------------------------
 		//初期化関連
 		//----------------------------------------------------------
+		void			VehicleClass::SubHP_Parts(HitPoint damage_t, int parts_Set_t) noexcept {
+			auto* PlayerMngr = PlayerManager::Instance();//todo:GetMyPlayerID()
+			if (this->m_VecData->Get_module_mesh()[0] == parts_Set_t) {
+				const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(2, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+				if (Ptr) {
+					if ((*Ptr)->Sub(damage_t)) {
+						PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*Ptr);
+					}
+					RepairParts(parts_Set_t);
+				}
+				else {
+					ClashParts(parts_Set_t);
+				}
+			}
+			else if (this->m_VecData->Get_module_mesh()[1] == parts_Set_t) {
+				const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(3, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+				if (Ptr) {
+					if ((*Ptr)->Sub(damage_t)) {
+						PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*Ptr);
+					}
+					RepairParts(parts_Set_t);
+				}
+				else {
+					ClashParts(parts_Set_t);
+				}
+			}
+			else {
+				this->m_HP_parts[parts_Set_t] = std::max<HitPoint>(this->m_HP_parts[parts_Set_t] - damage_t, 0);
+			}
+		}
 		const bool		VehicleClass::SetDamageEvent(const DamageEvent& value) noexcept {
 			if (this->m_MyID == value.ID && this->m_objType == value.CharaType) {
 				SubHP(value.Damage, value.rad);
@@ -14,10 +44,10 @@ namespace FPS_n2 {
 					auto* ObjMngr = ObjectManager::Instance();
 					auto* PlayerMngr = PlayerManager::Instance();//todo:GetMyPlayerID()
 
-					for (auto& I : PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventorys()) {
+					for (auto& I : PlayerMngr->GetPlayer(this->m_MyID).GetInventorys()) {
 						for (auto& xo : I) {
 							for (auto& yo : xo) {
-								if (yo.get()) {
+								if (yo.get() && (GetRand(100) < 33)) {
 									auto& item = *ObjMngr->AddObject(ObjType::Item, "data/model/item/");
 									auto Vec = (MATRIX_ref::RotX(GetRandf(deg2rad(90)))*MATRIX_ref::RotY(GetRandf(deg2rad(360)))).yvec()*Scale_Rate;
 									item->SetMove(
@@ -25,8 +55,8 @@ namespace FPS_n2 {
 										this->m_move.pos + Vec * 6.f,
 										Vec*25.f / FPS * (1.0f*GetRandf(0.5f)));
 									auto& ip = (std::shared_ptr<ItemClass>&)(item);
-									ip->SetData(yo->GetItemData());
-									PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(yo);
+									ip->SetData(yo->GetItemData(), yo->GetCount());
+									PlayerMngr->GetPlayer(this->m_MyID).DeleteInventory(yo);
 								}
 							}
 						}
@@ -164,7 +194,7 @@ namespace FPS_n2 {
 			);
 
 			Easing(&near_t, 1.f + 2.f*((is_ADS()) ? this->m_ratio : 2.f), 0.9f, EasingType::OutExpo);
-			Easing(&far_t, std::max(this->m_AimingDistance, Scale_Rate * 100.f) + Scale_Rate * 20.f, 0.9f, EasingType::OutExpo);
+			Easing(&far_t, std::max(this->m_AimingDistance, Scale_Rate * 50.f) + Scale_Rate * 50.f, 0.9f, EasingType::OutExpo);
 			MainCamera_t.SetCamInfo(fov_t, near_t, far_t);
 		}
 
@@ -205,7 +235,7 @@ namespace FPS_n2 {
 			}
 			for (auto& m : this->m_VecData->Get_space_mesh()) {//空間装甲
 				is_Hit |= HitCheck_Tank(m, pAmmo.GetMove().repos, GetColLine(pAmmo.GetMove().repos, EndPos, m));
-			}				
+			}
 			//
 			if (t != -1) {
 				is_Hit |= HitCheck_Tank(t, pAmmo.GetMove().repos, colres);
@@ -257,7 +287,7 @@ namespace FPS_n2 {
 							else {
 								pAmmo->Ricochet(HitPos, HitNormal);	//跳弾
 								SE->Get((int)SoundEnum::Tank_Ricochet).Play_3D(GetRand(16), HitPos, 100.f*Scale_Rate, 216);
-								m_ShakePer = 0.1f*pAmmo->GetCaliberSize()/ 0.10f;
+								m_ShakePer = 0.1f*pAmmo->GetCaliberSize() / 0.10f;
 							}
 							//エフェクトセット
 							EffectControl::SetOnce(EffectResource::Effect::ef_reco, HitPos, HitNormal, pAmmo->GetEffectSize()*Scale_Rate*10.f);
@@ -476,21 +506,38 @@ namespace FPS_n2 {
 				auto index = &cg - &this->m_Gun.front();
 				cg.FireReaction(&this->m_move.mat);
 				//射撃
-				const std::shared_ptr<CellItem>* PytBuf;
+				const std::shared_ptr<CellItem>* PtrBuf = nullptr;
 				int Check = -1;
+				float Time = 1.f;
 				for (int i = 0; i < cg.GetAmmoSpecNum(); i++) {
 					const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(0, [&](const std::shared_ptr<CellItem>& tgt) {
 						return tgt->GetItemData() == cg.GetAmmoSpec(i);
 					});
 					if (Ptr) {
-						PytBuf = Ptr;
+						PtrBuf = Ptr;
 						Check = i;
+						Time = 1.f;
 						break;
 					}
 				}
-				if (cg.Execute(this->m_key[(index == 0) ? 0 : 1], (Check >= 0), this->m_CharaType == CharaTypeID::Mine)) {
-					PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*PytBuf);
+				if (!PtrBuf) {
+					for (int i = 0; i < cg.GetAmmoSpecNum(); i++) {
+						const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(1, [&](const std::shared_ptr<CellItem>& tgt) {
+							return tgt->GetItemData() == cg.GetAmmoSpec(i);
+						});
+						if (Ptr) {
+							PtrBuf = Ptr;
+							Check = i;
+							Time = 2.5f;
+							break;
+						}
+					}
+				}
 
+				if (cg.Execute(this->m_key[(index == 0) ? 0 : 1], (Check >= 0), Time, this->m_CharaType == CharaTypeID::Mine)) {
+					if ((*PtrBuf)->Sub(1)) {
+						PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*PtrBuf);
+					}
 					SE->Get((int)SoundEnum::Tank_Shot).Play_3D(cg.GetShotSound(), this->m_move.pos, 250.f*Scale_Rate);													//サウンド
 					EffectControl::SetOnce(EffectResource::Effect::ef_fire, GetGunMuzzlePos((int)index), GetGunMuzzleVec((int)index), cg.GetCaliberSize() / 0.1f * Scale_Rate);	//銃発砲エフェクトのセット
 					auto& LastAmmo = (std::shared_ptr<AmmoClass>&)(*ObjMngr->AddObject(ObjType::Ammo));

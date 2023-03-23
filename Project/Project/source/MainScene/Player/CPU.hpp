@@ -203,7 +203,7 @@ namespace FPS_n2 {
 						}
 						else {
 							VECTOR_ref StartPos = MyVeh->Get_EyePos_Base();
-							VECTOR_ref EndPos = this->cpu_do.LastFindPoint + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate,0.f);
+							VECTOR_ref EndPos = this->cpu_do.LastFindPoint + VECTOR_ref::vget(0.f, 1.5f*Scale_Rate, 0.f);
 							vec_tmp = EndPos - StartPos;
 						}
 						vec_to = vec_tmp + VECTOR_ref::vget(GetRandf(2.f*Scale_Rate), GetRandf(2.f*Scale_Rate), GetRandf(2.f*Scale_Rate));
@@ -216,7 +216,7 @@ namespace FPS_n2 {
 					if (!ans) {
 						this->cpu_do.ai_time_find = std::max(this->cpu_do.ai_time_find - 1.f / FPS, 0.f);
 						if (this->cpu_do.ai_time_find == 0.f) {
-							this->cpu_do.ai_AimTarget=-1;
+							this->cpu_do.ai_AimTarget = -1;
 							this->cpu_do.ai_phase = 0;
 						}
 					}

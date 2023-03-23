@@ -47,7 +47,15 @@ namespace FPS_n2 {
 				for (auto& xp : this->m_Inventorys[ID]) { xp.resize(y); }
 			}
 		public:
-			bool CanPutInventory(int ID, int xp, int yp, int xsize, int ysize, const std::shared_ptr<CellItem>* DragIn = nullptr) noexcept {
+			bool CanPutInventory(int ID, int xp, int yp, int xsize, int ysize, const std::shared_ptr<ItemData>* Drag, const std::shared_ptr<CellItem>* DragIn = nullptr) noexcept {
+				//自機の履帯以外は乗らない
+				if (Drag) {
+					if (ID == 2 || ID == 3) {
+						if ((*Drag) != m_Vehicle->GetTrackPtr()) {
+							return false;
+						}
+					}
+				}
 				//
 				if (DragIn && *DragIn == this->m_Inventorys[ID][xp][yp]) {}//該当部分がInで埋まっている
 				else if (!this->m_Inventorys[ID][xp][yp].get()) {}//該当部分が空
@@ -55,7 +63,7 @@ namespace FPS_n2 {
 				//該当部の1マスが空だとして、その上にアイテムがないか
 				for (int x = 0; x <= xp; x++) {
 					for (int y = 0; y <= yp; y++) {
-						auto& yo = this->m_Inventorys[ID][x][y];
+						auto& yo = this->m_Inventorys.at(ID).at(x).at(y);
 						if (yo.get() && (&yo != DragIn) && !(xp == x && yp == y)) {
 							if (yo->GetXsize() > (xp - x) && yo->GetYsize() > (yp - y)) {
 								return false;
@@ -72,7 +80,7 @@ namespace FPS_n2 {
 					}
 					for (int x = xp; x < xp + xsize; x++) {
 						for (int y = yp; y < yp + ysize; y++) {
-							if (!CanPutInventory(ID, x, y, 1, 1, DragIn)) {
+							if (!CanPutInventory(ID, x, y, 1, 1, Drag, DragIn)) {
 								return false;
 							}
 						}
@@ -80,15 +88,15 @@ namespace FPS_n2 {
 				}
 				return true;
 			}
-			void PutInventory(int ID, int x, int y, const std::shared_ptr<ItemData>& data, bool Is90) noexcept {
-				this->m_Inventorys[ID][x][y] = std::make_shared<CellItem>();
-				this->m_Inventorys[ID][x][y]->Set(data);
+			void PutInventory(int ID, int x, int y, const std::shared_ptr<ItemData>& data, int cap, bool Is90) noexcept {
+				this->m_Inventorys.at(ID).at(x).at(y) = std::make_shared<CellItem>();
+				this->m_Inventorys.at(ID).at(x).at(y)->Set(data, cap, ID);
 				if (Is90) {
-					this->m_Inventorys[ID][x][y]->Rotate();
+					this->m_Inventorys.at(ID).at(x).at(y)->Rotate();
 				}
 			}
 			void DeleteInventory(int ID, int x, int y) noexcept {
-				this->m_Inventorys[ID][x][y].reset();
+				this->m_Inventorys.at(ID).at(x).at(y).reset();
 			}
 			void DeleteInventory(const std::shared_ptr<CellItem>& tgt) noexcept {
 				for (auto& I : this->m_Inventorys) {
@@ -109,7 +117,7 @@ namespace FPS_n2 {
 							auto& yo = this->m_Inventorys[ID][x][y];
 							if (yo.get() && !(xp == x && yp == y)) {
 								if (yo->GetXsize() > (xp - x) && yo->GetYsize() > (yp - y)) {
-									return &this->m_Inventorys[ID][x][y];
+									return &yo;
 								}
 							}
 						}

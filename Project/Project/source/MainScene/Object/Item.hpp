@@ -7,6 +7,7 @@ namespace FPS_n2 {
 		private:
 			std::vector<std::shared_ptr<VehicleClass>>* vehicle_Pool{ nullptr };
 
+			int							m_Count{ 1 };
 			std::shared_ptr<ItemData>	m_ItemData{ nullptr };
 		public://getter
 			const auto& GetItemData(void) const noexcept { return this->m_ItemData; }
@@ -14,12 +15,17 @@ namespace FPS_n2 {
 			ItemClass(void) noexcept { this->m_objType = ObjType::Item; }
 			~ItemClass(void) noexcept {}
 		public: //åpè≥
-			void SetVehPool(std::vector<std::shared_ptr<VehicleClass>>* vehiclePool_t) noexcept {
-				vehicle_Pool = vehiclePool_t;
-			}
-			void SetData(const std::shared_ptr<ItemData>& pItemData) noexcept {
+			void SetVehPool(std::vector<std::shared_ptr<VehicleClass>>* vehiclePool_t) noexcept { vehicle_Pool = vehiclePool_t; }
+			void SetData(const std::shared_ptr<ItemData>& pItemData, int cap) noexcept {
 				this->m_ItemData = pItemData;
+				if (cap < 0) {
+					this->m_Count = this->m_ItemData->GetCapacity();
+				}
+				else {
+					this->m_Count = cap;
+				}
 			}
+			const auto&		GetCount(void) const noexcept { return this->m_Count; }
 			//
 			void DrawItemData(int xp1, int yp1, int xp2, int yp2) noexcept {
 				auto* Fonts = FontPool::Instance();
@@ -73,6 +79,20 @@ namespace FPS_n2 {
 			//
 			void			DrawShadow(void) noexcept override {
 				GetObj().DrawModel();
+			}
+			//
+			void			Draw(void) noexcept override {
+				if (this->m_IsActive && this->m_IsDraw) {
+					if (CheckCameraViewClip_Box(
+						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-20, 0, -20)).get(),
+						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(20, 20, 20)).get()) == FALSE
+						) {
+						auto Length = (this->GetObj().GetMatrix().pos() - DxLib::GetCameraPosition()).Length();
+						if (Length < 50.f*Scale_Rate) {
+							this->GetObj().DrawModel();
+						}
+					}
+				}
 			}
 			//
 		};

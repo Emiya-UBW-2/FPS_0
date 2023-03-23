@@ -199,6 +199,7 @@ namespace FPS_n2 {
 				this->m_Tree.Draw(false);
 			}
 			void			Shadow_Draw(void) noexcept {
+				this->m_grass.DrawShadow();
 			}
 			void			Draw(void) noexcept {
 				this->m_ObjGround.DrawModel();

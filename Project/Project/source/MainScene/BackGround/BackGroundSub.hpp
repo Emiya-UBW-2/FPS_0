@@ -257,6 +257,8 @@ namespace FPS_n2 {
 				}
 			}
 		}
+		void DrawShadow(void) noexcept {
+		}
 		void Draw(void) noexcept {
 			SetFogEnable(TRUE);
 			SetFogColor(184, 187, 118);

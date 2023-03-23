@@ -1,6 +1,7 @@
 Name=M728
 ItemType=Ammo
 ItemInfo=M60,Leopard1A4å–C—p‚Ì’Êí–C’eB
+ItemCapacity=3
 ammo_cal(mm)=105
 ammo_speed(m/s)=1426
 ammo_pene(mm)=268

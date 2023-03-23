@@ -4,6 +4,7 @@ speed_flont=40
 speed_back=-20
 body_rad=38
 turret_rad=60
+TrackName=D640A
 gun_0_name=L1A3
 gun_0_loadcnt=7.0
 gun_0_fire_sound=6

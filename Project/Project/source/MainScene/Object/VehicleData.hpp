@@ -53,7 +53,7 @@ namespace FPS_n2 {
 					this->m_frame[2].Set(child2_num, obj);
 				}
 			}
-			void			Set(int mdata, const std::string& stt, const std::vector<std::shared_ptr<ItemData>>& ItemData) noexcept {
+			void			Set(int mdata, const std::string& stt, const std::vector<std::shared_ptr<ItemData>>& ItemDatas) noexcept {
 				this->m_name = getparams::getright(stt);
 				this->m_loadTime = getparams::_float(mdata);
 				this->m_Shot_Sound = getparams::_int(mdata);//サウンド
@@ -67,7 +67,7 @@ namespace FPS_n2 {
 						break;
 					}
 					auto RIGHT = getparams::getright(stp);
-					for (const auto& d : ItemData) {
+					for (const auto& d : ItemDatas) {
 						if (d->GetPath().find(RIGHT) != std::string::npos) {
 							this->m_AmmoSpec.emplace_back((const std::shared_ptr<AmmoData>&)d);
 							break;
@@ -90,6 +90,7 @@ namespace FPS_n2 {
 				float								m_MaxBackSpeed{ 0.f };			//後退速度(km/h)
 				float								m_MaxBodyRad{ 0.f };			//旋回速度(度/秒)
 				float								m_MaxTurretRad{ 0.f };			//砲塔駆動速度(度/秒)
+				std::shared_ptr<ItemData>			m_TrackPtr{ nullptr };
 				std::vector<GunData>				m_GunFrameData;					//
 				b2PolygonShape						m_DynamicBox;					//
 				MV1									m_DataObj;						//
@@ -143,6 +144,7 @@ namespace FPS_n2 {
 				const auto&		GetMaxBackSpeed(void) const noexcept { return this->m_MaxBackSpeed; }
 				const auto&		GetMaxBodyRad(void) const noexcept { return this->m_MaxBodyRad; }
 				const auto&		GetMaxTurretRad(void) const noexcept { return this->m_MaxTurretRad; }
+				const auto&		GetTrackPtr(void) const noexcept { return this->m_TrackPtr; }
 				const auto&		Get_gunframe(void) const noexcept { return this->m_GunFrameData; }
 				const auto&		GetDynamicBox(void) const noexcept { return this->m_DynamicBox; }
 				const auto&		Get_wheelframe(void) const noexcept { return this->m_wheelframe; }
@@ -318,7 +320,7 @@ namespace FPS_n2 {
 							ammo_turret_num++;
 						}
 					}
-					this->m_TankViewPic[1].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_look_turret.bmp")),-1));
+					this->m_TankViewPic[1].emplace_back(ViewAndModule(std::make_shared<GraphHandle>(GraphHandle::Load("data/UI/body/battle_look_turret.bmp")), -1));
 					//data
 					{
 						int mdata = FileRead_open(("data/tank/" + this->m_name + "/data.txt").c_str(), FALSE);
@@ -328,8 +330,19 @@ namespace FPS_n2 {
 						this->m_MaxBackSpeed = getparams::_float(mdata);
 						this->m_MaxBodyRad = getparams::_float(mdata);
 						this->m_MaxTurretRad = deg2rad(getparams::_float(mdata));
-						auto stt = getparams::_str(mdata);
-						for (auto& g : this->m_GunFrameData) { g.Set(mdata, stt, ItemDatas); }
+						{
+							auto RIGHT = getparams::_str(mdata);
+							for (const auto& d : ItemDatas) {
+								if (d->GetPath().find(RIGHT) != std::string::npos) {
+									m_TrackPtr = d;
+									break;
+								}
+							}
+						}
+						{
+							auto stt = getparams::_str(mdata);
+							for (auto& g : this->m_GunFrameData) { g.Set(mdata, stt, ItemDatas); }
+						}
 						FileRead_close(mdata);
 					}
 					this->m_DataObj.Dispose();
@@ -425,12 +438,12 @@ namespace FPS_n2 {
 				}
 				this->m_ShotRadAdd.Set(0, 0, 0);
 			}
-			bool		Execute(bool key, bool ammoIn, bool playSound) noexcept {
+			bool		Execute(bool key, bool ammoIn, float timeMul, bool playSound) noexcept {
 				auto* SE = SoundPool::Instance();
 				bool isshot = (key && ammoIn && this->m_loadtimer == 0);
 				//射撃
 				if (isshot) {
-					this->m_loadtimer = this->m_GunSpec->GetLoadTime();
+					this->m_loadtimer = this->m_GunSpec->GetLoadTime()*timeMul;
 					this->m_Recoil = 1.f;
 					this->m_React = std::clamp(this->m_React + GetCaliberSize() * 10.f, 0.f, 3.f);
 					this->m_reloadSEFlag = true;
@@ -444,7 +457,7 @@ namespace FPS_n2 {
 					this->m_loadtimer = std::max(this->m_loadtimer - 1.f / FPS, 0.f);
 				}
 				else {
-					this->m_loadtimer = this->m_GunSpec->GetLoadTime();
+					this->m_loadtimer = this->m_GunSpec->GetLoadTime()*timeMul;
 				}
 				this->m_Recoil = std::max(this->m_Recoil - 1.f / FPS, 0.f);
 				this->m_React = std::max(this->m_React - 1.f / FPS, 0.f);
@@ -553,7 +566,7 @@ namespace FPS_n2 {
 					this->m_gndsmksize = 0.1f;
 				}
 				//
-				void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround,bool isCheckOnlyGround) noexcept {
+				void			FrameExecute(MV1* pTargetObj, const std::shared_ptr<BackGroundClass>& pBackGround, bool isCheckOnlyGround) noexcept {
 					if (this->m_frame.GetFrameID() >= 0) {
 						auto y_vec = pTargetObj->GetMatrix().yvec();
 						pTargetObj->frame_Reset(this->m_frame.GetFrameID());

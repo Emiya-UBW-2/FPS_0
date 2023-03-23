@@ -1,6 +1,7 @@
 Name=Gsh 6K30
 ItemType=Ammo
 ItemInfo=BMP3•›–C—p‚Ì“Ob’eB
+ItemCapacity=9
 ammo_cal(mm)=30.0
 ammo_speed(m/s)=970
 ammo_pene(mm)=58

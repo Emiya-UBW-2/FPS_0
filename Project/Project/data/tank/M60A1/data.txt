@@ -4,6 +4,7 @@ speed_flont=30
 speed_back=-16
 body_rad=48
 turret_rad=60
+TrackName=T142
 gun_0_name=M68
 gun_0_loadcnt=6.0
 gun_0_fire_sound=7

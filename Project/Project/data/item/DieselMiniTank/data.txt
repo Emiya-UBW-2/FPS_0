@@ -1,3 +1,4 @@
 Name=小型ディーゼル燃料缶
 ItemType=Fuel
 ItemInfo=M60戦車用のディーゼル燃料が入った10L缶。
+ItemCapacity=1000

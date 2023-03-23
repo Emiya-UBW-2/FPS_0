@@ -1,7 +1,8 @@
 Name=OF32 HE
 ItemType=Ammo
 ItemInfo=BMP3å–C—p‚ÌÖ’eB
+ItemCapacity=3
 ammo_cal(mm)=100
 ammo_speed(m/s)=362
-ammo_pene(mm)=85
+ammo_pene(mm)=65
 ammo_damage=300

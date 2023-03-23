@@ -4,6 +4,7 @@ speed_flont=45
 speed_back=-5
 body_rad=50
 turret_rad=60
+TrackName=BMP3
 gun_0_name=2A70
 gun_0_loadcnt=5.5
 gun_0_fire_sound=0

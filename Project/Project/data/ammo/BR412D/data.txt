@@ -1,6 +1,7 @@
 Name=BR412B@AP
 ItemType=Ammo
 ItemInfo=T-54-3å–C—p‚Ì“Ob’eB
+ItemCapacity=3
 ammo_cal(mm)=100
 ammo_speed(m/s)=887
 ammo_pene(mm)=175

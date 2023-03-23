@@ -13,7 +13,7 @@ namespace FPS_n2 {
 			MATRIX_ref											m_MouseVec;										//マウスエイム用変数確保
 			float												m_ShakePer{ 0.f };								//
 			VECTOR_ref											m_ShakePos;
-			float												m_AimingDistance{ 500.f*Scale_Rate };			//
+			float												m_AimingDistance{ 100.f*Scale_Rate };			//
 			bool												m_view_override{ false };						//
 			std::vector<VECTOR_ref>								m_view_rad;										//
 			float												m_range{ 6.0f };								//
@@ -60,11 +60,13 @@ namespace FPS_n2 {
 			std::array<FootWorld, 2>							m_b2Foot;										//履帯BOX2D
 		public:			//setter,getter
 			const bool		SetDamageEvent(const DamageEvent& value) noexcept;
+			void			ClashParts(int ID) noexcept { this->m_HP_parts[ID] = 0; }
+			void			RepairParts(int ID) noexcept { this->m_HP_parts[ID] = this->m_VecData->GetMaxHP() / 2; }
 			void			SetCharaType(CharaTypeID value) noexcept { this->m_CharaType = value; }
 			void			SetDamageSwitchRec(unsigned long long value) noexcept { this->m_DamageSwitchRec = value; }
 			void			SetAimingDistance(float value) noexcept { this->m_AimingDistance = value; }
 			void			SubHP(HitPoint damage_t, float)  noexcept { this->m_HP = std::clamp<HitPoint>(this->m_HP - damage_t, 0, this->m_VecData->GetMaxHP()); }
-			void			SubHP_Parts(HitPoint damage_t, int parts_Set_t) noexcept { this->m_HP_parts[parts_Set_t] = std::max<HitPoint>(this->m_HP_parts[parts_Set_t] - damage_t, 0); }
+			void			SubHP_Parts(HitPoint damage_t, int parts_Set_t) noexcept;
 			const auto&		GetDamageEvent(void) const noexcept { return this->m_DamageEvent; }
 			const auto&		GetDamageSwitch(void) const noexcept { return this->m_DamageSwitch; }
 			const auto&		GetDamageSwitchRec(void) const noexcept { return this->m_DamageSwitchRec; }
@@ -73,6 +75,8 @@ namespace FPS_n2 {
 			const auto&		GetHPMax(void) const noexcept { return this->m_VecData->GetMaxHP(); }
 			const auto&		GetCharaType(void) const noexcept { return this->m_CharaType; }
 			const auto&		GetName(void) const noexcept { return this->m_VecData->GetName(); }
+			const auto&		GetTrackPtr(void) const noexcept { return this->m_VecData->GetTrackPtr(); }
+			const auto&		Get_module_mesh(void) const noexcept { return this->m_VecData->Get_module_mesh(); }
 			const auto&		GetLookVec(void) const noexcept { return this->m_MouseVec; }
 			const auto&		Getvec_real(void) const noexcept { return this->m_add_vec_real; }
 			const auto		Get_pseed_per(void) const noexcept { return this->m_add_vec_real.size() / (this->m_VecData->GetMaxFrontSpeed() / 3.6f); }			//移動速度のパーセンテージ

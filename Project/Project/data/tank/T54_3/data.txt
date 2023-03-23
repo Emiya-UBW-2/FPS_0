@@ -4,6 +4,7 @@ speed_flont=35
 speed_back=-5
 body_rad=45
 turret_rad=60
+TrackName=T54
 gun_0_name=D-10TG
 gun_0_loadcnt=6.0
 gun_0_fire_sound=0
