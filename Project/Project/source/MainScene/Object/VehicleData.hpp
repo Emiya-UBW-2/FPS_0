@@ -483,20 +483,26 @@ namespace FPS_n2 {
 				int			m_UseFrame{ 0 };		//使用フレーム
 				MV1			m_obj;					//弾痕モデル
 				moves		m_move;					//座標
+				int			m_FrameID{ 0 };			//影響を受ける車輛側のフレーム
 			};
 			std::array<Hit, 24> hit_obj;			//弾痕
 			int hitbuf = 0;							//使用弾痕
 		public:
-			void			Set(const moves& this_move, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal, const VECTOR_ref& ammo_nomal/*this->move.vec.Norm()*/, const float&caliber, bool isPene) noexcept {
-				float asize = 200.f*caliber;
-				auto y_vec = MATRIX_ref::Vtrans(Put_normal, this_move.mat.Inverse());
-				auto z_vec = MATRIX_ref::Vtrans(Put_normal.cross(ammo_nomal).Norm(), this_move.mat.Inverse());
-				auto scale = VECTOR_ref::vget(asize / std::abs(ammo_nomal.dot(Put_normal)), asize, asize);
+			void			Set(int FrameNum, const MV1& pObj, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal, const VECTOR_ref& ammo_nomal/*this->move.vec.Norm()*/, const float&caliber, bool isPene) noexcept {
+				auto AmmoSize = 200.f*caliber;
+				auto YVec = MATRIX_ref::Vtrans(Put_normal, pObj.GetMatrix().GetRot().Inverse());
+				auto ZVec = MATRIX_ref::Vtrans(Put_normal.cross(ammo_nomal).Norm(), pObj.GetMatrix().GetRot().Inverse());
+				auto scale = VECTOR_ref::vget(AmmoSize / std::abs(ammo_nomal.dot(Put_normal)), AmmoSize, AmmoSize);
+
+				auto matrix_tmp = pObj.GetFrameLocalWorldMatrix(FrameNum);
+				auto rot_tmp = matrix_tmp.GetRot();
+				auto pos_tmp = matrix_tmp.pos();
 
 				this->hit_obj[this->hitbuf].m_UseFrame = (isPene) ? 0 : 1;				//弾痕
-				this->hit_obj[this->hitbuf].m_move.mat = MATRIX_ref::GetScale(scale)* MATRIX_ref::Axis1_YZ(y_vec, z_vec);
-				this->hit_obj[this->hitbuf].m_move.pos = MATRIX_ref::Vtrans(Put_pos - this_move.pos, this_move.mat.Inverse()) + y_vec * 0.005f;
+				this->hit_obj[this->hitbuf].m_move.mat = MATRIX_ref::GetScale(scale) * MATRIX_ref::Axis1_YZ(YVec, ZVec);
+				this->hit_obj[this->hitbuf].m_move.pos = MATRIX_ref::Vtrans((Put_pos + YVec * 0.05f) - pos_tmp, rot_tmp.Inverse());
 				this->hit_obj[this->hitbuf].m_IsActive = true;
+				this->hit_obj[this->hitbuf].m_FrameID = FrameNum;
 				++this->hitbuf %= this->hit_obj.size();
 			}
 		public:
@@ -510,8 +516,11 @@ namespace FPS_n2 {
 				//弾痕
 				for (auto& h : this->hit_obj) {
 					if (h.m_IsActive) {
-						auto matrix_tmp = pObj.GetMatrix();
-						h.m_obj.SetMatrix(h.m_move.mat* matrix_tmp.GetRot()*MATRIX_ref::Mtrans(matrix_tmp.pos() + MATRIX_ref::Vtrans(h.m_move.pos, matrix_tmp.GetRot())));
+						auto matrixL_tmp = pObj.GetFrameLocalMatrix(h.m_FrameID);
+						auto matrix_tmp = pObj.GetFrameLocalWorldMatrix(h.m_FrameID);
+						auto rot_tmp = matrix_tmp.GetRot();
+						auto pos_tmp = matrix_tmp.pos();
+						h.m_obj.SetMatrix(h.m_move.mat * matrixL_tmp.GetRot() * rot_tmp * MATRIX_ref::Mtrans(pos_tmp + MATRIX_ref::Vtrans(h.m_move.pos, rot_tmp)));
 					}
 				}
 			}

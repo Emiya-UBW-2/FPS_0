@@ -62,6 +62,7 @@ using namespace DXLib_ref;
 #include "MainScene/UI/MainSceneUIControl.hpp"
 //
 #include "MainScene/NetWorks.hpp"
+#include "MainScene/Input.hpp"
 #include "MainScene/Inventory.hpp"
 
 #include "Scene/MainScene.hpp"

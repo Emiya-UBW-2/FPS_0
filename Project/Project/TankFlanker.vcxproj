@@ -15,6 +15,7 @@
     <ClInclude Include="source\Header.hpp" />
     <ClInclude Include="source\MainScene\BackGround\BackGround.hpp" />
     <ClInclude Include="source\MainScene\BackGround\BackGroundSub.hpp" />
+    <ClInclude Include="source\MainScene\Input.hpp" />
     <ClInclude Include="source\MainScene\Inventory.hpp" />
     <ClInclude Include="source\MainScene\NetWorks.hpp" />
     <ClInclude Include="source\MainScene\Object\Ammo.hpp" />

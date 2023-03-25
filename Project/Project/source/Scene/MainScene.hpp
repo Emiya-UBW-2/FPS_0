@@ -10,95 +10,73 @@ namespace FPS_n2 {
 			static const int		gun_num = Chara_num;
 		private:
 			//リソース関連
-			std::shared_ptr<BackGroundClass>			m_BackGround;		//BG
-			MV1						hit_pic;								//弾痕  
+			std::shared_ptr<BackGroundClass>			m_BackGround;					//BG
+			MV1											m_hit_pic;						//弾痕  
 			//いちいち探査しないよう別持ち
-			std::vector<std::shared_ptr<VehicleClass>>	vehicle_Pool;		//ポインター別持ち
-			//アイテムデータ
-			std::vector<std::shared_ptr<ItemData>>		m_ItemData;		//ポインター別持ち
-			//戦車データ
-			std::shared_ptr<VehDataControl>				m_VehDataControl;
-
-			std::vector<std::shared_ptr<AIControl>>		AICtrl;
+			std::vector<std::shared_ptr<VehicleClass>>	m_vehicle_Pool;					//ポインター別持ち
+			std::vector<std::shared_ptr<ItemData>>		m_ItemData;						//アイテムデータ
+			std::shared_ptr<VehDataControl>				m_VehDataControl;				//戦車データ
+			std::vector<std::shared_ptr<AIControl>>		m_AICtrl;						//AI
 			//操作関連
-			float					m_EyePosPer_Prone = 0.f;
-			float					m_EyePosPer = 0.f;
-			float					m_EyeRunPer{ 0.f };
-			switchs					m_FPSActive;
-			switchs					m_MouseActive;
-			int						m_LookMode{ 0 };
+			std::unique_ptr<InputClass>					m_InputClass;
+			MATRIX_ref									m_FreeLookMat;
+			float										m_Concussion{ 0.f };
+			float										m_ConcussionPer{ 0.f };
 			//UI関連
-			UIClass					m_UIclass;
-			float					m_HPBuf{ 0.f };
-			float					m_ScoreBuf{ 0.f };
-			GraphHandle				hit_Graph;
-			GraphHandle				aim_Graph;
-			GraphHandle				scope_Graph;
+			UIClass										m_UIclass;
+			float										m_HPBuf{ 0.f };
+			float										m_ScoreBuf{ 0.f };
+			GraphHandle									m_hit_Graph;
+			GraphHandle									m_aim_Graph;
+			GraphHandle									m_scope_Graph;
+			bool										m_Reticle_on = false;
+			float										m_Reticle_xpos = 0;
+			float										m_Reticle_ypos = 0;
+			NetWorkBrowser								m_NetWorkBrowser;
+			InventoryClass								m_InventoryClass;
 			//
-			float					m_CamShake{ 0.f };
-			VECTOR_ref				m_CamShake1;
-			VECTOR_ref				m_CamShake2;
-			//銃関連
-			bool Reticle_on = false;
-			float Reticle_xpos = 0;
-			float Reticle_ypos = 0;
-			//
-			MATRIX_ref				m_FreeLookMat;
-			float					m_TPS_Xrad{ 0.f };
-			float					m_TPS_Yrad{ 0.f };
-			float					m_TPS_XradR{ 0.f };
-			float					m_TPS_YradR{ 0.f };
-			float					m_TPS_Per{ 1.f };
-			//
-			float					m_Rader{ 1.f };
-			float					m_Rader_r{ 1.f };
-			//
-			std::vector<DamageEvent>	m_DamageEvents;
-
-			NetWorkBrowser			m_NetWorkBrowser;
-			InventoryClass			m_InventoryClass;
-			//共通
-			double					m_ClientFrame{ 0.0 };
-
-			float					fov_base{ deg2rad(45.f) };
+			std::vector<DamageEvent>					m_DamageEvents;
+			float										m_fov_base{ deg2rad(45.f) };
 		private:
 			const auto&		GetMyPlayerID(void) const noexcept { return m_NetWorkBrowser.GetMyPlayerID(); }
 		public:
 			MAINLOOP(void) noexcept {
 				this->m_BackGround = std::make_shared<BackGroundClass>();
 				this->m_VehDataControl = std::make_shared<VehDataControl>();
-				AICtrl.resize(Player_num);
 				for (int i = 0; i < Player_num; i++) {
-					AICtrl[i] = std::make_shared<AIControl>();
+					this->m_AICtrl.emplace_back(std::make_shared<AIControl>());
 				}
+				this->m_InputClass = std::make_unique<InputClass>();
 			}
+			~MAINLOOP(void) noexcept {}
+		public:
 			//Load
 			void			Load_Sub(void) noexcept override {
 				auto* ObjMngr = ObjectManager::Instance();
-				//auto* SE = SoundPool::Instance();
 				//BG
 				this->m_BackGround->Load();
 				ObjMngr->Init(this->m_BackGround);
 				//
 				this->m_VehDataControl->Load();
-				MV1::Load("data/model/hit/model.mv1", &this->hit_pic);
+				MV1::Load("data/model/hit/model.mv1", &this->m_hit_pic);
 
-				hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
-				aim_Graph = GraphHandle::Load("data/UI/battle_aim.bmp");
-				scope_Graph = GraphHandle::Load("data/UI/battle_scope.png");
+				this->m_hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
+				this->m_aim_Graph = GraphHandle::Load("data/UI/battle_aim.bmp");
+				this->m_scope_Graph = GraphHandle::Load("data/UI/battle_scope.png");
 			}
 			void			Set_Sub(void) noexcept override {
-				this->m_BackGround->Init();
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto* SE = SoundPool::Instance();
+
+				this->m_BackGround->Init();
 				SetAmbientShadow(
 					VECTOR_ref::vget(Scale_Rate*-300.f, Scale_Rate*-10.f, Scale_Rate*-300.f),
 					VECTOR_ref::vget(Scale_Rate*300.f, Scale_Rate*50.f, Scale_Rate*300.f),
 					VECTOR_ref::vget(-0.8f, -0.5f, -0.1f),
 					GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				for (int i = 0; i < Vehicle_num; i++) {
-					vehicle_Pool.emplace_back((std::shared_ptr<VehicleClass>&)(*ObjMngr->AddObject(ObjType::Vehicle)));
+					this->m_vehicle_Pool.emplace_back((std::shared_ptr<VehicleClass>&)(*ObjMngr->AddObject(ObjType::Vehicle)));
 				}
 				ObjMngr->AddObject(ObjType::HindD, "data/model/hindD/");
 				{
@@ -135,8 +113,8 @@ namespace FPS_n2 {
 					VECTOR_ref BasePos;
 
 					std::vector<int> OtherSelect;
-					for (auto& v : this->vehicle_Pool) {
-						size_t index = &v - &this->vehicle_Pool.front();
+					for (auto& v : this->m_vehicle_Pool) {
+						size_t index = &v - &this->m_vehicle_Pool.front();
 						int ID = 0;
 						while (true) {
 							ID = GetRand(this->m_BackGround->GetRoadPointNum() - 1);
@@ -174,7 +152,7 @@ namespace FPS_n2 {
 						}
 
 						auto& vehc_data = this->m_VehDataControl->GetVehData();
-						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 3], hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
+						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], this->m_hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
 						v->ValueSet(deg2rad(0), rad_t, pos_t);
 					}
 				}
@@ -258,7 +236,7 @@ namespace FPS_n2 {
 							}
 						}
 					}
-					AICtrl[i]->Init(&vehicle_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetVehicle());
+					this->m_AICtrl[i]->Init(&this->m_vehicle_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetVehicle());
 				}
 				this->m_HPBuf = (float)PlayerMngr->GetPlayer(0).GetVehicle()->GetHP();
 				this->m_ScoreBuf = PlayerMngr->GetPlayer(0).GetScore();
@@ -276,23 +254,30 @@ namespace FPS_n2 {
 				for (int i = 0; i < 2; i++) {
 					SE->Add((int)SoundEnum::Tank_Damage, 3, "data/Sound/SE/damage/" + std::to_string(i) + ".wav");
 				}
-				SE->Add((int)SoundEnum::Tank_engine, 10, "data/Sound/SE/engine.wav");
+				SE->Add((int)SoundEnum::Tank_move, Vehicle_num, "data/Sound/SE/Engine/move.wav");
+				SE->Add((int)SoundEnum::Tank_engine, Vehicle_num, "data/Sound/SE/Engine/engine.wav");
+				SE->Add((int)SoundEnum::Tank_Start, Vehicle_num, "data/Sound/SE/Engine/start.wav");
 				for (int i = 0; i < 7; i++) {
 					SE->Add((int)SoundEnum::Tank_Eject, 3, "data/Sound/SE/gun/reload/eject/" + std::to_string(i) + ".wav", false);
 				}
 				for (int i = 0; i < 5; i++) {
 					SE->Add((int)SoundEnum::Tank_Reload, 3, "data/Sound/SE/gun/reload/hand/" + std::to_string(i) + ".wav", false);
 				}
+				SE->Add((int)SoundEnum::Tank_near, 10, "data/Sound/SE/near.wav");
+
 				SE->Get((int)SoundEnum::Environment).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Shot).SetVol(0.5f);
-				SE->Get((int)SoundEnum::Tank_engine).SetVol(0.25f);
+				SE->Get((int)SoundEnum::Tank_engine).SetVol(0.5f);
+				SE->Get((int)SoundEnum::Tank_Start).SetVol(0.5f);
+				SE->Get((int)SoundEnum::Tank_move).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Ricochet).SetVol(0.65f);
 				SE->Get((int)SoundEnum::Tank_Damage).SetVol(0.65f);
 				SE->Get((int)SoundEnum::Tank_Eject).SetVol(0.25f);
 				SE->Get((int)SoundEnum::Tank_Reload).SetVol(0.25f);
+				SE->Get((int)SoundEnum::Tank_near).SetVol(1.f);
 				//入力
-				this->m_FPSActive.Set(true);
-				this->m_MouseActive.Set(true);
+				this->m_InputClass->Init();
+				//
 				this->m_DamageEvents.clear();
 				this->m_NetWorkBrowser.Init();
 				this->m_InventoryClass.Init();
@@ -307,149 +292,23 @@ namespace FPS_n2 {
 				auto* DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
 #ifdef DEBUG
-				DebugParts->SetPoint("Execute=Start(0.9)");
+				DebugParts->SetPoint("Execute=Start(0.3)");
 #endif // DEBUG
 				//FirstDoingv
 				if (GetIsFirstLoop()) {
 					SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
 					SE->Get((int)SoundEnum::Environment).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-					fov_base = GetMainCamera().GetCamFov();
+					this->m_fov_base = GetMainCamera().GetCamFov();
 				}
 				//Input,AI
 				{
-					float cam_per = ((GetMainCamera().GetCamFov() / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
-					float pp_x = 0.f, pp_y = 0.f;
-					bool look_key = false;
-					bool eyechange_key = false;
-					bool Lockon_key = false;
-					InputControl MyInput;
-
-					if (GetJoypadNum() > 0) {
-						DINPUT_JOYSTATE input;
-						int padID = DX_INPUT_PAD1;
-						GetJoypadInputState(padID);
-						switch (GetJoypadType(padID)) {
-						case DX_PADTYPE_OTHER:
-						case DX_PADTYPE_DUAL_SHOCK_4:
-						case DX_PADTYPE_DUAL_SENSE:
-						case DX_PADTYPE_SWITCH_JOY_CON_L:
-						case DX_PADTYPE_SWITCH_JOY_CON_R:
-						case DX_PADTYPE_SWITCH_PRO_CTRL:
-						case DX_PADTYPE_SWITCH_HORI_PAD:
-							GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
-							{
-								pp_x = std::clamp(-(float)(-input.Rz) / 100.f*1.f, -9.f, 9.f) * cam_per;
-								pp_y = std::clamp((float)(input.Z) / 100.f*1.f, -9.f, 9.f) * cam_per;
-
-								float deg = rad2deg(std::atan2f((float)input.X, -(float)input.Y));
-								bool w_key = false;
-								bool s_key = false;
-								bool a_key = false;
-								bool d_key = false;
-								if (!(input.X == 0 && input.Y == 0)) {
-									w_key = (-50.f <= deg && deg <= 50.f);
-									a_key = (-140.f <= deg && deg <= -40.f);
-									s_key = (130.f <= deg || deg <= -130.f);
-									d_key = (40.f <= deg && deg <= 140.f);
-								}
-								//視点切り替え
-								look_key = (input.Buttons[11] != 0);
-								//eyechange_key = (input.Buttons[11]!=0);
-								//十字
-								deg = (float)(input.POV[0]) / 100.f;
-								bool right_key = (40.f <= deg && deg <= 140.f);
-								bool left_key = (220.f <= deg && deg <= 320.f);
-								bool up_key = (310.f <= deg || deg <= 50.f);
-								bool down_key = (130.f <= deg && deg <= 230.f);
-								//ボタン
-								Lockon_key = (input.Buttons[0] != 0);/*△*/
-								//_key = (input.Buttons[2] != 0);/*×*/
-								VECTOR_ref ReCoil;
-								MyInput.SetInput(
-									pp_x*(1.f - this->m_TPS_Per) - ReCoil.y(),
-									pp_y*(1.f - this->m_TPS_Per) - ReCoil.x(),
-									w_key, s_key, a_key, d_key,
-									(input.Buttons[10] != 0),
-									(input.Buttons[6] != 0), (input.Buttons[7] != 0),
-									right_key, left_key, up_key, down_key,
-									(input.Buttons[10] != 0), (input.Buttons[5] != 0), (input.Buttons[4] != 0), (input.Buttons[3] != 0)/*□*/, (input.Buttons[1] != 0)/*〇*/,
-									false
-								);
-							}
-							break;
-						case DX_PADTYPE_XBOX_360:
-						case DX_PADTYPE_XBOX_ONE:
-							break;
-						default:
-							break;
-						}
-					}
-					else {//キーボード
-						this->m_MouseActive.Execute(CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0);
-						int mx = DXDraw::Instance()->m_DispXSize / 2, my = DXDraw::Instance()->m_DispYSize / 2;
-						if (this->m_MouseActive.on()) {
-							if (this->m_MouseActive.trigger()) {
-								SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
-							}
-							GetMousePoint(&mx, &my);
-							SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
-							SetMouseDispFlag(FALSE);
-						}
-						else {
-							SetMouseDispFlag(TRUE);
-						}
-						pp_x = std::clamp(-(float)(my - DXDraw::Instance()->m_DispYSize / 2)*1.f, -9.f, 9.f) * cam_per;
-						pp_y = std::clamp((float)(mx - DXDraw::Instance()->m_DispXSize / 2)*1.f, -9.f, 9.f) * cam_per;
-						look_key = ((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0) && this->m_MouseActive.on();
-						eyechange_key = CheckHitKeyWithCheck(KEY_INPUT_V) != 0;
-						Lockon_key = ((GetMouseInputWithCheck() & MOUSE_INPUT_MIDDLE) != 0) && this->m_MouseActive.on();
-
-						VECTOR_ref ReCoil;
-						MyInput.SetInput(
-							pp_x*(1.f - this->m_TPS_Per) - ReCoil.y(),
-							pp_y*(1.f - this->m_TPS_Per) - ReCoil.x(),
-							(CheckHitKeyWithCheck(KEY_INPUT_W) != 0), (CheckHitKeyWithCheck(KEY_INPUT_S) != 0), (CheckHitKeyWithCheck(KEY_INPUT_A) != 0), (CheckHitKeyWithCheck(KEY_INPUT_D) != 0),
-							(CheckHitKeyWithCheck(KEY_INPUT_LSHIFT) != 0),
-							(CheckHitKeyWithCheck(KEY_INPUT_Q) != 0), (CheckHitKeyWithCheck(KEY_INPUT_E) != 0),
-							(CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0), (CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0), (CheckHitKeyWithCheck(KEY_INPUT_UP) != 0), (CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0),
-
-							(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0),
-							(CheckHitKeyWithCheck(KEY_INPUT_R) != 0),
-							(CheckHitKeyWithCheck(KEY_INPUT_X) != 0),
-							(CheckHitKeyWithCheck(KEY_INPUT_C) != 0),
-							(((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) && this->m_MouseActive.on()),
-							(((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0) && this->m_MouseActive.on())
-						);
-					}
-
-					this->m_FPSActive.Execute(eyechange_key);
-					if (look_key) {
-						this->m_LookMode = 1;
-					}
-					else {
-						this->m_LookMode = 0;
-					}
-					Easing(&this->m_TPS_Per, (!this->m_FPSActive.on() && (this->m_LookMode == 1)) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
-
-					this->m_TPS_Xrad += pp_x;
-					this->m_TPS_Yrad += pp_y;
-					this->m_TPS_Xrad = std::clamp(this->m_TPS_Xrad, deg2rad(-60), deg2rad(60));
-					if (this->m_TPS_Yrad >= deg2rad(180)) { this->m_TPS_Yrad -= deg2rad(360); }
-					if (this->m_TPS_Yrad <= deg2rad(-180)) { this->m_TPS_Yrad += deg2rad(360); }
-
-					this->m_TPS_Xrad *= this->m_TPS_Per;
-					this->m_TPS_Yrad *= this->m_TPS_Per;
-
-					Easing(&this->m_TPS_XradR, this->m_TPS_Xrad, 0.5f, EasingType::OutExpo);
-
-					this->m_TPS_YradR += (sin(this->m_TPS_Yrad)*cos(this->m_TPS_YradR) - cos(this->m_TPS_Yrad) * sin(this->m_TPS_YradR))*20.f / FPS;
-					MyInput.SetRadBuf(PlayerMngr->GetPlayer(GetMyPlayerID()).GetRadBuf());
+					this->m_InputClass->Execute(((GetMainCamera().GetCamFov() / this->m_fov_base) / (is_lens() ? zoom_lens() : 1.f)) / 100.f);
 					//ネットワーク
-					this->m_NetWorkBrowser.FirstExecute(MyInput, PlayerMngr->GetPlayer(GetMyPlayerID()).GetNetSendMove());
+					this->m_NetWorkBrowser.FirstExecute(this->m_InputClass->GetInput(), PlayerMngr->GetPlayer(GetMyPlayerID()).GetNetSendMove());
 					this->m_InventoryClass.FirstExecute();
 					//クライアント
 					if (this->m_NetWorkBrowser.GetIsClient()) {
-						for (auto& v : this->vehicle_Pool) {
+						for (auto& v : this->m_vehicle_Pool) {
 							if (v->GetMyPlayerID() == GetMyPlayerID()) {
 								v->SetCharaType(CharaTypeID::Mine);
 							}
@@ -465,17 +324,17 @@ namespace FPS_n2 {
 						if (this->m_NetWorkBrowser.GetSequence() == SequenceEnum::MainGame) {
 							auto tmp = m_NetWorkBrowser.GetNowServerPlayerData(i, true);
 							if (i == GetMyPlayerID()) {
-								MyInput.SetKeyInput(tmp.Input.GetKeyInput());//キーフレームだけサーバーに合わせる
-								v->SetInput(MyInput, isready, false);
+								this->m_InputClass->SetInput(tmp.Input.GetKeyInput());//キーフレームだけサーバーに合わせる
+								v->SetInput(this->m_InputClass->GetInput(), isready, false);
 								this->m_NetWorkBrowser.GetRecvData(i, tmp.Frame);
 							}
 							else {
 								if (!m_NetWorkBrowser.GetIsClient()) {
-									AICtrl[i]->AI_move(&tmp.Input);
+									m_AICtrl[i]->AI_move(&tmp.Input);
 								}
 								v->SetInput(tmp.Input, isready, true);
 								bool override_true = true;
-								for (auto& v2 : this->vehicle_Pool) {
+								for (auto& v2 : this->m_vehicle_Pool) {
 									if ((v != v2) && ((v->GetMove().pos - v2->GetMove().pos).size() <= 10.f*Scale_Rate)) {
 										override_true = false;
 										break;
@@ -496,11 +355,11 @@ namespace FPS_n2 {
 						}
 						else {
 							if (i == GetMyPlayerID()) {
-								v->SetInput(MyInput, isready, false);
+								v->SetInput(this->m_InputClass->GetInput(), isready, false);
 							}
 							else {
 								InputControl OtherInput;
-								AICtrl[i]->AI_move(&OtherInput);//めっちゃ重い
+								m_AICtrl[i]->AI_move(&OtherInput);//めっちゃ重い
 								v->SetInput(OtherInput, isready, false);
 							}
 							//ダメージイベント処理
@@ -515,7 +374,7 @@ namespace FPS_n2 {
 					this->m_NetWorkBrowser.LateExecute();
 					this->m_InventoryClass.LateExecute();
 					//ダメージイベント
-					for (auto& v : this->vehicle_Pool) {
+					for (auto& v : this->m_vehicle_Pool) {
 						for (int j = 0; j < this->m_DamageEvents.size(); j++) {
 							if (v->SetDamageEvent(this->m_DamageEvents[j])) {
 								std::swap(this->m_DamageEvents.back(), this->m_DamageEvents[j]);
@@ -526,14 +385,14 @@ namespace FPS_n2 {
 					}
 				}
 #ifdef DEBUG
-				DebugParts->SetPoint("Execute=0.1ms");
+				DebugParts->SetPoint("Execute=0.2ms");
 #endif // DEBUG
 				//レーザーサイト
 				{
 					auto StartPos = Vehicle->GetGunMuzzlePos(0);
 					auto EndPos = StartPos + Vehicle->GetGunMuzzleVec(0) * 100.f*Scale_Rate;
 					this->m_BackGround->CheckLinetoMap(StartPos, &EndPos, true, false);
-					for (auto& v : this->vehicle_Pool) {
+					for (auto& v : this->m_vehicle_Pool) {
 						if (v->GetMyPlayerID() == GetMyPlayerID()) { continue; }
 						if (v->RefreshCol(StartPos, EndPos, 10.f*Scale_Rate)) {
 							v->GetColNearestInAllMesh(StartPos, &EndPos);
@@ -552,7 +411,7 @@ namespace FPS_n2 {
 						if (item) {
 							auto& ip = (std::shared_ptr<ItemClass>&)(*item);
 							if (!ip->IsActive()) {
-								ip->SetVehPool(&vehicle_Pool);
+								ip->SetVehPool(&m_vehicle_Pool);
 								ip->SetActive(true);
 							}
 						}
@@ -567,10 +426,12 @@ namespace FPS_n2 {
 				//いらないオブジェクトの除去
 				ObjMngr->DeleteCheck();
 #ifdef DEBUG
-				DebugParts->SetPoint("Execute=1.0ms");
+				DebugParts->SetPoint("Execute=0.7ms");
 #endif // DEBUG
 				//弾の更新
 				{
+					m_Concussion = std::max(m_Concussion - 1.f / FPS, 0.f);
+
 					int loop = 0;
 					while (true) {
 						auto ammo = ObjMngr->GetObj(ObjType::Ammo, loop);
@@ -581,12 +442,18 @@ namespace FPS_n2 {
 								//AmmoClass
 								VECTOR_ref repos_tmp = a->GetMove().repos;
 								VECTOR_ref pos_tmp = a->GetMove().pos;
+								if (GetMyPlayerID() != a->GetShootedID()) {
+									if (GetMinLenSegmentToPoint(repos_tmp, pos_tmp, GetMainCamera().GetCamPos()) < 5.f*Scale_Rate) {
+										m_Concussion = 1.f;
+									}
+								}
+
 								VECTOR_ref norm_tmp;
 								bool ColRes = this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, false, &norm_tmp);
 								ColRes |= this->m_BackGround->GetWallCol(repos_tmp, &pos_tmp, &norm_tmp, a->GetCaliberSize());
 								bool is_HitAll = false;
 								auto& v = *ObjMngr->GetObj(ObjType::Vehicle, a->GetShootedID());
-								for (auto& tgt : this->vehicle_Pool) {
+								for (auto& tgt : this->m_vehicle_Pool) {
 									if (tgt->GetMyPlayerID() == a->GetShootedID()) { continue; }
 									auto res = tgt->CheckAmmoHit(a.get(), v->GetMove().pos);
 									is_HitAll |= res.first;
@@ -608,10 +475,43 @@ namespace FPS_n2 {
 						}
 						loop++;
 					}
+
+					Set_is_Blackout(m_Concussion > 0.f);
+					if (m_Concussion == 1.f) {
+						Vehicle->ShakePer(0.05f);
+						SE->Get((int)SoundEnum::Tank_near).Play_3D(0, GetMainCamera().GetCamPos(), 10.f*Scale_Rate, 128);//, DX_PLAYTYPE_LOOP
+					}
+					if (m_Concussion > 0.9f) {
+						Easing(&m_ConcussionPer, 1.f, 0.1f, EasingType::OutExpo);
+					}
+					else if (m_Concussion > 0.25f) {
+						if (m_ConcussionPer > 0.25f) {
+							Easing(&m_ConcussionPer, 0.f, 0.8f, EasingType::OutExpo);
+						}
+						else {
+							m_ConcussionPer = 0.25f;
+						}
+					}
+					else {
+						Easing(&m_ConcussionPer, 0.f, 0.8f, EasingType::OutExpo);
+					}
+
+					Set_Per_Blackout(m_ConcussionPer * 1.5f);
+
+					//Set_is_Blackout(true);
+					//Set_Per_Blackout(1000.f);
+
+					//Set_is_lens(true);
+					//Set_xp_lens(y_r(960));
+					//Set_yp_lens(y_r(540));
+					//Set_size_lens(y_r(300));
+					//Set_zoom_lens(3.f);
+
+					printfDx("[%5.2f]", m_Concussion);
 				}
 				//木の更新
 				{
-					for (auto& v : this->vehicle_Pool) {
+					for (auto& v : this->m_vehicle_Pool) {
 						this->m_BackGround->CheckTreetoSquare(v->GetSquarePos(0), v->GetSquarePos(2), v->GetSquarePos(3), v->GetSquarePos(1), v->GetMove().pos,
 							(v->GetMove().pos - v->GetMove().repos).Length() * 60.f / FPS);
 					}
@@ -626,26 +526,19 @@ namespace FPS_n2 {
 				ObjMngr->LateExecuteObject();
 				//視点
 				{
-					Vehicle->Setcamera(SetMainCamera(), fov_base);
-					{
-						MATRIX_ref FreeLook;
-						FreeLook = MATRIX_ref::RotAxis((GetMainCamera().GetCamVec() - GetMainCamera().GetCamPos()).cross(GetMainCamera().GetCamUp()), this->m_TPS_XradR) * MATRIX_ref::RotAxis(GetMainCamera().GetCamUp(), this->m_TPS_YradR);
-						Easing_Matrix(&this->m_FreeLookMat, FreeLook, 0.5f, EasingType::OutExpo);
-						VECTOR_ref CamVec = (GetMainCamera().GetCamVec() - GetMainCamera().GetCamPos()).Norm();
-						CamVec = Lerp(CamVec, MATRIX_ref::Vtrans(CamVec, this->m_FreeLookMat), this->m_TPS_Per);
-						VECTOR_ref CamPos = Vehicle->Get_EyePos_Base();
-						SetMainCamera().SetCamPos(
-							Lerp(GetMainCamera().GetCamPos(), (CamPos + CamVec * -100.f), this->m_TPS_Per),
-							CamPos + CamVec * 100.f,
-							GetMainCamera().GetCamUp());
-					}
-					/*
+					auto& VehicleView = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
+					VehicleView->Setcamera(SetMainCamera(), this->m_fov_base);
+					VECTOR_ref BaseVec = (GetMainCamera().GetCamVec() - GetMainCamera().GetCamPos()).Norm();
+					VECTOR_ref BaseUp = GetMainCamera().GetCamUp();
+					MATRIX_ref FreeLook = MATRIX_ref::RotAxis(BaseVec.cross(BaseUp), this->m_InputClass->GetTPS_XradR()) * MATRIX_ref::RotAxis(BaseUp, this->m_InputClass->GetTPS_YradR());
+					Easing_Matrix(&this->m_FreeLookMat, FreeLook, 0.5f, EasingType::OutExpo);
+					VECTOR_ref CamVec = Lerp(BaseVec, MATRIX_ref::Vtrans(BaseVec, this->m_FreeLookMat), this->m_InputClass->GetTPS_Per());
+					VECTOR_ref CamPos = VehicleView->Get_EyePos_Base();
+
 					SetMainCamera().SetCamPos(
-						VECTOR_ref::vget(0, 600.f*Scale_Rate, 1.f),
-						VECTOR_ref::zero(),
-						VECTOR_ref::up());
-					SetMainCamera().SetCamInfo(100.f, 1000.f*Scale_Rate, deg2rad(45));
-					//*/
+						Lerp(GetMainCamera().GetCamPos(), (CamPos + CamVec * -100.f), this->m_InputClass->GetTPS_Per()),
+						CamPos + CamVec * 100.f,
+						BaseUp);
 				}
 				this->m_BackGround->Execute();
 
@@ -671,7 +564,7 @@ namespace FPS_n2 {
 				}
 				EffectControl::Execute();
 #ifdef DEBUG
-				DebugParts->SetPoint("Execute=1.0ms");
+				DebugParts->SetPoint("Execute=0.7ms");
 #endif // DEBUG
 				return true;
 			}
@@ -681,24 +574,18 @@ namespace FPS_n2 {
 
 				this->m_NetWorkBrowser.Dispose();
 				this->m_InventoryClass.Dispose();
+				for (auto& v : this->m_vehicle_Pool) {
+					v.reset();
+				}
+				this->m_vehicle_Pool.clear();
 				EffectControl::Dispose();
 				PlayerMngr->Dispose();
 				ObjMngr->DisposeObject();
-				for (auto& v : this->vehicle_Pool) {
-					v.reset();
-				}
-				this->vehicle_Pool.clear();
 				this->m_BackGround->Dispose();
 				this->m_VehDataControl->Dispose();
 			}
 			//
-			void			Depth_Draw_Sub(void) noexcept override {
-				//auto* ObjMngr = ObjectManager::Instance();
-				//auto* PlayerMngr = PlayerManager::Instance();
-
-				this->m_BackGround->Draw();
-				//ObjMngr->DrawDepthObject();
-			}
+			void			Depth_Draw_Sub(void) noexcept override {}
 			void			BG_Draw_Sub(void) noexcept override {
 				this->m_BackGround->BG_Draw();
 			}
@@ -727,14 +614,14 @@ namespace FPS_n2 {
 				auto EndPos = Vehicle->GetGunMuzzlePos(0) + Vehicle->GetGunMuzzleVec(0) * Vehicle->GetAimingDistance();
 				VECTOR_ref LensPos = ConvWorldPosToScreenPos(EndPos.get());
 				if (0.f < LensPos.z() && LensPos.z() < 1.f) {
-					Reticle_xpos = LensPos.x();
-					Reticle_ypos = LensPos.y();
-					Reticle_on = true;
-					if (!this->m_MouseActive.on()) {
-						Reticle_on = false;
+					this->m_Reticle_xpos = LensPos.x();
+					this->m_Reticle_ypos = LensPos.y();
+					this->m_Reticle_on = true;
+					if (!this->m_InputClass->GetMouseActive().on()) {
+						this->m_Reticle_on = false;
 					}
 				}
-				for (auto& v : this->vehicle_Pool) {
+				for (auto& v : this->m_vehicle_Pool) {
 					if (v->GetMyPlayerID() == GetMyPlayerID()) { continue; }
 					auto pos = v->Set_MidPos();
 					VECTOR_ref campos = ConvWorldPosToScreenPos(pos.get());
@@ -746,15 +633,11 @@ namespace FPS_n2 {
 
 
 				for (int i = 0; i < Player_num; i++) {
-					AICtrl[i]->Draw();
+					m_AICtrl[i]->Draw();
 				}
 
 			}
-			void			MainDrawbyDepth_Sub(void) noexcept override {
-				auto* ObjMngr = ObjectManager::Instance();
-
-				ObjMngr->DrawDepthObject();
-			}
+			void			MainDrawbyDepth_Sub(void) noexcept override {}
 			//UI表示
 			void			DrawUI_Base_Sub(void) noexcept override {
 				//return;
@@ -769,8 +652,6 @@ namespace FPS_n2 {
 				//auto White = GetColor(212, 255, 239);
 				//auto Gray = GetColor(64, 64, 64);
 				//auto Black = GetColor(0, 0, 0);
-				//unsigned int color = Red;
-				//
 				{
 					int loop = 0;
 					while (true) {
@@ -778,7 +659,7 @@ namespace FPS_n2 {
 						if (ammo != nullptr) {
 							auto& a = (std::shared_ptr<AmmoClass>&)(*ammo);
 							if (GetMyPlayerID() == a->GetMyPlayerID()) {
-								a->Draw_Hit_UI(hit_Graph);
+								a->Draw_Hit_UI(this->m_hit_Graph);
 							}
 						}
 						else {
@@ -789,7 +670,7 @@ namespace FPS_n2 {
 				}
 				//UI
 				if (Vehicle->is_ADS()) {
-					scope_Graph.DrawExtendGraph(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, true);
+					this->m_scope_Graph.DrawExtendGraph(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, true);
 				}
 				this->m_UIclass.Draw();
 				Vehicle->DrawModuleView(y_r(50 + 100), DrawParts->m_DispYSize - y_r(100 + 100), y_r(200));
@@ -798,15 +679,14 @@ namespace FPS_n2 {
 				//	this->m_NetWorkBrowser.Draw();
 				//}
 				//Pause
-				this->m_InventoryClass.Draw(!this->m_MouseActive.on(), Vehicle->GetMove().pos);
+				this->m_InventoryClass.Draw(!this->m_InputClass->GetMouseActive().on(), Vehicle->GetMove().pos);
 			}
 			void			DrawUI_In_Sub(void) noexcept override {
-				//auto* DrawParts = DXDraw::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto* Fonts = FontPool::Instance();
 				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
-				if (Reticle_on) {
-					aim_Graph.DrawRotaGraph((int)Reticle_xpos, (int)Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);
+				if (this->m_Reticle_on) {
+					this->m_aim_Graph.DrawRotaGraph((int)this->m_Reticle_xpos, (int)this->m_Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);
 
 					unsigned int color = GetColor(0, 255, 0);
 					auto Time = Vehicle->GetTotalloadtime(0);
@@ -814,7 +694,7 @@ namespace FPS_n2 {
 						color = GetColor(255, 0, 0);
 						Time = Vehicle->Gunloadtime(0);
 					}
-					Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, (int)Reticle_xpos + y_r(50), (int)Reticle_ypos, color, GetColor(0, 0, 0), "%05.2f s", Time);
+					Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, (int)this->m_Reticle_xpos + y_r(50), (int)this->m_Reticle_ypos, color, GetColor(0, 0, 0), "%05.2f s", Time);
 				}
 			}
 		};

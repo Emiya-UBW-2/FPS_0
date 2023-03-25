@@ -1005,7 +1005,7 @@ namespace FPS_n2 {
 			MV1::Load("data/model/tree/model2.mv1", &tree_far, true); //–Ø
 		}
 		void	Init(const MV1* MapCol, const std::vector<Builds>& BGBuild) noexcept {
-			tree.resize(150);
+			tree.resize(80);
 			for (auto& t : tree) {
 				auto scale = 15.f / 10.f*Scale_Rate;
 				t.mat = MATRIX_ref::GetScale(VECTOR_ref::vget(scale, scale, scale));

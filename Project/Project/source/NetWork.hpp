@@ -63,7 +63,7 @@ public:
 namespace FPS_n2 {
 	namespace Sceneclass {
 		//í êM
-		static const int		Player_num = 10;
+		static const int		Player_num = 14;
 		struct NewSetting {
 			IPDATA					IP{ 127,0,0,1 };
 			int						UsePort{ 10850 };

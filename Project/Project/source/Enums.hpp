@@ -24,7 +24,10 @@ namespace FPS_n2 {
 			Tank_engine,
 			Tank_Eject,
 			Tank_Reload,
-
+			Tank_Start,
+			Tank_move,
+			Tank_near,
+			
 			Shot_Gun,
 			Trigger,
 			Cocking0,

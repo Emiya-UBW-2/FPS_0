@@ -9,6 +9,7 @@ namespace FPS_n2 {
 
 			int							m_Count{ 1 };
 			std::shared_ptr<ItemData>	m_ItemData{ nullptr };
+			bool						m_CanMove{ true };
 		public://getter
 			const auto& GetItemData(void) const noexcept { return this->m_ItemData; }
 		public: //コンストラクタ、デストラクタ
@@ -40,41 +41,51 @@ namespace FPS_n2 {
 				ObjectBaseClass::Init();
 				SetUseRealTimePhysics(false);
 				SetActive(false);
+				this->m_CanMove = true;
 			}
 			//
 			void			FirstExecute(void) noexcept override {
-				this->m_move.repos = this->m_move.pos;
-				this->m_move.Update_Physics(0.f, 1.f);
-				//AmmoClass
-				VECTOR_ref repos_tmp = this->m_move.repos + VECTOR_ref::up()*Scale_Rate*2.f;
-				VECTOR_ref pos_tmp = this->m_move.pos;
-				VECTOR_ref norm_tmp;
-				bool ColRes = this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, false, &norm_tmp);
-				bool ColVeh = false;
-				for (auto& tgt : *vehicle_Pool) {
-					if (tgt->CheckLine(repos_tmp, &pos_tmp, &norm_tmp)) {
-						ColVeh |= true;
-						this->m_move.vec = tgt->Getvec_real()*4.5f;
-						this->m_move.vec.xadd(GetRandf(2.5f*Scale_Rate / FPS));
-						this->m_move.vec.zadd(GetRandf(2.5f*Scale_Rate / FPS));
-
-						this->m_move.mat *= MATRIX_ref::RotX(GetRandf(deg2rad(90)));
-						this->m_move.mat *= MATRIX_ref::RotY(GetRandf(deg2rad(90)));
-						this->m_move.mat *= MATRIX_ref::RotZ(GetRandf(deg2rad(90)));
+				if (this->m_CanMove) {
+					this->m_move.repos = this->m_move.pos;
+					this->m_move.Update_Physics(0.f, 1.f);
+					//AmmoClass
+					VECTOR_ref repos_tmp = this->m_move.repos + VECTOR_ref::up()*Scale_Rate*2.f;
+					VECTOR_ref pos_tmp = this->m_move.pos;
+					VECTOR_ref norm_tmp;
+					bool ColRes = this->m_BackGround->CheckLinetoMap(repos_tmp, &pos_tmp, true, false, &norm_tmp);
+					if (ColRes) {//固定化
+						this->m_move.mat *= MATRIX_ref::RotVec2(this->m_move.mat.yvec(), Lerp(this->m_move.mat.yvec(), norm_tmp, std::powf(0.95f, 60.f / FPS)));
+						this->m_move.pos = pos_tmp;
+						this->m_move.vec.y(0.f);
+						this->m_CanMove = false;
 					}
-				}
-				if (ColRes || ColVeh) {
-					this->m_move.mat *= MATRIX_ref::RotVec2(this->m_move.mat.yvec(), Lerp(this->m_move.mat.yvec(), norm_tmp, std::powf(0.95f, 60.f / FPS)));
-					this->m_move.pos = pos_tmp;
-					this->m_move.vec.y(0.f);
-				}
-				if (!ColVeh) {
-					auto recY = this->m_move.vec.y();
-					Easing(&this->m_move.vec, VECTOR_ref::zero(), 0.95f, EasingType::OutExpo);
-					this->m_move.vec.y(recY);
-				}
+					else {
+						bool ColVeh = false;
+						for (auto& tgt : *vehicle_Pool) {
+							if (tgt->CheckLine(repos_tmp, &pos_tmp, &norm_tmp)) {
+								ColVeh |= true;
+								this->m_move.vec = tgt->Getvec_real()*4.5f;
+								this->m_move.vec.xadd(GetRandf(2.5f*Scale_Rate / FPS));
+								this->m_move.vec.zadd(GetRandf(2.5f*Scale_Rate / FPS));
 
-				UpdateMove();
+								this->m_move.mat *= MATRIX_ref::RotX(GetRandf(deg2rad(90)));
+								this->m_move.mat *= MATRIX_ref::RotY(GetRandf(deg2rad(90)));
+								this->m_move.mat *= MATRIX_ref::RotZ(GetRandf(deg2rad(90)));
+							}
+						}
+						if (ColVeh) {
+							this->m_move.mat *= MATRIX_ref::RotVec2(this->m_move.mat.yvec(), Lerp(this->m_move.mat.yvec(), norm_tmp, std::powf(0.95f, 60.f / FPS)));
+							this->m_move.pos = pos_tmp;
+							this->m_move.vec.y(0.f);
+						}
+						if (!ColVeh) {
+							auto recY = this->m_move.vec.y();
+							Easing(&this->m_move.vec, VECTOR_ref::zero(), 0.95f, EasingType::OutExpo);
+							this->m_move.vec.y(recY);
+						}
+					}
+					UpdateMove();
+				}
 			}
 			//
 			void			DrawShadow(void) noexcept override {

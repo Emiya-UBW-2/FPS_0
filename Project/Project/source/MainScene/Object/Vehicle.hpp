@@ -37,6 +37,8 @@ namespace FPS_n2 {
 			float												m_yradadd_left{ 0.f };							//
 			float												m_yradadd_right{ 0.f };							//
 			float												m_engine_time{ 0.f };							//エンジン音声
+			bool												m_engine_start{ false };						//エンジン音声
+			int													m_enginemoveID{ -1 };							//エンジン音声
 			HIT_ACTIVE											m_Hit_active;									//
 			std::vector<HitSortInfo> hitssort;																	//フレームに当たった順番
 			std::vector<MV1_COLL_RESULT_POLY> hitres;															//確保
@@ -59,6 +61,7 @@ namespace FPS_n2 {
 			float												m_spd_buf{ 0.f };								//BOX2D
 			std::array<FootWorld, 2>							m_b2Foot;										//履帯BOX2D
 		public:			//setter,getter
+			void			ShakePer(float value) noexcept { this->m_ShakePer = value; }
 			const bool		SetDamageEvent(const DamageEvent& value) noexcept;
 			void			ClashParts(int ID) noexcept { this->m_HP_parts[ID] = 0; }
 			void			RepairParts(int ID) noexcept { this->m_HP_parts[ID] = this->m_VecData->GetMaxHP() / 2; }
@@ -136,13 +139,19 @@ namespace FPS_n2 {
 			~VehicleClass(void) noexcept {}
 		public: //継承
 			void			Init(void) noexcept override {
+
 				ObjectBaseClass::Init();
 				this->m_IsDraw = true;
 			}
 			void			FirstExecute(void) noexcept override {
+				auto* SE = SoundPool::Instance();
 				//初回のみ更新する内容
 				if (this->m_IsFirstLoop) {
 					this->m_view_override = false;
+
+					this->m_engine_start = true;
+					this->m_engine_time = (float)GetRand(100) / 100.f;
+					this->m_enginemoveID = SE->Get((int)SoundEnum::Tank_move).Play_3D(0, this->m_move.pos, 30.f*Scale_Rate, 255, DX_PLAYTYPE_LOOP);
 				}
 				ExecuteSavePrev();			//以前の状態保持
 				ExecuteElse();				//その他

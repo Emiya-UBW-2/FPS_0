@@ -76,6 +76,7 @@ namespace FPS_n2 {
 			std::vector<std::shared_ptr<VehicleClass>>* vehicle_Pool{ nullptr };
 			std::shared_ptr<BackGroundClass>			m_BackGround;				//BG
 			float								m_RepairCnt{ 0.f };
+			float								m_RepairCnt2{ 0.f };
 		private:
 			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss, VECTOR_ref zvec = VECTOR_ref::zero()) {
 				int now = -1;
@@ -229,6 +230,7 @@ namespace FPS_n2 {
 					}
 					this->cpu_do.ai_time_turn = std::max(this->cpu_do.ai_time_turn - 1.f / FPS, 0.f);
 				}
+				//this->cpu_do.ai_phase = 0;
 				//
 				switch (this->cpu_do.ai_phase) {
 				case 0://戦車乗車中通常フェイズ
@@ -588,14 +590,83 @@ namespace FPS_n2 {
 					shotMain_Key,
 					false
 				);
-				if (m_RepairCnt > 12.f) {
-					m_RepairCnt = 0.f;
-					for (int i = 0; i < MyVeh->Get_HP_parts().size(); i++) {
-						MyVeh->SubHP_Parts(-5, i);
+				//生き返り
+				auto* PlayerMngr = PlayerManager::Instance();//todo:GetMyPlayerID()
+				if (!MyVeh->Get_alive()) {
+					if (m_RepairCnt > 30.f) {
+						m_RepairCnt = 0.f;
+						//履帯
+						{
+							const auto* Ptr = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).GetInventory(2, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+							if (!Ptr) {
+								for (int y = 0; y < 10; y++) {
+									PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(2, 0, y, MyVeh->GetTrackPtr(), -1, false);
+								}
+								MyVeh->RepairParts(MyVeh->Get_module_mesh()[0]);
+							}
+						}
+						{
+							const auto* Ptr = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).GetInventory(3, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+							if (!Ptr) {
+								for (int y = 0; y < 10; y++) {
+									PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(3, 0, y, MyVeh->GetTrackPtr(), -1, false);
+								}
+								MyVeh->RepairParts(MyVeh->Get_module_mesh()[1]);
+							}
+						}
+						//弾
+						{
+							const auto* Ptr = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).GetInventory(0, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+							if (!Ptr) {
+								{
+									int xp = 0;
+									int yp = 0;
+									for (int i = 0; i < 3; i++) {
+										PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(0, xp, yp, MyVeh->GetGun()[0].GetAmmoSpec(0), -1, false);
+										xp += MyVeh->GetGun()[0].GetAmmoSpec(0)->GetXsize();
+										if (xp >= 5) {
+											xp = 0;
+											yp += MyVeh->GetGun()[0].GetAmmoSpec(0)->GetYsize();
+											if (yp >= 6) {
+												break;
+											}
+										}
+									}
+								}
+								if (MyVeh->Get_Gunsize() >= 2) {
+									int xp = 5;
+									int yp = 0;
+									for (int i = 0; i < 3; i++) {
+										PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(0, xp, yp, MyVeh->GetGun()[1].GetAmmoSpec(0), -1, false);
+										xp += MyVeh->GetGun()[1].GetAmmoSpec(0)->GetXsize();
+										if (xp >= 10) {
+											xp = 5;
+											yp += MyVeh->GetGun()[1].GetAmmoSpec(0)->GetYsize();
+											if (yp >= 6) {
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+						//
+						MyVeh->SubHP(-MyVeh->GetHPMax() / 3, 0);
+
+
 					}
+					else {
+						m_RepairCnt += 1.f / FPS;
+					}
+					m_RepairCnt2 = 0;
 				}
 				else {
-					m_RepairCnt += 1.f / FPS;
+					m_RepairCnt = 0.f;
+
+					if (m_RepairCnt2 > 30.f) {
+						m_RepairCnt2 = 0.f;
+						MyVeh->SubHP(-MyVeh->GetHPMax() / 3, 0);
+					}
 				}
 			}
 		public:

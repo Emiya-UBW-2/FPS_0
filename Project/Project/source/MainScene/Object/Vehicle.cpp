@@ -162,6 +162,11 @@ namespace FPS_n2 {
 
 			VECTOR_ref eyepos = Get_EyePos_Base();
 			auto OLD = this->m_range;
+
+			if (!this->Get_alive()) {
+				ReSet_range();
+			}
+
 			if (is_ADS()) {
 				this->m_ratio = std::clamp(this->m_ratio + float(GetMouseWheelRotVolWithCheck()) * 2.0f, 0.0f, 30.f);
 				if (this->m_ratio == 0.f) {
@@ -188,7 +193,7 @@ namespace FPS_n2 {
 			this->m_changeview = ((this->m_range != OLD) && (this->m_range == 0.f || OLD == 0.f));
 
 			MainCamera_t.SetCamPos(
-				eyepos + m_ShakePos,
+				eyepos + m_ShakePos * (is_ADS() ? 0.25f : 1.f),
 				eyetgt + m_ShakePos * (is_ADS() ? 0.f : 2.f),
 				Lerp(this->m_move.mat.yvec(), VECTOR_ref::up(), std::clamp(this->m_range_r / 3.f, 0.f, 1.f))
 			);
@@ -291,7 +296,16 @@ namespace FPS_n2 {
 							}
 							//エフェクトセット
 							EffectControl::SetOnce(EffectResource::Effect::ef_reco, HitPos, HitNormal, pAmmo->GetEffectSize()*Scale_Rate*10.f);
-							this->m_Hit_active.Set(this->m_move, HitPos, HitNormal, pAmmo->GetMove().vec.Norm(), pAmmo->GetCaliberSize()*Scale_Rate, !pAmmo->IsActive());
+							auto Frame0 = this->hitres[tt.GetHitMesh()].PosMaxWeightFrameIndex[0];
+							auto Frame1 = this->hitres[tt.GetHitMesh()].PosMaxWeightFrameIndex[1];
+							auto Frame2 = this->hitres[tt.GetHitMesh()].PosMaxWeightFrameIndex[2];
+
+
+							if (Frame0 == this->m_VecData->Get_gunframe()[0].Get_frame(0).GetFrameID()) {
+								int a = 0;
+							}
+
+							this->m_Hit_active.Set(Frame0, GetObj(), HitPos, HitNormal, pAmmo->GetMove().vec.Norm(), pAmmo->GetCaliberSize()*Scale_Rate, !pAmmo->IsActive());
 							break;
 						}
 					}
@@ -312,17 +326,29 @@ namespace FPS_n2 {
 		void			VehicleClass::ExecuteElse(void) noexcept {
 			auto* SE = SoundPool::Instance();
 			//エンジン音
-			{
-				if (this->m_engine_time == 0.f) {
+			if(this->Get_alive()){
+				if (this->m_engine_time <= 0.f) {
+
 					SE->Get((int)SoundEnum::Tank_engine).Play_3D(0, this->m_move.pos, 50.f*Scale_Rate, 64);//, DX_PLAYTYPE_LOOP
-					this->m_engine_time = 1.f;
-				}
-				else {
-					this->m_engine_time -= 1.f / FPS;
-					if (this->m_engine_time <= 0.f) {
-						this->m_engine_time = 0.f;
+					this->m_engine_time = 0.9f;
+					if (this->m_engine_start) {
+						this->m_engine_start = false;
+						SE->Get((int)SoundEnum::Tank_Start).Play_3D(0, this->m_move.pos, 50.f*Scale_Rate, 128);//, DX_PLAYTYPE_LOOP
 					}
 				}
+				else {
+					this->m_engine_time = std::max(this->m_engine_time - 1.f / FPS, 0.f);
+				}
+			}
+			else {
+				this->m_engine_start = true;
+				this->m_engine_time = 0.f;
+			}
+			if (this->m_enginemoveID >= 0) {
+				SE->Get((int)SoundEnum::Tank_move).SetPos(0, this->m_enginemoveID, this->m_move.pos);
+				SE->Get((int)SoundEnum::Tank_move).SetVol_Local(0, this->m_enginemoveID,
+					std::clamp((int)(255.f*(std::abs(this->m_move.vec.Length() / Scale_Rate) * 0.75f + std::abs(this->m_radAdd.y()) * 8.f)*10.f), 0, 255)
+				);
 			}
 		}
 		//操作
@@ -599,6 +625,11 @@ namespace FPS_n2 {
 					(this->GetMove().pos + VECTOR_ref::vget(-5, -5, -5)*Scale_Rate).get(),
 					(this->GetMove().pos + VECTOR_ref::vget(5, 5, 5)*Scale_Rate).get()) == FALSE
 					) {
+
+					//this->m_col.DrawModel();
+					//this->m_Hit_active.Draw();
+					//return;
+
 					if (true) {
 						if (this->m_HP_parts[this->m_VecData->Get_module_mesh()[0]] > 0) {
 							MV1SetFrameTextureAddressTransform(GetObj().get(), 0, -this->m_wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
