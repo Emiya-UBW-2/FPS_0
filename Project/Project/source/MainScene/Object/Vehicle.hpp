@@ -51,6 +51,7 @@ namespace FPS_n2 {
 			float												m_wheel_Right{ 0.f };							//転輪回転
 			std::vector<float>									m_wheel_frameYpos{ 0.f };						//転輪のY方向保持
 			//ダメージ
+			float												m_Fuel{ 100.f };
 			HitPoint											m_HP{ 100 };
 			std::vector<HitPoint>								m_HP_parts;
 			DamageEvent											m_DamageEvent;									//
@@ -76,6 +77,9 @@ namespace FPS_n2 {
 			const auto&		GetHP(void) const noexcept { return this->m_HP; }
 			const auto&		Get_HP_parts(void) const noexcept { return this->m_HP_parts; }
 			const auto&		GetHPMax(void) const noexcept { return this->m_VecData->GetMaxHP(); }
+			auto&			SetFuel(void) noexcept { return this->m_Fuel; }
+			const auto&		GetFuel(void) const noexcept { return this->m_Fuel; }
+			const auto&		GetFuelMax(void) const noexcept { return this->m_VecData->GetMaxFuel(); }
 			const auto&		GetCharaType(void) const noexcept { return this->m_CharaType; }
 			const auto&		GetName(void) const noexcept { return this->m_VecData->GetName(); }
 			const auto&		GetTrackPtr(void) const noexcept { return this->m_VecData->GetTrackPtr(); }
@@ -91,6 +95,8 @@ namespace FPS_n2 {
 			const auto&		GetViewRad(void) const noexcept { return this->m_view_rad[0]; }
 			const auto&		Get_ratio(void) const noexcept { return this->m_ratio; }																			//UI用
 			const auto&		GetAimingDistance(void) const noexcept { return this->m_AimingDistance; }
+			const auto		GetInventoryXSize(int ID) const noexcept { return this->m_VecData->GetInventoryXSize(ID); }
+			const auto		GetInventoryYSize(int ID) const noexcept { return this->m_VecData->GetInventoryYSize(ID); }
 			const auto		Get_alive(void) const noexcept { return this->m_HP != 0; }																			//生きているか
 			const auto		Get_body_yrad(void) const noexcept { auto pp = this->m_move.mat.zvec()*-1.f; return std::atan2f(pp.x(), pp.z()); }
 			const auto		is_ADS(void) const noexcept { return this->m_range == 0.f; }																		//ADS中
@@ -159,6 +165,9 @@ namespace FPS_n2 {
 				ExecuteFrame();				//フレーム操作
 				ExecuteMove();				//移動操作
 				this->m_PosBufOverRideFlag = false;
+				if (Get_alive()) {
+					this->m_Fuel -= 1.f / FPS * (0.6f + (std::abs(this->m_move.vec.Length() / Scale_Rate) * 0.75f + std::abs(this->m_radAdd.y()) * 8.f)*3.5f);
+				}
 			}
 			void			LateExecute(void) noexcept override {
 				ExecuteMatrix();			//SetMat指示//0.03ms

@@ -9,27 +9,39 @@ namespace FPS_n2 {
 		void			VehicleClass::SubHP_Parts(HitPoint damage_t, int parts_Set_t) noexcept {
 			auto* PlayerMngr = PlayerManager::Instance();//todo:GetMyPlayerID()
 			if (this->m_VecData->Get_module_mesh()[0] == parts_Set_t) {
-				const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(2, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
-				if (Ptr) {
-					if ((*Ptr)->Sub(damage_t)) {
-						PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*Ptr);
+				while (true) {
+					const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(2, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+					if (Ptr) {
+						if ((*Ptr)->Sub(&damage_t)) {
+							PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*Ptr);
+						}
+						RepairParts(parts_Set_t);
 					}
-					RepairParts(parts_Set_t);
-				}
-				else {
-					ClashParts(parts_Set_t);
+					else {
+						ClashParts(parts_Set_t);
+						break;
+					}
+					if (damage_t == 0) {
+						break;
+					}
 				}
 			}
 			else if (this->m_VecData->Get_module_mesh()[1] == parts_Set_t) {
-				const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(3, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
-				if (Ptr) {
-					if ((*Ptr)->Sub(damage_t)) {
-						PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*Ptr);
+				while (true) {
+					const auto* Ptr = PlayerMngr->GetPlayer(this->GetMyPlayerID()).GetInventory(3, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+					if (Ptr) {
+						if ((*Ptr)->Sub(&damage_t)) {
+							PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*Ptr);
+						}
+						RepairParts(parts_Set_t);
 					}
-					RepairParts(parts_Set_t);
-				}
-				else {
-					ClashParts(parts_Set_t);
+					else {
+						ClashParts(parts_Set_t);
+						break;
+					}
+					if (damage_t == 0) {
+						break;
+					}
 				}
 			}
 			else {
@@ -107,6 +119,8 @@ namespace FPS_n2 {
 				this->m_HP_parts.resize(this->m_col.mesh_num());
 				for (auto& h : this->m_HP_parts) { h = this->m_VecData->GetMaxHP(); }//モジュール耐久
 			}
+			this->m_Fuel = (float)this->m_VecData->GetMaxFuel();
+
 			//戦車スポーン
 			this->m_b2mine.SetTransform(b2Vec2(this->m_move.pos.x(), this->m_move.pos.z()), Get_body_yrad());
 			this->m_PosBufOverRideFlag = false;
@@ -183,7 +197,9 @@ namespace FPS_n2 {
 				if (this->m_BackGround->CheckLinetoMap(eyepos, &eyepos2, true, false)) { eyepos = eyepos2; }
 
 				this->m_ratio = 2.0f;
-				this->m_range = std::clamp(this->m_range - float(GetMouseWheelRotVolWithCheck()) * this->m_range_change, 0.f, 9.f);
+				if (this->Get_alive()) {
+					this->m_range = std::clamp(this->m_range - float(GetMouseWheelRotVolWithCheck()) * this->m_range_change, 0.f, 9.f);
+				}
 				Easing(&this->m_range_r, this->m_range, 0.8f, EasingType::OutExpo);
 
 				Easing(&fov_t, fov_base, 0.9f, EasingType::OutExpo);
@@ -297,14 +313,6 @@ namespace FPS_n2 {
 							//エフェクトセット
 							EffectControl::SetOnce(EffectResource::Effect::ef_reco, HitPos, HitNormal, pAmmo->GetEffectSize()*Scale_Rate*10.f);
 							auto Frame0 = this->hitres[tt.GetHitMesh()].PosMaxWeightFrameIndex[0];
-							auto Frame1 = this->hitres[tt.GetHitMesh()].PosMaxWeightFrameIndex[1];
-							auto Frame2 = this->hitres[tt.GetHitMesh()].PosMaxWeightFrameIndex[2];
-
-
-							if (Frame0 == this->m_VecData->Get_gunframe()[0].Get_frame(0).GetFrameID()) {
-								int a = 0;
-							}
-
 							this->m_Hit_active.Set(Frame0, GetObj(), HitPos, HitNormal, pAmmo->GetMove().vec.Norm(), pAmmo->GetCaliberSize()*Scale_Rate, !pAmmo->IsActive());
 							break;
 						}
@@ -326,7 +334,7 @@ namespace FPS_n2 {
 		void			VehicleClass::ExecuteElse(void) noexcept {
 			auto* SE = SoundPool::Instance();
 			//エンジン音
-			if(this->Get_alive()){
+			if (this->Get_alive()) {
 				if (this->m_engine_time <= 0.f) {
 
 					SE->Get((int)SoundEnum::Tank_engine).Play_3D(0, this->m_move.pos, 50.f*Scale_Rate, 64);//, DX_PLAYTYPE_LOOP
@@ -561,7 +569,8 @@ namespace FPS_n2 {
 				}
 
 				if (cg.Execute(this->m_key[(index == 0) ? 0 : 1], (Check >= 0), Time, this->m_CharaType == CharaTypeID::Mine)) {
-					if ((*PtrBuf)->Sub(1)) {
+					HitPoint AmmoC = 1;
+					if ((*PtrBuf)->Sub(&AmmoC)) {
 						PlayerMngr->GetPlayer(this->GetMyPlayerID()).DeleteInventory(*PtrBuf);
 					}
 					SE->Get((int)SoundEnum::Tank_Shot).Play_3D(cg.GetShotSound(), this->m_move.pos, 250.f*Scale_Rate);													//サウンド
@@ -710,7 +719,8 @@ namespace FPS_n2 {
 					}
 				}
 				else {
-					SetDrawBright(0, 255, 0);
+					auto radp = deg2rad(90)*(float)this->GetHP() / (float)(this->m_VecData->GetMaxHP());
+					SetDrawBright(std::clamp((int)(255.f*cos(radp)*2.f), 0, 255), std::clamp((int)(255.f*sin(radp)*2.f), 0, 255), 0);
 				}
 				m.first->DrawRotaGraph(xp, yp, (float)size / 200, rad + this->Get_body_yrad(), true);
 			}
@@ -725,7 +735,8 @@ namespace FPS_n2 {
 					}
 				}
 				else {
-					SetDrawBright(0, 255, 0);
+					auto radp = deg2rad(90)*(float)this->GetHP() / (float)(this->m_VecData->GetMaxHP());
+					SetDrawBright(std::clamp((int)(255.f*cos(radp)*2.f), 0, 255), std::clamp((int)(255.f*sin(radp)*2.f), 0, 255), 0);
 				}
 				m.first->DrawRotaGraph(xp, yp, (float)size / 200, rad + this->Get_body_yrad() + this->m_view_rad[0].y(), true);
 			}

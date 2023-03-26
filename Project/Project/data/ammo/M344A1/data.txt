@@ -1,0 +1,8 @@
+Name=M344A1 HEAT
+ItemType=Ammo
+ItemInfo=–³”½“®–C—p‚ÌHEAT–C’eB
+ItemCapacity=1
+ammo_cal(mm)=105
+ammo_speed(m/s)=503
+ammo_pene(mm)=400
+ammo_damage=300

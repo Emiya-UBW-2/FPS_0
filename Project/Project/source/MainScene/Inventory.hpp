@@ -51,6 +51,7 @@ namespace FPS_n2 {
 				if (isDraw) {
 					auto* ObjMngr = ObjectManager::Instance();
 					auto* PlayerMngr = PlayerManager::Instance();//todo:GetMyPlayerID()
+					auto& Player = PlayerMngr->GetPlayer(0);
 					//auto* DrawParts = DXDraw::Instance();
 					auto* Fonts = FontPool::Instance();
 					auto Red = GetColor(255, 0, 0);
@@ -97,23 +98,23 @@ namespace FPS_n2 {
 						bool M_In = false;
 						std::string InfoStr;
 						bool isHit = false;
-						for (auto& I : PlayerMngr->GetPlayer(0).GetInventorys()) {
-							int loop = (int)(&I - &PlayerMngr->GetPlayer(0).GetInventorys().front());
+						for (auto& I : Player.GetInventorys()) {
+							int loop = (int)(&I - &Player.GetInventorys().front());
 							switch (loop) {
 							case 0:
-								xp = y_r(24);
-								yp = y_r(24);
+								xp = y_r(24) + (10 - Player.GetInventoryXSize(loop))*size / 2;
+								yp = y_r(24) + (6 - Player.GetInventoryYSize(loop))*size / 2;
 								break;
 							case 1:
-								xp = y_r(24 + 150 + 10);
+								xp = y_r(24 + 150 + 10) + (5 - Player.GetInventoryXSize(loop))*size / 2;
 								yp = y_r(442);
 								break;
 							case 2:
-								xp = y_r(24 + 24);
+								xp = y_r(24 + 24) + (2 - Player.GetInventoryXSize(loop))*size / 2;
 								yp = y_r(424);
 								break;
 							case 3:
-								xp = y_r(24 + 640 - 24 - 128);
+								xp = y_r(24 + 640 - 24 - 128) + (2 - Player.GetInventoryXSize(loop))*size / 2;
 								yp = y_r(424);
 								break;
 							case 4:
@@ -123,8 +124,6 @@ namespace FPS_n2 {
 							default:
 								break;
 							}
-							xs = (int)I.size() * size;
-							ys = (int)I.back().size() * size;
 							for (auto& xo : I) {
 								int x = (int)(&xo - &I.front());
 								for (auto& yo : xo) {
@@ -163,7 +162,7 @@ namespace FPS_n2 {
 									}
 								}
 							}
-							DrawBox(xp, yp, xp + xs, yp + ys, White, FALSE);
+							DrawBox(xp, yp, xp + Player.GetInventoryXSize(loop) * size, yp + Player.GetInventoryYSize(loop) * size, White, FALSE);
 							{
 								for (auto& xo : I) {
 									int x = (int)(&xo - &I.front());
@@ -173,7 +172,7 @@ namespace FPS_n2 {
 
 
 											{
-												const auto* Ptr = PlayerMngr->GetPlayer(0).GetInventory(loop, x, y);
+												const auto* Ptr = Player.GetInventory(loop, x, y);
 												if (Ptr) {
 													if (!m_Drag) {
 														M_In = true;
@@ -185,23 +184,23 @@ namespace FPS_n2 {
 															auto Vec = (MATRIX_ref::RotX(GetRandf(deg2rad(90)))*MATRIX_ref::RotY(GetRandf(deg2rad(360)))).yvec()*Scale_Rate;
 															item->SetMove(
 																MATRIX_ref::RotVec2(VECTOR_ref::up(), Vec.Norm()),
-																PlayerMngr->GetPlayer(0).GetPos() + Vec * 6.f,
+																Player.GetPos() + Vec * 6.f,
 																Vec*25.f / FPS * (1.0f*GetRandf(0.5f)));
 
 															auto& ip = (std::shared_ptr<ItemClass>&)(item);
 															ip->SetData((*Ptr)->GetItemData(), (*Ptr)->GetCount());
-															PlayerMngr->GetPlayer(0).DeleteInventory(*Ptr);
+															Player.DeleteInventory(*Ptr);
 															if (loop == 2) {
-																const auto* Ptrt = PlayerMngr->GetPlayer(0).GetInventory(loop, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+																const auto* Ptrt = Player.GetInventory(loop, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 																if (!Ptrt) {
-																	auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																	auto& Vehicle = Player.GetVehicle();
 																	Vehicle->ClashParts(Vehicle->Get_module_mesh()[0]);
 																}
 															}
 															else if (loop == 3) {
-																const auto* Ptrt = PlayerMngr->GetPlayer(0).GetInventory(loop, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+																const auto* Ptrt = Player.GetInventory(loop, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 																if (!Ptrt) {
-																	auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																	auto& Vehicle = Player.GetVehicle();
 																	Vehicle->ClashParts(Vehicle->Get_module_mesh()[1]);
 																}
 															}
@@ -219,36 +218,36 @@ namespace FPS_n2 {
 											if (m_Drag) {
 												auto xsize = this->Is90 ? (*m_Drag)->GetYsize() : (*m_Drag)->GetXsize();
 												auto ysize = this->Is90 ? (*m_Drag)->GetXsize() : (*m_Drag)->GetYsize();
-												if (PlayerMngr->GetPlayer(0).CanPutInventory(loop, x, y, xsize, ysize, m_Drag, m_DragIn)) {
+												if (Player.CanPutInventory(loop, x, y, xsize, ysize, m_Drag, m_DragIn)) {
 													isHit = true;
 													DrawBox(xp + x * size, yp + y * size, xp + (x + xsize) * size, yp + (y + ysize) * size, Green, TRUE);
 													if (!this->m_LeftClick.press()) {
 														if (m_DragIn && (*m_DragIn).get() && (yo != (*m_DragIn))) {
-															PlayerMngr->GetPlayer(0).PutInventory(loop, x, y, *m_Drag, (*m_DragIn)->GetCount(), Is90);
+															Player.PutInventory(loop, x, y, *m_Drag, (*m_DragIn)->GetCount(), Is90);
 															if (loop == 2) {
-																auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																auto& Vehicle = Player.GetVehicle();
 																Vehicle->RepairParts(Vehicle->Get_module_mesh()[0]);
 															}
 															else if (loop == 3) {
-																auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																auto& Vehicle = Player.GetVehicle();
 																Vehicle->RepairParts(Vehicle->Get_module_mesh()[1]);
 															}
 
 															auto IDDel = (*m_DragIn)->GetSlotID();
 
-															PlayerMngr->GetPlayer(0).DeleteInventory(*m_DragIn);
+															Player.DeleteInventory(*m_DragIn);
 
 															if (IDDel == 2) {
-																const auto* Ptrt = PlayerMngr->GetPlayer(0).GetInventory(IDDel, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+																const auto* Ptrt = Player.GetInventory(IDDel, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 																if (!Ptrt) {
-																	auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																	auto& Vehicle = Player.GetVehicle();
 																	Vehicle->ClashParts(Vehicle->Get_module_mesh()[0]);
 																}
 															}
 															else if (IDDel == 3) {
-																const auto* Ptrt = PlayerMngr->GetPlayer(0).GetInventory(IDDel, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+																const auto* Ptrt = Player.GetInventory(IDDel, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 																if (!Ptrt) {
-																	auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																	auto& Vehicle = Player.GetVehicle();
 																	Vehicle->ClashParts(Vehicle->Get_module_mesh()[1]);
 																}
 															}
@@ -257,13 +256,13 @@ namespace FPS_n2 {
 															m_DragIn = nullptr;
 														}
 														else if (m_DragOut && (*m_DragOut).get()) {
-															PlayerMngr->GetPlayer(0).PutInventory(loop, x, y, *m_Drag, (*m_DragOut)->GetCount(), Is90);
+															Player.PutInventory(loop, x, y, *m_Drag, (*m_DragOut)->GetCount(), Is90);
 															if (loop == 2) {
-																auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																auto& Vehicle = Player.GetVehicle();
 																Vehicle->RepairParts(Vehicle->Get_module_mesh()[0]);
 															}
 															else if (loop == 3) {
-																auto& Vehicle = PlayerMngr->GetPlayer(0).GetVehicle();
+																auto& Vehicle = Player.GetVehicle();
 																Vehicle->RepairParts(Vehicle->Get_module_mesh()[1]);
 															}
 															(*m_DragOut)->SetIsDelete(true);
@@ -362,14 +361,11 @@ namespace FPS_n2 {
 											}
 										}
 										if (this->m_LCtrlkey.press()) {
-											auto xsize = (*n.Ptr[0])->GetItemData()->GetXsize();
-											auto ysize = (*n.Ptr[0])->GetItemData()->GetYsize();
-											auto& I = PlayerMngr->GetPlayer(0).GetInventorys()[4];
 											bool isHit = false;
-											for (int y = 0; y < I.at(0).size(); y++) {
-												for (int x = 0; x < I.size(); x++) {
-													if (PlayerMngr->GetPlayer(0).CanPutInventory(4, x, y, xsize, ysize, &(*n.Ptr[0])->GetItemData())) {
-														PlayerMngr->GetPlayer(0).PutInventory(4, x, y, (*n.Ptr[0])->GetItemData(), (*Buff)->GetCount(), false);
+											for (int y = 0; y < Player.GetInventoryYSize(4); y++) {
+												for (int x = 0; x < Player.GetInventoryXSize(4); x++) {
+													if (Player.CanPutInventory(4, x, y, (*n.Ptr[0])->GetItemData()->GetXsize(), (*n.Ptr[0])->GetItemData()->GetYsize(), &(*n.Ptr[0])->GetItemData())) {
+														Player.PutInventory(4, x, y, (*n.Ptr[0])->GetItemData(), (*Buff)->GetCount(), false);
 														(*Buff)->SetIsDelete(true);
 														isHit = true;
 														break;
@@ -379,15 +375,12 @@ namespace FPS_n2 {
 											}
 										}
 										else if (this->m_LAltkey.press()) {
-											auto xsize = (*n.Ptr[0])->GetItemData()->GetXsize();
-											auto ysize = (*n.Ptr[0])->GetItemData()->GetYsize();
-											auto& I = PlayerMngr->GetPlayer(0).GetInventorys()[4];
 											for (auto& p : n.Ptr) {
 												bool isHit = false;
-												for (int y = 0; y < I.at(0).size(); y++) {
-													for (int x = 0; x < I.size(); x++) {
-														if (PlayerMngr->GetPlayer(0).CanPutInventory(4, x, y, xsize, ysize, &(*n.Ptr[0])->GetItemData())) {
-															PlayerMngr->GetPlayer(0).PutInventory(4, x, y, (*n.Ptr[0])->GetItemData(), (*p)->GetCount(), false);
+												for (int y = 0; y < Player.GetInventoryYSize(4); y++) {
+													for (int x = 0; x < Player.GetInventoryXSize(4); x++) {
+														if (Player.CanPutInventory(4, x, y, (*p)->GetItemData()->GetXsize(), (*p)->GetItemData()->GetYsize(), &(*p)->GetItemData())) {
+															Player.PutInventory(4, x, y, (*p)->GetItemData(), (*p)->GetCount(), false);
 															(*p)->SetIsDelete(true);
 															isHit = true;
 															break;

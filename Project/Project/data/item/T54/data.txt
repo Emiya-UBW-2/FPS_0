@@ -1,4 +1,4 @@
 Name=T-54—p—š‘Ñ
 ItemType=Track
 ItemInfo=T-54íÔ—p‚Ì—š‘ÑB
-ItemCapacity=100
+ItemCapacity=80

@@ -53,8 +53,8 @@ namespace FPS_n2 {
 					this->m_frame[2].Set(child2_num, obj);
 				}
 			}
-			void			Set(int mdata, const std::string& stt, const std::vector<std::shared_ptr<ItemData>>& ItemDatas) noexcept {
-				this->m_name = getparams::getright(stt);
+			void			Set(int mdata, const std::vector<std::shared_ptr<ItemData>>& ItemDatas) noexcept {
+				this->m_name = getparams::_str(mdata);
 				this->m_loadTime = getparams::_float(mdata);
 				this->m_Shot_Sound = getparams::_int(mdata);//サウンド
 				this->m_Eject_Sound = getparams::_int(mdata);//サウンド
@@ -84,6 +84,7 @@ namespace FPS_n2 {
 			private:
 				std::string							m_name;							//名称
 				HitPoint							m_MaxHP{ 0 };					//HP
+				int									m_MaxFuel{ 0 };					//燃料
 				bool								m_IsFloat{ false };				//浮くかどうか
 				float								m_DownInWater{ 0.f };			//沈む判定箇所
 				float								m_MaxFrontSpeed{ 0.f };			//前進速度(km/h)
@@ -104,6 +105,7 @@ namespace FPS_n2 {
 				std::array<std::vector<frames>, 2>	m_b2upsideframe;				//履帯上
 				std::array<std::vector<frames>, 2>	m_downsideframe;				//履帯
 				std::array<std::vector<ViewAndModule>, 2>	m_TankViewPic;				//モジュール表示
+				std::vector<std::pair<int, int>>	m_Inventory;
 			private:
 				const auto		GetSide(bool isLeft, bool isFront) const noexcept {
 					int ans = 0;
@@ -138,6 +140,7 @@ namespace FPS_n2 {
 			public:			//getter
 				const auto&		GetName(void) const noexcept { return this->m_name; }
 				const auto&		GetMaxHP(void) const noexcept { return this->m_MaxHP; }
+				const auto&		GetMaxFuel(void) const noexcept { return this->m_MaxFuel; }
 				const auto&		GetIsFloat(void) const noexcept { return this->m_IsFloat; }
 				const auto&		GetDownInWater(void) const noexcept { return this->m_DownInWater; }
 				const auto&		GetMaxFrontSpeed(void) const noexcept { return this->m_MaxFrontSpeed; }
@@ -158,11 +161,14 @@ namespace FPS_n2 {
 				const auto&		Get_b2upsideframe(size_t ID_t)const noexcept { return this->m_b2upsideframe[ID_t]; }
 				const auto&		Get_b2upsideframe(void) const noexcept { return this->m_b2upsideframe; }
 				const auto&		Get_b2downsideframe(void) const noexcept { return this->m_downsideframe; }
+				const auto		GetInventoryXSize(int ID) const noexcept { return this->m_Inventory[ID].first; }
+				const auto		GetInventoryYSize(int ID) const noexcept { return this->m_Inventory[ID].second; }
 			public: //コンストラクタ、デストラクタ
 				VhehicleData(void) noexcept { }
 				VhehicleData(const VhehicleData& o) noexcept {
 					this->m_name = o.m_name;
 					this->m_MaxHP = o.m_MaxHP;
+					this->m_MaxFuel = o.m_MaxFuel;
 					this->m_IsFloat = o.m_IsFloat;
 					this->m_DownInWater = o.m_DownInWater;
 					this->m_MaxFrontSpeed = o.m_MaxFrontSpeed;
@@ -325,6 +331,7 @@ namespace FPS_n2 {
 					{
 						int mdata = FileRead_open(("data/tank/" + this->m_name + "/data.txt").c_str(), FALSE);
 						this->m_MaxHP = (HitPoint)getparams::_int(mdata);
+						this->m_MaxFuel = getparams::_int(mdata);
 						this->m_IsFloat = getparams::_bool(mdata);
 						this->m_MaxFrontSpeed = getparams::_float(mdata);
 						this->m_MaxBackSpeed = getparams::_float(mdata);
@@ -339,9 +346,18 @@ namespace FPS_n2 {
 								}
 							}
 						}
+						//インベントリ
 						{
-							auto stt = getparams::_str(mdata);
-							for (auto& g : this->m_GunFrameData) { g.Set(mdata, stt, ItemDatas); }
+							this->m_Inventory.resize(5);
+							for (auto& I : this->m_Inventory) {
+								I.first = getparams::_int(mdata);
+								I.second = getparams::_int(mdata);
+							}
+						}
+						{
+							for (auto& g : this->m_GunFrameData) {
+								g.Set(mdata, ItemDatas);
+							}
 						}
 						FileRead_close(mdata);
 					}
@@ -390,7 +406,7 @@ namespace FPS_n2 {
 		public:			//getter
 			const auto&	Getloadtime(void) const noexcept { return m_loadtimer; }
 			const auto&	GetTotalloadtime(void) const noexcept { return this->m_GunSpec->GetLoadTime(); }
-
+			const auto&	GetGunSpec(void) const noexcept { return this->m_GunSpec; }
 			const int	GetAmmoSpecNum() const noexcept { return (int)this->m_AmmoSpec.size(); }
 			const auto&	GetAmmoSpec(int select) const noexcept { return this->m_AmmoSpec[select]; }
 			const auto&	GetCaliberSize(void) const noexcept { return GetAmmoSpec(0)->GetCaliber(); }

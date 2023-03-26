@@ -29,7 +29,7 @@ namespace FPS_n2 {
 				this->m_FPSActive.Set(true);
 				this->m_MouseActive.Set(true);
 			}
-			void Execute(float FovPer) {
+			void Execute(float FovPer,bool isAlive) {
 				bool look_key = false;
 				bool eyechange_key = false;
 				bool Lockon_key = false;
@@ -95,18 +95,21 @@ namespace FPS_n2 {
 					}
 				}
 				else {//キーボード
-					this->m_MouseActive.Execute(CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0);
+					this->m_MouseActive.Execute((CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0) && isAlive);
+					if (!isAlive) {
+						this->m_MouseActive.Set(true);
+					}
 					int mx = DXDraw::Instance()->m_DispXSize / 2, my = DXDraw::Instance()->m_DispYSize / 2;
-					if (this->m_MouseActive.on()) {
+					if (!this->m_MouseActive.on() || !isAlive) {
+						SetMouseDispFlag(TRUE);
+					}
+					else {
 						if (this->m_MouseActive.trigger()) {
 							SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
 						}
 						GetMousePoint(&mx, &my);
 						SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
 						SetMouseDispFlag(FALSE);
-					}
-					else {
-						SetMouseDispFlag(TRUE);
 					}
 					m_MouseX = std::clamp(-(float)(my - DXDraw::Instance()->m_DispYSize / 2)*1.f, -9.f, 9.f) * FovPer;
 					m_MouseY = std::clamp((float)(mx - DXDraw::Instance()->m_DispXSize / 2)*1.f, -9.f, 9.f) * FovPer;

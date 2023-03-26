@@ -23,9 +23,6 @@ namespace FPS_n2 {
 			auto&		GetVehicle(void) noexcept { return m_Vehicle; }
 			const auto&	GetScore(void) const noexcept { return this->m_Score; }
 			const auto	IsRide(void) const noexcept { return (bool)m_Vehicle; }
-
-			auto&		GetInventorys(void) noexcept { return this->m_Inventorys; }
-
 			const auto		GetNetSendMove(void) const noexcept {
 				SendInfo ans;
 				if (IsRide()) {
@@ -37,16 +34,18 @@ namespace FPS_n2 {
 				}
 				return ans;
 			}
-
 			const auto		GetPos(void) const noexcept { return m_Vehicle->GetMatrix().pos(); }
 			const auto		GetAim(void) const noexcept { return m_Vehicle->GetLookVec().zvec()*-1.f; }
 			const auto		GetRadBuf(void) const noexcept { return m_Vehicle->GetViewRad(); }
-		private:
+		public:
+			auto&			GetInventorys(void) noexcept { return this->m_Inventorys; }
+			const auto		GetInventoryXSize(int ID) const noexcept { return (int)this->m_Inventorys[ID].size(); }
+			const auto		GetInventoryYSize(int ID) const noexcept { return (int)this->m_Inventorys[ID][0].size(); }
+		public:
 			void SetInventory(int ID, int x, int y) noexcept {
 				this->m_Inventorys[ID].resize(x);
 				for (auto& xp : this->m_Inventorys[ID]) { xp.resize(y); }
 			}
-		public:
 			bool CanPutInventory(int ID, int xp, int yp, int xsize, int ysize, const std::shared_ptr<ItemData>* Drag, const std::shared_ptr<CellItem>* DragIn = nullptr) noexcept {
 				//自機の履帯以外は乗らない
 				if (Drag) {
@@ -73,9 +72,7 @@ namespace FPS_n2 {
 				}
 				//指示サイズのものが置けるかチェック
 				if (xsize > 1 || ysize > 1) {
-					auto xLimit = (int)this->m_Inventorys[ID].size();
-					auto yLimit = (int)this->m_Inventorys[ID][xp].size();
-					if (xp + xsize > xLimit || yp + ysize > yLimit) {
+					if (xp + xsize > GetInventoryXSize(ID) || yp + ysize > GetInventoryYSize(ID)) {
 						return false;//マス越え
 					}
 					for (int x = xp; x < xp + xsize; x++) {
@@ -140,15 +137,30 @@ namespace FPS_n2 {
 				}
 				return nullptr;
 			}
+			void FillInventory(int ID, const std::shared_ptr<ItemData>& data, int xStart, int yStart, int xEnd, int yEnd,int MaxCount=-1) noexcept {
+				int xp = xStart;
+				int yp = yStart;
+				int cnt = 0;
+				while (true) {
+					if (MaxCount >= 0) {
+						if (cnt >= MaxCount) { break; }
+					}
+					PutInventory(ID, xp, yp, data, -1, false);
+					xp += data->GetXsize();
+					if (xp >= std::min(xEnd, GetInventoryXSize(ID))) {
+						xp = xStart;
+						yp += data->GetYsize();
+						if (yp >= std::min(yEnd, GetInventoryYSize(ID))) {
+							break;
+						}
+					}
+					cnt++;
+				}
+			};
 		public:
 			void Init(void) noexcept {
 				this->m_Vehicle = nullptr;
 				this->m_Inventorys.resize(5);
-				SetInventory(0, 10, 6);
-				SetInventory(1, 5, 9);
-				SetInventory(2, 2, 10);
-				SetInventory(3, 2, 10);
-				SetInventory(4, 10, 15);
 			}
 
 			void Dispose(void) noexcept {

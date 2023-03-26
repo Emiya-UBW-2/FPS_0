@@ -92,9 +92,10 @@ namespace FPS_n2 {
 				}
 				SlotID = Slot;
 			}
-			bool Sub(int value) {
+			bool Sub(HitPoint* value) {
 				auto prev = this->m_Count;
-				this->m_Count = std::max(this->m_Count - value, 0);
+				this->m_Count = std::max(this->m_Count - *value, 0);
+				*value -= (prev - this->m_Count);
 				return (prev != this->m_Count && this->m_Count == 0);//0‚É‚È‚Á‚½‚Æ‚«
 			}
 

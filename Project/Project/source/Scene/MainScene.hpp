@@ -152,7 +152,7 @@ namespace FPS_n2 {
 						}
 
 						auto& vehc_data = this->m_VehDataControl->GetVehData();
-						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 2], this->m_hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
+						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 1], this->m_hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
 						v->ValueSet(deg2rad(0), rad_t, pos_t);
 					}
 				}
@@ -162,71 +162,22 @@ namespace FPS_n2 {
 					//PlayerMngr->GetPlayer(i).SetVehicle(nullptr);
 					PlayerMngr->GetPlayer(i).SetVehicle((std::shared_ptr<VehicleClass>&)(*ObjMngr->GetObj(ObjType::Vehicle, i)));
 					auto& Vehicle = PlayerMngr->GetPlayer(i).GetVehicle();
-					{
-						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d == Vehicle->GetGun()[0].GetAmmoSpec(0)); });
-						if (Select != m_ItemData.end()) {
-							{
-								int xp = 0;
-								int yp = 0;
-								while (true) {
-									PlayerMngr->GetPlayer(i).PutInventory(0, xp, yp, *Select, -1, false);
-									xp += (*Select)->GetXsize();
-									if (xp >= 5) {
-										xp = 0;
-										yp += (*Select)->GetYsize();
-										if (yp >= 6) {
-											break;
-										}
-									}
-								}
-							}
-							{
-								int xp = 0;
-								int yp = 0;
-								while (true) {
-									PlayerMngr->GetPlayer(i).PutInventory(1, xp, yp, *Select, -1, false);
-									xp += (*Select)->GetXsize();
-									if (xp >= 5) {
-										xp = 0;
-										yp += (*Select)->GetYsize();
-										if (yp >= 6) {
-											break;
-										}
-									}
-								}
-							}
-						}
-					}
-					if (Vehicle->Get_Gunsize() >= 2) {
-						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d == Vehicle->GetGun()[1].GetAmmoSpec(0)); });
-						if (Select != m_ItemData.end()) {
-							{
-								int xp = 5;
-								int yp = 0;
-								while (true) {
-									PlayerMngr->GetPlayer(i).PutInventory(0, xp, yp, *Select, -1, false);
-									xp += (*Select)->GetXsize();
-									if (xp >= 10) {
-										xp = 5;
-										yp += (*Select)->GetYsize();
-										if (yp >= 6) {
-											break;
-										}
-									}
-								}
-							}
-							for (int x = 0; x < 5; x++) {
-								PlayerMngr->GetPlayer(i).PutInventory(1, x, 6, *Select, -1, false);
-							}
-						}
+					for (int loop = 0; loop < 5; loop++) {
+						PlayerMngr->GetPlayer(i).SetInventory(loop, Vehicle->GetInventoryXSize(loop), Vehicle->GetInventoryYSize(loop));
 					}
 					{
-						for (int y = 0; y < 10; y++) {
-							PlayerMngr->GetPlayer(i).PutInventory(2, 0, y, Vehicle->GetTrackPtr(), -1, false);
+						if (Vehicle->Get_Gunsize() >= 2) {
+							PlayerMngr->GetPlayer(i).FillInventory(0, Vehicle->GetGun()[0].GetAmmoSpec(0), 0, 0, PlayerMngr->GetPlayer(i).GetInventoryXSize(0) / 2, PlayerMngr->GetPlayer(i).GetInventoryYSize(0));
+							PlayerMngr->GetPlayer(i).FillInventory(0, Vehicle->GetGun()[1].GetAmmoSpec(0), PlayerMngr->GetPlayer(i).GetInventoryXSize(0) / 2, 0, PlayerMngr->GetPlayer(i).GetInventoryXSize(0), PlayerMngr->GetPlayer(i).GetInventoryYSize(0));
 						}
-						for (int y = 0; y < 10; y++) {
-							PlayerMngr->GetPlayer(i).PutInventory(3, 0, y, Vehicle->GetTrackPtr(), -1, false);
+						else {
+							PlayerMngr->GetPlayer(i).FillInventory(0, Vehicle->GetGun()[0].GetAmmoSpec(0), 0, 0, PlayerMngr->GetPlayer(i).GetInventoryXSize(0), PlayerMngr->GetPlayer(i).GetInventoryYSize(0));
 						}
+						PlayerMngr->GetPlayer(i).FillInventory(1, Vehicle->GetGun()[0].GetAmmoSpec(0), 0, 0, PlayerMngr->GetPlayer(i).GetInventoryXSize(1), 6);
+					}
+					{
+						PlayerMngr->GetPlayer(i).FillInventory(2, Vehicle->GetTrackPtr(), 0, 0, PlayerMngr->GetPlayer(i).GetInventoryXSize(2), PlayerMngr->GetPlayer(i).GetInventoryYSize(2));
+						PlayerMngr->GetPlayer(i).FillInventory(3, Vehicle->GetTrackPtr(), 0, 0, PlayerMngr->GetPlayer(i).GetInventoryXSize(3), PlayerMngr->GetPlayer(i).GetInventoryYSize(3));
 					}
 					{
 						auto Select = std::find_if(m_ItemData.begin(), m_ItemData.end(), [&](const std::shared_ptr<ItemData>& d) {return (d->GetPath().find("DieselMiniTank") != std::string::npos); });
@@ -302,7 +253,7 @@ namespace FPS_n2 {
 				}
 				//Input,AI
 				{
-					this->m_InputClass->Execute(((GetMainCamera().GetCamFov() / this->m_fov_base) / (is_lens() ? zoom_lens() : 1.f)) / 100.f);
+					this->m_InputClass->Execute(((GetMainCamera().GetCamFov() / this->m_fov_base) / (is_lens() ? zoom_lens() : 1.f)) / 100.f, Vehicle->Get_alive());
 					//ネットワーク
 					this->m_NetWorkBrowser.FirstExecute(this->m_InputClass->GetInput(), PlayerMngr->GetPlayer(GetMyPlayerID()).GetNetSendMove());
 					this->m_InventoryClass.FirstExecute();
@@ -475,7 +426,7 @@ namespace FPS_n2 {
 						}
 						loop++;
 					}
-
+					//コンカッション
 					Set_is_Blackout(m_Concussion > 0.f);
 					if (m_Concussion == 1.f) {
 						Vehicle->ShakePer(0.05f);
@@ -495,19 +446,13 @@ namespace FPS_n2 {
 					else {
 						Easing(&m_ConcussionPer, 0.f, 0.8f, EasingType::OutExpo);
 					}
-
 					Set_Per_Blackout(m_ConcussionPer * 1.5f);
-
-					//Set_is_Blackout(true);
-					//Set_Per_Blackout(1000.f);
 
 					//Set_is_lens(true);
 					//Set_xp_lens(y_r(960));
 					//Set_yp_lens(y_r(540));
 					//Set_size_lens(y_r(300));
 					//Set_zoom_lens(3.f);
-
-					printfDx("[%5.2f]", m_Concussion);
 				}
 				//木の更新
 				{
@@ -549,18 +494,31 @@ namespace FPS_n2 {
 
 					this->m_UIclass.SetIntParam(2, 1);
 
+					this->m_UIclass.SetStrParam(0, Vehicle->GetName());
 					this->m_UIclass.SetIntParam(3, (int)Vehicle->GetHP());
 					this->m_UIclass.SetIntParam(4, (int)Vehicle->GetHPMax());
 					this->m_UIclass.SetIntParam(5, (int)(this->m_HPBuf + 0.5f));
 					this->m_HPBuf += std::clamp((Vehicle->GetHP() - this->m_HPBuf)*100.f, -500.f, 500.f) / FPS;
 
-					this->m_UIclass.SetIntParam(6, (int)1.f);
-					this->m_UIclass.SetIntParam(7, (int)1.f);
-					this->m_UIclass.SetIntParam(8, (int)1.f);
+					this->m_UIclass.SetIntParam(6, (int)Vehicle->GetFuel());
+					this->m_UIclass.SetIntParam(7, (int)Vehicle->GetFuelMax());
+					this->m_UIclass.SetIntParam(8, (int)Vehicle->GetFuel());
 
 
 					this->m_UIclass.SetIntParam(12, (int)0);//現在選択
-					this->m_UIclass.SetIntParam(13, (int)1);//銃の総数
+					this->m_UIclass.SetIntParam(13, (int)Vehicle->Get_Gunsize());//銃の総数
+
+
+					this->m_UIclass.SetStrParam(1, Vehicle->GetGun()[0].GetGunSpec()->GetName());
+					this->m_UIclass.SetIntParam(14, (int)1);//現在選択
+					this->m_UIclass.SetIntParam(15, (int)1);//銃の総数
+					this->m_UIclass.SetItemGraph(0, &m_aim_Graph);
+					if (Vehicle->Get_Gunsize() >= 2) {
+						this->m_UIclass.SetStrParam(2, Vehicle->GetGun()[1].GetGunSpec()->GetName());
+						this->m_UIclass.SetIntParam(16, (int)1);//現在選択
+						this->m_UIclass.SetIntParam(17, (int)1);//銃の総数
+						this->m_UIclass.SetItemGraph(1, &m_aim_Graph);
+					}
 				}
 				EffectControl::Execute();
 #ifdef DEBUG
@@ -672,8 +630,10 @@ namespace FPS_n2 {
 				if (Vehicle->is_ADS()) {
 					this->m_scope_Graph.DrawExtendGraph(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, true);
 				}
-				this->m_UIclass.Draw();
-				Vehicle->DrawModuleView(y_r(50 + 100), DrawParts->m_DispYSize - y_r(100 + 100), y_r(200));
+				if (Vehicle->Get_alive()) {
+					this->m_UIclass.Draw();
+					Vehicle->DrawModuleView(y_r(50 + 100), DrawParts->m_DispYSize - y_r(100 + 150), y_r(200));
+				}
 				//通信設定
 				//if (!this->m_MouseActive.on()) {
 				//	this->m_NetWorkBrowser.Draw();
@@ -685,16 +645,18 @@ namespace FPS_n2 {
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto* Fonts = FontPool::Instance();
 				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
-				if (this->m_Reticle_on) {
-					this->m_aim_Graph.DrawRotaGraph((int)this->m_Reticle_xpos, (int)this->m_Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);
+				if (Vehicle->Get_alive()) {
+					if (this->m_Reticle_on) {
+						this->m_aim_Graph.DrawRotaGraph((int)this->m_Reticle_xpos, (int)this->m_Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);
 
-					unsigned int color = GetColor(0, 255, 0);
-					auto Time = Vehicle->GetTotalloadtime(0);
-					if (Vehicle->Gunloadtime(0) != 0.f) {
-						color = GetColor(255, 0, 0);
-						Time = Vehicle->Gunloadtime(0);
+						unsigned int color = GetColor(0, 255, 0);
+						auto Time = Vehicle->GetTotalloadtime(0);
+						if (Vehicle->Gunloadtime(0) != 0.f) {
+							color = GetColor(255, 0, 0);
+							Time = Vehicle->Gunloadtime(0);
+						}
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, (int)this->m_Reticle_xpos + y_r(50), (int)this->m_Reticle_ypos, color, GetColor(0, 0, 0), "%05.2f s", Time);
 					}
-					Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, (int)this->m_Reticle_xpos + y_r(50), (int)this->m_Reticle_ypos, color, GetColor(0, 0, 0), "%05.2f s", Time);
 				}
 			}
 		};

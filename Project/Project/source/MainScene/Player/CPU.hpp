@@ -595,58 +595,29 @@ namespace FPS_n2 {
 				if (!MyVeh->Get_alive()) {
 					if (m_RepairCnt > 30.f) {
 						m_RepairCnt = 0.f;
+						auto& Player = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID());
 						//—š‘Ñ
 						{
-							const auto* Ptr = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).GetInventory(2, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+							const auto* Ptr = Player.GetInventory(2, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 							if (!Ptr) {
-								for (int y = 0; y < 10; y++) {
-									PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(2, 0, y, MyVeh->GetTrackPtr(), -1, false);
-								}
+								Player.FillInventory(2, MyVeh->GetTrackPtr(), 0, 0, Player.GetInventoryXSize(2), Player.GetInventoryYSize(2));
 								MyVeh->RepairParts(MyVeh->Get_module_mesh()[0]);
 							}
 						}
 						{
-							const auto* Ptr = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).GetInventory(3, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+							const auto* Ptr = Player.GetInventory(3, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 							if (!Ptr) {
-								for (int y = 0; y < 10; y++) {
-									PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(3, 0, y, MyVeh->GetTrackPtr(), -1, false);
-								}
+								Player.FillInventory(3, MyVeh->GetTrackPtr(), 0, 0, Player.GetInventoryXSize(3), Player.GetInventoryYSize(3));
 								MyVeh->RepairParts(MyVeh->Get_module_mesh()[1]);
 							}
 						}
 						//’e
 						{
-							const auto* Ptr = PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).GetInventory(0, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
+							const auto* Ptr = Player.GetInventory(0, [&](const std::shared_ptr<CellItem>& tgt) { return tgt.get(); });
 							if (!Ptr) {
-								{
-									int xp = 0;
-									int yp = 0;
-									for (int i = 0; i < 3; i++) {
-										PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(0, xp, yp, MyVeh->GetGun()[0].GetAmmoSpec(0), -1, false);
-										xp += MyVeh->GetGun()[0].GetAmmoSpec(0)->GetXsize();
-										if (xp >= 5) {
-											xp = 0;
-											yp += MyVeh->GetGun()[0].GetAmmoSpec(0)->GetYsize();
-											if (yp >= 6) {
-												break;
-											}
-										}
-									}
-								}
+								Player.FillInventory(0, MyVeh->GetGun()[0].GetAmmoSpec(0), 0, 0, Player.GetInventoryXSize(0) / 2, Player.GetInventoryYSize(0), 3);
 								if (MyVeh->Get_Gunsize() >= 2) {
-									int xp = 5;
-									int yp = 0;
-									for (int i = 0; i < 3; i++) {
-										PlayerMngr->GetPlayer(MyVeh->GetMyPlayerID()).PutInventory(0, xp, yp, MyVeh->GetGun()[1].GetAmmoSpec(0), -1, false);
-										xp += MyVeh->GetGun()[1].GetAmmoSpec(0)->GetXsize();
-										if (xp >= 10) {
-											xp = 5;
-											yp += MyVeh->GetGun()[1].GetAmmoSpec(0)->GetYsize();
-											if (yp >= 6) {
-												break;
-											}
-										}
-									}
+									Player.FillInventory(0, MyVeh->GetGun()[1].GetAmmoSpec(0), Player.GetInventoryXSize(0) / 2, 0, Player.GetInventoryXSize(0), Player.GetInventoryYSize(0), 3);
 								}
 							}
 						}

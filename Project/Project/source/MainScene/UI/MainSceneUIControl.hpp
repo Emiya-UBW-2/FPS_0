@@ -27,9 +27,9 @@ namespace FPS_n2 {
 			}
 			void			DrawGauge(int xp1, int yp1, int xp2, int yp2,
 				int Param1, int ParamMax, int ParamBuf,
-				COLOR_U8 Color1, COLOR_U8 Color2, COLOR_U8 Color3, unsigned int ColorAdd, unsigned int ColorSub) {
-				DrawBox(xp1 + 0, yp1 + 0, xp2 - 0, yp2 - 0, GetColor(255, 255, 255), FALSE);
-				DrawBox(xp1 + 1, yp1 + 1, xp2 - 1, yp2 - 1, GetColor(255, 255, 255), FALSE);
+				COLOR_U8 Color1, COLOR_U8 Color2, COLOR_U8 Color3, unsigned int ColorAdd, unsigned int ColorSub, unsigned int EdgeColor) {
+				DrawBox(xp1 + 0, yp1 + 0, xp2 - 0, yp2 - 0, EdgeColor, FALSE);
+				DrawBox(xp1 + 1, yp1 + 1, xp2 - 1, yp2 - 1, EdgeColor, FALSE);
 				int length = (xp2 - 2) - (xp1 + 2);
 
 				COLOR_U8 Color = Blend3Color(Color1, Color2, Color3, (float)Param1 / (float)ParamMax);
@@ -48,22 +48,18 @@ namespace FPS_n2 {
 				auto* Fonts = FontPool::Instance();
 				auto* DrawParts = DXDraw::Instance();
 				auto Red = GetColor(255, 0, 0);
-				auto Blue = GetColor(50, 50, 255);
-				auto Green = GetColor(43, 163, 91);
+				auto Blue = GetColor(0, 0, 255);
+				auto Green = GetColor(0, 255, 0);
 				auto White = GetColor(255, 255, 255);
 				auto Black = GetColor(0, 0, 0);
-				//タイム,スコア
+				auto Gray = GetColor(192, 192, 192);
+				//タイム
 				{
 					int xp1, yp1;
 					xp1 = y_r(10);
 					yp1 = y_r(10);
-					//Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
-					Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, Green, White, "TIME");
-					Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP, xp1 + y_r(240), yp1, Green, White, "%d:%05.2f", intParam[0], floatParam[0]);
-
-					yp1 += y_r(25);
-					Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, Green, White, "SCORE");
-					Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP, xp1 + y_r(240), yp1, Green, White, "%d", intParam[1]);
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, White, Black, "TIME");
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(20), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP, xp1 + y_r(240), yp1, White, Black, "%d:%05.2f", intParam[0], floatParam[0]);
 				}
 				//情報
 				{
@@ -71,31 +67,29 @@ namespace FPS_n2 {
 					//名前、体力、魔力
 					{
 						xp1 = y_r(50);
-						yp1 = DrawParts->m_DispYSize - y_r(140);
+						yp1 = DrawParts->m_DispYSize - y_r(160);
 
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1 + y_r(50), yp1, Green, White, "%s", strParam[0].c_str());
-						yp1 += y_r(25);
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, xp1 + y_r(100), yp1, Green, Black, "%s", strParam[0].c_str());
+						yp1 += y_r(40);
 
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, Green, White, "HP");
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1 + y_r(50), yp1, Green, White, "%03d / %03d", intParam[3], intParam[4]);
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, Green, Black, "HP");
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1 + y_r(70), yp1, Green, Black, "%03d / %03d", intParam[3], intParam[4]);
 						yp1 += y_r(25);
 
 						DrawGauge(
 							xp1, yp1, xp1 + y_r(200), yp1 + y_r(10),
 							intParam[3], intParam[4], intParam[5], GetColorU8(255, 0, 0, 255), GetColorU8(255, 255, 0, 255), GetColorU8(0, 255, 0, 255),
-							GetColor(0, 0, 255), GetColor(255, 0, 0)
-						);
+							Blue, Red, Black);
 						yp1 += y_r(10);
 
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, Green, White, "MP");
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1 + y_r(50), yp1, Green, White, "%03d / %03d", intParam[6], intParam[7]);
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, Gray, Black, "Fuel");
+						Fonts->Get(FontPool::FontType::Nomal_EdgeL).DrawString(y_r(20), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1 + y_r(70), yp1, Gray, Black, "%03d / %03d", intParam[6], intParam[7]);
 						yp1 += y_r(25);
 
 						DrawGauge(
 							xp1, yp1, xp1 + y_r(200), yp1 + y_r(10),
-							intParam[6], intParam[7], intParam[8], GetColorU8(255, 0, 0, 255), GetColorU8(255, 255, 0, 255), GetColorU8(0, 255, 0, 255),
-							GetColor(0, 0, 255), GetColor(255, 0, 0)
-						);
+							intParam[6], intParam[7], intParam[8], GetColorU8(255, 0, 0, 255), GetColorU8(255, 128, 0, 255), GetColorU8(192, 192, 192, 255),
+							Blue, Red, Black);
 						yp1 += y_r(10);
 					}
 					//魔法、クールタイム
@@ -110,15 +104,15 @@ namespace FPS_n2 {
 								ItemGraphPtr[0]->GetSize(&x, &y);
 								ItemGraphPtr[0]->DrawRotaGraph(xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.5f), yp1 - (int)((float)(y_r(y / 2))*0.5f), (float)(y_r(100)) / 100.f*0.5f, 0.f, true);
 
-								Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(18), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
+								Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(18), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
 									xp1 + y_r(250) - y_r(x / 2), yp1 - y_r(y / 2), White, Black, "%s", strParam[1].c_str());
 							}
 
 
-							Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(36), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
+							Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(36), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
 								xp1 + y_r(50) + y_r(80), yp1 - y_r(12 - 4), (per <= 0.6f) ? Red : White, Black, "%03d", intParam.at(14));
 
-							Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP,
+							Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP,
 								xp1 + y_r(50) + y_r(80), yp1, White, Black, " / %03d", intParam.at(15));
 						}
 						yp1 += y_r(64);
@@ -131,7 +125,7 @@ namespace FPS_n2 {
 									ItemGraphPtr[i]->GetSize(&x, &y);
 									ItemGraphPtr[i]->DrawRotaGraph(xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.25f), yp1 - (int)((float)(y_r(y / 2))*0.25f), (float)(y_r(100)) / 100.f*0.25f, 0.f, true);
 
-									Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(12), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
+									Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(12), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP,
 										xp1 + y_r(250) - (int)((float)(y_r(x / 2))*0.5f), yp1 - (int)((float)(y_r(y / 2))*0.5f), White, Black, "%s", str.c_str());
 									SetDrawBright(255, 255, 255);
 								}
@@ -161,11 +155,11 @@ namespace FPS_n2 {
 						int xs1, ys1;
 						xp1 = DrawParts->m_DispXSize / 2;
 						yp1 = DrawParts->m_DispYSize / 20;
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(28), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, xp1, yp1, color, White, "<%s>", Mes.c_str());
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(28), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, xp1, yp1, color, White, "<%s>", Mes.c_str());
 
 
 
-						int picx = std::max(DrawParts->m_DispXSize / 8, Fonts->Get(FontPool::FontType::HUD_Edge).GetStringWidth(y_r(28), "<%s>", Mes.c_str()) / 2 + y_r(20));
+						int picx = std::max(DrawParts->m_DispXSize / 8, Fonts->Get(FontPool::FontType::Nomal_Edge).GetStringWidth(y_r(28), "<%s>", Mes.c_str()) / 2 + y_r(20));
 
 						xs1 = y_r(40);
 						ys1 = y_r(40);
@@ -173,7 +167,7 @@ namespace FPS_n2 {
 						yp1 = DrawParts->m_DispYSize / 20 - y_r(28) + ys1;
 
 						DrawBox((int)(xp1 - xs1), (int)(yp1 - ys1), (int)(xp1 + xs1), (int)(yp1 + ys1), GetColor(0, 0, 0), TRUE);
-						Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(20), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, xp1, yp1 + ys1, color, White, "%s", strParam[5].c_str());
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(20), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, xp1, yp1 + ys1, color, White, "%s", strParam[5].c_str());
 					}
 				}
 			}
