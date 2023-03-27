@@ -18,6 +18,8 @@ namespace FPS_n2 {
 
 			InputControl								m_MyInput;
 		public:
+			const auto&		GetMouseX(void) const noexcept { return m_MouseX; }
+			const auto&		GetMouseY(void) const noexcept { return m_MouseY; }
 			const auto&		GetMouseActive(void) const noexcept { return m_MouseActive; }
 			const auto&		GetTPS_XradR(void) const noexcept { return m_TPS_XradR; }
 			const auto&		GetTPS_YradR(void) const noexcept { return m_TPS_YradR; }

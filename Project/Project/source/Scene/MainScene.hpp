@@ -22,6 +22,11 @@ namespace FPS_n2 {
 			MATRIX_ref									m_FreeLookMat;
 			float										m_Concussion{ 0.f };
 			float										m_ConcussionPer{ 0.f };
+			float										m_XScope{ 0.f };
+			float										m_YScope{ 0.f };
+			VECTOR_ref									m_VehRadAdd;
+			bool										m_IsChangeView{ false };
+			float										m_ChangeViewPer{ 0.f };
 			//UIŠÖ˜A
 			UIClass										m_UIclass;
 			float										m_HPBuf{ 0.f };
@@ -598,18 +603,7 @@ namespace FPS_n2 {
 			void			MainDrawbyDepth_Sub(void) noexcept override {}
 			//UI•\Ž¦
 			void			DrawUI_Base_Sub(void) noexcept override {
-				//return;
 				auto* ObjMngr = ObjectManager::Instance();
-				auto* PlayerMngr = PlayerManager::Instance();
-				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
-				//auto* Fonts = FontPool::Instance();
-				auto* DrawParts = DXDraw::Instance();
-				//auto Red = GetColor(255, 0, 0);
-				//auto Blue = GetColor(50, 50, 255);
-				//auto Green = GetColor(43, 163, 91);
-				//auto White = GetColor(212, 255, 239);
-				//auto Gray = GetColor(64, 64, 64);
-				//auto Black = GetColor(0, 0, 0);
 				{
 					int loop = 0;
 					while (true) {
@@ -626,10 +620,56 @@ namespace FPS_n2 {
 						loop++;
 					}
 				}
+			}
+			void			DrawUI_In_Sub(void) noexcept override {
+				auto* ObjMngr = ObjectManager::Instance();
+				auto* PlayerMngr = PlayerManager::Instance();
+				auto* Fonts = FontPool::Instance();
+				auto* DrawParts = DXDraw::Instance();
+				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
+				//auto Red = GetColor(255, 0, 0);
+				//auto Blue = GetColor(50, 50, 255);
+				//auto Green = GetColor(43, 163, 91);
+				//auto White = GetColor(212, 255, 239);
+				//auto Gray = GetColor(64, 64, 64);
+				auto Black = GetColor(1, 1, 1);
 				//UI
 				if (Vehicle->is_ADS()) {
-					this->m_scope_Graph.DrawExtendGraph(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, true);
+					auto RadAdd = Vehicle->GetRadAdd() - m_VehRadAdd;
+					{
+						auto Base = this->m_InputClass->GetMouseY()*5000.f + RadAdd.z()*1000.f;
+						Easing(&this->m_XScope, Base, 0.95f, EasingType::OutExpo);
+					}
+					{
+						auto Base = this->m_InputClass->GetMouseX()*25000.f + RadAdd.x()*1000.f;
+						Easing(&this->m_YScope, Base, 0.9f, EasingType::OutExpo);
+					}
+					int xpos = (int)(this->m_XScope);
+					int ypos = (int)(this->m_YScope);
+					int xsize = DrawParts->m_DispXSize;
+					int ysize = DrawParts->m_DispYSize;
+					DrawBox(0, 0, xpos, ypos + ysize, Black, TRUE);
+					DrawBox(xpos, 0, DrawParts->m_DispXSize, ypos, Black, TRUE);
+					DrawBox(xpos + xsize, ypos, DrawParts->m_DispXSize, DrawParts->m_DispYSize, Black, TRUE);
+					DrawBox(0, ypos + ysize, xpos + xsize, DrawParts->m_DispYSize, Black, TRUE);
+					this->m_scope_Graph.DrawExtendGraph(xpos, ypos, xpos + xsize, ypos + ysize, true);
 				}
+				{
+					if (m_IsChangeView != Vehicle->is_ADS()) {
+						this->m_ChangeViewPer = 1.f;
+					}
+					else {
+						Easing(&this->m_ChangeViewPer, 0.f, 0.95f, EasingType::OutExpo);
+					}
+					if ((this->m_ChangeViewPer*255.f) > 1.f) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*this->m_ChangeViewPer), 0, 255));
+						DrawBox(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, Black, TRUE);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					}
+				}
+				m_VehRadAdd = Vehicle->GetRadAdd();
+				m_IsChangeView = Vehicle->is_ADS();
+
 				if (Vehicle->Get_alive()) {
 					this->m_UIclass.Draw();
 					Vehicle->DrawModuleView(y_r(50 + 100), DrawParts->m_DispYSize - y_r(100 + 150), y_r(200));
@@ -640,11 +680,6 @@ namespace FPS_n2 {
 				//}
 				//Pause
 				this->m_InventoryClass.Draw(!this->m_InputClass->GetMouseActive().on(), Vehicle->GetMove().pos);
-			}
-			void			DrawUI_In_Sub(void) noexcept override {
-				auto* PlayerMngr = PlayerManager::Instance();
-				auto* Fonts = FontPool::Instance();
-				auto& Vehicle = PlayerMngr->GetPlayer(GetMyPlayerID()).GetVehicle();
 				if (Vehicle->Get_alive()) {
 					if (this->m_Reticle_on) {
 						this->m_aim_Graph.DrawRotaGraph((int)this->m_Reticle_xpos, (int)this->m_Reticle_ypos, (float)(y_r(100)) / 100.f, 0.f, true);

@@ -107,6 +107,7 @@ namespace FPS_n2 {
 
 			const auto		GetSquarePos(int ID) const noexcept { return GetObj_const().frame(this->m_VecData->Get_square(ID)); }
 
+			const auto&		GetRadAdd(void) const noexcept { return this->m_radAdd; }
 
 			const auto		Get_EyePos_Base(void) const noexcept { return (is_ADS()) ? GetGunMuzzleBase(0) : (this->m_move.pos + (this->m_move.mat.yvec() * 3.f * Scale_Rate)); }
 			const auto		Set_MidPos(void) noexcept { return (this->m_move.pos + (this->m_move.mat.yvec() * 1.5f * Scale_Rate)); }							//HPƒo[‚ğ•\¦‚·‚éêŠ

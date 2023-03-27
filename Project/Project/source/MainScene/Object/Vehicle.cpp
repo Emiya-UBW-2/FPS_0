@@ -209,7 +209,7 @@ namespace FPS_n2 {
 			this->m_changeview = ((this->m_range != OLD) && (this->m_range == 0.f || OLD == 0.f));
 
 			MainCamera_t.SetCamPos(
-				eyepos + m_ShakePos * (is_ADS() ? 0.25f : 1.f),
+				eyepos + m_ShakePos * (is_ADS() ? 0.05f : 1.f),
 				eyetgt + m_ShakePos * (is_ADS() ? 0.f : 2.f),
 				Lerp(this->m_move.mat.yvec(), VECTOR_ref::up(), std::clamp(this->m_range_r / 3.f, 0.f, 1.f))
 			);

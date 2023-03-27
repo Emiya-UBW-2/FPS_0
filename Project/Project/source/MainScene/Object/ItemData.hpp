@@ -95,7 +95,7 @@ namespace FPS_n2 {
 			bool Sub(HitPoint* value) {
 				auto prev = this->m_Count;
 				this->m_Count = std::max(this->m_Count - *value, 0);
-				*value -= (prev - this->m_Count);
+				*value -= (HitPoint)(prev - this->m_Count);
 				return (prev != this->m_Count && this->m_Count == 0);//0‚É‚È‚Á‚½‚Æ‚«
 			}
 
