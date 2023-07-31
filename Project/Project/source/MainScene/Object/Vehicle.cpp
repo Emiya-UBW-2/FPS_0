@@ -198,7 +198,7 @@ namespace FPS_n2 {
 
 				this->m_ratio = 2.0f;
 				if (this->Get_alive()) {
-					this->m_range = std::clamp(this->m_range - float(GetMouseWheelRotVolWithCheck()) * this->m_range_change, 0.f, 9.f);
+					this->m_range = std::clamp(this->m_range - float(GetMouseWheelRotVolWithCheck()) * this->m_range_change, 0.f, 4.f);
 				}
 				Easing(&this->m_range_r, this->m_range, 0.8f, EasingType::OutExpo);
 

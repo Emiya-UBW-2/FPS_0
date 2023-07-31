@@ -9,7 +9,7 @@
 #endif // _DEBUG
 
 //ここをコメントアウト
-#define DEBUG
+//#define DEBUG
 
 
 #include <D3D11.h>

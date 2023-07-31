@@ -79,7 +79,7 @@ namespace FPS_n2 {
 					VECTOR_ref::vget(Scale_Rate*-300.f, Scale_Rate*-10.f, Scale_Rate*-300.f),
 					VECTOR_ref::vget(Scale_Rate*300.f, Scale_Rate*50.f, Scale_Rate*300.f),
 					VECTOR_ref::vget(-0.8f, -0.5f, -0.1f),
-					GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
+					GetColorF(0.92f, 0.91f, 0.90f, 1.0f));
 				for (int i = 0; i < Vehicle_num; i++) {
 					this->m_vehicle_Pool.emplace_back((std::shared_ptr<VehicleClass>&)(*ObjMngr->AddObject(ObjType::Vehicle)));
 				}
@@ -157,7 +157,10 @@ namespace FPS_n2 {
 						}
 
 						auto& vehc_data = this->m_VehDataControl->GetVehData();
-						v->ValueInit(&vehc_data[index != 0 ? GetRand((int)vehc_data.size() - 1) : 1], this->m_hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
+						v->ValueInit(&vehc_data[
+							GetRand((int)vehc_data.size() - 1)
+							//index != 0 ? GetRand((int)vehc_data.size() - 1) : 0
+						], this->m_hit_pic, this->m_BackGround->GetBox2Dworld(), (PlayerID)index);
 						v->ValueSet(deg2rad(0), rad_t, pos_t);
 					}
 				}
@@ -622,6 +625,9 @@ namespace FPS_n2 {
 				}
 			}
 			void			DrawUI_In_Sub(void) noexcept override {
+
+				printfDx("%5.2f fps", FPS);
+
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 				auto* Fonts = FontPool::Instance();
