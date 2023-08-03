@@ -18,11 +18,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	auto* EffectUseControl = EffectResource::Instance();
 	//auto* SE = SoundPool::Instance();
 	//シーン
+	auto StartMoviescene = std::make_shared<FPS_n2::Sceneclass::StartMovieScene>();
 	auto MAINLOOPscene = std::make_shared<FPS_n2::Sceneclass::MAINLOOP>();
 	//シーンコントロール
-	auto scene = std::make_unique<SceneControl>(MAINLOOPscene);
+	auto scene = std::make_unique<SceneControl>(StartMoviescene);
 	//遷移先指定
-	MAINLOOPscene->Set_Next(MAINLOOPscene);
+	StartMoviescene->Set_Next(MAINLOOPscene);
+	MAINLOOPscene->Set_Next(StartMoviescene);
 	//繰り返し
 	while (true) {
 		scene->StartScene();
@@ -47,9 +49,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			//デバッグ
 #ifdef DEBUG
 			DebugParts->DebugWindow(1920 - 300, 50);
-			printfDx("AsyncCount :%d\n", GetASyncLoadNum());
-			printfDx("Drawcall   :%d\n", GetDrawCallCount());
-			printfDx("FPS        :%5.2f fps\n", FPS);
 #endif // DEBUG
 			DrawParts->Screen_Flip();				//画面の反映
 		}

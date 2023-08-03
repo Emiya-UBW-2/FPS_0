@@ -17,37 +17,18 @@ namespace FPS_n2 {
 		enum class ObjType {
 			Plane,
 			Ammo,
+			Movie,
 		};
 		enum class SoundEnum {
-			Trigger,
-			Cocking1_0,
-			Cocking1_1,
-			Cocking1_2,
-			Cocking1_3,
-
-			Cocking2_0,
-			Cocking2_1,
 			Shot2,
-			Unload2,
-			Load2,
-
-			Cocking3_0,
-			Cocking3_1,
-			Shot3,
-			Unload3,
-			Load3,
-
 			RunFoot,
-			SlideFoot,
-			StandupFoot,
-			Heart,
-			Switch,
-			GateOpen,
-
 			Engine,
 			Propeller,
-
 			Env,
+
+			EngineStart,
+			Engine2,
+			Propeller2,
 
 			Num,
 		};

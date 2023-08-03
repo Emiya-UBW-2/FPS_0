@@ -15,7 +15,7 @@ namespace FPS_n2 {
 
 			moves										m_move;
 			MATRIX_ref									m_PrevMat;//ï®óùçXêVÇÃÇΩÇﬂ
-			std::shared_ptr<BackGroundClass>			m_BackGround;				//BG
+			std::shared_ptr<BackGroundClassBase>		m_BackGround;				//BG
 			std::vector<std::pair<int, MATRIX_ref>>		m_Frames;
 			std::vector<std::pair<int, float>>			m_Shapes;
 			ObjType										m_objType{ (ObjType)0 };
@@ -42,7 +42,7 @@ namespace FPS_n2 {
 			void			SetUseRealTimePhysics(bool value) noexcept { this->m_Use_RealTimePhysics = value; }
 			void			SetActive(bool value) noexcept { this->m_IsActive = value; }
 			void			SetIsDelete(bool value) noexcept { this->m_IsDelete = value; }
-			void			SetMapCol(const std::shared_ptr<BackGroundClass>& backGround) noexcept { this->m_BackGround = backGround; }
+			void			SetMapCol(const std::shared_ptr<BackGroundClassBase>& backGround) noexcept { this->m_BackGround = backGround; }
 			void			SetResetP(bool value) { this->m_IsResetPhysics = value; }
 			void			SetCameraPosition(const VECTOR_ref& value) { this->m_CameraPosition = value; }
 			void			SetCameraSize(float value) { this->m_CameraSize = value; }

@@ -8,7 +8,7 @@ namespace FPS_n2 {
 			static const int		Chara_num = Player_num;
 		private:
 			//リソース関連
-			std::shared_ptr<BackGroundClass>			m_BackGround;				//BG
+			std::shared_ptr<BackGroundClassMain>			m_BackGround;				//BG
 			SoundHandle				m_BGM;
 			SoundHandle				m_AimOn;
 			//人
@@ -86,8 +86,8 @@ namespace FPS_n2 {
 					GetColorF(0.92f, 0.91f, 0.90f, 0.0f));
 				//Load
 				//BG
-				this->m_BackGround = std::make_shared<BackGroundClass>();
-				this->m_BackGround->Init();
+				this->m_BackGround = std::make_shared<BackGroundClassMain>();
+				this->m_BackGround->Init("data/model/map/", "data/model/sky/");
 				//
 				ObjMngr->Init(this->m_BackGround);
 				for (int i = 0; i < Chara_num * 1 / 3; i++) {
@@ -172,12 +172,10 @@ namespace FPS_n2 {
 				SE->Add((int)SoundEnum::Engine, Chara_num, "data/Sound/SE/engine.wav");
 				SE->Add((int)SoundEnum::Propeller, Chara_num, "data/Sound/SE/Propeller.wav");
 				SE->Add((int)SoundEnum::Shot2, Chara_num * 3, "data/Sound/SE/hit.wav");
-				SE->Add((int)SoundEnum::Heart, Chara_num * 2, "data/Sound/SE/move/heart.wav");
 
 				SE->Get((int)SoundEnum::Engine).SetVol_Local(64);
 				SE->Get((int)SoundEnum::Propeller).SetVol_Local(128);
 				SE->Get((int)SoundEnum::Shot2).SetVol_Local(128);
-				SE->Get((int)SoundEnum::Heart).SetVol_Local(92);
 				//入力
 				this->m_MouseActive.Set(true);
 				this->m_MouseWheel.Set(false);
@@ -809,11 +807,15 @@ namespace FPS_n2 {
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
 
+				for (auto& c : character_Pool) {
+					c.reset();
+				}
 				m_NetWorkBrowser.Dispose();
 				EffectControl::Dispose();
 				PlayerMngr->Dispose();
 				ObjMngr->DisposeObject();
 				this->m_BackGround->Dispose();
+				this->m_BackGround.reset();
 			}
 			//
 			void			Depth_Draw_Sub(void) noexcept override {

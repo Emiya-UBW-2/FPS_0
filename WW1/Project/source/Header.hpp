@@ -56,3 +56,5 @@ using namespace DXLib_ref;
 //
 #include "MainScene/NetworkBrowser.hpp"
 #include "Scene/MainScene.hpp"
+#include "Scene/StartMovieScene.hpp"
+

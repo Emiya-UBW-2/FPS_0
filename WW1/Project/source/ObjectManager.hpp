@@ -9,7 +9,7 @@ namespace FPS_n2 {
 		private:
 			std::vector<std::shared_ptr<ObjectBaseClass>>	m_Object;
 			switchs											m_ResetP;
-			std::shared_ptr<BackGroundClass>				m_BackGround;				//BGコピー
+			std::shared_ptr<BackGroundClassBase>				m_BackGround;				//BGコピー
 		public:
 			void	LoadModel(ObjectBaseClass* pObj, const char* filepath, const char* objfilename = "model", const char* colfilename = "col") const noexcept {
 				bool iscopy = false;
@@ -36,6 +36,10 @@ namespace FPS_n2 {
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<AmmoClass>();
 					break;
+				case ObjType::Movie:
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<ObjectBaseClass>();
+					break;
 				default:
 					break;
 				}
@@ -56,6 +60,10 @@ namespace FPS_n2 {
 				case ObjType::Ammo:
 					this->m_Object.resize(this->m_Object.size() + 1);
 					this->m_Object.back() = std::make_shared<AmmoClass>();
+					break;
+				case ObjType::Movie:
+					this->m_Object.resize(this->m_Object.size() + 1);
+					this->m_Object.back() = std::make_shared<ObjectBaseClass>();
 					break;
 				default:
 					break;
@@ -106,7 +114,7 @@ namespace FPS_n2 {
 				}
 			}
 		public:
-			void			Init(const std::shared_ptr<BackGroundClass>& backGround) noexcept {
+			void			Init(const std::shared_ptr<BackGroundClassBase>& backGround) noexcept {
 				this->m_BackGround = backGround;
 			}
 			void			ExecuteObject(void) noexcept {

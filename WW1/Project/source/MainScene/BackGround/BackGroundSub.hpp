@@ -10,8 +10,8 @@ namespace FPS_n2 {
 			bool			canlook = true;
 			Model_Instance	m_Inst;
 		public:
-			void Init(int total) {
-				this->m_Inst.Init("data/model/tree/tree.png", "data/model/tree/model3.mv1", -1);
+			void Init(int total, const char* Graph, const char* Model) {
+				this->m_Inst.Init(Graph, Model, -1);
 				this->m_Inst.Reset();
 				this->m_Inst.Set_start(total);
 			}
@@ -48,7 +48,7 @@ namespace FPS_n2 {
 	public:
 		static const int grassDiv{ 12 };//^2;
 	private:
-		const int grasss = 6 * 6;						/*grassÇÃêî*/
+		int grasss = 6 * 6;						/*grassÇÃêî*/
 		std::array<std::pair<float,int>, grassDiv>grassLen;
 		std::array<grass_t, grassDiv>grass__;
 		std::array<VECTOR_ref, grassDiv>grassPosMin;
@@ -128,9 +128,10 @@ namespace FPS_n2 {
 			}
 		}
 	public:
-		void Init(const MV1* MapCol, int softimage) {
-			float MAPX = 6000.f*Scale_Rate;
-			float MAPZ = 6000.f*Scale_Rate;
+		void Init(const MV1* MapCol, int softimage, const char* Graph, const char* Model, float MAPX, float MAPZ, int count) {
+			grasss = count * count;
+			//float MAPX = 6000.f*Scale_Rate;
+			//float MAPZ = 6000.f*Scale_Rate;
 			float PosX = 0.f;
 			float PosZ = 0.f;
 
@@ -217,7 +218,7 @@ namespace FPS_n2 {
 					float zmid = zsize / 2.f;
 					if (grasss != 0) {
 						auto& tgt_g = grass__[ID];
-						tgt_g.Init(grasss);
+						tgt_g.Init(grasss, Graph, Model);
 						for (int i = 0; i < grasss; ++i) {
 							float x1 = xmid + GetRandf(xmid);
 							float z1 = zmid + GetRandf(zmid);

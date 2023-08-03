@@ -67,7 +67,7 @@ namespace FPS_n2 {
 		private:
 			//
 			std::vector<std::shared_ptr<CharacterClass>>*	chara_Pool{ nullptr };
-			std::shared_ptr<BackGroundClass>				m_BackGround;				//BG
+			std::shared_ptr<BackGroundClassBase>			m_BackGround;				//BG
 			//
 			AI												cpu_do;						//AI—p
 			std::shared_ptr<CharacterClass>					MyChara;
@@ -376,7 +376,7 @@ namespace FPS_n2 {
 				);
 			}
 		public:
-			void Init(std::vector<std::shared_ptr<CharacterClass>>* vehiclePool_t, std::shared_ptr<BackGroundClass>& BackBround_t, const std::shared_ptr<CharacterClass>& MyChara_t) noexcept {
+			void Init(std::vector<std::shared_ptr<CharacterClass>>* vehiclePool_t, const std::shared_ptr<BackGroundClassBase>& BackBround_t, const std::shared_ptr<CharacterClass>& MyChara_t) noexcept {
 				chara_Pool = vehiclePool_t;
 				MyChara = MyChara_t;
 				this->m_BackGround = BackBround_t;
