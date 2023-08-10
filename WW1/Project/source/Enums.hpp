@@ -20,8 +20,11 @@ namespace FPS_n2 {
 			Movie,
 		};
 		enum class SoundEnum {
-			Shot2,
 			RunFoot,
+			StandUp,
+			Siren,
+
+			Shot2,
 			Engine,
 			Propeller,
 			Env,
@@ -29,6 +32,10 @@ namespace FPS_n2 {
 			EngineStart,
 			Engine2,
 			Propeller2,
+
+			UI_Select,
+			UI_OK,
+			UI_NG,
 
 			Num,
 		};

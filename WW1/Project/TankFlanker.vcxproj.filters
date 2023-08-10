@@ -96,6 +96,9 @@
     <ClInclude Include="source\Scene\StartMovieScene.hpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="source\Scene\TitleScene.hpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">

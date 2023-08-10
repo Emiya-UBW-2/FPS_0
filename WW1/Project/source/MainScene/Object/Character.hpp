@@ -74,6 +74,9 @@ namespace FPS_n2 {
 			const auto		GetSpeed(void) const noexcept { return this->m_Speed * 28.f; }
 			const auto&		GetCharaType(void) const noexcept { return this->m_CharaType; }
 			const auto&		GetAccel(void) const noexcept { return this->m_Accel; }
+			const auto&		GetYaw(void) const noexcept { return this->m_Yaw; }
+			const auto&		GetRoll(void) const noexcept { return this->m_Roll; }
+			const auto&		GetPitch(void) const noexcept { return this->m_Pitch; }
 		public://セッター
 			void			SetCamEyeVec(const VECTOR_ref& value) noexcept { this->m_CamEyeVec = value; }
 			void			SetDamageSwitchRec(unsigned long long value) noexcept { this->m_DamageSwitchRec = value; }
@@ -223,15 +226,21 @@ namespace FPS_n2 {
 				fog_density = GetFogDensity();													// フォグの密度を取得する( 0.0f ～ 1.0f )
 
 				SetFogEnable(TRUE);
-				SetFogColor(0, 0, 0);
-				SetFogStartEnd(Scale_Rate*1.f, Scale_Rate*20.f);
-				SetFogEnable(FALSE);
+				if (GetCharaType() == CharaTypeID::Enemy) {
+					SetFogColor(0, 0, 0);
+					SetFogStartEnd(Scale_Rate*100.f, Scale_Rate*400.f);
+				}
+				else {
+					SetFogColor(64, 64, 64);
+					SetFogStartEnd(Scale_Rate*100.f, Scale_Rate*400.f);
+				}
+				//SetFogEnable(FALSE);
 
 				//
 				if (this->m_IsActive && this->m_IsDraw) {
 					if (CheckCameraViewClip_Box(
-						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-10.f*Scale_Rate, -10.f*Scale_Rate, -10.f*Scale_Rate)).get(),
-						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(10.f*Scale_Rate, 10.f*Scale_Rate, 10.f*Scale_Rate)).get()) == FALSE
+						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-30.f*Scale_Rate, -30.f*Scale_Rate, -30.f*Scale_Rate)).get(),
+						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(30.f*Scale_Rate, 30.f*Scale_Rate, 30.f*Scale_Rate)).get()) == FALSE
 						) {
 						auto* DrawParts = DXDraw::Instance();
 						DrawParts->SetUseFarShadowDraw(false);

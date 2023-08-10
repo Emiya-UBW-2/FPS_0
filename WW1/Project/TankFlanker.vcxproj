@@ -31,6 +31,7 @@
     <ClInclude Include="source\ObjectManager.hpp" />
     <ClInclude Include="source\Scene\MainScene.hpp" />
     <ClInclude Include="source\Scene\StartMovieScene.hpp" />
+    <ClInclude Include="source\Scene\TitleScene.hpp" />
     <ClInclude Include="source\sub.hpp" />
   </ItemGroup>
   <ItemGroup>

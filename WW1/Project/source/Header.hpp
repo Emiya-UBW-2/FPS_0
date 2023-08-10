@@ -9,8 +9,10 @@
 #endif // _DEBUG
 
 //ここをコメントアウト
-#define DEBUG
+//#define DEBUG
 
+
+static int g_Mode = 0;
 
 #include <D3D11.h>
 #include <array>
@@ -55,6 +57,7 @@ using namespace DXLib_ref;
 #include "MainScene/UI/MainSceneUIControl.hpp"
 //
 #include "MainScene/NetworkBrowser.hpp"
-#include "Scene/MainScene.hpp"
+#include "Scene/TitleScene.hpp"
 #include "Scene/StartMovieScene.hpp"
+#include "Scene/MainScene.hpp"
 

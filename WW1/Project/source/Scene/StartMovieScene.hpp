@@ -28,11 +28,22 @@ namespace FPS_n2 {
 			int			m_Seq{ 0 };
 			float		m_SeqCount{ 0.f };
 
+			float		m_SkipCount{ 0.f };
+
+			float		m_Seq0Count{ 0.f };
 			float		m_Seq1Yadd{ 0.f };
 			float		m_Propeller{ 0.f };
+
+
+			LoadScriptClass LSClass;		//スクリプト読み込み
+			TelopClass TLClass;				//テロップ
+
+			LONGLONG BaseTime{ 0 }, WaitTime{ 0 }, NowTimeWait{ 0 };//
 		public:
 			StartMovieScene(void) noexcept { }
 			void			Set_Sub(void) noexcept override {
+				Get_Next()->Load();
+
 				auto* ObjMngr = ObjectManager::Instance();
 				auto SE = SoundPool::Instance();
 				//
@@ -48,13 +59,38 @@ namespace FPS_n2 {
 				//
 				ObjMngr->Init(this->m_BackGround);
 				//
-				for (int i = 0; i < 3; i++) {
-					plane_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Plane/Albatros/"));
+				{
+					auto kill = FPS_n2::SaveDataClass::Instance()->GetParam("KillCount");
+					auto killTotal = 80;
+					if (g_Mode == 1 && (kill >= killTotal)) {
+						plane_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Plane/Albatros_2/"));
+						for (int i = 1; i < 3; i++) {
+							plane_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Plane/Albatros/"));
+						}
+					}
+					else {
+						for (int i = 0; i < 3; i++) {
+							plane_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Plane/Albatros/"));
+						}
+					}
 				}
 				character_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Chara/mechanic1/"));
 				character_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Chara/mechanic2/"));
 				character_Pool.emplace_back(*ObjMngr->AddObject(ObjType::Movie, "data/Chara/mechanic1/"));
 				//ロード
+				TLClass.Init();
+				//テロップ
+				{
+					int mdata = FileRead_open("data/Cut.txt", FALSE);
+					while (FileRead_eof(mdata) == 0) {
+						LSClass.LoadScript(getparams::Getstr(mdata));
+						const auto& args = LSClass.Getargs();
+						const auto& func = LSClass.Getfunc();
+						if (func == "") { continue; }
+						TLClass.LoadTelop(func, args);
+					}
+					FileRead_close(mdata);
+				}
 				//Set
 				m_CamPosRandBuf = VECTOR_ref::zero();
 				m_CamPosRand = VECTOR_ref::zero();
@@ -69,6 +105,8 @@ namespace FPS_n2 {
 
 				m_Seq = 0;
 				m_SeqCount = 0.f;
+				m_SkipCount = 0.f;
+				m_Seq0Count = 0.f;
 				m_Seq1Yadd = 0.f;
 				m_Propeller = 0.f;
 				//player
@@ -117,19 +155,38 @@ namespace FPS_n2 {
 				//サウンド
 				SetCreate3DSoundFlag(FALSE);
 				//this->m_BGM = SoundHandle::Load("data/Sound/BGM/Beethoven8_2.wav");
-				SE->Add((int)SoundEnum::EngineStart, 1, "data/Sound/SE/enginestart.wav");
-				SE->Add((int)SoundEnum::Engine2, 1, "data/Sound/SE/engine.wav");
-				SE->Add((int)SoundEnum::Propeller2, 1, "data/Sound/SE/Propeller.wav");
+				SE->Add((int)SoundEnum::EngineStart, 1, "data/Sound/SE/enginestart.wav", false);
+				SE->Add((int)SoundEnum::Engine2, 1, "data/Sound/SE/engine.wav", false);
+				SE->Add((int)SoundEnum::Propeller2, 1, "data/Sound/SE/Propeller.wav", false);
 
-				SE->Add((int)SoundEnum::RunFoot, 6, "data/Sound/SE/move/runfoot.wav");
+				SE->Add((int)SoundEnum::RunFoot, 6, "data/Sound/SE/move/runfoot.wav", false);
+				SE->Add((int)SoundEnum::StandUp, 1, "data/Sound/SE/move/sliding.wav", false);
+				SE->Add((int)SoundEnum::Siren, 1, "data/Sound/SE/siren.wav", false);
+				
 				SetCreate3DSoundFlag(FALSE);
 				//this->m_BGM.vol(128);
 				SE->Get((int)SoundEnum::EngineStart).SetVol_Local(192);
 				SE->Get((int)SoundEnum::Engine2).SetVol_Local(64);
 				SE->Get((int)SoundEnum::Propeller2).SetVol_Local(128);
+				SE->Get((int)SoundEnum::RunFoot).SetVol_Local(128);
+				SE->Get((int)SoundEnum::Siren).SetVol_Local(128);
+
+				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+
+				KeyGuide->AddGuide("", "何れかのキーを押してスキップ");
 			}
 			//
-			bool			Update_Sub(void) noexcept override {
+			bool			Update_Sub(bool*  isPause) noexcept override {
+				if (*isPause) {
+					return true;
+				}
+				{
+					auto kill = FPS_n2::SaveDataClass::Instance()->GetParam("KillCount");
+					auto killTotal = 80;
+					if (g_Mode == 1 && (kill < killTotal)) {
+						return false;
+					}
+				}
 #ifdef DEBUG
 				auto* DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
@@ -143,7 +200,13 @@ namespace FPS_n2 {
 #endif // DEBUG
 				//FirstDoingv
 				if (GetIsFirstLoop()) {
+					BaseTime = GetNowHiPerformanceCount();
 				}
+
+				auto time = GetNowHiPerformanceCount() - BaseTime;
+				NowTimeWait += (time);
+				BaseTime = GetNowHiPerformanceCount();
+
 				//Input,AI
 				for (auto& c : plane_Pool) {
 					int index = (int)(&c - &plane_Pool.front());
@@ -182,6 +245,9 @@ namespace FPS_n2 {
 					switch (m_Seq) {
 					case 0:
 					{
+						if (m_SeqCount == 0.f) {
+							SE->Get((int)SoundEnum::Siren).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+						}
 						m_CamPos.zadd(-60.f / FPS);
 						m_CamPosRandBuf = VECTOR_ref::vget(1.f, 0.5f, 1.f)*Scale_Rate;
 						if (m_CamPos.z() < 1.8f*Scale_Rate) {
@@ -189,6 +255,15 @@ namespace FPS_n2 {
 							//
 							m_Seq1Yadd = 5.f*Scale_Rate;
 							m_CamUp = VECTOR_ref::vget(-0.5f, 0.8f, -0.5f).Norm();
+							SE->Get((int)SoundEnum::StandUp).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						}
+
+						if (m_Seq0Count > 0.3f) {
+							m_Seq0Count -= 0.3f;
+							SE->Get((int)SoundEnum::RunFoot).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						}
+						else {
+							m_Seq0Count += 1.f / FPS;
 						}
 					}
 					break;
@@ -233,6 +308,7 @@ namespace FPS_n2 {
 								c->UpdateMove();
 							}
 
+							SE->Get((int)SoundEnum::EngineStart).StopAll(0);
 							SE->Get((int)SoundEnum::Engine2).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 							SE->Get((int)SoundEnum::Propeller2).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 
@@ -264,6 +340,8 @@ namespace FPS_n2 {
 						}
 						if (m_SeqCount > 4.f) {
 							m_Seq++;
+							SE->Get((int)SoundEnum::Engine2).SetVol_Local(192);
+							SE->Get((int)SoundEnum::Propeller2).SetVol_Local(255);
 						}
 					}
 					break;
@@ -300,6 +378,8 @@ namespace FPS_n2 {
 						}
 						if (m_SeqCount > 10.f) {
 							m_Seq++;
+							SE->Get((int)SoundEnum::Engine2).SetVol_Local(64);
+							SE->Get((int)SoundEnum::Propeller2).SetVol_Local(96);
 						}
 					}
 					break;
@@ -368,6 +448,14 @@ namespace FPS_n2 {
 #ifdef DEBUG
 				DebugParts->SetPoint("update end");
 #endif // DEBUG
+				//
+				if (!(m_SkipCount == 0.f && !CheckHitKeyAll())) {
+					m_SkipCount += 1.f / FPS / 0.5f;
+				}
+
+				if (m_SkipCount > 1.f) {
+					return false;
+				}
 				if (m_Seq == 4) {
 					if (m_SeqCount > 10.f) {
 						return false;
@@ -382,13 +470,17 @@ namespace FPS_n2 {
 				SE->Get((int)SoundEnum::EngineStart).StopAll(0);
 				SE->Get((int)SoundEnum::Engine2).StopAll(0);
 				SE->Get((int)SoundEnum::Propeller2).StopAll(0);
+				SE->Get((int)SoundEnum::Siren).StopAll(0);
 				EffectControl::Dispose();
 				for (auto& c : plane_Pool) {
 					c.reset();
 				}
+				plane_Pool.clear();
 				for (auto& c : character_Pool) {
 					c.reset();
 				}
+				AimPos.clear();
+				character_Pool.clear();
 				ObjMngr->DisposeObject();
 				this->m_BackGround->Dispose();
 				this->m_BackGround.reset();
@@ -439,6 +531,18 @@ namespace FPS_n2 {
 					DrawBox(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, GetColor(0, 0, 0), TRUE);
 
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+				}
+				{
+					auto per = std::clamp((m_SkipCount), 0.f, 1.f);
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*per), 0, 255));
+
+					DrawBox(0, 0, DrawParts->m_DispXSize, DrawParts->m_DispYSize, GetColor(0, 0, 0), TRUE);
+
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+				}
+
+				if (NowTimeWait > 0) {
+					TLClass.Draw(NowTimeWait);
 				}
 			}
 		};

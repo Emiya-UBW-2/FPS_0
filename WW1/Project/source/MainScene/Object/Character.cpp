@@ -20,7 +20,6 @@ namespace FPS_n2 {
 			}
 			//
 			this->m_Speed = 0.f;
-			this->m_Speed = 0.f;
 			this->m_Press_Shot = false;
 			this->m_CharaSound = -1;			//ƒTƒEƒ“ƒh
 			//“®ì‚É‚©‚©‚í‚é‘€ì
@@ -151,7 +150,7 @@ namespace FPS_n2 {
 			}
 			if (this->m_Thrust / SpeedNormal > 1.5f) {
 				if (std::abs(yp) <= sin(deg2rad(10))) {
-					this->m_AccelAdd += -0.5f * 60.f / FPS;
+					this->m_AccelAdd += -0.1f * 60.f / FPS;
 				}
 			}
 			this->m_AccelAdd += -0.15f * 60.f / FPS * std::clamp((this->m_move.pos.y() - (600.f*Scale_Rate)) / (3000.f*Scale_Rate), 0.f, 1.f);

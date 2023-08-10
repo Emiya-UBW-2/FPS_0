@@ -414,6 +414,9 @@ namespace FPS_n2 {
 				//*/
 #endif
 			}
+			void Dispose() noexcept {
+
+			}
 		};
 	};
 };

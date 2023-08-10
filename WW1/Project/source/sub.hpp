@@ -463,4 +463,509 @@ namespace FPS_n2 {
 		}
 		return screenPos;
 	}
+
+	class LoadScriptClass {
+	private:
+		struct VARIABLE {
+			std::string Base;
+			std::string After;
+		};
+	private:
+		std::vector<VARIABLE> m_Variable;
+		std::string m_Func;
+		std::vector<std::string> m_Args;
+	private:
+		static void Sub_Func(std::string& func_t, const char& in_str) noexcept {
+			size_t str_switch = 0;
+			size_t str_in = std::string::npos;
+			bool in = false;
+			while (true) {
+				if (str_switch != std::string::npos) { str_switch = func_t.find('\"', str_switch + 1); in ^= 1; }
+				str_in = func_t.find(in_str, str_in + 1);
+				if (str_in != std::string::npos) {
+					if (str_switch != std::string::npos && str_switch < str_in && in) {
+						continue;
+					}
+					func_t = func_t.erase(str_in, 1);
+					continue;
+				}
+				break;
+			}
+		}
+	public:
+		//Getter
+		const auto& Getfunc(void) const noexcept { return m_Func; }
+		const auto& Getargs(void) const noexcept { return m_Args; }
+		//ƒXƒNƒŠƒvƒg“Ç‚Ýž‚Ýˆ—
+		void LoadScript(std::string_view func_t) noexcept {
+			m_Args.clear();
+			m_Func = func_t;
+			{
+				// //‚ðíœ
+				size_t sls = m_Func.find("//");
+				if (sls != std::string::npos) { m_Func = m_Func.substr(0, sls); }
+				//‚¢‚ç‚È‚¢—v‘f‚ð”rœ
+				Sub_Func(m_Func, '{');
+				Sub_Func(m_Func, '}');
+				Sub_Func(m_Func, ' ');
+				Sub_Func(m_Func, '\t');
+				Sub_Func(m_Func, ';');
+				Sub_Func(m_Func, '\"');
+			}
+			//()‚Æ,‚ÅˆÍ‚í‚ê‚½•”•ª‚©‚çˆø”‚ðŽæ“¾
+			if (m_Func != "") {
+				std::string tmp_func = m_Func;
+				size_t left = tmp_func.find("(");
+				size_t right = tmp_func.rfind(")");
+				if (left != std::string::npos && right != std::string::npos) {
+					tmp_func = tmp_func.substr(left + 1, right - 1 - left);
+				}
+				while (true) {
+					size_t in_str = tmp_func.find(",");
+					if (in_str == std::string::npos) {
+						m_Args.emplace_back(tmp_func);
+						break;
+					}
+					else {
+						std::string arg = tmp_func.substr(0, in_str);
+						tmp_func = tmp_func.substr(in_str + 1);
+						m_Args.emplace_back(arg);
+					}
+				}
+			}
+		}
+	};
+
+	class TelopClass {
+	private:
+		class Cut_tex {
+			int xpos = 0;
+			int ypos = 0;
+			int size = 0;
+			int LMR = 1;
+			std::string str;
+			LONGLONG START_TIME = 0;
+			LONGLONG END_TIME = 0;
+		public:
+			Cut_tex(void) noexcept {
+				xpos = 0;
+				ypos = 0;
+				size = 12;
+				str = "test";
+				START_TIME = (LONGLONG)(1000000.f * 0.01f);
+				END_TIME = (LONGLONG)(1000000.f * 1.01f);
+			}
+			void Set(int xp, int yp, int Fontsize, std::string_view mag, LONGLONG StartF, LONGLONG ContiF, int m_LMR) noexcept {
+				this->xpos = xp;
+				this->ypos = yp;
+				this->size = Fontsize;
+				this->str = mag;
+				this->START_TIME = StartF;
+				this->END_TIME = StartF + ContiF;;
+				this->LMR = m_LMR;
+			}
+			void Draw(LONGLONG nowTimeWait) const noexcept {
+				if (this->START_TIME < nowTimeWait && nowTimeWait < this->END_TIME) {
+					auto* Fonts = FontPool::Instance();
+					switch (this->LMR) {
+					case 0:
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(this->size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, this->xpos, this->ypos, GetColor(255, 255, 255), GetColor(0, 0, 0), this->str);
+						break;
+					case 1:
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(this->size, FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, this->xpos, this->ypos, GetColor(255, 255, 255), GetColor(0, 0, 0), this->str);
+						break;
+					case 2:
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(this->size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP, this->xpos, this->ypos, GetColor(255, 255, 255), GetColor(0, 0, 0), this->str);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		};
+	private:
+		std::vector<Cut_tex> Texts;
+		LONGLONG StartF = 0;
+		LONGLONG ContiF = 0;
+	public:
+		void Init(void) noexcept {
+			StartF = 0;
+			ContiF = 0;
+		}
+		void LoadTelop(const std::string &func, const std::vector<std::string>& args) noexcept {
+			if (func.find("SetTelopTime") != std::string::npos) {
+				StartF = (LONGLONG)(1000000.f * std::stof(args[0]));
+				ContiF = (LONGLONG)(1000000.f * std::stof(args[1]));
+			}
+			else if (func.find("AddTelopTime") != std::string::npos) {
+				StartF += (LONGLONG)(1000000.f * std::stof(args[0]));
+				ContiF = (LONGLONG)(1000000.f * std::stof(args[1]));
+			}
+			else if (func.find("SetTelop") != std::string::npos) {
+				int t = 0;
+				if (args[4].find("LEFT") != std::string::npos) { t = 0; }
+				else if (args[4].find("MIDDLE") != std::string::npos) { t = 1; }
+				else if (args[4].find("RIGHT") != std::string::npos) { t = 2; }
+				Texts.resize(Texts.size() + 1);
+				Texts.back().Set(y_r(std::stoi(args[0])), y_r(std::stoi(args[1])), y_r(std::stoi(args[2])), args[3], StartF, ContiF, t);
+			}
+		}
+		void Draw(LONGLONG nowTimeWait) const noexcept {
+			for (auto& t : Texts) {
+				t.Draw(nowTimeWait);
+			}
+		}
+	};
+
+	class KeyGuideClass : public SingletonBase<KeyGuideClass> {
+	private:
+		friend class SingletonBase<KeyGuideClass>;
+	private:
+		class Keys {
+		public:
+			int xsize{ 0 }, ysize{ 0 };
+			GraphHandle GuideImg;
+			std::string GuideString;
+		public:
+			void AddGuide(std::string_view ImgName, std::string_view GuideStr) noexcept {
+				if (ImgName != "") {
+					std::string Path = "data/key/key_glay/";
+					Path += ImgName;
+					GuideImg = GraphHandle::Load(Path);
+					GuideImg.GetSize(&xsize, &ysize);
+					xsize = xsize * y_r(21) / ysize;
+					ysize = ysize * y_r(21) / ysize;
+				}
+				else {
+					xsize = 0;
+					ysize = 0;
+				}
+				GuideString = GuideStr;
+			}
+			void Reset() noexcept {
+				GuideImg.Dispose();
+				GuideString = "";
+			}
+			int Draw(int x, int y) const noexcept {
+				auto* Fonts = FontPool::Instance();
+
+				int ofs = 0;
+				if (xsize > 0) {
+					GuideImg.DrawExtendGraph(x + ofs, y, x + ofs + xsize, y + ysize, false);
+					ofs += xsize + y_r(6);
+				}
+				Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(21), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, x + ofs, y, GetColor(255, 255, 255), GetColor(0, 0, 0), GuideString);
+				ofs += Fonts->Get(FontPool::FontType::Nomal_Edge).GetStringWidth(y_r(21), GuideString) + y_r(6);
+				return ofs;
+			}
+		};
+	private:
+		std::vector<Keys> Key;
+	public:
+		void Reset(void) noexcept {
+			for (auto& k : Key) {
+				k.Reset();
+			}
+			Key.clear();
+		}
+		void AddGuide(std::string_view ImgName, std::string_view GuideStr) noexcept {
+			Key.resize(Key.size() + 1);
+			Key.back().AddGuide(ImgName, GuideStr);
+		}
+		void Draw() const noexcept {
+			int x = y_r(32);
+			int y = y_r(1080 - 21 - 16);
+			for (const auto& k : Key) {
+				x += k.Draw(x,y);
+			}
+		}
+	};
+
+	typedef std::pair<std::string, int> SaveParam;
+	class SaveDataClass : public SingletonBase<SaveDataClass> {
+	private:
+		friend class SingletonBase<SaveDataClass>;
+	private:
+		std::vector<SaveParam> m_data;
+	public:
+		SaveParam* GetData(std::string_view Name) noexcept {
+			for (auto& d : m_data) {
+				if (d.first == Name) {
+					return &d;
+				}
+			}
+			return nullptr;
+		}
+	public:
+		void SetParam(std::string_view Name, int value) noexcept {
+			auto* Data = GetData(Name);
+			if (Data) {
+				Data->second = value;
+			}
+			else {
+				m_data.emplace_back(std::make_pair((std::string)Name, value));
+			}
+		}
+		auto GetParam(std::string_view Name) noexcept {
+			auto* Data = GetData(Name);
+			if (Data) {
+				return Data->second;
+			}
+			return -1;
+		}
+	public:
+		void Save() noexcept {
+			std::ofstream outputfile("data/Plane/bokuzyo.ok");
+			for (auto& d : m_data) {
+				outputfile << d.first + "=" + std::to_string(d.second) + "\n";
+			}
+			outputfile.close();
+		}
+		void Load() noexcept {
+
+			m_data.clear();
+
+			std::ifstream inputputfile("data/Plane/bokuzyo.ok");
+			std::string line;
+			while (std::getline(inputputfile, line)) {
+				auto Start = line.find("=");
+				if (Start != std::string::npos) {
+					m_data.emplace_back(std::make_pair(line.substr(0, Start), std::stoi(line.substr(Start + 1))));
+				}
+			}
+			inputputfile.close();
+
+		}
+	};
+
+	namespace Sceneclass {
+		class OptionWindowClass : public SingletonBase<OptionWindowClass> {
+		private:
+			friend class SingletonBase<OptionWindowClass>;
+		private:
+			switchs UpKey;
+			switchs DownKey;
+			switchs LeftKey;
+			switchs RightKey;
+			switchs OKKey;
+			switchs NGKey;
+
+			int select{ 0 };
+			float SelYadd[3] = { 0.f,0.f,0.f };
+
+			bool isActive{ false };
+		private:
+		public:
+			void SetActive(bool value) noexcept { isActive = value; }
+			const auto& IsActive() const noexcept { return isActive; }
+		public:
+			void Init(void) noexcept {
+				select = 0;
+				isActive = false;
+			}
+			void Execute(void) noexcept {
+				auto SE = SoundPool::Instance();
+				if (isActive) {
+					auto* OptionParts = OPTION::Instance();
+
+					if (GetJoypadNum() > 0) {
+						DINPUT_JOYSTATE input;
+						int padID = DX_INPUT_PAD1;
+						GetJoypadInputState(padID);
+						switch (GetJoypadType(padID)) {
+						case DX_PADTYPE_OTHER:
+						case DX_PADTYPE_DUAL_SHOCK_4:
+						case DX_PADTYPE_DUAL_SENSE:
+						case DX_PADTYPE_SWITCH_JOY_CON_L:
+						case DX_PADTYPE_SWITCH_JOY_CON_R:
+						case DX_PADTYPE_SWITCH_PRO_CTRL:
+						case DX_PADTYPE_SWITCH_HORI_PAD:
+							GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
+							{
+								//pp_x = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f) * cam_per;
+								//pp_y = std::clamp((float)(input.Z) / 100.f*0.35f, -9.f, 9.f) * cam_per;
+								float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
+								bool w_key = false;
+								bool s_key = false;
+								bool a_key = false;
+								bool d_key = false;
+								if (!(input.X == 0 && input.Y == 0)) {
+									w_key = (-50.f <= deg && deg <= 50.f);
+									a_key = (-140.f <= deg && deg <= -40.f);
+									s_key = (130.f <= deg || deg <= -130.f);
+									d_key = (40.f <= deg && deg <= 140.f);
+								}
+								//\Žš
+								//deg = (float)(input.POV[0]) / 100.f;
+								//bool right_key = (40.f <= deg && deg <= 140.f);
+								//bool left_key = (220.f <= deg && deg <= 320.f);
+								//bool up_key = (310.f <= deg || deg <= 50.f);
+								//bool down_key = (130.f <= deg && deg <= 230.f);
+
+								//ƒ{ƒ^ƒ“
+								//(input.Buttons[0] != 0)/* */
+								//(input.Buttons[1] != 0)/*~*/
+								//(input.Buttons[2] != 0)/*Z*/
+								//(input.Buttons[3] != 0)/*¢*/
+								//(input.Buttons[4] != 0)/*L1*/
+								//(input.Buttons[5] != 0)/*R1*/
+								//(input.Buttons[6] != 0)/*L2*/
+								//(input.Buttons[7] != 0)/*R2*/
+								//(input.Buttons[8] != 0)/**/
+								//(input.Buttons[9] != 0)/**/
+								//(input.Buttons[10] != 0)/*L3*/
+								//(input.Buttons[11] != 0)/*R3*/
+								UpKey.Execute(w_key);
+								DownKey.Execute(s_key);
+								LeftKey.Execute(a_key);
+								RightKey.Execute(d_key);
+								OKKey.Execute((input.Buttons[1] != 0)/*~*/);
+								NGKey.Execute((input.Buttons[2] != 0)/*Z*/);
+
+							}
+							break;
+						case DX_PADTYPE_XBOX_360:
+						case DX_PADTYPE_XBOX_ONE:
+							break;
+						default:
+							break;
+						}
+					}
+					else {//ƒL[ƒ{[ƒh
+						UpKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_W) != 0 || CheckHitKeyWithCheck(KEY_INPUT_UP) != 0);
+						DownKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_S) != 0 || CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0);
+						LeftKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_A) != 0 || CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0);
+						RightKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_D) != 0 || CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0);
+						OKKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0);
+						NGKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_X) != 0);
+					}
+
+					if (UpKey.trigger()) {
+						--select;
+						if (select < 0) { select = 2; }
+						SelYadd[select] = 10.f;
+
+						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					}
+					if (DownKey.trigger()) {
+						++select;
+						if (select > 2) { select = 0; }
+						SelYadd[select] = -10.f;
+
+						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					}
+					for (int i = 0; i < 3; i++) {
+						Easing(&SelYadd[i], 0.f, 0.95f, EasingType::OutExpo);
+					}
+					{
+						switch (select) {
+						case 0:
+							if (LeftKey.trigger()) {
+								OptionParts->Set_BGM(std::clamp(OptionParts->Get_BGM() - 0.1f, 0.f, 1.f));
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							if (RightKey.trigger()) {
+								OptionParts->Set_BGM(std::clamp(OptionParts->Get_BGM() + 0.1f, 0.f, 1.f));
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
+						case 1:
+							if (LeftKey.trigger()) {
+								OptionParts->Set_SE(std::clamp(OptionParts->Get_SE() - 0.1f, 0.f, 1.f));
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							if (RightKey.trigger()) {
+								OptionParts->Set_SE(std::clamp(OptionParts->Get_SE() + 0.1f, 0.f, 1.f));
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
+						default:
+							break;
+						}
+					}
+					if (OKKey.trigger()) {
+						switch (select) {
+						case 0:
+							break;
+						case 1:
+							break;
+						case 2:
+							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							isActive = false;
+							break;
+						default:
+							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							isActive = false;
+							break;
+						}
+					}
+					if (NGKey.trigger()) {
+						SE->Get((int)SoundEnum::UI_NG).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						isActive = false;
+					}
+
+					SE->SetVol(OptionParts->Get_SE());
+
+					if (!isActive) {
+						OptionParts->Save();
+					}
+				}
+				else {
+					select = 0;
+				}
+			}
+			void Draw() const noexcept {
+				if (isActive) {
+					auto* OptionParts = OPTION::Instance();
+					//
+					{
+						auto per = std::clamp(0.3f, 0.f, 1.f);
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*per), 0, 255));
+
+						DrawBox(y_r(960 - 320), y_r(540 - 320), y_r(960 + 320), y_r(540 + 320), GetColor(255, 255, 255), TRUE);
+
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+					}
+
+					int xp1, yp1;
+					auto* Fonts = FontPool::Instance();
+					auto Red = GetColor(255, 0, 0);
+					auto Red75 = GetColor(192, 0, 0);
+					auto White = GetColor(255, 255, 255);
+					auto Gray75 = GetColor(128, 128, 128);
+					auto Gray = GetColor(64, 64, 64);
+
+					xp1 = y_r(960 + 44);
+					yp1 = y_r(1080 - 400 - 108 * 3);
+					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), Gray75, Gray, "Option");
+					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, White, Gray, "Option");
+
+					xp1 = y_r(960 - 54 * 2);
+					yp1 = y_r(1080 - 400 - 108 * 2 + (int)SelYadd[0]);
+					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 0) ? Red75 : Gray75, Gray, "BGM");
+					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 0) ? Red : White, Gray, "BGM");
+
+					xp1 = y_r(960 - 54 * 2 + 208);
+					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
+					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
+
+					xp1 = y_r(960 - 54 * 2);
+					yp1 = y_r(1080 - 400 - 108 * 1 + (int)SelYadd[1]);
+					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "SE");
+					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "SE");
+
+					xp1 = y_r(960 - 54 * 2 + 208);
+					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
+					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
+
+					xp1 = y_r(960 + 44);
+					yp1 = y_r(1080 - 400 - 108 * -1 + (int)SelYadd[2]);
+					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 2) ? Red75 : Gray75, Gray, "Return");
+					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 2) ? Red : White, Gray, "Return");
+
+				}
+			}
+		};
+	};
+
 };

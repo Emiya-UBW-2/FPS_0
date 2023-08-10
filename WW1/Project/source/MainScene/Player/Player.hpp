@@ -6,19 +6,19 @@ namespace FPS_n2 {
 		class PlayerControl {
 		private:
 			std::shared_ptr<CharacterClass>	m_Chara{ nullptr };
-			float							m_Score{ 0.f };							//スコア
+			int							m_Score{ 0 };							//スコア
 		public:
 			PlayerControl(void) noexcept {
-				this->m_Score = 0.f;
+				this->m_Score = 0;
 			}
 			~PlayerControl(void) noexcept {
 				this->Dispose();
 			}
 		public:
 			void		SetChara(const std::shared_ptr<CharacterClass>& pChara) noexcept { this->m_Chara = pChara; }
-			void		AddScore(float value) noexcept { this->m_Score += value; }
-			void		SubScore(float value) noexcept { this->m_Score -= value; }
-			void		SetScore(float value) noexcept { this->m_Score = value; }
+			void		AddScore(int value) noexcept { this->m_Score += value; }
+			void		SubScore(int value) noexcept { this->m_Score -= value; }
+			void		SetScore(int value) noexcept { this->m_Score = value; }
 			auto&		GetChara(void) noexcept { return this->m_Chara; }
 			const auto&	GetScore(void) const noexcept { return this->m_Score; }
 
