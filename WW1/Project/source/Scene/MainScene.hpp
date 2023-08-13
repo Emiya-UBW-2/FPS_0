@@ -1037,8 +1037,12 @@ namespace FPS_n2 {
 				if (g_Mode == 0) {
 					this->m_BGM.stop();
 				}
+
+				auto SE = SoundPool::Instance();
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
+
+				SE->Get((int)SoundEnum::Env).StopAll(0);
 
 				for (auto& c : character_Pool) {
 					c.reset();
@@ -1205,27 +1209,24 @@ namespace FPS_n2 {
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 					}
 					int xp1, yp1;
-					auto* Fonts = FontPool::Instance();
-					auto Red = GetColor(255, 0, 0);
-					auto Red75 = GetColor(192, 0, 0);
-					auto White = GetColor(255, 255, 255);
-					auto Gray75 = GetColor(128, 128, 128);
-					auto Gray = GetColor(64, 64, 64);
+					//auto* Fonts = FontPool::Instance();
+					//auto Red = GetColor(255, 0, 0);
+					//auto Red75 = GetColor(192, 0, 0);
+					//auto White = GetColor(255, 255, 255);
+					//auto Gray75 = GetColor(128, 128, 128);
+					//auto Gray = GetColor(64, 64, 64);
 
 					xp1 = y_r(1920 - 256 - 54 * 2);
 					yp1 = y_r(1080 - 108 - 108 * 2 + (int)SelYadd[0]);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 0) ? Red75 : Gray75, Gray, "Retire");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 0) ? Red : White, Gray, "Retire");
+					DrawFetteString(xp1, yp1, 1.f, (select == 0), "Retire");
 
 					xp1 = y_r(1920 - 256 - 54 * 1);
 					yp1 = y_r(1080 - 108 - 108 * 1 + (int)SelYadd[1]);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "Option");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "Option");
+					DrawFetteString(xp1, yp1, 1.f, (select == 1), "Option");
 
 					xp1 = y_r(1920 - 256);
 					yp1 = y_r(1080 - 108 + (int)SelYadd[2]);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 2) ? Red75 : Gray75, Gray, "Return Game");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 2) ? Red : White, Gray, "Return Game");
+					DrawFetteString(xp1, yp1, 1.f, (select == 2), "Return Game");
 				}
 				//
 			}
@@ -1306,8 +1307,8 @@ namespace FPS_n2 {
 
 							{
 								int xp1, yp1;
-								auto White = GetColor(255, 255, 255);
-								auto Gray75 = GetColor(128, 128, 128);
+								//auto White = GetColor(255, 255, 255);
+								//auto Gray75 = GetColor(128, 128, 128);
 								auto Gray = GetColor(64, 64, 64);
 
 
@@ -1315,14 +1316,11 @@ namespace FPS_n2 {
 								yp1 = DrawParts->m_DispYSize / 2 - y_r(200);
 
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*m_ResultColor), 0, 255));
-								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 - y_r(100) + y_r(40) + (int)0, yp1 + y_r(20), Gray75, Gray, "Result");
-								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 - y_r(100) - (int)0, yp1, White, Gray, "ReSult");
+								DrawFetteString(xp1 - y_r(100), yp1, 1.33f, false, "Result");
 								yp1 += y_r(64 * 2);
 
-								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) + (int)0, yp1 + y_r(20), Gray75, Gray, "Shoot Down");
-								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(32 * 3 / 2), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) + y_r(40) + (int)0, yp1 + y_r(20), Gray75, Gray, "%02d", Kill);
-								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 - (int)0, yp1, White, Gray, "Shoot Down");
-								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(32 * 2), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) - (int)0, yp1, White, Gray, "%02d", Kill);
+								DrawFetteString(xp1, yp1, 1.33f, false, "Shoot Down");
+								DrawFetteString(xp1 + y_r(40), yp1, 1.f, false, "%02d", Kill);
 								yp1 += y_r(64 * 2);
 
 								const char* RankStr[] = {
@@ -1344,10 +1342,10 @@ namespace FPS_n2 {
 									GetColor(0,0,192),
 								};
 
-								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) + (int)0, yp1 + y_r(20), RankColorBack[Rank], Gray, "Rank");
-								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(32 * 3 / 2), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) + y_r(40) + (int)0, yp1 + y_r(20), RankColorBack[Rank], Gray, "%s", RankStr[Rank]);
-								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 - (int)0, yp1, RankColor[Rank], Gray, "Rank");
-								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(32 * 2), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) - (int)0, yp1, RankColor[Rank], Gray, "%s", RankStr[Rank]);
+								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), RankColorBack[Rank], Gray, "Rank");
+								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, RankColor[Rank], Gray, "Rank");
+								Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(32 * 3 / 2), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40) + y_r(40), yp1 + y_r(20), RankColorBack[Rank], Gray, RankStr[Rank]);
+								Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(32 * 2), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1, RankColor[Rank], Gray, RankStr[Rank]);
 								yp1 += y_r(64 * 2);
 								SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 							}

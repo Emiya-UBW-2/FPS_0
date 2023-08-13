@@ -738,6 +738,19 @@ namespace FPS_n2 {
 		}
 	};
 
+	template <typename... Args>
+	static void DrawFetteString(int xp1, int yp1, float per, bool IsSelect, const std::string& String, Args&&... args) noexcept {
+		auto* Fonts = FontPool::Instance();
+		auto Red = GetColor(255, 0, 0);
+		auto Red75 = GetColor(192, 0, 0);
+		auto White = GetColor(255, 255, 255);
+		auto Gray75 = GetColor(128, 128, 128);
+		auto Gray = GetColor(64, 64, 64);
+
+		Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r((int)((float)(48 * 3 / 2 * 3 / 4) * per)), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), IsSelect ? Red75 : Gray75, Gray, String, args...);
+		Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r((int)((float)(48 * 2 * 3 / 4) * per)), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, IsSelect ? Red : White, Gray, String, args...);
+	}
+
 	namespace Sceneclass {
 		class OptionWindowClass : public SingletonBase<OptionWindowClass> {
 		private:
@@ -928,41 +941,34 @@ namespace FPS_n2 {
 					}
 
 					int xp1, yp1;
-					auto* Fonts = FontPool::Instance();
-					auto Red = GetColor(255, 0, 0);
-					auto Red75 = GetColor(192, 0, 0);
-					auto White = GetColor(255, 255, 255);
-					auto Gray75 = GetColor(128, 128, 128);
-					auto Gray = GetColor(64, 64, 64);
+					//auto* Fonts = FontPool::Instance();
+					//auto Red = GetColor(255, 0, 0);
+					//auto Red75 = GetColor(192, 0, 0);
+					//auto White = GetColor(255, 255, 255);
+					//auto Gray75 = GetColor(128, 128, 128);
+					//auto Gray = GetColor(64, 64, 64);
 
 					xp1 = y_r(960 + 44);
 					yp1 = y_r(1080 - 400 - 108 * 3);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), Gray75, Gray, "Option");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, White, Gray, "Option");
+					DrawFetteString(xp1, yp1, 1.f, false, "Option");
 
 					xp1 = y_r(960 - 54 * 2);
 					yp1 = y_r(1080 - 400 - 108 * 2 + (int)SelYadd[0]);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 0) ? Red75 : Gray75, Gray, "BGM");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 0) ? Red : White, Gray, "BGM");
+					DrawFetteString(xp1, yp1, 0.75f, (select == 0), "BGM");
 
 					xp1 = y_r(960 - 54 * 2 + 208);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
+					DrawFetteString(xp1, yp1, 0.75f, (select == 0), "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
 
 					xp1 = y_r(960 - 54 * 2);
 					yp1 = y_r(1080 - 400 - 108 * 1 + (int)SelYadd[1]);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "SE");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "SE");
+					DrawFetteString(xp1, yp1, 0.75f, (select == 1), "SE");
 
 					xp1 = y_r(960 - 54 * 2 + 208);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
+					DrawFetteString(xp1, yp1, 0.75f, (select == 1), "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
 
 					xp1 = y_r(960 + 44);
 					yp1 = y_r(1080 - 400 - 108 * -1 + (int)SelYadd[2]);
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 2) ? Red75 : Gray75, Gray, "Return");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 2) ? Red : White, Gray, "Return");
-
+					DrawFetteString(xp1, yp1, 0.75f, (select == 2), "Return");
 				}
 			}
 		};

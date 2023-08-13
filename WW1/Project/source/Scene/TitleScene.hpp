@@ -237,8 +237,7 @@ namespace FPS_n2 {
 					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, WhiteR, Gray, "Final EpiSode");
 				}
 				else {
-					Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), Gray75, Gray, "Final EpiSode");
-					Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, White, Gray, "Final EpiSode");
+					DrawFetteString(xp1, yp1, 1.33f, false, "Final EpiSode");
 				}
 				//
 				xp1 = y_r(1920 - 256 - 54 * 2 - (int)(GameStart*100.f));
@@ -268,8 +267,7 @@ namespace FPS_n2 {
 						Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : WhiteR, Gray, "Red Baron Mode");
 					}
 					else {
-						Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 1) ? Red75 : Gray75, Gray, "Free Flight");
-						Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 1) ? Red : White, Gray, "Free Flight");
+						DrawFetteString(xp1, yp1, 1.f, (select == 1), "Free Flight");
 
 						Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 - y_r(350), yp1, White, Gray, "%02d / %02d", kill, killTotal);
 					}
@@ -278,8 +276,7 @@ namespace FPS_n2 {
 
 				xp1 = y_r(1920 - 256);
 				yp1 = y_r(1080 - 108 + (int)SelYadd[2]);
-				Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r(48 * 3 / 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), (select == 2) ? Red75 : Gray75, Gray, "Option");
-				Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r(48 * 2 * 3 / 4), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, (select == 2) ? Red : White, Gray, "Option");
+				DrawFetteString(xp1, yp1, 1.f, (select == 2), "Option");
 
 
 				{
