@@ -153,7 +153,7 @@ namespace FPS_n2 {
 					this->m_AccelAdd += -0.1f * 60.f / FPS;
 				}
 			}
-			this->m_AccelAdd += -0.15f * 60.f / FPS * std::clamp((this->m_move.pos.y() - (600.f*Scale_Rate)) / (3000.f*Scale_Rate), 0.f, 1.f);
+			this->m_AccelAdd += -0.15f * std::clamp((this->m_move.pos.y() - (600.f*Scale_Rate)) / (3000.f*Scale_Rate), 0.f, 1.f);
 
 			this->m_AccelAdd = std::clamp(this->m_AccelAdd + this->m_Accel*0.05f * 60.f / FPS, -30.f, 30.f);
 
@@ -226,10 +226,10 @@ namespace FPS_n2 {
 
 			//ƒxƒNƒgƒ‹‚Ì‰‰ŽZ
 			m_AddVecs.at(1) = (this->m_move.mat.yvec() * -(M_GR / (60.f*60.f) * 2.f) * std::clamp(this->m_Thrust / SpeedNormal, 0.1f, 1.f));//„—Í
-			m_AddVecs.at(2) = (this->m_move.mat.zvec() * -1.f * this->m_Thrust / (Scale_Rate*(60.f / 5.f)));//„—Í
+			m_AddVecs.at(2) = (this->m_move.mat.zvec() * -1.f * this->m_Thrust / (Scale_Rate*(60.f / 5.f)))* (60.f / FPS);//„—Í
 			//”½‰f
 			for (auto& v : m_AddVecs) {
-				this->m_move.vec += v * 60.f / FPS;
+				this->m_move.vec += v * (60.f / FPS);
 			}
 			//’n–Ê”»’è
 			{

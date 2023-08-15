@@ -19,12 +19,9 @@ namespace FPS_n2 {
 			switchs					m_MouseActive;
 			int						m_LookMode{ 0 };
 			int						m_LookOn{ -1 };
-			switchs					m_MouseWheel;
-			float					m_MouseWheelPressTime{ 0.f };
 			//UI関連
 			UIClass					m_UIclass;
 			float					m_HPBuf{ 0.f };
-			float					m_ScoreBuf{ 0.f };
 			GraphHandle				autoaimpoint_Graph;
 			GraphHandle				Enemyaimpoint_Graph;
 			GraphHandle				hit_Graph;
@@ -75,15 +72,11 @@ namespace FPS_n2 {
 			float					m_ResultColor{ 0.f };
 
 			bool					m_GameEnd{ false };
+
+			float					m_DrawSpeed{ 0.f };
 		private:
-			switchs UpKey;
-			switchs DownKey;
-			switchs LeftKey;
-			switchs RightKey;
-			switchs OKKey;
-			switchs NGKey;
 			int select{ 0 };
-			float SelYadd[3] = { 0.f,0.f,0.f };
+			std::array<float, 3> SelYadd{};
 		private:
 			const auto&		GetMyPlayerID(void) const noexcept { return this->m_NetWorkBrowser.GetMyPlayerID(); }
 		public:
@@ -110,6 +103,10 @@ namespace FPS_n2 {
 				//BG
 				this->m_BackGround = std::make_shared<BackGroundClassMain>();
 				this->m_BackGround->Init("data/model/map/", "data/model/sky/");
+
+				for (auto& y : SelYadd) {
+					y = 0.f;
+				}
 			}
 			void			Set_Sub(void) noexcept override {
 				m_GameEnd = false;
@@ -198,7 +195,6 @@ namespace FPS_n2 {
 					this->m_AICtrl[i]->Init(&this->character_Pool, this->m_BackGround, PlayerMngr->GetPlayer(i).GetChara());
 				}
 				this->m_HPBuf = (float)PlayerMngr->GetPlayer(0).GetChara()->GetHP();
-				this->m_ScoreBuf = (float)PlayerMngr->GetPlayer(0).GetScore();
 				//Cam
 				SetMainCamera().SetCamInfo(deg2rad(65), 1.f, 100.f);
 				SetMainCamera().SetCamPos(VECTOR_ref::vget(0, 15, -20), VECTOR_ref::vget(0, 15, 0), VECTOR_ref::vget(0, 1, 0));
@@ -210,7 +206,6 @@ namespace FPS_n2 {
 				SE->Get((int)SoundEnum::Shot2).SetVol_Local(128);
 				//入力
 				this->m_MouseActive.Set(true);
-				this->m_MouseWheel.Set(false);
 				//
 				this->m_DamageEvents.clear();
 				m_NetWorkBrowser.Init();
@@ -219,6 +214,8 @@ namespace FPS_n2 {
 			}
 			//
 			bool			Update_Sub(bool*  isPause) noexcept override {
+				auto* Pad = FPS_n2::PadControl::Instance();
+				//ポーズ
 				if (GetJoypadNum() > 0) {
 					DINPUT_JOYSTATE input;
 					int padID = DX_INPUT_PAD1;
@@ -227,36 +224,14 @@ namespace FPS_n2 {
 					case DX_PADTYPE_OTHER:
 					case DX_PADTYPE_DUAL_SHOCK_4:
 					case DX_PADTYPE_DUAL_SENSE:
-					case DX_PADTYPE_SWITCH_JOY_CON_L:
-					case DX_PADTYPE_SWITCH_JOY_CON_R:
-					case DX_PADTYPE_SWITCH_PRO_CTRL:
-					case DX_PADTYPE_SWITCH_HORI_PAD:
+					case DX_PADTYPE_SWITCH_JOY_CON_L://大丈夫？
+					case DX_PADTYPE_SWITCH_JOY_CON_R://大丈夫？
+					case DX_PADTYPE_SWITCH_PRO_CTRL://大丈夫？
+					case DX_PADTYPE_SWITCH_HORI_PAD://大丈夫？
+					case DX_PADTYPE_XBOX_360://大丈夫？
+					case DX_PADTYPE_XBOX_ONE://大丈夫？
 						GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
-						{
-							float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
-							bool w_key = false;
-							bool s_key = false;
-							bool a_key = false;
-							bool d_key = false;
-							if (!(input.X == 0 && input.Y == 0)) {
-								w_key = (-50.f <= deg && deg <= 50.f);
-								a_key = (-140.f <= deg && deg <= -40.f);
-								s_key = (130.f <= deg || deg <= -130.f);
-								d_key = (40.f <= deg && deg <= 140.f);
-							}
-
-							this->m_MouseActive.Execute((input.Buttons[8] != 0)/**/);
-
-							UpKey.Execute(w_key);
-							DownKey.Execute(s_key);
-							LeftKey.Execute(a_key);
-							RightKey.Execute(d_key);
-							OKKey.Execute((input.Buttons[1] != 0)/*×*/);
-							NGKey.Execute((input.Buttons[2] != 0)/*〇*/);
-						}
-						break;
-					case DX_PADTYPE_XBOX_360:
-					case DX_PADTYPE_XBOX_ONE:
+						this->m_MouseActive.Execute((input.Buttons[9] != 0)/**/);
 						break;
 					default:
 						break;
@@ -264,56 +239,77 @@ namespace FPS_n2 {
 				}
 				else {//キーボード
 					this->m_MouseActive.Execute(CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0);
-
-					UpKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_W) != 0 || CheckHitKeyWithCheck(KEY_INPUT_UP) != 0);
-					DownKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_S) != 0 || CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0);
-					LeftKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_A) != 0 || CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0);
-					RightKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_D) != 0 || CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0);
-					OKKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0);
-					NGKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_X) != 0);
 				}
-
-				auto PauseOn = !this->m_MouseActive.on();
 
 				if (GetIsFirstLoop() || this->m_MouseActive.trigger()) {
-					auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
-					if (PauseOn) {
-						KeyGuide->Reset();
-						KeyGuide->AddGuide("none.jpg", "決定");
-						KeyGuide->AddGuide("X.jpg", "戻る");
-						KeyGuide->AddGuide("W.jpg", "");
-						KeyGuide->AddGuide("S.jpg", "上下選択");
-						KeyGuide->AddGuide("A.jpg", "");
-						KeyGuide->AddGuide("D.jpg", "調整");
+					if (!this->m_MouseActive.on()) {
 						select = 0;
 					}
-					else {
-						KeyGuide->Reset();
-						KeyGuide->AddGuide("W.jpg", "");
-						KeyGuide->AddGuide("S.jpg", "機首下上(ピッチ)");
-						KeyGuide->AddGuide("A.jpg", "");
-						KeyGuide->AddGuide("D.jpg", "左右回転(ロール)");
-						KeyGuide->AddGuide("Q.jpg", "");
-						KeyGuide->AddGuide("E.jpg", "左右傾け(ヨー)");
-						KeyGuide->AddGuide("R.jpg", "");
-						KeyGuide->AddGuide("F.jpg", "加減速");
-						KeyGuide->AddGuide("LM.jpg", "射撃");
-						KeyGuide->AddGuide("MM.jpg", "フリールック");
-						KeyGuide->AddGuide("RM.jpg", "エイム");
-					}
 				}
-				*isPause = PauseOn;
+
+				Pad->Execute(
+					[&]() {
+						auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+						if (!this->m_MouseActive.on()) {
+							KeyGuide->Reset();
+							KeyGuide->AddGuide("ng.png", "決定");
+							KeyGuide->AddGuide("ok.png", "戻る");
+							KeyGuide->AddGuide("R_stick.png", "上下選択,調整");
+						}
+						else {
+							KeyGuide->Reset();
+							KeyGuide->AddGuide("R_stick.png", "機首下上(ピッチ),左右回転(ロール)");
+							KeyGuide->AddGuide("L1.png", "");
+							KeyGuide->AddGuide("R1.png", "左右傾け(ヨー)");
+							KeyGuide->AddGuide("square.png", "");
+							KeyGuide->AddGuide("triangle.png", "加減速");
+							KeyGuide->AddGuide("R2.png", "射撃");
+							KeyGuide->AddGuide("L_stick.png", "押し込みでフリールック");
+							KeyGuide->AddGuide("L2.png", "エイム");
+							KeyGuide->AddGuide("option.png", "ポーズ");
+						}
+					},
+					[&]() {
+						auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+						if (!this->m_MouseActive.on()) {
+							KeyGuide->Reset();
+							KeyGuide->AddGuide("none.jpg", "決定");
+							KeyGuide->AddGuide("X.jpg", "戻る");
+							KeyGuide->AddGuide("W.jpg", "");
+							KeyGuide->AddGuide("S.jpg", "上下選択");
+							KeyGuide->AddGuide("A.jpg", "");
+							KeyGuide->AddGuide("D.jpg", "調整");
+						}
+						else {
+							KeyGuide->Reset();
+							KeyGuide->AddGuide("W.jpg", "");
+							KeyGuide->AddGuide("S.jpg", "機首下上(ピッチ)");
+							KeyGuide->AddGuide("A.jpg", "");
+							KeyGuide->AddGuide("D.jpg", "左右回転(ロール)");
+							KeyGuide->AddGuide("Q.jpg", "");
+							KeyGuide->AddGuide("E.jpg", "左右傾け(ヨー)");
+							KeyGuide->AddGuide("R.jpg", "");
+							KeyGuide->AddGuide("F.jpg", "加減速");
+							KeyGuide->AddGuide("LM.jpg", "射撃");
+							KeyGuide->AddGuide("MM.jpg", "フリールック");
+							KeyGuide->AddGuide("RM.jpg", "エイム");
+							KeyGuide->AddGuide("Tab.jpg", "ポーズ");
+						}
+					},
+					&this->m_MouseActive);
+
+				*isPause = !this->m_MouseActive.on();
 				if (*isPause) {
 					auto SE = SoundPool::Instance();
 					if (!OptionWindowClass::Instance()->IsActive()) {
-						if (UpKey.trigger()) {
+						if (Pad->GetUpKey().trigger()) {
 							--select;
 							if (select < 0) { select = 2; }
 							SelYadd[select] = 10.f;
 
 							SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
-						if (DownKey.trigger()) {
+						if (Pad->GetDownKey().trigger()) {
 							++select;
 							if (select > 2) { select = 0; }
 							SelYadd[select] = -10.f;
@@ -323,7 +319,7 @@ namespace FPS_n2 {
 						for (int i = 0; i < 3; i++) {
 							Easing(&SelYadd[i], 0.f, 0.95f, EasingType::OutExpo);
 						}
-						if (OKKey.trigger()) {
+						if (Pad->GetOKKey().trigger()) {
 							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 							switch (select) {
 							case 0:
@@ -341,7 +337,7 @@ namespace FPS_n2 {
 								break;
 							}
 						}
-						if (NGKey.trigger()) {
+						if (Pad->GetNGKey().trigger()) {
 							SE->Get((int)SoundEnum::UI_NG).Play(0, DX_PLAYTYPE_BACK, TRUE);
 							this->m_MouseActive.Execute(true);
 						}
@@ -402,169 +398,47 @@ namespace FPS_n2 {
 					}
 				}
 				//Input,AI
-				bool look_key = false;
 				{
 					float cam_per = ((GetMainCamera().GetCamFov() / deg2rad(75)) / (is_lens() ? zoom_lens() : 1.f)) / 100.f;
 					if (this->m_LookMode != 0) {
 						cam_per *= 0.2f;
 					}
 					float pp_x = 0.f, pp_y = 0.f;
-					bool eyechange_key = false;
 					InputControl MyInput;
 					auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();
-					{
-
-						if (GetJoypadNum() > 0) {
-							DINPUT_JOYSTATE input;
-							int padID = DX_INPUT_PAD1;
-							GetJoypadInputState(padID);
-							switch (GetJoypadType(padID)) {
-							case DX_PADTYPE_OTHER:
-							case DX_PADTYPE_DUAL_SHOCK_4:
-							case DX_PADTYPE_DUAL_SENSE:
-							case DX_PADTYPE_SWITCH_JOY_CON_L:
-							case DX_PADTYPE_SWITCH_JOY_CON_R:
-							case DX_PADTYPE_SWITCH_PRO_CTRL:
-							case DX_PADTYPE_SWITCH_HORI_PAD:
-								GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
-								{
-									this->m_MouseWheel.Execute((input.Buttons[11] != 0)/*R3*/);
-									if (this->m_MouseWheel.press()) {
-										this->m_MouseWheelPressTime += 1.f / FPS;
-									}
-									else {
-										this->m_MouseWheelPressTime = 0.f;
-									}
-
-									pp_x = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f) * cam_per;
-									pp_y = std::clamp((float)(input.Z) / 100.f*0.35f, -9.f, 9.f) * cam_per;
-									if (input.Buttons[11] != 0)/*R3*/ {
-										pp_x *= 2.f;
-										pp_y *= 2.f;
-									}
-									float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
-									bool w_key = false;
-									bool s_key = false;
-									bool a_key = false;
-									bool d_key = false;
-									if (!(input.X == 0 && input.Y == 0)) {
-										w_key = (-50.f <= deg && deg <= 50.f);
-										a_key = (-140.f <= deg && deg <= -40.f);
-										s_key = (130.f <= deg || deg <= -130.f);
-										d_key = (40.f <= deg && deg <= 140.f);
-									}
-									//視点切り替え
-									look_key = (input.Buttons[6] != 0);/*L2*/	//ADS
-									//十字
-									deg = (float)(input.POV[0]) / 100.f;
-									bool right_key = (40.f <= deg && deg <= 140.f);
-									bool left_key = (220.f <= deg && deg <= 320.f);
-									bool up_key = (310.f <= deg || deg <= 50.f);
-									bool down_key = (130.f <= deg && deg <= 230.f);
-
-
-									if (m_AutoAimSel != -1) {
-										if (0.f < m_AimPoint.z() && m_AimPoint.z() < 1.f) {
-											auto& c = (std::shared_ptr<CharacterClass>&)(*ObjMngr->GetObj(ObjType::Plane, m_AutoAimSel));
-											pp_x += -(float)(c->GetCameraPosition().y() - m_AimPoint.y()) * 0.0001f * 60.f / FPS;
-											pp_y += (float)(c->GetCameraPosition().x() - m_AimPoint.x()) * 0.0003f * 60.f / FPS;
-										}
-									}
-
-									//ボタン
-									//(input.Buttons[0] != 0)/*□*/
-									//(input.Buttons[1] != 0)/*×*/
-									//(input.Buttons[2] != 0)/*〇*/
-									//(input.Buttons[3] != 0)/*△*/
-									//(input.Buttons[4] != 0)/*L1*/
-									//(input.Buttons[5] != 0)/*R1*/
-									//(input.Buttons[6] != 0)/*L2*/
-									//(input.Buttons[7] != 0)/*R2*/
-									//(input.Buttons[8] != 0)/**/
-									//(input.Buttons[9] != 0)/**/
-									//(input.Buttons[10] != 0)/*L3*/
-									//(input.Buttons[11] != 0)/*R3*/
-									MyInput.SetInput(
-										pp_x,
-										pp_y,
-										w_key, s_key, a_key, d_key,
-										(input.Buttons[1] != 0)/*×*/,
-										(input.Buttons[4] != 0)/*L1*/, (input.Buttons[5] != 0)/*R1*/,
-										right_key, left_key, up_key, down_key,
-										(input.Buttons[11] != 0)/*R3*/,	//Space
-										(input.Buttons[0] != 0)/*□*/,	//R
-										(input.Buttons[3] != 0)/*△*/,	//F
-										(input.Buttons[10] != 0)/*L3*/,	//C
-										(input.Buttons[7] != 0)/*R2*/,	//Shot
-										(input.Buttons[6] != 0)/*L2*/	//ADS
-									);
-								}
-								break;
-							case DX_PADTYPE_XBOX_360:
-							case DX_PADTYPE_XBOX_ONE:
-								break;
-							default:
-								break;
-							}
-
-							this->m_TPS_Xrad += pp_x;
-							this->m_TPS_Yrad += pp_y;
-						}
-						else {//キーボード
-							this->m_MouseWheel.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_MIDDLE) != 0);
-							if (this->m_MouseWheel.press()) {
-								this->m_MouseWheelPressTime += 1.f / FPS;
-							}
-							else {
-								this->m_MouseWheelPressTime = 0.f;
-							}
-							int mx = DXDraw::Instance()->m_DispXSize / 2, my = DXDraw::Instance()->m_DispYSize / 2;
-							if (this->m_MouseActive.on()) {
-								if (this->m_MouseActive.trigger()) {
-									SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
-								}
-								GetMousePoint(&mx, &my);
-								SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
-								SetMouseDispFlag(FALSE);
-							}
-							else {
-								SetMouseDispFlag(TRUE);
-							}
-
-							pp_x = std::clamp((-(float)(my - DXDraw::Instance()->m_DispYSize / 2))*1.f, -180.f, 180.f) * cam_per;
-							pp_y = std::clamp(((float)(mx - DXDraw::Instance()->m_DispXSize / 2))*1.f, -180.f, 180.f) * cam_per;
-
-
-							look_key = ((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0) && this->m_MouseActive.on();
-							eyechange_key = CheckHitKeyWithCheck(KEY_INPUT_V) != 0 && false;
-
-							if (m_AutoAimSel != -1) {
-								if (0.f < m_AimPoint.z() && m_AimPoint.z() < 1.f) {
-									auto& c = (std::shared_ptr<CharacterClass>&)(*ObjMngr->GetObj(ObjType::Plane, m_AutoAimSel));
-									pp_x += -(float)(c->GetCameraPosition().y() - m_AimPoint.y()) * 0.00025f * 60.f / FPS;
-									pp_y += (float)(c->GetCameraPosition().x() - m_AimPoint.x()) * 0.0003f * 60.f / FPS;
-								}
-							}
-
-							MyInput.SetInput(
-								pp_x*(1.f - this->m_FreeLook_Per),
-								pp_y*(1.f - this->m_FreeLook_Per),
-								(CheckHitKeyWithCheck(KEY_INPUT_W) != 0), (CheckHitKeyWithCheck(KEY_INPUT_S) != 0), (CheckHitKeyWithCheck(KEY_INPUT_A) != 0), (CheckHitKeyWithCheck(KEY_INPUT_D) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_LSHIFT) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_Q) != 0), (CheckHitKeyWithCheck(KEY_INPUT_E) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0), (CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0), (CheckHitKeyWithCheck(KEY_INPUT_UP) != 0), (CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_R) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_F) != 0),
-								(CheckHitKeyWithCheck(KEY_INPUT_C) != 0),
-								(((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) && this->m_MouseActive.on()),
-								(((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0) && this->m_MouseActive.on())
-							);
-
-							this->m_TPS_Xrad += std::clamp(((float)(my - DXDraw::Instance()->m_DispYSize / 2))*0.5f, -9.f, 9.f) / 100.f;
-							this->m_TPS_Yrad += std::clamp(((float)(mx - DXDraw::Instance()->m_DispXSize / 2))*0.5f, -9.f, 9.f) / 100.f;
+					//
+					this->m_TPS_Xrad += std::clamp(-Pad->GetLS_Y()*0.5f, -9.f, 9.f) / 100.f;
+					this->m_TPS_Yrad += std::clamp(Pad->GetLS_X()*0.5f, -9.f, 9.f) / 100.f;
+					//
+					pp_x = Pad->GetLS_Y() * cam_per;
+					pp_y = Pad->GetLS_X() * cam_per;
+					if (Pad->GetMouseWheel().press()) {
+						pp_x *= 2.f;
+						pp_y *= 2.f;
+					}
+					//オートエイム
+					if (m_AutoAimSel != -1) {
+						if (0.f < m_AimPoint.z() && m_AimPoint.z() < 1.f) {
+							auto& c = (std::shared_ptr<CharacterClass>&)(*ObjMngr->GetObj(ObjType::Plane, m_AutoAimSel));
+							pp_x += -(float)(c->GetCameraPosition().y() - m_AimPoint.y()) * 0.0001f * 60.f / FPS;
+							pp_y += (float)(c->GetCameraPosition().x() - m_AimPoint.x()) * 0.0003f * 60.f / FPS;
 						}
 					}
+					MyInput.SetInput(
+						pp_x*(1.f - this->m_FreeLook_Per),
+						pp_y*(1.f - this->m_FreeLook_Per),
+						Pad->GetUpKey().press(), Pad->GetDownKey().press(), Pad->GetLeftKey().press(), Pad->GetRightKey().press(),
+						false,
+						Pad->GetQKey().press(), Pad->GetEKey().press(),
+						false, false, false, false,
+						Pad->GetOKKey().press(),
+						Pad->GetAccelKey().press(),
+						Pad->GetBrakeKey().press(),
+						false,
+						(Pad->GetShotKey().press() && this->m_MouseActive.on()),
+						(Pad->GetLookKey().press() && this->m_MouseActive.on())
+					);
+
 
 					//一番前を狙う
 					auto AimFront = [&]() {
@@ -625,55 +499,15 @@ namespace FPS_n2 {
 						return tmp_id;
 					};
 
-					switch (this->m_LookMode) {
-					case 0:
-					{
-						if (this->m_MouseWheel.trigger()) {
-							this->m_LookMode = 1;
-						}
-					}
-					break;
-					case 1:
-					{
-						if (this->m_MouseWheel.trigger()) {
-							this->m_LookMode = 0;
-						}
-						if (this->m_MouseWheelPressTime > 0.5f) {
-							this->m_LookMode = 2;
-							//ロック対象を選択
-							this->m_LookOn = AimFront();
-						}
-					}
-					break;
-					case 2:
-					{
-						if (this->m_MouseWheel.trigger()) {
-							this->m_LookMode = 0;
-							this->m_LookOn = -1;
-						}
-						auto Wheel = GetMouseWheelRotVolWithCheck();
-						if (Wheel > 0) {
-							this->m_LookOn = AimFront();
-						}
-						else if (Wheel < 0) {
-							this->m_LookOn = AimBack();
-						}
-					}
-					break;
-					default:
-						this->m_LookMode = 0;
-						break;
-					}
-
 					this->m_LookOn = -1;
-					this->m_LookMode = this->m_MouseWheel.press() ? 1 : 0;
+					this->m_LookMode = Pad->GetMouseWheel().press() ? 1 : 0;
 
 
-					if (look_key) {
+					if (Pad->GetLookKey().press() && this->m_MouseActive.on()) {
 						this->m_LookMode = 0;
 					}
 					Easing(&this->m_FreeLook_Per, ((this->m_LookMode != 0)) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
-					Easing(&this->m_Aim_Per, (look_key) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					Easing(&this->m_Aim_Per, (Pad->GetLookKey().press() && this->m_MouseActive.on()) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
 
 					this->m_TPS_Xrad = std::clamp(this->m_TPS_Xrad, deg2rad(-60), deg2rad(60));
 					if (this->m_TPS_Yrad >= deg2rad(180)) { this->m_TPS_Yrad -= deg2rad(360); }
@@ -890,7 +724,7 @@ namespace FPS_n2 {
 					Easing(&near_t, Scale_Rate * 1.f, 0.9f, EasingType::OutExpo);
 					Easing(&far_t, Scale_Rate * 500.f, 0.9f, EasingType::OutExpo);
 
-					if (look_key) {
+					if (Pad->GetLookKey().press() && this->m_MouseActive.on()) {
 						Easing(&fov_t, deg2rad(25), 0.9f, EasingType::OutExpo);
 					}
 					else {
@@ -936,7 +770,7 @@ namespace FPS_n2 {
 					m_AutoAimSel = -1;
 				}
 				m_AutoAimTimer = std::max(m_AutoAimTimer - 1.f / FPS, 0.f);
-				if (look_key) {
+				if (Pad->GetLookKey().press() && this->m_MouseActive.on()) {
 					if (0.f < m_AimPoint.z() && m_AimPoint.z() < 1.f) {
 						int select_t = -1;
 						float len = 10000.f*Scale_Rate;
@@ -975,8 +809,7 @@ namespace FPS_n2 {
 					auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();
 					//Time,Score
 					this->m_UIclass.SetfloatParam(0, TotalTime - Timer);
-					this->m_UIclass.SetIntParam(6, (int)this->m_ScoreBuf);
-					this->m_ScoreBuf += std::clamp((PlayerMngr->GetPlayer(0).GetScore() - this->m_ScoreBuf)*100.f, -5.f, 5.f) / FPS;
+					this->m_UIclass.SetIntParam(6, PlayerMngr->GetPlayer(0).GetScore());
 					//HP
 					this->m_UIclass.SetIntParam(3, (int)Chara->GetHP());
 					this->m_UIclass.SetIntParam(4, (int)Chara->GetHPMax());
@@ -988,10 +821,12 @@ namespace FPS_n2 {
 					this->m_UIclass.SetIntParam(1, (int)(this->m_CamShake2.y()*100.f + Chara->GetPitch()*100.f));
 					this->m_UIclass.SetIntParam(2, (int)(Chara->GetRoll()*100.f));
 
-					this->m_UIclass.SetfloatParam(3, Chara->GetSpeed());
+					Easing(&m_DrawSpeed, Chara->GetSpeed(), 0.9f, EasingType::OutExpo);
+
+					this->m_UIclass.SetfloatParam(3, m_DrawSpeed);
 					this->m_UIclass.SetfloatParam(4, Chara->GetMove().pos.y() / Scale_Rate);
 					if (SpeedUpdateTime <= 0.f) {
-						this->m_UIclass.SetfloatParam(1, Chara->GetSpeed());
+						this->m_UIclass.SetfloatParam(1, m_DrawSpeed);
 						this->m_UIclass.SetfloatParam(2, Chara->GetMove().pos.y() / Scale_Rate);
 						SpeedUpdateTime = 0.25f;
 					}
@@ -1020,6 +855,11 @@ namespace FPS_n2 {
 					}
 				}
 				else {
+					if (EndTimer == 0.f) {
+						if (CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0) {
+							m_ResultXofs = 0.f;
+						}
+					}
 					if (m_ResultXofs > -5.f) {
 						if (m_ResultColor == 0.f) {
 							auto& Chara = PlayerMngr->GetPlayer(GetMyPlayerID()).GetChara();

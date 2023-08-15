@@ -5,15 +5,8 @@ namespace FPS_n2 {
 	namespace Sceneclass {
 		class TitleScene : public TEMPSCENE {
 		private:
-			switchs UpKey;
-			switchs DownKey;
-			switchs LeftKey;
-			switchs RightKey;
-			switchs OKKey;
-			switchs NGKey;
-
 			int select{ 0 };
-			float SelYadd[3] = { 0.f,0.f,0.f };
+			std::array<float, 3> SelYadd{};
 
 			float GameFadeIn{ 0.f };
 			float GameStart{ 0.f };
@@ -40,14 +33,9 @@ namespace FPS_n2 {
 				GameStart2 = 0.f;
 				GameStart3 = 0.f;
 
-				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
-
-				KeyGuide->AddGuide("none.jpg", "決定");
-				KeyGuide->AddGuide("X.jpg", "戻る");
-				KeyGuide->AddGuide("W.jpg", "");
-				KeyGuide->AddGuide("S.jpg", "上下選択");
-				KeyGuide->AddGuide("A.jpg", "");
-				KeyGuide->AddGuide("D.jpg", "調整");
+				for (auto& y : SelYadd) {
+					y = 0.f;
+				}
 			}
 			//
 			bool			Update_Sub(bool* isPause) noexcept override {
@@ -61,93 +49,42 @@ namespace FPS_n2 {
 				DebugParts->SetPoint("update start");
 #endif // DEBUG
 				auto SE = SoundPool::Instance();
+				auto* Pad = FPS_n2::PadControl::Instance();
 				//FirstDoingv
 				if (GetIsFirstLoop()) {
 				}
 
 				GameFadeIn = std::max(GameFadeIn - 1.f / FPS, 0.f);
 
-				if (GetJoypadNum() > 0) {
-					DINPUT_JOYSTATE input;
-					int padID = DX_INPUT_PAD1;
-					GetJoypadInputState(padID);
-					switch (GetJoypadType(padID)) {
-					case DX_PADTYPE_OTHER:
-					case DX_PADTYPE_DUAL_SHOCK_4:
-					case DX_PADTYPE_DUAL_SENSE:
-					case DX_PADTYPE_SWITCH_JOY_CON_L:
-					case DX_PADTYPE_SWITCH_JOY_CON_R:
-					case DX_PADTYPE_SWITCH_PRO_CTRL:
-					case DX_PADTYPE_SWITCH_HORI_PAD:
-						GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
-						{
-							//pp_x = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f) * cam_per;
-							//pp_y = std::clamp((float)(input.Z) / 100.f*0.35f, -9.f, 9.f) * cam_per;
-							float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
-							bool w_key = false;
-							bool s_key = false;
-							bool a_key = false;
-							bool d_key = false;
-							if (!(input.X == 0 && input.Y == 0)) {
-								w_key = (-50.f <= deg && deg <= 50.f);
-								a_key = (-140.f <= deg && deg <= -40.f);
-								s_key = (130.f <= deg || deg <= -130.f);
-								d_key = (40.f <= deg && deg <= 140.f);
-							}
-							//十字
-							//deg = (float)(input.POV[0]) / 100.f;
-							//bool right_key = (40.f <= deg && deg <= 140.f);
-							//bool left_key = (220.f <= deg && deg <= 320.f);
-							//bool up_key = (310.f <= deg || deg <= 50.f);
-							//bool down_key = (130.f <= deg && deg <= 230.f);
-
-							//ボタン
-							//(input.Buttons[0] != 0)/*□*/
-							//(input.Buttons[1] != 0)/*×*/
-							//(input.Buttons[2] != 0)/*〇*/
-							//(input.Buttons[3] != 0)/*△*/
-							//(input.Buttons[4] != 0)/*L1*/
-							//(input.Buttons[5] != 0)/*R1*/
-							//(input.Buttons[6] != 0)/*L2*/
-							//(input.Buttons[7] != 0)/*R2*/
-							//(input.Buttons[8] != 0)/**/
-							//(input.Buttons[9] != 0)/**/
-							//(input.Buttons[10] != 0)/*L3*/
-							//(input.Buttons[11] != 0)/*R3*/
-							UpKey.Execute(w_key);
-							DownKey.Execute(s_key);
-							LeftKey.Execute(a_key);
-							RightKey.Execute(d_key);
-							OKKey.Execute((input.Buttons[1] != 0)/*×*/);
-							NGKey.Execute((input.Buttons[2] != 0)/*〇*/);
-
-						}
-						break;
-					case DX_PADTYPE_XBOX_360:
-					case DX_PADTYPE_XBOX_ONE:
-						break;
-					default:
-						break;
+				Pad->Execute(
+					[&]() {
+						auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+						KeyGuide->Reset();
+						KeyGuide->AddGuide("ng.png", "決定");
+						KeyGuide->AddGuide("ok.png", "戻る");
+						KeyGuide->AddGuide("R_stick.png", "上下選択,調整");
+					},
+					[&]() {
+						auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+						KeyGuide->Reset();
+						KeyGuide->AddGuide("none.jpg", "決定");
+						KeyGuide->AddGuide("X.jpg", "戻る");
+						KeyGuide->AddGuide("W.jpg", "");
+						KeyGuide->AddGuide("S.jpg", "上下選択");
+						KeyGuide->AddGuide("A.jpg", "");
+						KeyGuide->AddGuide("D.jpg", "調整");
 					}
-				}
-				else {//キーボード
-					UpKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_W) != 0 || CheckHitKeyWithCheck(KEY_INPUT_UP) != 0);
-					DownKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_S) != 0 || CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0);
-					LeftKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_A) != 0 || CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0);
-					RightKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_D) != 0 || CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0);
-					OKKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0);
-					NGKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_X) != 0);
-				}
+				);
 				if (!OptionWindowClass::Instance()->IsActive()) {
 					if (GameStart == 0.f && GameStart2 == 0.f) {
-						if (UpKey.trigger()) {
+						if (Pad->GetUpKey().trigger()) {
 							--select;
 							if (select < 0) { select = 2; }
 							SelYadd[select] = 10.f;
 
 							SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
-						if (DownKey.trigger()) {
+						if (Pad->GetDownKey().trigger()) {
 							++select;
 							if (select > 2) { select = 0; }
 							SelYadd[select] = -10.f;
@@ -161,26 +98,26 @@ namespace FPS_n2 {
 
 					switch (select) {
 					case 0:
-						if (OKKey.trigger()) {
+						if (Pad->GetOKKey().trigger()) {
 							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
-						if (!(GameStart == 0.f && !OKKey.trigger())) {
+						if (!(GameStart == 0.f && !Pad->GetOKKey().trigger())) {
 							GameStart += 1.f / FPS / 0.5f;
 						}
 						break;
 					case 1:
-						if (OKKey.trigger()) {
+						if (Pad->GetOKKey().trigger()) {
 							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
-						if (!(GameStart2 == 0.f && !OKKey.trigger())) {
+						if (!(GameStart2 == 0.f && !Pad->GetOKKey().trigger())) {
 							GameStart2 += 1.f / FPS / 0.5f;
 						}
 						break;
 					case 2:
-						if (OKKey.trigger()) {
+						if (Pad->GetOKKey().trigger()) {
 							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
-						if (OKKey.trigger()) {
+						if (Pad->GetOKKey().trigger()) {
 							OptionWindowClass::Instance()->SetActive(true);
 						}
 						break;

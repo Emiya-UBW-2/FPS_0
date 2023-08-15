@@ -177,6 +177,7 @@ namespace FPS_n2 {
 			}
 			//
 			bool			Update_Sub(bool*  isPause) noexcept override {
+				//auto* Pad = FPS_n2::PadControl::Instance();
 				if (*isPause) {
 					return true;
 				}

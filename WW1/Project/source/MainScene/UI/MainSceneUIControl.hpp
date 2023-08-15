@@ -10,6 +10,9 @@ namespace FPS_n2 {
 			std::array<std::string, 7>		strParam;
 			std::array<GraphHandle*, 3>		ItemGraphPtr{ 0 };
 
+			int prevScore{ 0 };
+			std::vector<std::pair<int, float>> ScoreAdd;
+		private:
 			int Blend3Int(int pInt1, int pInt2, int pInt3, float per) {
 				int ans;
 				ans = (int)(std::clamp<float>(per * 2.f - 1.f, 0.f, 1.f) * (float)pInt3);
@@ -44,13 +47,15 @@ namespace FPS_n2 {
 				for (int i = 0; i < 3; i++) {
 					ItemGraphPtr[i] = nullptr;
 				}
+				prevScore = 0;
+				ScoreAdd.clear();
 			}
 			void			Draw(void) noexcept {
 				auto* Fonts = FontPool::Instance();
 				auto* DrawParts = DXDraw::Instance();
 				auto Red = GetColor(255, 0, 0);
 				//auto Blue = GetColor(50, 50, 255);
-				//auto Green = GetColor(43, 163, 91);
+				auto Green = GetColor(64, 192, 48);
 				auto White = GetColor(255, 255, 255);
 				auto Gray = GetColor(64, 64, 64);
 				//auto Black = GetColor(0, 0, 0);
@@ -70,6 +75,33 @@ namespace FPS_n2 {
 					yp1 += y_r(25);
 					Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(24), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, xp1, yp1, White, Gray, "SCORE");
 					Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(24), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP, xp1 + y_r(240), yp1, White, Gray, "%d", intParam[6]);
+				}
+				{
+					int xp1, yp1;
+					xp1 = DrawParts->m_DispXSize / 2;
+					yp1 = DrawParts->m_DispYSize / 2;
+
+					if (intParam[6] != prevScore) {
+						if (intParam[6] > prevScore) {
+							ScoreAdd.emplace_back(std::make_pair(intParam[6] - prevScore, 2.f));
+						}
+						prevScore = intParam[6];
+					}
+					for (int i = 0; i < ScoreAdd.size(); i++) {
+						auto& s = ScoreAdd[i];
+						if (s.second > 0.f) {
+							float per = std::powf(2.f - s.second, 2.f);
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*(1.f- per)), 0, 255));
+							Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(32), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::BOTTOM, xp1, yp1 - y_r(per*96.f), Green, Gray, "+%d", s.first);
+						}
+						else {
+							std::swap(s, ScoreAdd.back());
+							ScoreAdd.pop_back();
+							i--;
+						}
+						s.second = std::max(s.second - 1.f / FPS, 0.f);
+					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 				}
 				//î•ñ
 				{
@@ -99,7 +131,7 @@ namespace FPS_n2 {
 					float rad = deg2rad(intParam[2])/60.f;
 					int xp1, yp1;
 					if (ItemGraphPtr[0]) {
-						float per = (floatParam[3] - 60.f) / (220.f - 60.f);
+						float per = std::clamp((floatParam[3] - 60.f) / (220.f - 60.f), 0.f, 1.f);
 
 						xp1 = DrawParts->m_DispXSize / 2 + intParam[0] - y_r(300.f*std::cos(rad));
 						yp1 = DrawParts->m_DispYSize / 2 + intParam[1] - y_r(300.f*std::sin(rad)) - y_r(18) / 2;

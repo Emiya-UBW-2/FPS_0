@@ -22,8 +22,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	FPS_n2::KeyGuideClass::Create();
 	FPS_n2::SaveDataClass::Create();
+	FPS_n2::PadControl::Create();
 	FPS_n2::Sceneclass::OptionWindowClass::Create();
 	FPS_n2::Sceneclass::OptionWindowClass::Instance()->Init();
+	
 
 	FPS_n2::SaveDataClass::Instance()->Load();
 	//MV1SetLoadModelUsePackDraw(TRUE);

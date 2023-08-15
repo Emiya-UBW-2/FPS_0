@@ -9,7 +9,7 @@
 #endif // _DEBUG
 
 //ここをコメントアウト
-//#define DEBUG
+#define DEBUG
 
 
 static int g_Mode = 0;

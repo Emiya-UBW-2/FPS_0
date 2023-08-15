@@ -176,7 +176,7 @@ namespace FPS_n2 {
 				auto* SE = SoundPool::Instance();
 				//‰‰ñ‚Ì‚ÝXV‚·‚é“à—e
 				if (this->m_IsFirstLoop) {
-					for (int i = 0; i < GetObj().get_anime().size(); i++) { GetAnime((CharaAnimeID)i).per = GetAnimeBuf((CharaAnimeID)i); }
+					for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) { GetAnime((CharaAnimeID)i).per = GetAnimeBuf((CharaAnimeID)i); }
 					GetObj().work_anime();
 
 					if (this->m_MyID == 0) {

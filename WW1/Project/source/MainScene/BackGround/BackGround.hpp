@@ -153,7 +153,10 @@ namespace FPS_n2 {
 			void			Shadow_Draw_Sub(void) noexcept override {
 			}
 			void			Draw_Sub(void) noexcept override {
-				this->m_grass.Draw();
+				auto* OptionParts = OPTION::Instance();
+				if (OptionParts->Get_grass_level() > 0) {
+					this->m_grass.Draw();
+				}
 			}
 			//
 			void			Dispose_Sub(void) noexcept override {
@@ -195,7 +198,10 @@ namespace FPS_n2 {
 			}
 			//
 			void			Execute_Sub(void) noexcept override {
-				this->m_Tree.Execute();
+				auto* OptionParts = OPTION::Instance();
+				if (OptionParts->Get_grass_level() > 0) {
+					this->m_Tree.Execute();
+				}
 			}
 			//
 			void			Shadow_Draw_Far_Sub(void) noexcept override {
@@ -203,8 +209,11 @@ namespace FPS_n2 {
 				this->m_grass.DrawShadow();
 			}
 			void			Draw_Sub(void) noexcept override {
-				this->m_Tree.Draw(true);
-				this->m_grass.Draw();
+				auto* OptionParts = OPTION::Instance();
+				if (OptionParts->Get_grass_level() > 0) {
+					this->m_Tree.Draw(true);
+					this->m_grass.Draw();
+				}
 			}
 			//
 			void			Dispose_Sub(void) noexcept override {

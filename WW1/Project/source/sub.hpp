@@ -747,7 +747,7 @@ namespace FPS_n2 {
 		auto Gray75 = GetColor(128, 128, 128);
 		auto Gray = GetColor(64, 64, 64);
 
-		Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r((int)((float)(48 * 3 / 2 * 3 / 4) * per)), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40), yp1 + y_r(20), IsSelect ? Red75 : Gray75, Gray, String, args...);
+		Fonts->Get(FontPool::FontType::Nomal_AA).DrawString(y_r((int)((float)(48 * 3 / 2 * 3 / 4) * per)), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1 + y_r(40.f*per), yp1 + y_r(20.f*per), IsSelect ? Red75 : Gray75, Gray, String, args...);
 		Fonts->Get(FontPool::FontType::Fette_AA).DrawString(y_r((int)((float)(48 * 2 * 3 / 4) * per)), FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, IsSelect ? Red : White, Gray, String, args...);
 	}
 
@@ -764,7 +764,8 @@ namespace FPS_n2 {
 			switchs NGKey;
 
 			int select{ 0 };
-			float SelYadd[3] = { 0.f,0.f,0.f };
+			static const int selMax{ 8 };
+			std::array<float, selMax> SelYadd{};
 
 			bool isActive{ false };
 		private:
@@ -775,6 +776,9 @@ namespace FPS_n2 {
 			void Init(void) noexcept {
 				select = 0;
 				isActive = false;
+				for (auto& y : SelYadd) {
+					y = 0.f;
+				}
 			}
 			void Execute(void) noexcept {
 				auto SE = SoundPool::Instance();
@@ -789,10 +793,12 @@ namespace FPS_n2 {
 						case DX_PADTYPE_OTHER:
 						case DX_PADTYPE_DUAL_SHOCK_4:
 						case DX_PADTYPE_DUAL_SENSE:
-						case DX_PADTYPE_SWITCH_JOY_CON_L:
-						case DX_PADTYPE_SWITCH_JOY_CON_R:
-						case DX_PADTYPE_SWITCH_PRO_CTRL:
-						case DX_PADTYPE_SWITCH_HORI_PAD:
+						case DX_PADTYPE_SWITCH_JOY_CON_L://大丈夫？
+						case DX_PADTYPE_SWITCH_JOY_CON_R://大丈夫？
+						case DX_PADTYPE_SWITCH_PRO_CTRL://大丈夫？
+						case DX_PADTYPE_SWITCH_HORI_PAD://大丈夫？
+						case DX_PADTYPE_XBOX_360://大丈夫？
+						case DX_PADTYPE_XBOX_ONE://大丈夫？
 							GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
 							{
 								//pp_x = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f) * cam_per;
@@ -837,9 +843,6 @@ namespace FPS_n2 {
 
 							}
 							break;
-						case DX_PADTYPE_XBOX_360:
-						case DX_PADTYPE_XBOX_ONE:
-							break;
 						default:
 							break;
 						}
@@ -855,19 +858,19 @@ namespace FPS_n2 {
 
 					if (UpKey.trigger()) {
 						--select;
-						if (select < 0) { select = 2; }
+						if (select < 0) { select = selMax - 1; }
 						SelYadd[select] = 10.f;
 
 						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					if (DownKey.trigger()) {
 						++select;
-						if (select > 2) { select = 0; }
+						if (select > selMax - 1) { select = 0; }
 						SelYadd[select] = -10.f;
 
 						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
-					for (int i = 0; i < 3; i++) {
+					for (int i = 0; i < selMax; i++) {
 						Easing(&SelYadd[i], 0.f, 0.95f, EasingType::OutExpo);
 					}
 					{
@@ -892,6 +895,36 @@ namespace FPS_n2 {
 								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 							}
 							break;
+						case 2:
+							if (LeftKey.trigger() || RightKey.trigger()) {
+								OptionParts->Set_grass_level(1 - OptionParts->Get_grass_level());
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
+						case 3:
+							if (LeftKey.trigger() || RightKey.trigger()) {
+								OptionParts->Set_Bloom(OptionParts->Get_Bloom() ^ 1);
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
+						case 4:
+							if (LeftKey.trigger() || RightKey.trigger()) {
+								OptionParts->Set_Shadow(OptionParts->Get_Shadow() ^ 1);
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
+						case 5:
+							if (LeftKey.trigger() || RightKey.trigger()) {
+								OptionParts->Set_Vsync(OptionParts->Get_Vsync() ^ 1);
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
+						case 6:
+							if (LeftKey.trigger() || RightKey.trigger()) {
+								OptionParts->Set_aberration(OptionParts->Get_aberration() ^ 1);
+								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							break;
 						default:
 							break;
 						}
@@ -903,6 +936,14 @@ namespace FPS_n2 {
 						case 1:
 							break;
 						case 2:
+							break;
+						case 3:
+							break;
+						case 4:
+							break;
+						case 5:
+							break;
+						case 6:
 							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 							isActive = false;
 							break;
@@ -935,7 +976,7 @@ namespace FPS_n2 {
 						auto per = std::clamp(0.3f, 0.f, 1.f);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*per), 0, 255));
 
-						DrawBox(y_r(960 - 320), y_r(540 - 320), y_r(960 + 320), y_r(540 + 320), GetColor(255, 255, 255), TRUE);
+						DrawBox(y_r(960 - 320), y_r(540 - 320), y_r(960 + 320), y_r(540 + 320), GetColor(128, 128, 128), TRUE);
 
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 					}
@@ -948,30 +989,263 @@ namespace FPS_n2 {
 					//auto Gray75 = GetColor(128, 128, 128);
 					//auto Gray = GetColor(64, 64, 64);
 
-					xp1 = y_r(960 + 44);
-					yp1 = y_r(1080 - 400 - 108 * 3);
+					int Line = 0;
+
+					int height = 54;
+					//
+					xp1 = y_r(960 + 64);
+					yp1 = y_r(356 + height * Line);
 					DrawFetteString(xp1, yp1, 1.f, false, "Option");
-
-					xp1 = y_r(960 - 54 * 2);
-					yp1 = y_r(1080 - 400 - 108 * 2 + (int)SelYadd[0]);
-					DrawFetteString(xp1, yp1, 0.75f, (select == 0), "BGM");
-
-					xp1 = y_r(960 - 54 * 2 + 208);
-					DrawFetteString(xp1, yp1, 0.75f, (select == 0), "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
-
-					xp1 = y_r(960 - 54 * 2);
-					yp1 = y_r(1080 - 400 - 108 * 1 + (int)SelYadd[1]);
-					DrawFetteString(xp1, yp1, 0.75f, (select == 1), "SE");
-
-					xp1 = y_r(960 - 54 * 2 + 208);
-					DrawFetteString(xp1, yp1, 0.75f, (select == 1), "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
-
+					Line++;
+					//
+					auto SelStart = Line;
+					//
+					{
+						xp1 = y_r(960 - 54 * 2);
+						//サウンド
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "BGM");
+						DrawFetteString(xp1 + y_r(300), yp1, 0.4f, (select == (Line - SelStart)), "%3d %", (int)(OptionParts->Get_BGM()*100.f + 0.5f));
+						Line++;
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "SE");
+						DrawFetteString(xp1 + y_r(300), yp1, 0.4f, (select == (Line - SelStart)), "%3d %", (int)(OptionParts->Get_SE()*100.f + 0.5f));
+						Line++;
+						//グラフィック
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "GRASS");
+						DrawFetteString(xp1 + y_r(300), yp1, (OptionParts->Get_grass_level() ? 0.4f : 0.35f), (select == (Line - SelStart)), ((OptionParts->Get_grass_level() > 0) ? "Enable" : "DiSable"));
+						Line++;
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "BloomEffect");
+						DrawFetteString(xp1 + y_r(300), yp1, (OptionParts->Get_Bloom() ? 0.4f : 0.35f), (select == (Line - SelStart)), (OptionParts->Get_Bloom() ? "Enable" : "DiSable"));
+						Line++;
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "Shadow");
+						DrawFetteString(xp1 + y_r(300), yp1, (OptionParts->Get_Shadow() ? 0.4f : 0.35f), (select == (Line - SelStart)), (OptionParts->Get_Shadow() ? "Enable" : "DiSable"));
+						Line++;
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "V Sync");
+						DrawFetteString(xp1 + y_r(300), yp1, (OptionParts->Get_Vsync() ? 0.4f : 0.35f), (select == (Line - SelStart)), (OptionParts->Get_Vsync() ? "Enable" : "DiSable"));
+						Line++;
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "ColorAberration");
+						DrawFetteString(xp1 + y_r(300), yp1, (OptionParts->Get_aberration() ? 0.4f : 0.35f), (select == (Line - SelStart)), (OptionParts->Get_aberration() ? "Enable" : "DiSable"));
+						Line++;
+					}
+					//
 					xp1 = y_r(960 + 44);
-					yp1 = y_r(1080 - 400 - 108 * -1 + (int)SelYadd[2]);
-					DrawFetteString(xp1, yp1, 0.75f, (select == 2), "Return");
+					yp1 = y_r(356 + height * Line + (int)SelYadd.back());
+					DrawFetteString(xp1, yp1, 0.4f, (select == selMax - 1), "Return");
+					//
+					{
+						xp1 = y_r(960 - 320);
+						yp1 = y_r(540 + 320);
+
+						auto* Fonts = FontPool::Instance();
+						auto White = GetColor(255, 255, 255);
+						auto Gray = GetColor(0, 0, 0);
+
+						std::string Info = "";
+						switch (select) {
+						case 0:
+							Info = "BGMボリュームを変更します";
+							break;
+						case 1:
+							Info = "SEボリュームを変更します";
+							break;
+						case 2:
+							Info = "木の表示をするかを指定します(GPU次第では大きくがFPS変動します)";
+							break;
+						case 3:
+							Info = "ブルームエフェクトの有効無効を指定します";
+							break;
+						case 4:
+							Info = "影の有効無効を指定します(GPU次第では大きくFPSが変動します)";
+							break;
+						case 5:
+							Info = "垂直同期の有効無効を指定します(反映は再起動後にされます)";
+							break;
+						case 6:
+							Info = "画面エフェクトの有効無効を指定します";
+							break;
+						default:
+							Info = "オプションを閉じます";
+							break;
+						}
+
+						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(18), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, White, Gray, Info);
+					}
 				}
 			}
 		};
+	};
+
+	class PadControl : public SingletonBase<PadControl> {
+	private:
+		friend class SingletonBase<PadControl>;
+	private:
+		switchs UpKey;
+		switchs DownKey;
+		switchs LeftKey;
+		switchs RightKey;
+		switchs OKKey;
+		switchs NGKey;
+
+		switchs m_ShotKey;
+		switchs m_MouseWheel;
+		switchs m_LookKey;
+
+		switchs m_AccelKey;
+		switchs m_BrakeKey;
+
+		switchs m_QKey;
+		switchs m_EKey;
+
+		float LS_X{ 0.f };
+		float LS_Y{ 0.f };
+	public:
+		const auto& GetUpKey() const noexcept { return UpKey; }
+		const auto& GetDownKey() const noexcept { return DownKey; }
+		const auto& GetLeftKey() const noexcept { return LeftKey; }
+		const auto& GetRightKey() const noexcept { return RightKey; }
+		const auto& GetOKKey() const noexcept { return OKKey; }
+		const auto& GetNGKey() const noexcept { return NGKey; }
+		const auto& GetShotKey() const noexcept { return m_ShotKey; }
+		const auto& GetMouseWheel() const noexcept { return m_MouseWheel; }
+		const auto& GetLookKey() const noexcept { return m_LookKey; }
+
+		const auto& GetAccelKey() const noexcept { return m_AccelKey; }
+		const auto& GetBrakeKey() const noexcept { return m_BrakeKey; }
+
+		const auto& GetQKey() const noexcept { return m_QKey; }
+		const auto& GetEKey() const noexcept { return m_EKey; }
+
+		const auto& GetLS_X() const noexcept { return LS_X; }
+		const auto& GetLS_Y() const noexcept { return LS_Y; }
+	public:
+		void Execute(std::function<void()>Guide_Pad_PS4, std::function<void()>Guide_Key, switchs* MouseActive = nullptr) noexcept {
+			//
+			if (GetJoypadNum() > 0) {
+				DINPUT_JOYSTATE input;
+				int padID = DX_INPUT_PAD1;
+				GetJoypadInputState(padID);
+				switch (GetJoypadType(padID)) {
+				case DX_PADTYPE_OTHER:
+				case DX_PADTYPE_DUAL_SHOCK_4:
+				case DX_PADTYPE_DUAL_SENSE:
+				case DX_PADTYPE_SWITCH_JOY_CON_L:
+				case DX_PADTYPE_SWITCH_JOY_CON_R:
+				case DX_PADTYPE_SWITCH_PRO_CTRL:
+				case DX_PADTYPE_SWITCH_HORI_PAD:
+					GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
+					//左スティック
+					{
+						float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
+						bool w_key = false;
+						bool s_key = false;
+						bool a_key = false;
+						bool d_key = false;
+						if (!(input.X == 0 && input.Y == 0)) {
+							w_key = (-50.f <= deg && deg <= 50.f);
+							a_key = (-140.f <= deg && deg <= -40.f);
+							s_key = (130.f <= deg || deg <= -130.f);
+							d_key = (40.f <= deg && deg <= 140.f);
+						}
+						this->UpKey.Execute(w_key);
+						this->DownKey.Execute(s_key);
+						this->LeftKey.Execute(a_key);
+						this->RightKey.Execute(d_key);
+					}
+					//十字
+					{
+						//float deg = (float)(input.POV[0]) / 100.f;
+						//bool right_key = (40.f <= deg && deg <= 140.f);
+						//bool left_key = (220.f <= deg && deg <= 320.f);
+						//bool up_key = (310.f <= deg || deg <= 50.f);
+						//bool down_key = (130.f <= deg && deg <= 230.f);
+					}
+					//ボタン
+					{
+						//(input.Buttons[0] != 0)/*□*/
+						//(input.Buttons[1] != 0)/*×*/
+						//(input.Buttons[2] != 0)/*〇*/
+						//(input.Buttons[3] != 0)/*△*/
+						//(input.Buttons[4] != 0)/*L1*/
+						//(input.Buttons[5] != 0)/*R1*/
+						//(input.Buttons[6] != 0)/*L2*/
+						//(input.Buttons[7] != 0)/*R2*/
+						//(input.Buttons[8] != 0)/**/
+						//(input.Buttons[9] != 0)/**/
+						//(input.Buttons[10] != 0)/*L3*/
+						//(input.Buttons[11] != 0)/*R3*/
+						this->OKKey.Execute((input.Buttons[1] != 0)/*×*/);
+						this->NGKey.Execute((input.Buttons[2] != 0)/*〇*/);
+						this->m_ShotKey.Execute((input.Buttons[7] != 0)/*R2*/);
+						this->m_MouseWheel.Execute((input.Buttons[11] != 0)/*R3*/);
+						this->m_LookKey.Execute(input.Buttons[6] != 0);/*L2*/	//ADS
+						this->m_AccelKey.Execute((input.Buttons[0] != 0)/*□*/);
+						this->m_BrakeKey.Execute((input.Buttons[3] != 0)/*△*/);
+						this->m_QKey.Execute((input.Buttons[4] != 0)/*L1*/);
+						this->m_EKey.Execute((input.Buttons[5] != 0)/*R1*/);
+					}
+					//右スティック
+					{
+						LS_X = std::clamp((float)(input.Z) / 100.f*0.35f, -9.f, 9.f);
+						LS_Y = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f);
+					}
+					//
+					Guide_Pad_PS4();
+					break;
+				case DX_PADTYPE_XBOX_360:
+				case DX_PADTYPE_XBOX_ONE:
+					break;
+				default:
+					break;
+				}
+			}
+			else {//キーボード
+				//左スティック
+				{
+					this->UpKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_W) != 0 || CheckHitKeyWithCheck(KEY_INPUT_UP) != 0);
+					this->DownKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_S) != 0 || CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0);
+					this->LeftKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_A) != 0 || CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0);
+					this->RightKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_D) != 0 || CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0);
+				}
+				//ボタン
+				{
+					this->OKKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0);
+					this->NGKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_X) != 0);
+					this->m_ShotKey.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0);
+					this->m_MouseWheel.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_MIDDLE) != 0);
+					this->m_LookKey.Execute((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0);
+					this->m_AccelKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_R) != 0);
+					this->m_BrakeKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_F) != 0);
+					this->m_QKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_Q) != 0);
+					this->m_EKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_E) != 0);
+				}
+				//右スティック
+				{
+					int mx = DXDraw::Instance()->m_DispXSize / 2, my = DXDraw::Instance()->m_DispYSize / 2;
+					if (MouseActive && MouseActive->on()) {
+						if (MouseActive->trigger()) {
+							SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
+						}
+						GetMousePoint(&mx, &my);
+						SetMousePoint(DXDraw::Instance()->m_DispXSize / 2, DXDraw::Instance()->m_DispYSize / 2);
+						SetMouseDispFlag(FALSE);
+					}
+					else {
+						SetMouseDispFlag(TRUE);
+					}
+					LS_X = std::clamp((float)(mx - DXDraw::Instance()->m_DispXSize / 2), -180.f, 180.f);
+					LS_Y = std::clamp(-(float)(my - DXDraw::Instance()->m_DispYSize / 2), -180.f, 180.f);
+				}
+				//
+				Guide_Key();
+			}
+			//
+		}
 	};
 
 };
