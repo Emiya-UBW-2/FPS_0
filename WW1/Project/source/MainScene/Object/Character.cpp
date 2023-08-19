@@ -15,9 +15,7 @@ namespace FPS_n2 {
 			//
 			this->m_MyID = pID;
 			//
-			for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) {
-				GetAnimeBuf((CharaAnimeID)i) = 0.f;
-			}
+			for (int i = 0; i < (int)CharaAnimeID::AnimeIDMax; i++) { GetAnimeBuf((CharaAnimeID)i) = 0.f; }
 			//
 			this->m_Speed = 0.f;
 			this->m_Press_Shot = false;
@@ -112,7 +110,7 @@ namespace FPS_n2 {
 		}
 		//SetMat指示
 		void			CharacterClass::ExecuteAnim(void) noexcept {
-			//auto SE = SoundPool::Instance();
+			//auto* SE = SoundPool::Instance();
 			//アニメ演算
 			{
 				//SetAnimLoop(GetBottomWalkAnimSel(), 1.f);
@@ -122,7 +120,7 @@ namespace FPS_n2 {
 		}
 		//SetMat指示更新
 		void			CharacterClass::ExecuteMatrix(void) noexcept {
-			//auto SE = SoundPool::Instance();
+			//auto* SE = SoundPool::Instance();
 			//auto* DrawParts = DXDraw::Instance();
 
 			auto SpeedNormal = 51.39f*0.5f;//秒速換算 92.5km/hくらい

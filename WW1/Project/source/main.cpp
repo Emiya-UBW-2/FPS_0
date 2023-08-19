@@ -1,23 +1,7 @@
 #include"Header.hpp"
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-	LPCSTR font_path;
-
-	font_path = "data/x14y24pxHeadUpDaisy.ttf"; // 読み込むフォントファイルのパス
-	DESIGNVECTOR Font1;
-	if (AddFontResourceEx(font_path, FR_PRIVATE, &Font1) == 0) {
-		MessageBox(NULL, "フォント読込失敗", "", MB_OK);
-	}
-
-	font_path = "data/DSFetteGotisch.ttf"; // 読み込むフォントファイルのパス
-	DESIGNVECTOR Font2;
-	if (AddFontResourceEx(font_path, FR_PRIVATE, &Font2) == 0) {
-		MessageBox(NULL, "フォント読込失敗", "", MB_OK);
-	}
-
 	OPTION::Create();
-	auto* OptionParts = OPTION::Instance();
-	OptionParts->Load();							//設定読み込み
 	DXDraw::Create("FPS_n2");						//汎用
 
 	FPS_n2::KeyGuideClass::Create();
@@ -66,13 +50,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 #endif // DEBUG
 			if (scene->Execute()) { break; }		//更新
 			FPS_n2::Sceneclass::OptionWindowClass::Instance()->Execute();
-
-			if (!scene->isPause()) {
-				EffectUseControl->Calc();			//エフェクシアのアプデを60FPS相当に変更
-			}
-			else {
-				EffectUseControl->Update_effect_f = false;
-			}
+			EffectUseControl->Calc(scene->isPause());//エフェクシアのアプデを60FPS相当に変更
 			scene->Draw();							//描画
 			FPS_n2::KeyGuideClass::Instance()->Draw();
 			FPS_n2::Sceneclass::OptionWindowClass::Instance()->Draw();
@@ -91,16 +69,5 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		FPS_n2::KeyGuideClass::Instance()->Reset();
 		scene->NextScene();							//次のシーンへ移行
 	}
-
-	font_path = "data/x14y24pxHeadUpDaisy.ttf"; // 読み込むフォントファイルのパス
-	if (RemoveFontResourceEx(font_path, FR_PRIVATE, &Font1) == 0) {
-		MessageBox(NULL, "フォント読込失敗", "", MB_OK);
-	}
-
-	font_path = "data/DSFetteGotisch.ttf"; // 読み込むフォントファイルのパス
-	if (RemoveFontResourceEx(font_path, FR_PRIVATE, &Font2) == 0) {
-		MessageBox(NULL, "フォント読込失敗", "", MB_OK);
-	}
-
 	return 0;
 }

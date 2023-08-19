@@ -7,7 +7,7 @@ namespace FPS_n2 {
 		class PlaneMove {
 		public:
 			VECTOR_ref Aim;
-			float Speed;
+			float Speed{ 0.f };
 		};
 
 		class StartMovieScene : public TEMPSCENE, public EffectControl {
@@ -23,7 +23,7 @@ namespace FPS_n2 {
 			VECTOR_ref	m_CamPos;
 			VECTOR_ref	m_CamVec;
 			VECTOR_ref	m_CamUp;
-			float		m_near, m_far, m_fov{ 0.f };
+			float		m_near{ 0.f }, m_far{ 0.f }, m_fov{ 0.f };
 
 			int			m_Seq{ 0 };
 			float		m_SeqCount{ 0.f };
@@ -45,7 +45,7 @@ namespace FPS_n2 {
 				Get_Next()->Load();
 
 				auto* ObjMngr = ObjectManager::Instance();
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				//
 				SetAmbientShadow(
 					VECTOR_ref::vget(Scale_Rate*-60.f, Scale_Rate*-10.f, Scale_Rate*-60.f),
@@ -195,7 +195,7 @@ namespace FPS_n2 {
 				DebugParts->SetPoint("update start");
 #endif // DEBUG
 				auto* ObjMngr = ObjectManager::Instance();
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 #ifdef DEBUG
 				//auto* DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
@@ -466,7 +466,7 @@ namespace FPS_n2 {
 			}
 			void			Dispose_Sub(void) noexcept override {
 				auto* ObjMngr = ObjectManager::Instance();
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 
 				SE->Get((int)SoundEnum::EngineStart).StopAll(0);
 				SE->Get((int)SoundEnum::Engine2).StopAll(0);

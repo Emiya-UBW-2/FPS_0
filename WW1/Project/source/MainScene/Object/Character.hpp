@@ -161,7 +161,7 @@ namespace FPS_n2 {
 				//
 				{
 					int mdata = FileRead_open((this->m_FilePath + "data.txt").c_str(), FALSE);
-					getparams::_str(mdata);
+					//getparams::_str(mdata);
 					FileRead_close(mdata);
 				}
 				//

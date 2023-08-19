@@ -552,8 +552,8 @@ namespace FPS_n2 {
 				ypos = 0;
 				size = 12;
 				str = "test";
-				START_TIME = (LONGLONG)(1000000.f * 0.01f);
-				END_TIME = (LONGLONG)(1000000.f * 1.01f);
+				START_TIME = 1000000 * 1 / 100;
+				END_TIME = 1000000 * 101 / 100;
 			}
 			void Set(int xp, int yp, int Fontsize, std::string_view mag, LONGLONG StartF, LONGLONG ContiF, int m_LMR) noexcept {
 				this->xpos = xp;
@@ -781,7 +781,7 @@ namespace FPS_n2 {
 				}
 			}
 			void Execute(void) noexcept {
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				if (isActive) {
 					auto* OptionParts = OPTION::Instance();
 

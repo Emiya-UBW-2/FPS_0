@@ -82,11 +82,11 @@ namespace FPS_n2 {
 		public:
 			MAINLOOP(void) noexcept { }
 			void			Load_Sub(void) noexcept override {
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 
 				SetCreate3DSoundFlag(FALSE);
 				this->m_BGM = SoundHandle::Load("data/Sound/BGM/Beethoven8_2.wav");
-				this->m_AimOn = SoundHandle::Load("data/Sound/SE/aim_on.wav");
+				//this->m_AimOn = SoundHandle::Load("data/Sound/SE/aim_on.wav");
 				SE->Add((int)SoundEnum::Env, 1, "data/Sound/SE/envi.wav", false);
 				SetCreate3DSoundFlag(FALSE);
 				SE->Add((int)SoundEnum::Engine, Chara_num, "data/Sound/SE/engine.wav");
@@ -120,7 +120,7 @@ namespace FPS_n2 {
 
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				//
 				SetAmbientShadow(
 					VECTOR_ref::vget(Scale_Rate*-600.f, Scale_Rate*-300.f, Scale_Rate*-600.f),
@@ -300,7 +300,7 @@ namespace FPS_n2 {
 
 				*isPause = !this->m_MouseActive.on();
 				if (*isPause) {
-					auto SE = SoundPool::Instance();
+					auto* SE = SoundPool::Instance();
 					if (!OptionWindowClass::Instance()->IsActive()) {
 						if (Pad->GetUpKey().trigger()) {
 							--select;
@@ -352,7 +352,8 @@ namespace FPS_n2 {
 #endif // DEBUG
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
+				auto* OptionParts = OPTION::Instance();
 #ifdef DEBUG
 				//auto* DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
@@ -379,12 +380,8 @@ namespace FPS_n2 {
 						Timer += 1.f / FPS;
 					}
 					if (g_Mode == 0) {
-						auto* OptionParts = OPTION::Instance();
-
-						this->m_BGM.vol(
-							(int)((float)Lerp(128, 255, std::powf(std::clamp(Timer / TotalTime, 0.f, 1.f), 2.f))*OptionParts->Get_BGM())
-						);
-						SE->SetVol(Lerp(1.f, 0.f, std::powf(std::clamp(Timer / TotalTime, 0.f, 1.f), 2.f)));
+						this->m_BGM.vol((int)((float)Lerp(128, 255, std::powf(std::clamp(Timer / TotalTime, 0.f, 1.f), 2.f))*OptionParts->Get_BGM()));
+						SE->SetVol(Lerp(1.f, 0.f, std::powf(std::clamp(Timer / TotalTime, 0.f, 1.f), 2.f))*OptionParts->Get_SE());
 						if (m_ResultXofs > -5.f) {
 							this->m_BGM.vol((int)(128.f*m_ResultColor));
 						}
@@ -878,11 +875,13 @@ namespace FPS_n2 {
 					this->m_BGM.stop();
 				}
 
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				auto* ObjMngr = ObjectManager::Instance();
 				auto* PlayerMngr = PlayerManager::Instance();
+				auto* OptionParts = OPTION::Instance();
 
 				SE->Get((int)SoundEnum::Env).StopAll(0);
+				SE->SetVol(OptionParts->Get_SE());
 
 				for (auto& c : character_Pool) {
 					c.reset();
@@ -1156,11 +1155,11 @@ namespace FPS_n2 {
 								yp1 = DrawParts->m_DispYSize / 2 - y_r(200);
 
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*m_ResultColor), 0, 255));
-								DrawFetteString(xp1 - y_r(100), yp1, 1.33f, false, "Result");
+								DrawFetteString(xp1 - y_r(100), yp1, 1.33f, false, "ReSult");
 								yp1 += y_r(64 * 2);
 
 								DrawFetteString(xp1, yp1, 1.33f, false, "Shoot Down");
-								DrawFetteString(xp1 + y_r(40), yp1, 1.f, false, "%02d", Kill);
+								DrawFetteString(xp1 + y_r(100), yp1, 1.f, false, "%02d", Kill);
 								yp1 += y_r(64 * 2);
 
 								const char* RankStr[] = {

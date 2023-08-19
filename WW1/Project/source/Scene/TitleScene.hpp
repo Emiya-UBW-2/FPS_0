@@ -16,7 +16,7 @@ namespace FPS_n2 {
 			TitleScene(void) noexcept { }
 			void			Set_Sub(void) noexcept override {
 				Get_Next()->Load();
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				//サウンド
 				//this->m_BGM = SoundHandle::Load("data/Sound/BGM/Beethoven8_2.wav");
 				SE->Add((int)SoundEnum::StandUp, 1, "data/Sound/SE/move/sliding.wav", false);
@@ -48,7 +48,7 @@ namespace FPS_n2 {
 #ifdef DEBUG
 				DebugParts->SetPoint("update start");
 #endif // DEBUG
-				auto SE = SoundPool::Instance();
+				auto* SE = SoundPool::Instance();
 				auto* Pad = FPS_n2::PadControl::Instance();
 				//FirstDoingv
 				if (GetIsFirstLoop()) {
@@ -96,33 +96,35 @@ namespace FPS_n2 {
 						Easing(&SelYadd[i], 0.f, 0.95f, EasingType::OutExpo);
 					}
 
-					switch (select) {
-					case 0:
-						if (Pad->GetOKKey().trigger()) {
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					if (GameFadeIn == 0.f) {
+						switch (select) {
+						case 0:
+							if (Pad->GetOKKey().trigger()) {
+								SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							if (!(GameStart == 0.f && !Pad->GetOKKey().trigger())) {
+								GameStart += 1.f / FPS / 0.5f;
+							}
+							break;
+						case 1:
+							if (Pad->GetOKKey().trigger()) {
+								SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							if (!(GameStart2 == 0.f && !Pad->GetOKKey().trigger())) {
+								GameStart2 += 1.f / FPS / 0.5f;
+							}
+							break;
+						case 2:
+							if (Pad->GetOKKey().trigger()) {
+								SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							}
+							if (Pad->GetOKKey().trigger()) {
+								OptionWindowClass::Instance()->SetActive(true);
+							}
+							break;
+						default:
+							break;
 						}
-						if (!(GameStart == 0.f && !Pad->GetOKKey().trigger())) {
-							GameStart += 1.f / FPS / 0.5f;
-						}
-						break;
-					case 1:
-						if (Pad->GetOKKey().trigger()) {
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
-						}
-						if (!(GameStart2 == 0.f && !Pad->GetOKKey().trigger())) {
-							GameStart2 += 1.f / FPS / 0.5f;
-						}
-						break;
-					case 2:
-						if (Pad->GetOKKey().trigger()) {
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
-						}
-						if (Pad->GetOKKey().trigger()) {
-							OptionWindowClass::Instance()->SetActive(true);
-						}
-						break;
-					default:
-						break;
 					}
 				}
 
@@ -133,7 +135,7 @@ namespace FPS_n2 {
 				return true;
 			}
 			void			Dispose_Sub(void) noexcept override {
-				//auto SE = SoundPool::Instance();
+				//auto* SE = SoundPool::Instance();
 			}
 			//
 			void			Depth_Draw_Sub(void) noexcept override {}
@@ -152,6 +154,7 @@ namespace FPS_n2 {
 				auto White = GetColor(255, 255, 255);
 				auto Gray75 = GetColor(128, 128, 128);
 				auto Gray = GetColor(64, 64, 64);
+				auto Black = GetColor(0, 0, 0);
 
 				auto* DrawParts = DXDraw::Instance();
 				auto* Fonts = FontPool::Instance();
@@ -214,6 +217,29 @@ namespace FPS_n2 {
 				xp1 = y_r(1920 - 256);
 				yp1 = y_r(1080 - 108 + (int)SelYadd[2]);
 				DrawFetteString(xp1, yp1, 1.f, (select == 2), "Option");
+
+				//
+				{
+					xp1 = y_r(32);
+					yp1 = y_r(1080 - 32 - 32);
+
+					std::string Info = "";
+					switch (select) {
+					case 0:
+						Info = "3分間の間敵を倒し続けてください。累計撃墜数はこちらでのみカウントされます";
+						break;
+					case 1:
+						Info = "時間制限の緩いモードです";
+						break;
+					case 2:
+						Info = "オプションを開きます";
+						break;
+					default:
+						break;
+					}
+
+					Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(y_r(18), FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::BOTTOM, xp1, yp1, White, Black, Info);
+				}
 
 
 				{

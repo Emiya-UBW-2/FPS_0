@@ -1,7 +1,7 @@
 grass_level=0
 DoF=true
-bloom=false
-shadow=false
+bloom=true
+shadow=true
 usevr=false
 SSAO=false
 fov=65.000000
@@ -10,4 +10,4 @@ SE=1.000000
 VOICE=1.000000
 BGM=1.000000
 AllWaysFront=false
-aberration=false
+aberration=true
