@@ -464,158 +464,6 @@ namespace FPS_n2 {
 		return screenPos;
 	}
 
-	class LoadScriptClass {
-	private:
-		struct VARIABLE {
-			std::string Base;
-			std::string After;
-		};
-	private:
-		std::vector<VARIABLE> m_Variable;
-		std::string m_Func;
-		std::vector<std::string> m_Args;
-	private:
-		static void Sub_Func(std::string& func_t, const char& in_str) noexcept {
-			size_t str_switch = 0;
-			size_t str_in = std::string::npos;
-			bool in = false;
-			while (true) {
-				if (str_switch != std::string::npos) { str_switch = func_t.find('\"', str_switch + 1); in ^= 1; }
-				str_in = func_t.find(in_str, str_in + 1);
-				if (str_in != std::string::npos) {
-					if (str_switch != std::string::npos && str_switch < str_in && in) {
-						continue;
-					}
-					func_t = func_t.erase(str_in, 1);
-					continue;
-				}
-				break;
-			}
-		}
-	public:
-		//Getter
-		const auto& Getfunc(void) const noexcept { return m_Func; }
-		const auto& Getargs(void) const noexcept { return m_Args; }
-		//スクリプト読み込み処理
-		void LoadScript(std::string_view func_t) noexcept {
-			m_Args.clear();
-			m_Func = func_t;
-			{
-				// //を削除
-				size_t sls = m_Func.find("//");
-				if (sls != std::string::npos) { m_Func = m_Func.substr(0, sls); }
-				//いらない要素を排除
-				Sub_Func(m_Func, '{');
-				Sub_Func(m_Func, '}');
-				Sub_Func(m_Func, ' ');
-				Sub_Func(m_Func, '\t');
-				Sub_Func(m_Func, ';');
-				Sub_Func(m_Func, '\"');
-			}
-			//()と,で囲われた部分から引数を取得
-			if (m_Func != "") {
-				std::string tmp_func = m_Func;
-				size_t left = tmp_func.find("(");
-				size_t right = tmp_func.rfind(")");
-				if (left != std::string::npos && right != std::string::npos) {
-					tmp_func = tmp_func.substr(left + 1, right - 1 - left);
-				}
-				while (true) {
-					size_t in_str = tmp_func.find(",");
-					if (in_str == std::string::npos) {
-						m_Args.emplace_back(tmp_func);
-						break;
-					}
-					else {
-						std::string arg = tmp_func.substr(0, in_str);
-						tmp_func = tmp_func.substr(in_str + 1);
-						m_Args.emplace_back(arg);
-					}
-				}
-			}
-		}
-	};
-
-	class TelopClass {
-	private:
-		class Cut_tex {
-			int xpos = 0;
-			int ypos = 0;
-			int size = 0;
-			int LMR = 1;
-			std::string str;
-			LONGLONG START_TIME = 0;
-			LONGLONG END_TIME = 0;
-		public:
-			Cut_tex(void) noexcept {
-				xpos = 0;
-				ypos = 0;
-				size = 12;
-				str = "test";
-				START_TIME = 1000000 * 1 / 100;
-				END_TIME = 1000000 * 101 / 100;
-			}
-			void Set(int xp, int yp, int Fontsize, std::string_view mag, LONGLONG StartF, LONGLONG ContiF, int m_LMR) noexcept {
-				this->xpos = xp;
-				this->ypos = yp;
-				this->size = Fontsize;
-				this->str = mag;
-				this->START_TIME = StartF;
-				this->END_TIME = StartF + ContiF;;
-				this->LMR = m_LMR;
-			}
-			void Draw(LONGLONG nowTimeWait) const noexcept {
-				if (this->START_TIME < nowTimeWait && nowTimeWait < this->END_TIME) {
-					auto* Fonts = FontPool::Instance();
-					switch (this->LMR) {
-					case 0:
-						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(this->size, FontHandle::FontXCenter::LEFT, FontHandle::FontYCenter::TOP, this->xpos, this->ypos, GetColor(255, 255, 255), GetColor(0, 0, 0), this->str);
-						break;
-					case 1:
-						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(this->size, FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::TOP, this->xpos, this->ypos, GetColor(255, 255, 255), GetColor(0, 0, 0), this->str);
-						break;
-					case 2:
-						Fonts->Get(FontPool::FontType::Nomal_Edge).DrawString(this->size, FontHandle::FontXCenter::RIGHT, FontHandle::FontYCenter::TOP, this->xpos, this->ypos, GetColor(255, 255, 255), GetColor(0, 0, 0), this->str);
-						break;
-					default:
-						break;
-					}
-				}
-			}
-		};
-	private:
-		std::vector<Cut_tex> Texts;
-		LONGLONG StartF = 0;
-		LONGLONG ContiF = 0;
-	public:
-		void Init(void) noexcept {
-			StartF = 0;
-			ContiF = 0;
-		}
-		void LoadTelop(const std::string &func, const std::vector<std::string>& args) noexcept {
-			if (func.find("SetTelopTime") != std::string::npos) {
-				StartF = (LONGLONG)(1000000.f * std::stof(args[0]));
-				ContiF = (LONGLONG)(1000000.f * std::stof(args[1]));
-			}
-			else if (func.find("AddTelopTime") != std::string::npos) {
-				StartF += (LONGLONG)(1000000.f * std::stof(args[0]));
-				ContiF = (LONGLONG)(1000000.f * std::stof(args[1]));
-			}
-			else if (func.find("SetTelop") != std::string::npos) {
-				int t = 0;
-				if (args[4].find("LEFT") != std::string::npos) { t = 0; }
-				else if (args[4].find("MIDDLE") != std::string::npos) { t = 1; }
-				else if (args[4].find("RIGHT") != std::string::npos) { t = 2; }
-				Texts.resize(Texts.size() + 1);
-				Texts.back().Set(y_r(std::stoi(args[0])), y_r(std::stoi(args[1])), y_r(std::stoi(args[2])), args[3], StartF, ContiF, t);
-			}
-		}
-		void Draw(LONGLONG nowTimeWait) const noexcept {
-			for (auto& t : Texts) {
-				t.Draw(nowTimeWait);
-			}
-		}
-	};
 
 	class KeyGuideClass : public SingletonBase<KeyGuideClass> {
 	private:
@@ -756,15 +604,8 @@ namespace FPS_n2 {
 		private:
 			friend class SingletonBase<OptionWindowClass>;
 		private:
-			switchs UpKey;
-			switchs DownKey;
-			switchs LeftKey;
-			switchs RightKey;
-			switchs OKKey;
-			switchs NGKey;
-
 			int select{ 0 };
-			static const int selMax{ 8 };
+			static const int selMax{ 9 };
 			std::array<float, selMax> SelYadd{};
 
 			bool isActive{ false };
@@ -780,194 +621,7 @@ namespace FPS_n2 {
 					y = 0.f;
 				}
 			}
-			void Execute(void) noexcept {
-				auto* SE = SoundPool::Instance();
-				if (isActive) {
-					auto* OptionParts = OPTION::Instance();
-
-					if (GetJoypadNum() > 0) {
-						DINPUT_JOYSTATE input;
-						int padID = DX_INPUT_PAD1;
-						GetJoypadInputState(padID);
-						switch (GetJoypadType(padID)) {
-						case DX_PADTYPE_OTHER:
-						case DX_PADTYPE_DUAL_SHOCK_4:
-						case DX_PADTYPE_DUAL_SENSE:
-						case DX_PADTYPE_SWITCH_JOY_CON_L://大丈夫？
-						case DX_PADTYPE_SWITCH_JOY_CON_R://大丈夫？
-						case DX_PADTYPE_SWITCH_PRO_CTRL://大丈夫？
-						case DX_PADTYPE_SWITCH_HORI_PAD://大丈夫？
-						case DX_PADTYPE_XBOX_360://大丈夫？
-						case DX_PADTYPE_XBOX_ONE://大丈夫？
-							GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
-							{
-								//pp_x = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f) * cam_per;
-								//pp_y = std::clamp((float)(input.Z) / 100.f*0.35f, -9.f, 9.f) * cam_per;
-								float deg = rad2deg(atan2f((float)input.X, -(float)input.Y));
-								bool w_key = false;
-								bool s_key = false;
-								bool a_key = false;
-								bool d_key = false;
-								if (!(input.X == 0 && input.Y == 0)) {
-									w_key = (-50.f <= deg && deg <= 50.f);
-									a_key = (-140.f <= deg && deg <= -40.f);
-									s_key = (130.f <= deg || deg <= -130.f);
-									d_key = (40.f <= deg && deg <= 140.f);
-								}
-								//十字
-								//deg = (float)(input.POV[0]) / 100.f;
-								//bool right_key = (40.f <= deg && deg <= 140.f);
-								//bool left_key = (220.f <= deg && deg <= 320.f);
-								//bool up_key = (310.f <= deg || deg <= 50.f);
-								//bool down_key = (130.f <= deg && deg <= 230.f);
-
-								//ボタン
-								//(input.Buttons[0] != 0)/*□*/
-								//(input.Buttons[1] != 0)/*×*/
-								//(input.Buttons[2] != 0)/*〇*/
-								//(input.Buttons[3] != 0)/*△*/
-								//(input.Buttons[4] != 0)/*L1*/
-								//(input.Buttons[5] != 0)/*R1*/
-								//(input.Buttons[6] != 0)/*L2*/
-								//(input.Buttons[7] != 0)/*R2*/
-								//(input.Buttons[8] != 0)/**/
-								//(input.Buttons[9] != 0)/**/
-								//(input.Buttons[10] != 0)/*L3*/
-								//(input.Buttons[11] != 0)/*R3*/
-								UpKey.Execute(w_key);
-								DownKey.Execute(s_key);
-								LeftKey.Execute(a_key);
-								RightKey.Execute(d_key);
-								OKKey.Execute((input.Buttons[1] != 0)/*×*/);
-								NGKey.Execute((input.Buttons[2] != 0)/*〇*/);
-
-							}
-							break;
-						default:
-							break;
-						}
-					}
-					else {//キーボード
-						UpKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_W) != 0 || CheckHitKeyWithCheck(KEY_INPUT_UP) != 0);
-						DownKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_S) != 0 || CheckHitKeyWithCheck(KEY_INPUT_DOWN) != 0);
-						LeftKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_A) != 0 || CheckHitKeyWithCheck(KEY_INPUT_LEFT) != 0);
-						RightKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_D) != 0 || CheckHitKeyWithCheck(KEY_INPUT_RIGHT) != 0);
-						OKKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_SPACE) != 0);
-						NGKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_X) != 0);
-					}
-
-					if (UpKey.trigger()) {
-						--select;
-						if (select < 0) { select = selMax - 1; }
-						SelYadd[select] = 10.f;
-
-						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-					}
-					if (DownKey.trigger()) {
-						++select;
-						if (select > selMax - 1) { select = 0; }
-						SelYadd[select] = -10.f;
-
-						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-					}
-					for (int i = 0; i < selMax; i++) {
-						Easing(&SelYadd[i], 0.f, 0.95f, EasingType::OutExpo);
-					}
-					{
-						switch (select) {
-						case 0:
-							if (LeftKey.trigger()) {
-								OptionParts->Set_BGM(std::clamp(OptionParts->Get_BGM() - 0.1f, 0.f, 1.f));
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							if (RightKey.trigger()) {
-								OptionParts->Set_BGM(std::clamp(OptionParts->Get_BGM() + 0.1f, 0.f, 1.f));
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						case 1:
-							if (LeftKey.trigger()) {
-								OptionParts->Set_SE(std::clamp(OptionParts->Get_SE() - 0.1f, 0.f, 1.f));
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							if (RightKey.trigger()) {
-								OptionParts->Set_SE(std::clamp(OptionParts->Get_SE() + 0.1f, 0.f, 1.f));
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						case 2:
-							if (LeftKey.trigger() || RightKey.trigger()) {
-								OptionParts->Set_grass_level(1 - OptionParts->Get_grass_level());
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						case 3:
-							if (LeftKey.trigger() || RightKey.trigger()) {
-								OptionParts->Set_Bloom(OptionParts->Get_Bloom() ^ 1);
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						case 4:
-							if (LeftKey.trigger() || RightKey.trigger()) {
-								OptionParts->Set_Shadow(OptionParts->Get_Shadow() ^ 1);
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						case 5:
-							if (LeftKey.trigger() || RightKey.trigger()) {
-								OptionParts->Set_Vsync(OptionParts->Get_Vsync() ^ 1);
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						case 6:
-							if (LeftKey.trigger() || RightKey.trigger()) {
-								OptionParts->Set_aberration(OptionParts->Get_aberration() ^ 1);
-								SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							}
-							break;
-						default:
-							break;
-						}
-					}
-					if (OKKey.trigger()) {
-						switch (select) {
-						case 0:
-							break;
-						case 1:
-							break;
-						case 2:
-							break;
-						case 3:
-							break;
-						case 4:
-							break;
-						case 5:
-							break;
-						case 6:
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							isActive = false;
-							break;
-						default:
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
-							isActive = false;
-							break;
-						}
-					}
-					if (NGKey.trigger()) {
-						SE->Get((int)SoundEnum::UI_NG).Play(0, DX_PLAYTYPE_BACK, TRUE);
-						isActive = false;
-					}
-
-					SE->SetVol(OptionParts->Get_SE());
-
-					if (!isActive) {
-						OptionParts->Save();
-					}
-				}
-				else {
-					select = 0;
-				}
-			}
+			void Execute(void)noexcept;
 			void Draw() const noexcept {
 				if (isActive) {
 					auto* OptionParts = OPTION::Instance();
@@ -1032,6 +686,22 @@ namespace FPS_n2 {
 						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "ColorAberration");
 						DrawFetteString(xp1 + y_r(300), yp1, (OptionParts->Get_aberration() ? 0.4f : 0.35f), (select == (Line - SelStart)), (OptionParts->Get_aberration() ? "Enable" : "DiSable"));
 						Line++;
+						yp1 = y_r(356 + height * Line + (int)SelYadd.at(Line - SelStart));
+						DrawFetteString(xp1, yp1, 0.4f, (select == (Line - SelStart)), "DirectX VerSion");
+						switch (OptionParts->Get_DirectXVer()) {
+						case  DX_DIRECT3D_9:
+							DrawFetteString(xp1 + y_r(300), yp1, 0.4f, (select == (Line - SelStart)), "9.0");
+							break;
+						case  DX_DIRECT3D_9EX:
+							DrawFetteString(xp1 + y_r(300), yp1, 0.4f, (select == (Line - SelStart)), "9.0c");
+							break;
+						case  DX_DIRECT3D_11:
+							DrawFetteString(xp1 + y_r(300), yp1, 0.4f, (select == (Line - SelStart)), "11.0");
+							break;
+						default:
+							break;
+						}
+						Line++;
 					}
 					//
 					xp1 = y_r(960 + 44);
@@ -1068,6 +738,9 @@ namespace FPS_n2 {
 							break;
 						case 6:
 							Info = "画面エフェクトの有効無効を指定します";
+							break;
+						case 7:
+							Info = "DirectXのバージョンを変更します(反映は再起動後にされます)";
 							break;
 						default:
 							Info = "オプションを閉じます";
@@ -1196,6 +869,7 @@ namespace FPS_n2 {
 					}
 					//
 					Guide_Pad_PS4();
+					return;
 					break;
 				case DX_PADTYPE_XBOX_360:
 				case DX_PADTYPE_XBOX_ONE:
@@ -1204,7 +878,8 @@ namespace FPS_n2 {
 					break;
 				}
 			}
-			else {//キーボード
+			//PC
+			{//キーボード
 				//左スティック
 				{
 					this->UpKey.Execute(CheckHitKeyWithCheck(KEY_INPUT_W) != 0 || CheckHitKeyWithCheck(KEY_INPUT_UP) != 0);

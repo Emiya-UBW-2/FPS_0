@@ -1,5 +1,6 @@
 #pragma once
 #include	"Header.hpp"
+#include "MainScene/Object/ObjectBase.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {
@@ -26,53 +27,8 @@ namespace FPS_n2 {
 				pObj->SetFrameNum();
 			}
 
-			std::shared_ptr<ObjectBaseClass>* AddObject(ObjType ModelType, const char* filepath, const char* objfilename = "model", const char* colfilename = "col") noexcept {
-				switch (ModelType) {
-				case ObjType::Plane:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<CharacterClass>();
-					break;
-				case ObjType::Ammo:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<AmmoClass>();
-					break;
-				case ObjType::Movie:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<ObjectBaseClass>();
-					break;
-				default:
-					break;
-				}
-				LoadModel(this->m_Object.back().get(), filepath, objfilename, colfilename);
-
-				auto back = this->m_Object.size();
-				this->m_Object.back()->SetMapCol(this->m_BackGround);
-				this->m_Object.back()->Init();
-
-				return &(this->m_Object[back - 1]);
-			}
-			std::shared_ptr<ObjectBaseClass>* AddObject(ObjType ModelType) noexcept {
-				switch (ModelType) {
-				case ObjType::Plane:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<CharacterClass>();
-					break;
-				case ObjType::Ammo:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<AmmoClass>();
-					break;
-				case ObjType::Movie:
-					this->m_Object.resize(this->m_Object.size() + 1);
-					this->m_Object.back() = std::make_shared<ObjectBaseClass>();
-					break;
-				default:
-					break;
-				}
-				this->m_Object.back()->SetMapCol(this->m_BackGround);
-				this->m_Object.back()->Init();
-
-				return &(this->m_Object[this->m_Object.size() - 1]);
-			}
+			std::shared_ptr<ObjectBaseClass>* AddObject(ObjType ModelType, const char* filepath, const char* objfilename = "model", const char* colfilename = "col") noexcept;
+			std::shared_ptr<ObjectBaseClass>* AddObject(ObjType ModelType) noexcept;
 			std::shared_ptr<ObjectBaseClass>* GetObj(ObjType ModelType, int num) noexcept {
 				int cnt = 0;
 				for (int i = 0; i < this->m_Object.size(); i++) {

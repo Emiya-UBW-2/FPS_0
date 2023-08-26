@@ -350,10 +350,6 @@ namespace FPS_n2 {
 				}
 			}
 		};
-
-
-
-
 		class KeyControl {
 		private://キャラパラメーター
 		private:
@@ -408,6 +404,7 @@ namespace FPS_n2 {
 				this->m_InputGround.Execute();
 			}
 		};
+
 		class ShapeControl {
 		private://キャラパラメーター
 		private:

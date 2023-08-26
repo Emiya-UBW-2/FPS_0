@@ -11,3 +11,4 @@ VOICE=1.000000
 BGM=1.000000
 AllWaysFront=false
 aberration=true
+DirectXVer=11

@@ -113,5 +113,26 @@
     <ClCompile Include="source\MainScene\BackGround\BackGroundSub.cpp">
       <Filter>ソース ファイル\MainScene\BackGround</Filter>
     </ClCompile>
+    <ClCompile Include="source\ObjectManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Scene\MainScene.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Scene\StartMovieScene.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MainScene\Player\Player.cpp">
+      <Filter>ソース ファイル\MainScene\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MainScene\Player\CPU.cpp">
+      <Filter>ソース ファイル\MainScene\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Scene\TitleScene.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sub.cpp">
+      <Filter>ソース ファイル\MainScene</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,5 +1,7 @@
 #pragma once
 #include	"../../Header.hpp"
+#include	"../../MainScene/BackGround/BackGround.hpp"
+#include "../../MainScene/Object/CharacterEnum.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {

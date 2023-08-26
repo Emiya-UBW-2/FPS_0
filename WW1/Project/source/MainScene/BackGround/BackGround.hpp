@@ -1,5 +1,6 @@
 #pragma once
 #include	"../../Header.hpp"
+#include	"../../MainScene/BackGround/BackGroundSub.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {
@@ -124,8 +125,8 @@ namespace FPS_n2 {
 			void			Init_Sub(void) noexcept override {
 				//‘
 				{
-					float MAPX = 200.f*Scale_Rate;
-					float MAPZ = 200.f*Scale_Rate;
+					float MAPX = 100.f*Scale_Rate;
+					float MAPZ = 100.f*Scale_Rate;
 					//float SIZX = 10.f*Scale_Rate;
 					//float SIZZ = 10.f*Scale_Rate;
 					int x, y;
@@ -139,7 +140,7 @@ namespace FPS_n2 {
 						GetDrawScreenSoftImage(0, 0, x, y, m_softimage);
 					}
 					this->m_grass.Init(&this->m_ObjGroundCol, m_softimage,
-						"data/model/grass/grass.png", "data/model/grass/model.mv1", MAPX, MAPZ,30);
+						"data/model/grass/grass.png", "data/model/grass/model.mv1", MAPX, MAPZ,6);
 					//DeleteSoftImage(m_softimage);
 				}
 			}

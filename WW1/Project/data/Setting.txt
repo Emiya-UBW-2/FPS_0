@@ -1,4 +1,4 @@
-grass_level=0
+grass_level=1
 DoF=true
 bloom=true
 shadow=true
@@ -11,3 +11,4 @@ VOICE=1.000000
 BGM=1.000000
 AllWaysFront=false
 aberration=true
+DirectXVer=11

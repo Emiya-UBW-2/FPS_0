@@ -1,8 +1,7 @@
-#pragma once
-#include	"../../Header.hpp"
+#include	"Character.hpp"
 
-
-#include <math.h>
+#include "../../ObjectManager.hpp"
+#include "../../MainScene/BackGround/BackGround.hpp"
 
 namespace FPS_n2 {
 	namespace Sceneclass {
@@ -259,6 +258,9 @@ namespace FPS_n2 {
 			//–€ŽC
 			Easing(&this->m_move.vec, VECTOR_ref::zero(), 0.95f, EasingType::OutExpo);
 			this->m_PosBuf += this->m_move.vec;
+			if (m_DeathAlpha == 0.f) {
+				this->m_PosBuf.y(-500.f*Scale_Rate);
+			}
 			//•Ç”»’è
 			{
 				//std::vector<std::pair<MV1*, int>> cols;

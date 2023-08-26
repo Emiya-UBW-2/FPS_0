@@ -1,5 +1,6 @@
 #pragma once
 #include	"Header.hpp"
+#include "sub.hpp"
 
 class NewWorkControl {
 	//’ÊMŠÖ˜A

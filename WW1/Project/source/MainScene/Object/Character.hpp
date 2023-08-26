@@ -1,6 +1,14 @@
 #pragma once
 #include	"../../Header.hpp"
 
+
+#include "../../sub.hpp"
+#include "../../MainScene/Object/ObjectBase.hpp"
+#include "../../MainScene/Object/Character_before.hpp"
+#include "../../MainScene/Object/CharacterEnum.hpp"
+#include "../../MainScene/Object/AmmoData.hpp"
+#include "../../MainScene/Object/Ammo.hpp"
+
 namespace FPS_n2 {
 	namespace Sceneclass {
 
@@ -58,6 +66,8 @@ namespace FPS_n2 {
 			int													m_PropellerSESel{ -1 };
 
 			float												m_EffectAlphaPer1{ 0.f };
+
+			float												m_DeathAlpha{ 6.f };
 		public:
 			bool m_NearAmmo{ false };//至近弾(被弾含む)
 			int aim_cnt{ 0 };
@@ -204,6 +214,10 @@ namespace FPS_n2 {
 				if (GetHP() <= GetHPMax() * 3 / 10) {
 					EffectControl::Update_LoopEffect((EffectResource::Effect)12, GetMatrix().pos(), GetMatrix().zvec()*-1.f, 6.f * Scale_Rate);
 				}
+				if (m_DeathAlpha <= 0.1f) {
+					EffectControl::StopEffect((EffectResource::Effect)12);
+				}
+
 
 				ExecuteSavePrev();			//以前の状態保持
 				ExecuteInput();				//操作//0.01ms
@@ -211,6 +225,11 @@ namespace FPS_n2 {
 				ExecuteMatrix();			//SetMat指示//0.03ms
 				ExecuteShape();				//顔//スコープ内0.01ms
 				EffectControl::Execute();
+
+				if (GetHP() == 0) {
+					m_DeathAlpha = std::max(m_DeathAlpha - 1.f / FPS, 0.f);
+				}
+
 			}
 			void			Draw(bool isDrawSemiTrans) noexcept override {
 				int fog_enable;
@@ -228,11 +247,19 @@ namespace FPS_n2 {
 				SetFogEnable(TRUE);
 				if (GetCharaType() == CharaTypeID::Enemy) {
 					SetFogColor(0, 0, 0);
-					SetFogStartEnd(Scale_Rate*100.f, Scale_Rate*400.f);
+					SetFogStartEnd(Scale_Rate*50.f, Scale_Rate*400.f);
 				}
 				else {
-					SetFogColor(64, 64, 64);
-					SetFogStartEnd(Scale_Rate*100.f, Scale_Rate*400.f);
+					SetFogColor(128, 128, 128);
+					SetFogStartEnd(Scale_Rate*50.f, Scale_Rate*400.f);
+				}
+				if (GetHP() == 0) {
+					SetFogColor(64, 0, 0);
+					SetFogStartEnd(Scale_Rate*50.f, Scale_Rate*400.f);
+
+					if (m_DeathAlpha <= 1.f) {
+						this->GetObj().SetOpacityRate(m_DeathAlpha);
+					}
 				}
 				//SetFogEnable(FALSE);
 
