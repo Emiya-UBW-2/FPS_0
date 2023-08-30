@@ -22,11 +22,18 @@ namespace FPS_n2 {
 			auto* PlayerMngr = PlayerManager::Instance();
 			auto* SE = SoundPool::Instance();
 			//
-			SetAmbientShadow(
-				VECTOR_ref::vget(Scale_Rate*-600.f, Scale_Rate*-300.f, Scale_Rate*-600.f),
-				VECTOR_ref::vget(Scale_Rate*600.f, Scale_Rate*100.f, Scale_Rate*600.f),
+			SetAmbientLight(
 				VECTOR_ref::vget(-0.8f, -0.5f, -0.1f),
-				GetColorF(0.92f, 0.91f, 0.90f, 0.0f));
+				GetColorF(0.92f, 0.91f, 0.90f, 0.0f)
+			);
+			SetFarShadow(
+				VECTOR_ref::vget(Scale_Rate*-600.f, Scale_Rate*-300.f, Scale_Rate*-600.f),
+				VECTOR_ref::vget(Scale_Rate*600.f, Scale_Rate*100.f, Scale_Rate*600.f)
+			);
+			SetMiddleShadow(
+				VECTOR_ref::vget(Scale_Rate*-600.f, Scale_Rate*-600.f, Scale_Rate*-600.f),
+				VECTOR_ref::vget(Scale_Rate*600.f, Scale_Rate*600.f, Scale_Rate*600.f)
+			);
 			//
 			ObjMngr->Init(this->m_BackGround);
 
@@ -147,6 +154,9 @@ namespace FPS_n2 {
 				}
 			}
 
+			if (this->m_MouseActive.trigger()) {
+				Pad->SetGuideUpdate();
+			}
 			Pad->Execute(
 				[&]() {
 				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
@@ -630,6 +640,15 @@ namespace FPS_n2 {
 				}
 				SetMainCamera().SetCamInfo(fov_t, near_t, far_t);
 			}
+			//
+			{
+				auto Near = std::min(GetMainCamera().GetCamFar(), 12.f*Scale_Rate);
+				SetNearShadow(
+					VECTOR_ref::vget(-Near, -Near, -Near),
+					VECTOR_ref::vget(Near, Near, Near)
+				);
+			}
+			//
 			{
 				if (CheckHitKeyWithCheck(KEY_INPUT_0) != 0) { WatchSelect = GetMyPlayerID(); }
 				if (CheckHitKeyWithCheck(KEY_INPUT_1) != 0) { WatchSelect = 1; }

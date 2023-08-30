@@ -269,14 +269,14 @@ namespace FPS_n2 {
 						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(-30.f*Scale_Rate, -30.f*Scale_Rate, -30.f*Scale_Rate)).get(),
 						(this->GetObj().GetMatrix().pos() + VECTOR_ref::vget(30.f*Scale_Rate, 30.f*Scale_Rate, 30.f*Scale_Rate)).get()) == FALSE
 						) {
-						auto* DrawParts = DXDraw::Instance();
-						DrawParts->SetUseFarShadowDraw(false);
+
+						//MV1SetMaterialTypeAll(this->GetObj().get(), DX_MATERIAL_TYPE_MAT_SPEC_LUMINANCE_CLIP_UNORM);
+
 						for (int i = 0; i < this->GetObj().mesh_num(); i++) {
 							if ((MV1GetMeshSemiTransState(this->GetObj().get(), i) == TRUE) == isDrawSemiTrans) {
 								this->GetObj().DrawMesh(i);
 							}
 						}
-						DrawParts->SetUseFarShadowDraw(true);
 					}
 				}
 				//hitbox•`‰æ

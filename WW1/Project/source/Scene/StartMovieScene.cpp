@@ -11,11 +11,19 @@ namespace FPS_n2 {
 			auto* ObjMngr = ObjectManager::Instance();
 			auto* SE = SoundPool::Instance();
 			//
-			SetAmbientShadow(
-				VECTOR_ref::vget(Scale_Rate*-60.f, Scale_Rate*-10.f, Scale_Rate*-60.f),
-				VECTOR_ref::vget(Scale_Rate*60.f, Scale_Rate*50.f, Scale_Rate*60.f),
+			SetAmbientLight(
 				VECTOR_ref::vget(-0.f, -0.25f, -0.8f),
-				GetColorF(0.92f, 0.91f, 0.90f, 0.0f));
+				GetColorF(0.92f, 0.91f, 0.90f, 0.0f)
+			);
+			SetFarShadow(
+				VECTOR_ref::vget(Scale_Rate*-60.f, Scale_Rate*-10.f, Scale_Rate*-60.f),
+				VECTOR_ref::vget(Scale_Rate*60.f, Scale_Rate*50.f, Scale_Rate*60.f)
+			);
+			SetMiddleShadow(
+				VECTOR_ref::vget(Scale_Rate*-600.f, Scale_Rate*-600.f, Scale_Rate*-600.f),
+				VECTOR_ref::vget(Scale_Rate*600.f, Scale_Rate*600.f, Scale_Rate*600.f)
+			);
+
 			//Load
 			//BG
 			this->m_BackGround = std::make_shared<BackGroundClassMovie>();
@@ -408,6 +416,14 @@ namespace FPS_n2 {
 				Easing(&far_t, m_far, 0.9f, EasingType::OutExpo);
 				Easing(&fov_t, m_fov, 0.9f, EasingType::OutExpo);
 				SetMainCamera().SetCamInfo(fov_t, near_t, far_t);
+			}
+			//
+			{
+				auto Near = std::min(GetMainCamera().GetCamFar(), 12.f*Scale_Rate);
+				SetNearShadow(
+					VECTOR_ref::vget(-Near, -Near, -Near),
+					VECTOR_ref::vget(Near, Near, Near)
+				);
 			}
 			//
 #ifdef DEBUG

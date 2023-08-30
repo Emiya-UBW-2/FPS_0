@@ -31,28 +31,24 @@
 
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-	OPTION::Create();
 	DXDraw::Create("FPS_n2");						//汎用
-
+	PostPassEffect::Create();						//シェーダー
+#ifdef DEBUG
+	auto* DebugParts = DebugClass::Instance();		//デバッグ
+#endif // DEBUG
+	auto* DrawParts = DXDraw::Instance();
+	auto* EffectUseControl = EffectResource::Instance();
+	//auto* SE = SoundPool::Instance();
+	//
 	FPS_n2::KeyGuideClass::Create();
 	FPS_n2::SaveDataClass::Create();
 	FPS_n2::PadControl::Create();
 	FPS_n2::Sceneclass::OptionWindowClass::Create();
 	FPS_n2::Sceneclass::OptionWindowClass::Instance()->Init();
-	
-
 	FPS_n2::SaveDataClass::Instance()->Load();
+
+	auto* Pad = FPS_n2::PadControl::Instance();
 	//MV1SetLoadModelUsePackDraw(TRUE);
-#ifdef DEBUG
-	DebugClass::Create();
-	auto* DebugParts = DebugClass::Instance();		//デバッグ
-#endif // DEBUG
-	PostPassEffect::Create();						//シェーダー
-	EffectResource::Create();						//エフェクト
-	SoundPool::Create();							//サウンド
-	auto* DrawParts = DXDraw::Instance();
-	auto* EffectUseControl = EffectResource::Instance();
-	//auto* SE = SoundPool::Instance();
 	//シーン
 	auto Titlescene = std::make_shared<FPS_n2::Sceneclass::TitleScene>();
 	auto StartMoviescene = std::make_shared<FPS_n2::Sceneclass::StartMovieScene>();
@@ -66,6 +62,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	//繰り返し
 	while (true) {
 		scene->StartScene();
+		Pad->SetGuideUpdate();
 		while (true) {
 			if ((ProcessMessage() != 0) || (CheckHitKeyWithCheck(KEY_INPUT_ESCAPE) != 0)) {
 				return 0;

@@ -508,7 +508,7 @@ namespace FPS_n2 {
 			}
 		};
 	private:
-		std::vector<Keys> Key;
+		std::vector<Keys>	Key;
 	public:
 		void Reset(void) noexcept {
 			for (auto& k : Key) {
@@ -777,6 +777,16 @@ namespace FPS_n2 {
 
 		float LS_X{ 0.f };
 		float LS_Y{ 0.f };
+	private:
+		bool m_IsPad{ false };
+		bool m_IsUpdate{ true };
+	private:
+		PadControl() {
+			m_IsUpdate = true;
+		}
+		~PadControl() {}
+	public:
+		void SetGuideUpdate() noexcept { m_IsUpdate = true; }
 	public:
 		const auto& GetUpKey() const noexcept { return UpKey; }
 		const auto& GetDownKey() const noexcept { return DownKey; }
@@ -868,7 +878,14 @@ namespace FPS_n2 {
 						LS_Y = std::clamp(-(float)(input.Rz) / 100.f*0.35f, -9.f, 9.f);
 					}
 					//
-					Guide_Pad_PS4();
+					if (m_IsPad != true) {
+						m_IsUpdate = true;
+					}
+					m_IsPad = true;
+					if (m_IsUpdate) {
+						m_IsUpdate = false;
+						Guide_Pad_PS4();
+					}
 					return;
 					break;
 				case DX_PADTYPE_XBOX_360:
@@ -917,7 +934,14 @@ namespace FPS_n2 {
 					LS_Y = std::clamp(-(float)(my - DXDraw::Instance()->m_DispYSize / 2), -180.f, 180.f);
 				}
 				//
-				Guide_Key();
+				if (m_IsPad != false) {
+					m_IsUpdate = true;
+				}
+				m_IsPad = false;
+				if (m_IsUpdate) {
+					m_IsUpdate = false;
+					Guide_Key();
+				}
 			}
 			//
 		}

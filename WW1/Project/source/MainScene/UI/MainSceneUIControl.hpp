@@ -137,7 +137,7 @@ namespace FPS_n2 {
 						yp1 = DrawParts->m_DispYSize / 2 + intParam[1] - y_r(300.f*std::sin(rad)) - y_r(18) / 2;
 
 
-						SetDrawBlendMode(DX_BLENDMODE_ADD, 128);
+						SetDrawBlendMode(DX_BLENDMODE_ADD, 32);
 						DrawCircleGauge(xp1 + y_r(256), yp1, 50.0 + (double)((50.f - 15.0f*2.f)*1.f) + 15.0, ItemGraphPtr[0]->get(), 50.0 + 15.0, (double)((float)(DrawParts->m_DispYSize) / 1080.f));
 						DrawCircleGauge(xp1 + y_r(256), yp1, 50.0 + (double)((50.f - 15.0f*2.f)*per) + 15.0, ItemGraphPtr[0]->get(), 50.0 + 15.0, (double)((float)(DrawParts->m_DispYSize) / 1080.f));
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -150,7 +150,7 @@ namespace FPS_n2 {
 						xp1 = DrawParts->m_DispXSize / 2 + intParam[0] + y_r(300.f*std::cos(rad));
 						yp1 = DrawParts->m_DispYSize / 2 + intParam[1] + y_r(300.f*std::sin(rad)) - y_r(18) / 2;
 
-						SetDrawBlendMode(DX_BLENDMODE_ADD, 128);
+						SetDrawBlendMode(DX_BLENDMODE_ADD, 32);
 						DrawCircleGauge(xp1 - y_r(256), yp1, (double)(50.f - 15.0f*2.f) + 15.0, ItemGraphPtr[1]->get(), (double)((50.f - 15.0f*2.f)*(1.f - 1.f)) + 15.0, (double)((float)(DrawParts->m_DispYSize) / 1080.f));
 						DrawCircleGauge(xp1 - y_r(256), yp1, (double)(50.f - 15.0f*2.f) + 15.0, ItemGraphPtr[1]->get(), (double)((50.f - 15.0f*2.f)*(1.f - per)) + 15.0, (double)((float)(DrawParts->m_DispYSize) / 1080.f));
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);

@@ -82,7 +82,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -110,6 +110,9 @@
       <AdditionalLibraryDirectories>..\..\..\DxLib_VC\DX_VC;..\..\..\DxLib_VC\DX_VC\DXLib_ref;..\..\..\Box2D\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099
  %(AdditionalOptions)</AdditionalOptions>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <PerUserRedirection>true</PerUserRedirection>
+      <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PreBuildEvent>
       <Command>shader/Compile3D.bat
