@@ -121,7 +121,7 @@ namespace FPS_n2 {
 			StartTimer = 3.f;
 		}
 		bool			MAINLOOP::Update_Sub(bool*  isPause) noexcept {
-			auto* Pad = FPS_n2::PadControl::Instance();
+			auto* Pad = PadControl::Instance();
 			//ƒ|[ƒY
 			if (GetJoypadNum() > 0) {
 				DINPUT_JOYSTATE input;
@@ -217,27 +217,27 @@ namespace FPS_n2 {
 						if (select < 0) { select = 2; }
 						SelYadd[select] = 10.f;
 
-						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE->Get((int)SoundEnumCommon::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					if (Pad->GetDownKey().trigger()) {
 						++select;
 						if (select > 2) { select = 0; }
 						SelYadd[select] = -10.f;
 
-						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE->Get((int)SoundEnumCommon::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					for (int i = 0; i < 3; i++) {
 						Easing(&SelYadd[i], 0.f, 0.95f, EasingType::OutExpo);
 					}
 					if (Pad->GetOKKey().trigger()) {
-						SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE->Get((int)SoundEnumCommon::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						switch (select) {
 						case 0:
 							m_GameEnd = true;
 							this->m_MouseActive.Execute(true);
 							break;
 						case 1:
-							OptionWindowClass::Instance()->SetActive(true);
+							OptionWindowClass::Instance()->SetActive();
 							break;
 						case 2:
 							this->m_MouseActive.Execute(true);
@@ -248,7 +248,7 @@ namespace FPS_n2 {
 						}
 					}
 					if (Pad->GetNGKey().trigger()) {
-						SE->Get((int)SoundEnum::UI_NG).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE->Get((int)SoundEnumCommon::UI_NG).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						this->m_MouseActive.Execute(true);
 					}
 				}

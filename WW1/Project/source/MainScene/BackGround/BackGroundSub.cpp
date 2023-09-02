@@ -219,6 +219,7 @@ namespace FPS_n2 {
 						for (int i = 0; i < grasss; ++i) {
 							float x1 = xmid + GetRandf(xmid);
 							float z1 = zmid + GetRandf(zmid);
+							int count_buf = 0;
 							while (true) {
 								int CCC = GetColorSoftImage(softimage,
 									(int)(((grassPosMin[ID].x() + x1) - MINX) / (MAXX - MINX) * float(sizex)),
@@ -229,6 +230,8 @@ namespace FPS_n2 {
 								}
 								x1 = xmid + GetRandf(xmid);
 								z1 = zmid + GetRandf(zmid);
+								count_buf++;
+								if (count_buf > 10) { break; }
 							}
 
 							auto tmpvect = grassPosMin[ID] + VECTOR_ref::vget(x1, 0.2f, z1);

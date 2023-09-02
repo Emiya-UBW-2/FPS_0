@@ -72,6 +72,7 @@ namespace FPS_n2 {
 				path = SkyPath;
 				path += "model.mv1";
 				MV1::Load(path, &this->m_ObjSky);
+				this->m_ObjSky.SetScale(VECTOR_ref::vget(10.f, 10.f, 10.f));
 				MV1SetDifColorScale(this->m_ObjSky.get(), GetColorF(0.9f, 0.9f, 0.9f, 1.0f));
 				//
 				Init_Sub();

@@ -149,7 +149,7 @@ namespace FPS_n2 {
 		}
 		//
 		bool			StartMovieScene::Update_Sub(bool*  isPause) noexcept {
-			//auto* Pad = FPS_n2::PadControl::Instance();
+			//auto* Pad = PadControl::Instance();
 			if (*isPause) {
 				return true;
 			}

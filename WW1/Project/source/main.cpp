@@ -42,12 +42,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	//
 	FPS_n2::KeyGuideClass::Create();
 	FPS_n2::SaveDataClass::Create();
-	FPS_n2::PadControl::Create();
-	FPS_n2::Sceneclass::OptionWindowClass::Create();
-	FPS_n2::Sceneclass::OptionWindowClass::Instance()->Init();
 	FPS_n2::SaveDataClass::Instance()->Load();
-
-	auto* Pad = FPS_n2::PadControl::Instance();
 	//MV1SetLoadModelUsePackDraw(TRUE);
 	//シーン
 	auto Titlescene = std::make_shared<FPS_n2::Sceneclass::TitleScene>();
@@ -62,7 +57,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	//繰り返し
 	while (true) {
 		scene->StartScene();
-		Pad->SetGuideUpdate();
 		while (true) {
 			if ((ProcessMessage() != 0) || (CheckHitKeyWithCheck(KEY_INPUT_ESCAPE) != 0)) {
 				return 0;
@@ -76,11 +70,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			DebugParts->SetPoint("Execute start");
 #endif // DEBUG
 			if (scene->Execute()) { break; }		//更新
-			FPS_n2::Sceneclass::OptionWindowClass::Instance()->Execute();
 			EffectUseControl->Calc(scene->isPause());//エフェクシアのアプデを60FPS相当に変更
 			scene->Draw();							//描画
 			FPS_n2::KeyGuideClass::Instance()->Draw();
-			FPS_n2::Sceneclass::OptionWindowClass::Instance()->Draw();
 			//デバッグ
 #ifdef DEBUG
 			DebugParts->DebugWindow(1920 - 300, 50);

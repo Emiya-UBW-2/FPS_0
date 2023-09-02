@@ -20,7 +20,7 @@ namespace FPS_n2 {
 			Movie,
 		};
 		enum class SoundEnum {
-			RunFoot,
+			RunFoot = (int)SoundEnumCommon::Num,
 			StandUp,
 			Siren,
 
@@ -32,12 +32,6 @@ namespace FPS_n2 {
 			EngineStart,
 			Engine2,
 			Propeller2,
-
-			UI_Select,
-			UI_OK,
-			UI_NG,
-
-			Num,
 		};
 		enum class CharaTypeID {
 			Mine,

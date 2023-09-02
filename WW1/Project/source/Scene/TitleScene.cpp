@@ -11,12 +11,7 @@ namespace FPS_n2 {
 			//this->m_BGM = SoundHandle::Load("data/Sound/BGM/Beethoven8_2.wav");
 			SE->Add((int)SoundEnum::StandUp, 1, "data/Sound/SE/move/sliding.wav", false);
 			SE->Add((int)SoundEnum::Siren, 1, "data/Sound/SE/siren.wav", false);
-
-			SE->Add((int)SoundEnum::UI_Select, 2, "data/Sound/UI/cursor.wav", false);
-			SE->Add((int)SoundEnum::UI_OK, 1, "data/Sound/UI/hit.wav", false);
-			SE->Add((int)SoundEnum::UI_NG, 1, "data/Sound/UI/cancel.wav", false);
 			//this->m_BGM.vol(128);
-
 			select = 0;
 			GameFadeIn = 3.f;
 			GameStart = 0.f;
@@ -39,7 +34,7 @@ namespace FPS_n2 {
 			DebugParts->SetPoint("update start");
 #endif // DEBUG
 			auto* SE = SoundPool::Instance();
-			auto* Pad = FPS_n2::PadControl::Instance();
+			auto* Pad = PadControl::Instance();
 			//FirstDoingv
 			if (GetIsFirstLoop()) {
 			}
@@ -72,14 +67,14 @@ namespace FPS_n2 {
 						if (select < 0) { select = 2; }
 						SelYadd[select] = 10.f;
 
-						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE->Get((int)SoundEnumCommon::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					if (Pad->GetDownKey().trigger()) {
 						++select;
 						if (select > 2) { select = 0; }
 						SelYadd[select] = -10.f;
 
-						SE->Get((int)SoundEnum::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE->Get((int)SoundEnumCommon::UI_Select).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 				}
 				for (int i = 0; i < 3; i++) {
@@ -90,7 +85,7 @@ namespace FPS_n2 {
 					switch (select) {
 					case 0:
 						if (Pad->GetOKKey().trigger()) {
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							SE->Get((int)SoundEnumCommon::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						if (!(GameStart == 0.f && !Pad->GetOKKey().trigger())) {
 							GameStart += 1.f / FPS / 0.5f;
@@ -98,7 +93,7 @@ namespace FPS_n2 {
 						break;
 					case 1:
 						if (Pad->GetOKKey().trigger()) {
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							SE->Get((int)SoundEnumCommon::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						if (!(GameStart2 == 0.f && !Pad->GetOKKey().trigger())) {
 							GameStart2 += 1.f / FPS / 0.5f;
@@ -106,10 +101,10 @@ namespace FPS_n2 {
 						break;
 					case 2:
 						if (Pad->GetOKKey().trigger()) {
-							SE->Get((int)SoundEnum::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							SE->Get((int)SoundEnumCommon::UI_OK).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						if (Pad->GetOKKey().trigger()) {
-							OptionWindowClass::Instance()->SetActive(true);
+							OptionWindowClass::Instance()->SetActive();
 						}
 						break;
 					default:

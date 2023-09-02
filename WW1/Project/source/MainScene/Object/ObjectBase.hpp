@@ -37,7 +37,7 @@ namespace FPS_n2 {
 			float										m_CameraSize{ 0.f };
 			PlayerID									m_MyID{ 0 };									//
 
-			shaders*									m_UseShader{ nullptr };
+			ShaderUseClass*								m_UseShader{ nullptr };
 			std::array<int,2>							m_ShaderTex{ -1 , -1 };
 		public:
 			void			SetPlayerID(PlayerID value) noexcept { this->m_MyID = value; }
@@ -48,7 +48,7 @@ namespace FPS_n2 {
 			void			SetResetP(bool value) { this->m_IsResetPhysics = value; }
 			void			SetCameraPosition(const VECTOR_ref& value) { this->m_CameraPosition = value; }
 			void			SetCameraSize(float value) { this->m_CameraSize = value; }
-			void			SetUseShader(shaders* value) noexcept { this->m_UseShader = value; }
+			void			SetUseShader(ShaderUseClass* value) noexcept { this->m_UseShader = value; }
 			void			SetShaderTexHandle(int id, int value) noexcept { this->m_ShaderTex[id] = value; }
 
 			auto&			GetObj(void) noexcept { return this->m_Use_RealTimePhysics ? this->m_obj_REALTIME : this->m_obj_LOADCALC; }
