@@ -141,7 +141,7 @@ namespace FPS_n2 {
 						GetDrawScreenSoftImage(0, 0, x, y, m_softimage);
 					}
 					this->m_grass.Init(&this->m_ObjGroundCol, m_softimage,
-						"data/model/grass/grass.png", "data/model/grass/model.mv1", MAPX, MAPZ,6);
+						"data/model/grass/grass.png", "data/model/grass/model.mv1", MAPX, MAPZ, 6);
 					//DeleteSoftImage(m_softimage);
 				}
 			}

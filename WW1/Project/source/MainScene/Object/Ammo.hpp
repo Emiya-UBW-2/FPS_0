@@ -151,7 +151,7 @@ namespace FPS_n2 {
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 					if (IsActive()) {
 						if (CheckCameraViewClip_Box(this->m_move.repos.get(), this->m_move.pos.get()) == FALSE) {
-							DrawCapsule_3D(this->m_move.pos, this->m_move.repos, 10.f * ((this->m_AmmoData->GetCaliber() - 0.00762f) * 0.1f + 0.00762f)*Scale_Rate, GetColor(255, 255,172), GetColor(255, 255, 0));
+							DrawCapsule_3D(this->m_move.pos, this->m_move.repos, 10.f * ((this->m_AmmoData->GetCaliber() - 0.00762f) * 0.1f + 0.00762f)*Scale_Rate, GetColor(255, 255, 172), GetColor(255, 255, 0));
 						}
 					}
 					SetUseLighting(TRUE);

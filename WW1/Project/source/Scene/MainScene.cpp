@@ -780,18 +780,18 @@ namespace FPS_n2 {
 			this->m_BackGround.reset();
 		}
 
-		void			MAINLOOP::ShadowDraw_NearFar_Sub(void) noexcept{
+		void			MAINLOOP::ShadowDraw_NearFar_Sub(void) noexcept {
 			this->m_BackGround->Shadow_Draw_NearFar();
 			auto* ObjMngr = ObjectManager::Instance();
 			ObjMngr->DrawObject_Shadow();
 		}
-		void			MAINLOOP::ShadowDraw_Sub(void) noexcept{
+		void			MAINLOOP::ShadowDraw_Sub(void) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
 
 			//this->m_BackGround->Shadow_Draw();
 			ObjMngr->DrawObject_Shadow();
 		}
-		void			MAINLOOP::MainDraw_Sub(void) noexcept{
+		void			MAINLOOP::MainDraw_Sub(void) noexcept {
 
 			auto* ObjMngr = ObjectManager::Instance();
 			auto* PlayerMngr = PlayerManager::Instance();
@@ -860,7 +860,7 @@ namespace FPS_n2 {
 			}
 			//*/
 		}
-		void			MAINLOOP::MainDrawbyDepth_Sub(void) noexcept{
+		void			MAINLOOP::MainDrawbyDepth_Sub(void) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
 			ObjMngr->DrawDepthObject();
 		}
@@ -939,7 +939,7 @@ namespace FPS_n2 {
 			}
 			//
 		}
-		void			MAINLOOP::DrawUI_In_Sub(void) noexcept{
+		void			MAINLOOP::DrawUI_In_Sub(void) noexcept {
 			auto* ObjMngr = ObjectManager::Instance();
 			auto* DrawParts = DXDraw::Instance();
 			auto* Fonts = FontPool::Instance();

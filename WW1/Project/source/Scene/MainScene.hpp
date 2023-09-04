@@ -72,7 +72,7 @@ namespace FPS_n2 {
 			int						m_AutoAimSel{ -1 };
 			VECTOR_ref				m_AimPoint;
 			float					m_AimRot{ 0.f };
-			
+
 			float					m_ResultXofs{ 0.f };
 			float					m_ResultColor{ 0.f };
 

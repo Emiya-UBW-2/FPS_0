@@ -38,7 +38,7 @@ namespace FPS_n2 {
 			VECTOR_ref											m_PosBuf;
 			//入力
 			bool												m_Press_Shot{ false };
-			std::array<float,2>									m_ShotTimer{ 0.f, 0.f };	//yrad
+			std::array<float, 2>									m_ShotTimer{ 0.f, 0.f };	//yrad
 			//体力
 			std::vector<HitBox>									m_HitBox;
 			DamageEvent											m_DamageEvent;									//
@@ -194,7 +194,7 @@ namespace FPS_n2 {
 						EffectControl::SetLoop((EffectResource::Effect)4, GetMatrix().pos());
 					}
 
-					m_EngineSESel = SE->Get((int)SoundEnum::Engine).Play_3D(0, GetMatrix().pos(), 250.f*Scale_Rate,-1, DX_PLAYTYPE_LOOP);										//サウンド
+					m_EngineSESel = SE->Get((int)SoundEnum::Engine).Play_3D(0, GetMatrix().pos(), 250.f*Scale_Rate, -1, DX_PLAYTYPE_LOOP);										//サウンド
 					m_PropellerSESel = SE->Get((int)SoundEnum::Propeller).Play_3D(0, GetMatrix().pos(), 250.f*Scale_Rate, -1, DX_PLAYTYPE_LOOP);										//サウンド
 				}
 				else {

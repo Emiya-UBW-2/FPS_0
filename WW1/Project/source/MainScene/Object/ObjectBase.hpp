@@ -38,7 +38,7 @@ namespace FPS_n2 {
 			PlayerID									m_MyID{ 0 };									//
 
 			ShaderUseClass*								m_UseShader{ nullptr };
-			std::array<int,2>							m_ShaderTex{ -1 , -1 };
+			std::array<int, 2>							m_ShaderTex{ -1 , -1 };
 		public:
 			void			SetPlayerID(PlayerID value) noexcept { this->m_MyID = value; }
 			void			SetUseRealTimePhysics(bool value) noexcept { this->m_Use_RealTimePhysics = value; }

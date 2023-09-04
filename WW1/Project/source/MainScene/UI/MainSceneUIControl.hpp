@@ -91,7 +91,7 @@ namespace FPS_n2 {
 						auto& s = ScoreAdd[i];
 						if (s.second > 0.f) {
 							float per = std::powf(2.f - s.second, 2.f);
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*(1.f- per)), 0, 255));
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*(1.f - per)), 0, 255));
 							Fonts->Get(FontPool::FontType::HUD_Edge).DrawString(y_r(32), FontHandle::FontXCenter::MIDDLE, FontHandle::FontYCenter::BOTTOM, xp1, yp1 - y_r(per*96.f), Green, Gray, "+%d", s.first);
 						}
 						else {
@@ -128,7 +128,7 @@ namespace FPS_n2 {
 				}
 				//çÇìxÅAë¨ìx
 				{
-					float rad = deg2rad(intParam[2])/60.f;
+					float rad = deg2rad(intParam[2]) / 60.f;
 					int xp1, yp1;
 					if (ItemGraphPtr[0]) {
 						float per = std::clamp((floatParam[3] - 60.f) / (220.f - 60.f), 0.f, 1.f);

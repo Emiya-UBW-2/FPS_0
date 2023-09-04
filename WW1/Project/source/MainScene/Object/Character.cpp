@@ -189,7 +189,7 @@ namespace FPS_n2 {
 			//
 			{
 				auto PAdd = -(KeyControl::GetRadBuf() - this->m_RadBufPrev).x()*100.f;
-				if (this->GetHP()==0) {
+				if (this->GetHP() == 0) {
 					PAdd += 0.1f;
 				}
 				if (KeyControl::GetPressFront()) {
