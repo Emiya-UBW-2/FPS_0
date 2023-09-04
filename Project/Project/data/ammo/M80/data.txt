@@ -1,8 +1,0 @@
-Name=M80
-ItemType=Ammo
-ItemInfo=Leopard1A4‹@e—p‚Ì’Êí’eB
-ItemCapacity=24
-ammo_cal(mm)=7.62
-ammo_speed(m/s)=887
-ammo_pene(mm)=12
-ammo_damage=10

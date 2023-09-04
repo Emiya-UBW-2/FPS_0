@@ -1,5 +1,0 @@
-Setting0_Port=10850
-Setting0_IP1=127
-Setting0_IP2=0
-Setting0_IP3=0
-Setting0_IP4=1

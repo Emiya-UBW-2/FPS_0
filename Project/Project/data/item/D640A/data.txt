@@ -1,4 +1,0 @@
-Name=D 640A履帯
-ItemType=Track
-ItemInfo=レオパルト1A4戦車用の履帯。
-ItemCapacity=160

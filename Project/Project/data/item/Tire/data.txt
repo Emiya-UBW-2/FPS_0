@@ -1,4 +1,0 @@
-Name=ジープ用タイヤ
-ItemType=Track
-ItemInfo=ジープ用タイヤ。
-ItemCapacity=200
