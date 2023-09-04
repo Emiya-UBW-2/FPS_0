@@ -112,55 +112,18 @@ namespace FPS_n2 {
 			SE->Get((int)SoundEnum::Engine).SetVol_Local(64);
 			SE->Get((int)SoundEnum::Propeller).SetVol_Local(128);
 			SE->Get((int)SoundEnum::Shot2).SetVol_Local(128);
-			//入力
-			this->m_MouseActive.Set(true);
 			//
 			this->m_DamageEvents.clear();
 			m_NetWorkBrowser.Init();
 			//
 			StartTimer = 3.f;
 		}
-		bool			MAINLOOP::Update_Sub(bool*  isPause) noexcept {
+		bool			MAINLOOP::Update_Sub(void) noexcept {
 			auto* Pad = PadControl::Instance();
-			//ポーズ
-			if (GetJoypadNum() > 0) {
-				DINPUT_JOYSTATE input;
-				int padID = DX_INPUT_PAD1;
-				GetJoypadInputState(padID);
-				switch (GetJoypadType(padID)) {
-				case DX_PADTYPE_OTHER:
-				case DX_PADTYPE_DUAL_SHOCK_4:
-				case DX_PADTYPE_DUAL_SENSE:
-				case DX_PADTYPE_SWITCH_JOY_CON_L://大丈夫？
-				case DX_PADTYPE_SWITCH_JOY_CON_R://大丈夫？
-				case DX_PADTYPE_SWITCH_PRO_CTRL://大丈夫？
-				case DX_PADTYPE_SWITCH_HORI_PAD://大丈夫？
-				case DX_PADTYPE_XBOX_360://大丈夫？
-				case DX_PADTYPE_XBOX_ONE://大丈夫？
-					GetJoypadDirectInputState(DX_INPUT_PAD1, &input);
-					this->m_MouseActive.Execute((input.Buttons[9] != 0)/**/);
-					break;
-				default:
-					break;
-				}
-			}
-			else {//キーボード
-				this->m_MouseActive.Execute(CheckHitKeyWithCheck(KEY_INPUT_TAB) != 0);
-			}
-
-			if (GetIsFirstLoop() || this->m_MouseActive.trigger()) {
-				if (!this->m_MouseActive.on()) {
-					select = 0;
-				}
-			}
-
-			if (this->m_MouseActive.trigger()) {
-				Pad->SetGuideUpdate();
-			}
-			Pad->Execute(
+			Pad->ChangeGuide(
 				[&]() {
-				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
-				if (!this->m_MouseActive.on()) {
+				auto* KeyGuide = KeyGuideClass::Instance();
+				if (DXDraw::Instance()->IsPause()) {
 					KeyGuide->Reset();
 					KeyGuide->AddGuide("ng.png", "決定");
 					KeyGuide->AddGuide("ok.png", "戻る");
@@ -180,8 +143,8 @@ namespace FPS_n2 {
 				}
 			},
 				[&]() {
-				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
-				if (!this->m_MouseActive.on()) {
+				auto* KeyGuide = KeyGuideClass::Instance();
+				if (DXDraw::Instance()->IsPause()) {
 					KeyGuide->Reset();
 					KeyGuide->AddGuide("none.jpg", "決定");
 					KeyGuide->AddGuide("X.jpg", "戻る");
@@ -205,11 +168,9 @@ namespace FPS_n2 {
 					KeyGuide->AddGuide("RM.jpg", "エイム");
 					KeyGuide->AddGuide("Tab.jpg", "ポーズ");
 				}
-			},
-				&this->m_MouseActive);
+			});
 
-			*isPause = !this->m_MouseActive.on();
-			if (*isPause) {
+			if (DXDraw::Instance()->IsPause()) {
 				auto* SE = SoundPool::Instance();
 				if (!OptionWindowClass::Instance()->IsActive()) {
 					if (Pad->GetUpKey().trigger()) {
@@ -234,25 +195,28 @@ namespace FPS_n2 {
 						switch (select) {
 						case 0:
 							m_GameEnd = true;
-							this->m_MouseActive.Execute(true);
+							DXDraw::Instance()->PauseChange();
 							break;
 						case 1:
 							OptionWindowClass::Instance()->SetActive();
 							break;
 						case 2:
-							this->m_MouseActive.Execute(true);
+							DXDraw::Instance()->PauseChange();
 							break;
 						default:
-							this->m_MouseActive.Execute(true);
+							DXDraw::Instance()->PauseChange();
 							break;
 						}
 					}
 					if (Pad->GetNGKey().trigger()) {
 						SE->Get((int)SoundEnumCommon::UI_NG).Play(0, DX_PLAYTYPE_BACK, TRUE);
-						this->m_MouseActive.Execute(true);
+						DXDraw::Instance()->PauseChange();
 					}
 				}
 				return true;
+			}
+			else {
+				select = 0;
 			}
 #ifdef DEBUG
 			auto* DebugParts = DebugClass::Instance();					//デバッグ
@@ -319,7 +283,7 @@ namespace FPS_n2 {
 				//
 				pp_x = Pad->GetLS_Y() * cam_per;
 				pp_y = Pad->GetLS_X() * cam_per;
-				if (Pad->GetMouseWheel().press()) {
+				if (Pad->GetFreeLook().press()) {
 					pp_x *= 2.f;
 					pp_y *= 2.f;
 				}
@@ -342,8 +306,8 @@ namespace FPS_n2 {
 					Pad->GetAccelKey().press(),
 					Pad->GetBrakeKey().press(),
 					false,
-					(Pad->GetShotKey().press() && this->m_MouseActive.on()),
-					(Pad->GetLookKey().press() && this->m_MouseActive.on())
+					(Pad->GetShotKey().press() && !DXDraw::Instance()->IsPause()),
+					(Pad->GetLookKey().press() && !DXDraw::Instance()->IsPause())
 				);
 
 
@@ -407,14 +371,14 @@ namespace FPS_n2 {
 				};
 
 				this->m_LookOn = -1;
-				this->m_LookMode = Pad->GetMouseWheel().press() ? 1 : 0;
+				this->m_LookMode = Pad->GetFreeLook().press() ? 1 : 0;
 
 
-				if (Pad->GetLookKey().press() && this->m_MouseActive.on()) {
+				if (Pad->GetLookKey().press() && !DXDraw::Instance()->IsPause()) {
 					this->m_LookMode = 0;
 				}
 				Easing(&this->m_FreeLook_Per, ((this->m_LookMode != 0)) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
-				Easing(&this->m_Aim_Per, (Pad->GetLookKey().press() && this->m_MouseActive.on()) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->m_Aim_Per, (Pad->GetLookKey().press() && !DXDraw::Instance()->IsPause()) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
 
 				this->m_TPS_Xrad = std::clamp(this->m_TPS_Xrad, deg2rad(-60), deg2rad(60));
 				if (this->m_TPS_Yrad >= deg2rad(180)) { this->m_TPS_Yrad -= deg2rad(360); }
@@ -631,7 +595,7 @@ namespace FPS_n2 {
 				Easing(&near_t, Scale_Rate * 1.f, 0.9f, EasingType::OutExpo);
 				Easing(&far_t, Scale_Rate * 500.f, 0.9f, EasingType::OutExpo);
 
-				if (Pad->GetLookKey().press() && this->m_MouseActive.on()) {
+				if (Pad->GetLookKey().press() && !DXDraw::Instance()->IsPause()) {
 					Easing(&fov_t, deg2rad(25), 0.9f, EasingType::OutExpo);
 				}
 				else {
@@ -686,7 +650,7 @@ namespace FPS_n2 {
 				m_AutoAimSel = -1;
 			}
 			m_AutoAimTimer = std::max(m_AutoAimTimer - 1.f / FPS, 0.f);
-			if (Pad->GetLookKey().press() && this->m_MouseActive.on()) {
+			if (Pad->GetLookKey().press() && !DXDraw::Instance()->IsPause()) {
 				if (0.f < m_AimPoint.z() && m_AimPoint.z() < 1.f) {
 					int select_t = -1;
 					float len = 10000.f*Scale_Rate;
@@ -940,11 +904,11 @@ namespace FPS_n2 {
 			//UI
 			this->m_UIclass.Draw();
 			//通信設定
-			if (!this->m_MouseActive.on()) {
+			if (DXDraw::Instance()->IsPause()) {
 				//m_NetWorkBrowser.Draw();
 			}
 			//ポーズ
-			if (!this->m_MouseActive.on()) {
+			if (DXDraw::Instance()->IsPause()) {
 				{
 					auto per = std::clamp(0.7f, 0.f, 1.f);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f*per), 0, 255));

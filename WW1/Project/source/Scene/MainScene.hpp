@@ -22,7 +22,6 @@ namespace FPS_n2 {
 			std::vector<std::shared_ptr<AIControl>>		m_AICtrl;						//AI
 			//ëÄçÏä÷òA
 			float					m_EyeRunPer{ 0.f };
-			switchs					m_MouseActive;
 			int						m_LookMode{ 0 };
 			int						m_LookOn{ -1 };
 			//UIä÷òA
@@ -117,7 +116,7 @@ namespace FPS_n2 {
 			}
 			void			Set_Sub(void) noexcept override;
 			//
-			bool			Update_Sub(bool*  isPause) noexcept override;
+			bool			Update_Sub(void) noexcept override;
 			void			Dispose_Sub(void) noexcept override;
 			//
 			void			Depth_Draw_Sub(void) noexcept override {

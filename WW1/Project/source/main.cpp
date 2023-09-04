@@ -40,7 +40,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	auto* EffectUseControl = EffectResource::Instance();
 	//auto* SE = SoundPool::Instance();
 	//
-	FPS_n2::KeyGuideClass::Create();
 	FPS_n2::SaveDataClass::Create();
 	FPS_n2::SaveDataClass::Instance()->Load();
 	//MV1SetLoadModelUsePackDraw(TRUE);
@@ -70,9 +69,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			DebugParts->SetPoint("Execute start");
 #endif // DEBUG
 			if (scene->Execute()) { break; }		//更新
-			EffectUseControl->Calc(scene->isPause());//エフェクシアのアプデを60FPS相当に変更
+			EffectUseControl->Calc(DXDraw::Instance()->IsPause());//エフェクシアのアプデを60FPS相当に変更
 			scene->Draw();							//描画
-			FPS_n2::KeyGuideClass::Instance()->Draw();
 			//デバッグ
 #ifdef DEBUG
 			DebugParts->DebugWindow(1920 - 300, 50);
@@ -85,7 +83,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			DrawParts->Screen_Flip();				//画面の反映
 		}
 		FPS_n2::SaveDataClass::Instance()->Save();
-		FPS_n2::KeyGuideClass::Instance()->Reset();
 		scene->NextScene();							//次のシーンへ移行
 	}
 	return 0;

@@ -197,7 +197,7 @@ namespace FPS_n2 {
 			StartMovieScene(void) noexcept { }
 			void			Set_Sub(void) noexcept override;
 			//
-			bool			Update_Sub(bool*  isPause) noexcept override;
+			bool			Update_Sub(void) noexcept override;
 			void			Dispose_Sub(void) noexcept override;
 			//
 			void			Depth_Draw_Sub(void) noexcept override {

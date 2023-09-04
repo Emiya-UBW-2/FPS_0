@@ -16,7 +16,7 @@ namespace FPS_n2 {
 			TitleScene(void) noexcept { }
 			void			Set_Sub(void) noexcept override;
 			//
-			bool			Update_Sub(bool* isPause) noexcept override;
+			bool			Update_Sub(void) noexcept override;
 			void			Dispose_Sub(void) noexcept override {
 				//auto* SE = SoundPool::Instance();
 			}

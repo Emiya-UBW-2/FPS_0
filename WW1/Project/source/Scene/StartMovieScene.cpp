@@ -143,14 +143,14 @@ namespace FPS_n2 {
 			SE->Get((int)SoundEnum::RunFoot).SetVol_Local(128);
 			SE->Get((int)SoundEnum::Siren).SetVol_Local(128);
 
-			auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+			auto* KeyGuide = KeyGuideClass::Instance();
 
 			KeyGuide->AddGuide("", "何れかのキーを押してスキップ");
 		}
 		//
-		bool			StartMovieScene::Update_Sub(bool*  isPause) noexcept {
+		bool			StartMovieScene::Update_Sub(void) noexcept {
 			//auto* Pad = PadControl::Instance();
-			if (*isPause) {
+			if (DXDraw::Instance()->IsPause()) {
 				return true;
 			}
 			{

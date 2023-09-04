@@ -23,8 +23,8 @@ namespace FPS_n2 {
 			}
 		}
 		//
-		bool			TitleScene::Update_Sub(bool* isPause) noexcept {
-			if (*isPause) {
+		bool			TitleScene::Update_Sub(void) noexcept {
+			if (DXDraw::Instance()->IsPause()) {
 				return true;
 			}
 #ifdef DEBUG
@@ -41,16 +41,16 @@ namespace FPS_n2 {
 
 			GameFadeIn = std::max(GameFadeIn - 1.f / FPS, 0.f);
 
-			Pad->Execute(
+			Pad->ChangeGuide(
 				[&]() {
-				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+				auto* KeyGuide = KeyGuideClass::Instance();
 				KeyGuide->Reset();
 				KeyGuide->AddGuide("ng.png", "Œˆ’è");
 				KeyGuide->AddGuide("ok.png", "–ß‚é");
 				KeyGuide->AddGuide("R_stick.png", "ã‰º‘I‘ð,’²®");
 			},
 				[&]() {
-				auto* KeyGuide = FPS_n2::KeyGuideClass::Instance();
+				auto* KeyGuide = KeyGuideClass::Instance();
 				KeyGuide->Reset();
 				KeyGuide->AddGuide("none.jpg", "Œˆ’è");
 				KeyGuide->AddGuide("X.jpg", "–ß‚é");
