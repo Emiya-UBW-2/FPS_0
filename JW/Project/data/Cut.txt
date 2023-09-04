@@ -1,0 +1,15 @@
+//テロップはじめ
+	//テロップ1
+		SetTelopTime(0.5,4.0);
+		SetTelop(960,960, 32,"1918年3月",MIDDLE);
+
+		SetTelopTime(6.5,4.0);
+		SetTelop(960,960, 32,"ドイツ帝国勝利のための 最後の攻勢が始まった。",MIDDLE);
+
+		SetTelopTime(12.5,4.0);
+		SetTelop(960,960, 32,"我々は制空権確保のため　また地獄へと向かう。",MIDDLE);
+
+		SetTelopTime(18.5,4.0);
+		SetTelop(960,960, 32,"十字架は　我々を逃してはくれないのだ……",MIDDLE);
+
+//テロップ終わり
